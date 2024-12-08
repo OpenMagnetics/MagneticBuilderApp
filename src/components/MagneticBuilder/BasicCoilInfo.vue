@@ -203,7 +203,7 @@ export default {
 
     <img :data-cy="dataTestLabel + '-BasicCoilInfo-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
 
-    <div v-else class="container-flex text-white mt-2 mb-3 pb-3 border-bottom border-top pt-2">
+    <div v-else class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2">
         <div class="row" v-tooltip="styleTooltip">
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.windingLosses"
@@ -219,7 +219,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.totalLosses"
@@ -236,7 +239,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.ohmicLosses"
@@ -252,7 +258,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.acLosses"
@@ -269,7 +278,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <div class="col-12 mt-3 mb-2 p-0">
                 <WindingSelector
@@ -292,7 +304,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.skinLossesPerWinding"
@@ -309,7 +324,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.proximityLossesPerWinding"
@@ -325,7 +343,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -343,7 +364,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -360,7 +384,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveResistancePerWinding"
@@ -377,7 +404,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.leakageInductanceReflectedToPrimary"
@@ -393,7 +423,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
         </div>

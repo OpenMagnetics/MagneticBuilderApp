@@ -10,6 +10,7 @@ import tooltip from "./directives/tooltip.js";
 import "/src/assets/css/tooltip.css";
 import axios from "axios";
 import { useUserStore } from '/src/stores/user'
+import { useSettingsStore } from '/src/stores/settings'
 import Module from '/src/assets/js/libMKF.wasm.js';
 
 
@@ -24,6 +25,7 @@ app.use(VueCookies, { expires: '7d'})
 app.directive("tooltip", tooltip);
 app.config.globalProperties.$axios = axiosInstance
 app.config.globalProperties.$userStore = useUserStore()
+app.config.globalProperties.$settingsStore = useSettingsStore()
 app.mount("#app");
 
 

@@ -184,6 +184,9 @@ export default {
                 :options="sectionsOrientations"
                 :labelStyleClass="'col-7'"
                 :selectStyleClass="'col-5'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
                 @update:modelValue="data = $event"
             />
@@ -207,6 +210,9 @@ export default {
                 :options="windingOrientations"
                 :labelStyleClass="'col-7'"
                 :selectStyleClass="'col-5'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
             /> -->
 
@@ -222,6 +228,9 @@ export default {
                 :options="coilAlignments"
                 :labelStyleClass="'col-7'"
                 :selectStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
             />
 
@@ -238,6 +247,9 @@ export default {
                 :options="coilAlignments"
                 :labelStyleClass="'col-7'"
                 :selectStyleClass="'col-5'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
                 @update:modelValue="data = $event"
             />
@@ -255,6 +267,9 @@ export default {
                 :min="1"
                 :disabledScaling="true"
                 :maximumNumberElements="12"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
             />
         </div>

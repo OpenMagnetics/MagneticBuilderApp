@@ -400,6 +400,9 @@ export default {
                 :options="coreShapeFamilies"
                 :labelStyleClass="'col-6'"
                 :selectStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreShape"
@@ -415,6 +418,9 @@ export default {
                 @update="shapeUpdated"
                 :labelStyleClass="'col-6'"
                 :selectStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <ElementFromList
@@ -430,6 +436,9 @@ export default {
                 :options="coreMaterialManufacturers"
                 :labelStyleClass="'col-6'"
                 :selectStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <ElementFromList
@@ -446,6 +455,9 @@ export default {
                 @update="materialUpdated"
                 :labelStyleClass="'col-6'"
                 :selectStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2">Select a family and a shape for the core</h5>
 
@@ -463,6 +475,9 @@ export default {
                 :allowNegative="false"
                 :modelValue="localData"
                 @update="numberStacksUpdated"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <CoreGappingSelector class="col-12 mb-1 text-start"
@@ -472,6 +487,9 @@ export default {
                 :forceUpdate="forceUpdate"
                 :autoupdate="false"
                 :core="masStore.mas.magnetic.core"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="gappingUpdated"
             />
 

@@ -143,6 +143,9 @@ export default {
                 v-model="numberWindingsAux"
                 :labelStyleClass="'col-8'"
                 :selectStyleClass="'col-4'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 :justifyContent="true"
                 @update="updatedNumberElements"
             />

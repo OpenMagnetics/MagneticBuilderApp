@@ -71,7 +71,7 @@ export default {
         },
         inputStyleClassCurrentDensity() {
             if (this.effectiveCurrentDensity < 12) {
-                return 'col-6 text-white';
+                return 'col-6';
             }
             else {
                 return 'col-6 text-danger';
@@ -79,7 +79,7 @@ export default {
         },
         inputStyleClassSkinAcFactor() {
             if (this.skinAcFactor < 2) {
-                return 'col-6 text-white';
+                return 'col-6';
             }
             else {
                 return 'col-6 text-danger';
@@ -89,7 +89,7 @@ export default {
             if (this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
                 if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].width != null) {
                     if (this.outerDimensions[0] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].width) {
-                        return 'col-6 text-white';
+                        return 'col-6';
                     }
                     else {
                         return 'col-6 text-danger';
@@ -101,7 +101,7 @@ export default {
             if (this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
                 if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height != null) {
                     if (this.outerDimensions[1] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height) {
-                        return 'col-6 text-white';
+                        return 'col-6';
                     }
                     else {
                         return 'col-6 text-danger';
@@ -115,7 +115,7 @@ export default {
                     this.turnsRatioCheck = this.mkf.check_requirement(JSON.stringify(this.masStore.mas.inputs.designRequirements.turnsRatios[this.windingIndex - 1]), this.turnsRatio);
                 }
                 if (this.turnsRatioCheck) {
-                    return 'col-6 text-white';
+                    return 'col-6';
                 }
                 else {
                     return 'col-6 text-danger';
@@ -182,7 +182,7 @@ export default {
 </script>
 
 <template>
-    <div class="container-flex text-white mt-2 mb-3 pb-3 border-bottom border-top pt-2">
+    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2">
         <div class="row" v-tooltip="styleTooltip">
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.dcResistancePerMeter"
@@ -196,7 +196,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -212,7 +215,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -227,7 +233,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -243,7 +252,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -259,6 +271,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassCurrentDensity"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -275,7 +290,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -290,6 +308,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassouterDimensionsWidth"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -307,6 +328,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassSkinAcFactor"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -321,6 +345,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassouterDimensionsHeight"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
             <DimensionReadOnly 
@@ -339,6 +366,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassTurnsRatio"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
 

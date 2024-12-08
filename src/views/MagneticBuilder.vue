@@ -7,7 +7,7 @@ import MagneticBuilder from '/src/components/MagneticBuilder.vue'
 import ControlPanel from '/src/components/ControlPanel.vue'
 
 import { useMasStore } from '/src/stores/mas'
-
+import Module from '/src/assets/js/libMKF.wasm.js';
 </script>
 
 <script>

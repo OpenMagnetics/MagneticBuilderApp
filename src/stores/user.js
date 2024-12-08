@@ -13,6 +13,16 @@ export const useUserStore = defineStore("user", () => {
     const magnetic2DVisualizerPlotMagneticField = ref(0);
     const magnetic2DVisualizerPlotFringingField = ref(1);
 
+    const selectedModels = ref({
+        gapReluctance: Defaults.reluctanceModelDefault,
+        coreLosses: Defaults.coreLossesModelDefault,
+        coreTemperature: Defaults.coreTemperatureModelDefault,
+    })
+    
+    function setSelectedModels(variable, model) {
+        this.selectedModels[variable] = model
+    }
+
     function isAnyDesignLoaded() {
         return this.anyDesignLoaded;
     }
@@ -41,6 +51,8 @@ export const useUserStore = defineStore("user", () => {
         magnetic2DVisualizerPlotCurrentView,
         magnetic2DVisualizerPlotMagneticField,
         magnetic2DVisualizerPlotFringingField,
+        setSelectedModels,
+        selectedModels,
     }
 },
 {

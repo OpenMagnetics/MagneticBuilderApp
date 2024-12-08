@@ -95,7 +95,7 @@ export default {
                 <div :class="'col-lg-' + Number(12 / numberSections)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="key in range(0, numberSections)">
                     <h2 class="accordion-header" :id="'coreCalculatorheading-' + key">
                         <button
-                            :class="sectionIndex == key? 'text-success' : 'text-white collapsed'"
+                            :class="sectionIndex == key? 'text-success' : 'collapsed'"
                             class="fs-6 accordion-button bg-light p-1"
                             type="button"
                             data-bs-toggle="collapse"

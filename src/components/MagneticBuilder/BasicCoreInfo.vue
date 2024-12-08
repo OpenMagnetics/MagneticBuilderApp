@@ -56,7 +56,7 @@ export default {
         },
         inputStyleClassMagneticFluxDensity() {
             if (this.coreLossesData.magneticFluxDensityPeak < this.coreTemperatureDependantParametersData.magneticFluxDensitySaturation * 0.85) {
-                return 'col-6 text-white';
+                return 'col-6';
             }
             else {
                 return 'col-6 text-danger';
@@ -64,7 +64,7 @@ export default {
         },
         inputStyleClassMagnetizingInductance() {
             if (this.magnetizingInductanceCheck) {
-                return 'col-6 text-white';
+                return 'col-6';
             }
             else {
                 return 'col-6 text-danger';
@@ -173,7 +173,7 @@ export default {
 </script>
 
 <template>
-    <div class="container-flex text-white mt-2 mb-3 pb-3 border-bottom border-top pt-2">
+    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2">
         <div v-if="core.processedDescription != null" class="row" v-tooltip="styleTooltip">
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveLength"
@@ -188,7 +188,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveArea"
@@ -204,7 +207,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveVolume"
@@ -219,7 +225,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.minimumArea"
@@ -235,7 +244,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.initialPermeability"
@@ -251,7 +263,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectivePermeability"
@@ -268,7 +283,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.permeance"
@@ -284,7 +302,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.saturatingMagneticFluxDensity"
@@ -301,11 +322,14 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
-                class="col-xl-6 col-lg-12 text-start text-white"
+                class="col-xl-6 col-lg-12 text-start"
                 :name="'B'"
                 :subscriptName="'peak'"
                 :unit="'T'"
@@ -318,6 +342,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassMagneticFluxDensity"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
@@ -335,6 +362,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassMagneticFluxDensity"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
@@ -350,6 +380,9 @@ export default {
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassMagnetizingInductance"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.coreLosses"
@@ -366,7 +399,10 @@ export default {
                 :disableShortenLabels="true"
                 :labelStyleClass="'col-4'"
                 :dimensionStyleClass="'col-8'"
-                :inputStyleClass="'col-6 text-white'"
+                :inputStyleClass="'col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
             />
 
         </div>

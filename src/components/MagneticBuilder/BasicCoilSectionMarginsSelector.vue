@@ -1,5 +1,4 @@
 <script setup>
-import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { toTitleCase, checkAndFixMas, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import SectionSelector from './SectionSelector.vue'
@@ -155,6 +154,9 @@ export default {
                 :modelValue="data[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="topOrInnerMarginUpdated(selectedSectionIndex)"
             />
             <label :data-cy="dataTestLabel + '-TopOrLeftMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{topOrLeftMarginErrorMessage}}</label>
@@ -175,6 +177,9 @@ export default {
                 :modelValue="data[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="BottomOrOuterMarginUpdated(selectedSectionIndex)"
             />
             <label :data-cy="dataTestLabel + '-BottomOrRightMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{bottomOrRightMarginErrorMessage}}</label>

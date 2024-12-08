@@ -1,6 +1,4 @@
 <script setup>
-import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
-import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
 import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import BasicCoilInfo from './BasicCoilInfo.vue'

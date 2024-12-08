@@ -170,6 +170,9 @@ export default {
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-6 col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="turnsUpdated"
             />
             <Dimension class="col-12 mb-1 text-start"
@@ -186,6 +189,9 @@ export default {
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-6 col-6'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="turnsUpdated"
             />
         </div>
