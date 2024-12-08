@@ -84,6 +84,7 @@ export default {
                 :coilFits="coilFits"
                 :showFieldPlotInit="Boolean($userStore.magnetic2DVisualizerPlotMagneticField)"
                 :includeFringingInit="Boolean($userStore.magnetic2DVisualizerPlotFringingField)"
+                :backgroundColor="$settingsStore.labelBgColor"
                 @swapFieldPlot="swapFieldPlot"
                 @swapIncludeFringing="swapIncludeFringing"
                 />

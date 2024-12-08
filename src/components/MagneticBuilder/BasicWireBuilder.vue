@@ -119,6 +119,7 @@ export default {
                 :operatingPoint="masStore.mas.inputs.operatingPoints[0]"
                 :includeCurrentDensity="$userStore.wire2DVisualizerPlotCurrentDensity == 1"
                 :loadingGif="'/images/loading.gif'"
+                :backgroundColor="$settingsStore.labelBgColor"
             />
         </div>
         <h4 v-else class="mb-5" > {{"Wires Description"}} </h4>
