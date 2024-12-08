@@ -20,6 +20,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        useVisualizers: {
+            type: Boolean,
+            default: true,
+        },
         mkf: {
             type: Object,
             required: true,
@@ -117,7 +121,7 @@ export default {
             <div :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
-                    :useVisualizers="true"
+                    :useVisualizers="useVisualizers"
                     :isIsolatedApp="isIsolatedApp"
                     :mkf="mkf"
                 />
@@ -125,7 +129,7 @@ export default {
             <div :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicWireBuilder 
                     :masStore="masStore"
-                    :useVisualizers="true"
+                    :useVisualizers="useVisualizers"
                     :isIsolatedApp="isIsolatedApp"
                     :mkf="mkf"
                 />
@@ -133,7 +137,7 @@ export default {
             <div :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoilBuilder 
                     :masStore="masStore"
-                    :useVisualizers="true"
+                    :useVisualizers="useVisualizers"
                     :isIsolatedApp="isIsolatedApp"
                     :mkf="mkf"
                 />
