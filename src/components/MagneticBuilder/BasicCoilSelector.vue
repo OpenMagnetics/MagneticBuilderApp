@@ -6,26 +6,12 @@ import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import BasicCoilInfo from './BasicCoilInfo.vue'
 import BasicCoilSectionMarginsSelector from './BasicCoilSectionMarginsSelector.vue'
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
-import Module from '/src/assets/js/libAdvisers.wasm.js'
-import { useDataCacheStore } from '/src/stores/dataCache'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '/src/stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
 <script>
-var advisers = {
-    ready: new Promise(resolve => {
-        Module({
-            onRuntimeInitialized () {
-                advisers = Object.assign(this, {
-                    ready: Promise.resolve()
-                });
-                resolve();
-            }
-        });
-    })
-};
 
 export default {
     props: {
@@ -41,6 +27,10 @@ export default {
             type: Object,
             required: true,
         },
+        isIsolatedApp: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -52,11 +42,6 @@ export default {
         const tryingToSend = false;
         const forceUpdate = 0; 
         var pattern = "";
-        const proportionPerWinding = [];
-        this.masStore.mas.magnetic.coil.functionalDescription.forEach((item, index) => {
-            pattern += String(index + 1);
-            proportionPerWinding.push(1.0 / this.masStore.mas.magnetic.coil.functionalDescription.length);
-        })
 
         var localData = {
             sectionsOrientation: "overlapping",
@@ -69,8 +54,9 @@ export default {
             }],
             pattern: pattern,
             repetitions: 1,
-            proportionPerWinding: proportionPerWinding,
+            proportionPerWinding: [],
         };
+        this.resetProportionPerWinding(localData);
 
         return {
             blockingRebounds,
@@ -176,6 +162,12 @@ export default {
             },
             deep: true
         },
+        'masStore.mas.inputs.designRequirements.turnsRatios': {
+            handler(newValue, oldValue) {
+                this.resetProportionPerWinding(this.localData);
+            },
+            deep: true
+        },
     },
     mounted () {
         this.tryToWind();
@@ -235,6 +227,14 @@ export default {
 
     },
     methods: {
+        resetProportionPerWinding(localData) {
+            localData.proportionPerWinding = [];
+            localData.pattern = "";
+            this.masStore.mas.magnetic.coil.functionalDescription.forEach((item, index) => {
+                localData.pattern += String(index + 1);
+                localData.proportionPerWinding.push(1.0 / this.masStore.mas.magnetic.coil.functionalDescription.length);
+            })
+        },
         getWindingIndex(coil, windinName) {
             var foundWindingIndex = null;
             coil.functionalDescription.forEach((winding, windingIndex) => {
@@ -291,51 +291,60 @@ export default {
         wind() {
             this.$emit("fits", true);
             this.$mkf.ready.then(_ => {
+                try {
+                    const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 
-                const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
+                    const margins = [];
+                    if (this.conductiveSections.length > 0) {
+                        inputCoil["_turnsAlignment"] = {};
+                        inputCoil["_layersOrientation"] = {};
+                        this.localData.dataPerSection.forEach((datum, sectionIndex) => {
+                            if (sectionIndex in this.conductiveSections) {
+                                const sectionName = this.conductiveSections[sectionIndex].name
+                                inputCoil["_turnsAlignment"][sectionName] = datum.turnsAlignment;
+                                inputCoil["_layersOrientation"][sectionName] = datum.layersOrientation;
+                            }
+                            margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
+                        })
+                    }
+                    else {
+                        inputCoil["_turnsAlignment"] = [];
+                        inputCoil["_layersOrientation"] = [];
+                        this.localData.dataPerSection.forEach((datum, sectionIndex) => {
+                            inputCoil["_turnsAlignment"].push(datum.turnsAlignment);
+                            inputCoil["_layersOrientation"].push(datum.layersOrientation);
+                            margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
+                        })
+                    }
 
-                const margins = [];
-                if (this.conductiveSections.length > 0) {
-                    inputCoil["_turnsAlignment"] = {};
-                    inputCoil["_layersOrientation"] = {};
-                    this.localData.dataPerSection.forEach((datum, sectionIndex) => {
-                        if (sectionIndex in this.conductiveSections) {
-                            const sectionName = this.conductiveSections[sectionIndex].name
-                            inputCoil["_turnsAlignment"][sectionName] = datum.turnsAlignment;
-                            inputCoil["_layersOrientation"][sectionName] = datum.layersOrientation;
-                        }
-                        margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
-                    })
-                }
-                else {
-                    inputCoil["_turnsAlignment"] = [];
-                    inputCoil["_layersOrientation"] = [];
-                    this.localData.dataPerSection.forEach((datum, sectionIndex) => {
-                        inputCoil["_turnsAlignment"].push(datum.turnsAlignment);
-                        inputCoil["_layersOrientation"].push(datum.layersOrientation);
-                        margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
-                    })
-                }
+                    const pattern = [];
+                    this.localData.pattern.split('').forEach((char) => {
+                        pattern.push(Number(char) - 1);
+                    });
 
-                const pattern = [];
-                this.localData.pattern.split('').forEach((char) => {
-                    pattern.push(Number(char) - 1);
-                });
+                    const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
-                const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+                    if (coilJson.startsWith("Exception")) {
+                        this.tryingToSend = false;
+                        console.error(coilJson);
+                        return;
+                    }
+                    this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
+                    const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
+                    this.$emit("fits", fits);
 
-                if (coilJson.startsWith("Exception")) {
+                    this.historyStore.addToHistory(this.masStore.mas);
                     this.tryingToSend = false;
-                    console.error(coilJson);
-                    return;
+                    this.historyStore.unblockAdditions();
                 }
-                this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
-                const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
-                this.$emit("fits", fits);
-
-                this.historyStore.addToHistory(this.masStore.mas);
-                this.tryingToSend = false;
-                this.historyStore.unblockAdditions();
+                catch (e) {
+                    this.tryingToSend = false;
+                    this.recentChange = true;
+                    this.blockingRebounds = true;
+                    this.assignLocalData(this.masStore.mas.magnetic);
+                    this.tryToWind();
+                    setTimeout(() => this.blockingRebounds = false, 100);
+                }
 
             });
         },
@@ -356,44 +365,49 @@ export default {
             }
         },
         assignLocalData(magnetic) {
-            if (magnetic.coil.bobbin != "" && magnetic.coil.bobbin != "Dummy") {
-                if (magnetic.coil.bobbin.processedDescription != null) {
-                    if (magnetic.coil.bobbin.processedDescription.windingWindows != null) {
-                        if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment != null) {
-                            this.localData.sectionsAlignment = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment;
-                        }
-                        if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation != null) {
-                            this.localData.sectionsOrientation = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
+            try {
+                if (magnetic.coil.bobbin != "" && magnetic.coil.bobbin != "Dummy") {
+                    if (magnetic.coil.bobbin.processedDescription != null) {
+                        if (magnetic.coil.bobbin.processedDescription.windingWindows != null) {
+                            if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment != null) {
+                                this.localData.sectionsAlignment = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment;
+                            }
+                            if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation != null) {
+                                this.localData.sectionsOrientation = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
+                            }
                         }
                     }
                 }
-            }
-            if (magnetic.coil.sectionsDescription != null && magnetic.coil.layersDescription != null) {
-                var conductionSectionIndex = 0;
-                magnetic.coil.sectionsDescription.forEach((section) => {
-                    if (section.type == "conduction") {
-                        if (this.localData.dataPerSection.length <= conductionSectionIndex) {
-                            this.localData.dataPerSection.push({
-                                layersOrientation: "overlapping",
-                                turnsAlignment: "spread",
-                            });
-                        }
-                        this.localData.dataPerSection[conductionSectionIndex].layersOrientation = section.layersOrientation;
-
-                        magnetic.coil.layersDescription.forEach((layer, layerIndex) => {
-                            if (layer.section == section.name) {
-                                this.localData.dataPerSection[conductionSectionIndex].turnsAlignment = layer.turnsAlignment;
+                if (magnetic.coil.sectionsDescription != null && magnetic.coil.layersDescription != null) {
+                    var conductionSectionIndex = 0;
+                    magnetic.coil.sectionsDescription.forEach((section) => {
+                        if (section.type == "conduction") {
+                            if (this.localData.dataPerSection.length <= conductionSectionIndex) {
+                                this.localData.dataPerSection.push({
+                                    layersOrientation: "overlapping",
+                                    turnsAlignment: "spread",
+                                });
                             }
-                        })
+                            this.localData.dataPerSection[conductionSectionIndex].layersOrientation = section.layersOrientation;
 
-                        if (section.margin != null) {
-                            this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin = section.margin[0];
-                            this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin = section.margin[1];
+                            magnetic.coil.layersDescription.forEach((layer, layerIndex) => {
+                                if (layer.section == section.name) {
+                                    this.localData.dataPerSection[conductionSectionIndex].turnsAlignment = layer.turnsAlignment;
+                                }
+                            })
+
+                            if (section.margin != null) {
+                                this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin = section.margin[0];
+                                this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin = section.margin[1];
+                            }
+
+                            conductionSectionIndex += 1;
                         }
-
-                        conductionSectionIndex += 1;
-                    }
-                })
+                    })
+                }
+            }
+            catch (e) {
+                setTimeout(() => this.assignLocalData(magnetic), 50);
             }
         },
         assignCoilData() {
@@ -455,9 +469,9 @@ export default {
             <img :data-cy="dataTestLabel + '-BasicCoilSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
             <ListOfCharacters
                 v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"
-                v-if="!loading"
+                v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 1"
                 class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-ProportionPerWinding'"
+                :dataTestLabel="dataTestLabel + '-SectionsInterleaving'"
                 :modelValue="localData.pattern" 
                 @updateModelValue="localData.pattern = $event"
                 :name="'pattern'"
@@ -485,7 +499,7 @@ export default {
             />
         </div>
 
-        <div class="col-12">
+        <div v-if="!isIsolatedApp" class="col-12">
             <BasicCoilInfo
                 v-if="!loading"
                 :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"

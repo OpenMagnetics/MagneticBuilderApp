@@ -1,0 +1,3 @@
+[submodule "WebSharedComponents"]
+	path = WebSharedComponents
+	url = https://github.com/OpenMagnetics/WebSharedComponents.git

@@ -42,6 +42,10 @@ export default {
             type: Object,
             required: true,
         },
+        isIsolatedApp: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const dataCacheStore = useDataCacheStore();
@@ -67,7 +71,7 @@ export default {
             foilConductingHeight: 0.005,
             foilConductingWidth: 0.0001,
         };
-        if (typeof(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire) == 'string' && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "") {
+        if (typeof(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire) == 'string' && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "Dummy") {
             this.$mkf.ready.then(_ => {
 
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = JSON.parse(this.$mkf.get_wire_data(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])));
@@ -282,28 +286,33 @@ export default {
             });
         },
         getWireDiameters() {
-            if (this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] != null && this.dataCacheStore.isWireDataValid()) {
-                this.wireConductingDiameters = this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard];
-            }
-            else {
-                this.$mkf.ready.then(_ => {
-                    const aux = {};
-                    const wireConductingDiametersHandle = this.$mkf.get_unique_wire_diameters(JSON.stringify(this.localData.standard));
-                    for (var i = wireConductingDiametersHandle.size() - 1; i >= 0; i--) {
-                        const wireDiameter = wireConductingDiametersHandle.get(i);
-                        const key = Number(wireDiameter.split(" ")[0]);
-                        aux[key] = wireDiameter;
-                    }
-                    let orderedKeys = Object.keys(aux).sort(function(a, b) {
-                        return a - b;
-                    })
-                    this.wireConductingDiameters = [];
-                    orderedKeys.forEach((key) => {
-                        this.wireConductingDiameters.push(aux[key]);
+            try {
+                if (this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] != null && this.dataCacheStore.isWireDataValid()) {
+                    this.wireConductingDiameters = this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard];
+                }
+                else {
+                    this.$mkf.ready.then(_ => {
+                        const aux = {};
+                        const wireConductingDiametersHandle = this.$mkf.get_unique_wire_diameters(JSON.stringify(this.localData.standard));
+                        for (var i = wireConductingDiametersHandle.size() - 1; i >= 0; i--) {
+                            const wireDiameter = wireConductingDiametersHandle.get(i);
+                            const key = Number(wireDiameter.split(" ")[0]);
+                            aux[key] = wireDiameter;
+                        }
+                        let orderedKeys = Object.keys(aux).sort(function(a, b) {
+                            return a - b;
+                        })
+                        this.wireConductingDiameters = [];
+                        orderedKeys.forEach((key) => {
+                            this.wireConductingDiameters.push(aux[key]);
+                        });
+                        this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] = this.wireConductingDiameters;
+                        this.dataCacheStore.setWireDataTimestamp();
                     });
-                    this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] = this.wireConductingDiameters;
-                    this.dataCacheStore.setWireDataTimestamp();
-                });
+                }
+            }
+            catch (e) {
+                setTimeout(() => this.getWireDiameters(), 100);
             }
         },
         getWireCoatings() {
@@ -367,32 +376,38 @@ export default {
             return this.localData["foilConductingWidth"] != null
         },
         wireTypeUpdated() {
-            this.getWireCoatings();
+            try {
 
-            const newType = this.localData.type;
-            if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" &&
-                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.type != null) {
-                const oldType = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.type;
-                const effectiveFrequency = this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current.processed.effectiveFrequency;
+                this.getWireCoatings();
 
-                this.$mkf.ready.then(_ => {
+                const newType = this.localData.type;
+                if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" &&
+                    this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.type != null) {
+                    const oldType = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.type;
+                    const effectiveFrequency = this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current.processed.effectiveFrequency;
 
-                    if ((newType == "litz" && !this.isAnyLitzLoaded()) ||
-                        (newType == "round" && !this.isAnyRoundLoaded()) ||
-                        (newType == "rectangular" && !this.isAnyRectangularLoaded()) ||
-                        (newType == "foil" && !this.isAnyFoilLoaded())) {
-                        const wireString = this.$mkf.get_equivalent_wire(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire), JSON.stringify(newType), effectiveFrequency);
+                    this.$mkf.ready.then(_ => {
 
-                        if (wireString.startsWith("Exception")) {
-                            console.error(wireString);
-                            return;
+                        if ((newType == "litz" && !this.isAnyLitzLoaded()) ||
+                            (newType == "round" && !this.isAnyRoundLoaded()) ||
+                            (newType == "rectangular" && !this.isAnyRectangularLoaded()) ||
+                            (newType == "foil" && !this.isAnyFoilLoaded())) {
+                            const wireString = this.$mkf.get_equivalent_wire(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire), JSON.stringify(newType), effectiveFrequency);
+
+                            if (wireString.startsWith("Exception")) {
+                                console.error(wireString);
+                                return;
+                            }
+                            const wire = JSON.parse(wireString);
+                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
+                            this.assignLocalData(wire);
                         }
-                        const wire = JSON.parse(wireString);
-                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
-                        this.assignLocalData(wire);
-                    }
-                    // this.assignWire();
-                });
+                        // this.assignWire();
+                    });
+                }
+            }
+            catch(e) {
+                setTimeout(() => this.wireTypeUpdated(), 100);
             }
         },
         adviseWireRequested() {
@@ -633,7 +648,7 @@ export default {
                 @update="wireUpdated"
             />
 
-            <div class="col-12">
+            <div v-if="!isIsolatedApp" class="col-12">
                 <BasicWireInfo 
                     v-if="!loading"
                     :dataTestLabel="dataTestLabel + '-BasicWireInfo'"
@@ -647,6 +662,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-BasicWireSubmenu'"
                 :enableCustomize="false"
                 :severalWires="masStore.mas.magnetic.coil.functionalDescription.length > 1"
+                :enableAdvise="!isIsolatedApp"
                 @adviseWire="adviseWireRequested"
                 @adviseAllWires="adviseAllWiresRequested"
                 @customizeCore="customizeWire"

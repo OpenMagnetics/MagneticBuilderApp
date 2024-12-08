@@ -39,6 +39,10 @@ export default {
             type: Object,
             required: true,
         },
+        isIsolatedApp: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -467,7 +471,7 @@ export default {
 
             <div class="col-12">
                 <BasicCoreInfo 
-                    v-if="!loading"
+                    v-if="!loading & !isIsolatedApp"
                     :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
                     :core="masStore.mas.magnetic.core"
                     :masStore="masStore"

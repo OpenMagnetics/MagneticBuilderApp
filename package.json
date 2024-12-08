@@ -1,0 +1,42 @@
+{
+  "name": "my-vue-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@chenfengyuan/vue-number-input": "^2.0.1",
+    "@popperjs/core": "^2.11.8",
+    "@vueform/slider": "^2.1.10",
+    "axios": "^1.7.7",
+    "bootstrap": "^5.3.3",
+    "chartjs-plugin-dragdata": "^2.3.1",
+    "comlink": "^4.4.1",
+    "cors": "^2.8.5",
+    "echarts": "^5.5.1",
+    "pinia": "^2.2.2",
+    "pinia-plugin-persistedstate": "^4.0.2",
+    "three": "^0.168.0",
+    "three-trackballcontrols": "^0.9.0",
+    "troisjs": "^0.3.4",
+    "vue": "^3.5.8",
+    "vue-echarts": "^7.0.3",
+    "vue-good-table-next": "^0.2.2",
+    "vue-router": "^4.4.5",
+    "vue3-cookies": "^1.0.6",
+    "vue3-popper": "^1.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.4",
+    "cypress": "^13.14.2",
+    "raw-loader": "^4.0.2",
+    "sass": "^1.79.3",
+    "vite": "^5.4.7",
+    "vite-plugin-compression": "^0.5.1"
+  }
+}

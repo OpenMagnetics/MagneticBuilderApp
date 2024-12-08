@@ -14,6 +14,14 @@ export default {
             type: Object,
             required: true,
         },
+        useVisualizers: {
+            type: Boolean,
+            default: true,
+        },
+        isIsolatedApp: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         return {
@@ -32,7 +40,7 @@ export default {
 
 <template>
     <div class="container">
-        <div class="row" style="height: 30vh">
+        <div v-if="useVisualizers" class="row" style="height: 30vh">
             <Core3DVisualizer 
                 :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
                 :core="masStore.mas.magnetic.core"
@@ -40,9 +48,11 @@ export default {
                 :loadingGif="'/images/loading.gif'"
             />
         </div>
+        <h4 v-else class="mb-5" > {{"Core Description"}} </h4>
         <div class="row">
             <BasicCoreSelector 
                 :masStore="masStore"
+                :isIsolatedApp="isIsolatedApp"
             />
         </div>
     </div>

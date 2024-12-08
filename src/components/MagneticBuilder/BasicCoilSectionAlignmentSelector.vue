@@ -166,6 +166,24 @@ export default {
 <template>
     <div class="container p-0">
         <div class="row"  ref="coilSelectorContainer" v-tooltip="styleTooltip">
+
+            <ElementFromList
+                v-tooltip="tooltipsMagneticBuilder.windingsOrientation"
+                v-if="showAlignmentOptions"
+                class="col-12 mb-2 text-start"
+                :dataTestLabel="dataTestLabel + '-sectionsOrientation'"
+                :name="'sectionsOrientation'"
+                :replaceTitle="'Windings Orientation'"
+                :titleSameRow="true"
+                :justifyContent="true"
+                :modelValue="data"
+                :options="sectionsOrientations"
+                :labelStyleClass="'col-7'"
+                :selectStyleClass="'col-5'"
+                @update="coilUpdated"
+                @update:modelValue="data = $event"
+            />
+
             <SectionSelector
                 v-show="showAlignmentOptions" 
                 :sectionIndex="selectedSectionIndex"
@@ -174,7 +192,7 @@ export default {
             />
 
 
-            <ElementFromList
+<!--             <ElementFromList
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-LayersOrientation'"
                 :name="'layersOrientation'"
@@ -186,7 +204,7 @@ export default {
                 :labelStyleClass="'col-7'"
                 :selectStyleClass="'col-5'"
                 @update="coilUpdated"
-            />
+            /> -->
 
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.turnsAlignment"
@@ -201,23 +219,6 @@ export default {
                 :labelStyleClass="'col-7'"
                 :selectStyleClass="'col-6'"
                 @update="coilUpdated"
-            />
-
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.windingsOrientation"
-                v-if="showAlignmentOptions"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-sectionsOrientation'"
-                :name="'sectionsOrientation'"
-                :replaceTitle="'Windings Orientation'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                :modelValue="data"
-                :options="sectionsOrientations"
-                :labelStyleClass="'col-7'"
-                :selectStyleClass="'col-5'"
-                @update="coilUpdated"
-                @update:modelValue="data = $event"
             />
 
             <ElementFromList
@@ -238,7 +239,7 @@ export default {
             />
             <ArrayProportions
                 v-tooltip="tooltipsMagneticBuilder.proportions"
-                v-if="showAlignmentOptions"
+                v-if="showAlignmentOptions && masStore.mas.magnetic.coil.functionalDescription.length > 1"
                 class="col-12 my-1 text-start"
                 :dataTestLabel="dataTestLabel + '-ProportionPerWinding'"
                 :modelValue="data.proportionPerWinding"

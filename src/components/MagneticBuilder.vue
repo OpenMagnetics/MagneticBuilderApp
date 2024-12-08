@@ -16,6 +16,10 @@ export default {
         masStore: {
             type: Object,
         },
+        isIsolatedApp: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -39,7 +43,7 @@ export default {
         this.historyStore.$onAction((action) => {
             if (action.name == "addToHistory") {
                 this.$emit("canContinue", this.isMagneticBuilt());
-                if (this.isMagneticBuilt()) {
+                if (this.isMagneticBuilt() && !this.isIsolatedApp) {
                     this.insertIntermediateMas();
                 }
             }
@@ -108,16 +112,22 @@ export default {
             <div :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
+                    :useVisualizers="true"
+                    :isIsolatedApp="isIsolatedApp"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicWireBuilder 
                     :masStore="masStore"
+                    :useVisualizers="true"
+                    :isIsolatedApp="isIsolatedApp"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoilBuilder 
                     :masStore="masStore"
+                    :useVisualizers="true"
+                    :isIsolatedApp="isIsolatedApp"
                 />
             </div>
         </div>

@@ -42,11 +42,17 @@ export default {
         getWindingLabel(key) {
             const refKey = 'select-winding-' + key;
             var clientWidth;
-            Object.entries(this.$refs).forEach((value) => {
-                if (value[0] == refKey) {
-                    clientWidth = value[1][0].clientWidth;
-                }
-            })
+
+            try {
+                Object.entries(this.$refs).forEach((value) => {
+                    if (value[0] == refKey) {
+                        clientWidth = value[1][0].clientWidth;
+                    }
+                })
+            }
+            catch (error) {
+                setTimeout(() => this.getWindingLabel(key), 100);
+            }
 
             if (clientWidth > 134) {
                 return 'Winding ' + key;
@@ -62,6 +68,18 @@ export default {
             this.selectedWindingIndex = windingIndex;
             this.$emit("windingIndexChanged", windingIndex);
         },
+        isWireMissing(windingIndex) {
+            var isMissingWires = false;
+            if (this.coil.functionalDescription[windingIndex].wire == "Dummy" || this.coil.functionalDescription[windingIndex].wire == "" || this.coil.functionalDescription[windingIndex].wire == null) {
+                isMissingWires = true;
+            }
+            else {
+                if (this.coil.functionalDescription[windingIndex].wire.type == null) {
+                    isMissingWires = true;
+                }
+            }
+            return isMissingWires;
+        },
     }
 }
 </script>
@@ -72,7 +90,7 @@ export default {
             <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription">
                 <h2 class="accordion-header" :id="'wireBuilderAccordionHeading-' + key">
                     <button
-                        :class="selectedWindingIndex == key? 'text-success' : 'text-white collapsed'"
+                        :class="selectedWindingIndex == key? 'text-success' : isWireMissing(key)? 'text-danger collapsed' : 'text-white collapsed'"
                         class="fs-6 accordion-button bg-light p-2"
                         :ref="'select-winding-' + (key + 1)"
                         type="button"
