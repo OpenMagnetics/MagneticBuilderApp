@@ -24,6 +24,10 @@ export default {
             type: Object,
             required: true,
         },
+        mkf: {
+            type: Object,
+            required: true,
+        },
     },
     data() {
         const coreTemperatureDependantParametersData = {};
@@ -91,13 +95,13 @@ export default {
         calculateCoreEffectiveParameters() {
             if (this.core['functionalDescription']['shape'] != "") {
                 if (this.core['processedDescription'] == null) {
-                    this.$mkf.ready.then(_ => {
+                    this.mkf.ready.then(_ => {
 
                         const aux = deepCopy(this.core);
                         aux['geometricalDescription'] = null;
                         aux['processedDescription'] = null;
                         if (typeof(aux['functionalDescription']['shape']) == "string") {
-                            const result = this.$mkf.get_shape_data(aux['functionalDescription']['shape']);
+                            const result = this.mkf.get_shape_data(aux['functionalDescription']['shape']);
 
                             if (result.startsWith("Exception")) {
                                 console.error(result);
@@ -119,7 +123,7 @@ export default {
                         if (aux['functionalDescription']['shape']['familySubtype'] != "null" && aux['functionalDescription']['shape']['familySubtype'] != null) {
                             aux['functionalDescription']['shape']['familySubtype'] = String(aux['functionalDescription']['shape']['familySubtype']);
                         }
-                        const coreJson = this.$mkf.calculate_core_data(JSON.stringify(aux), false);
+                        const coreJson = this.mkf.calculate_core_data(JSON.stringify(aux), false);
                         if (coreJson.startsWith("Exception")) {
                             console.error(coreJson);
                             return;
@@ -136,7 +140,7 @@ export default {
         },
         calculateCoreLosses() {
             if (this.core['functionalDescription']['shape'] != "" && this.core['functionalDescription']['material'] != "") {
-                this.$mkf.ready.then(_ => {
+                this.mkf.ready.then(_ => {
                     if (!('gapReluctance' in this.$userStore.selectedModels)) {
                         this.$userStore.selectedModels['gapReluctance'] = Defaults.reluctanceModelDefault
                     }
@@ -149,18 +153,18 @@ export default {
                     const modelsData = {coreLosses: this.$userStore.selectedModels['coreLosses'].toUpperCase(),
                                   coreTemperature: this.$userStore.selectedModels['coreTemperature'].toUpperCase(),
                                   gapReluctance: this.$userStore.selectedModels['gapReluctance'].toUpperCase().replace(" ", "_")};
-                    this.coreLossesData = JSON.parse(this.$mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
+                    this.coreLossesData = JSON.parse(this.mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
                                                                                 JSON.stringify(this.masStore.mas.magnetic.coil),
                                                                                 JSON.stringify(this.masStore.mas.inputs),
                                                                                 JSON.stringify(modelsData)));
-                    this.coreTemperatureDependantParametersData = JSON.parse(this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature));
+                    this.coreTemperatureDependantParametersData = JSON.parse(this.mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature));
 
-                    this.magnetizingInductance = JSON.parse(this.$mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(this.masStore.mas.magnetic.core),
+                    this.magnetizingInductance = JSON.parse(this.mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(this.masStore.mas.magnetic.core),
                                                                                                              JSON.stringify(this.masStore.mas.magnetic.coil),
                                                                                                              JSON.stringify(this.masStore.mas.inputs.operatingPoints[0]),
                                                                                                              JSON.stringify(modelsData)));
 
-                    this.magnetizingInductanceCheck = this.$mkf.check_requirement(JSON.stringify(this.masStore.mas.inputs.designRequirements.magnetizingInductance), this.magnetizingInductance);
+                    this.magnetizingInductanceCheck = this.mkf.check_requirement(JSON.stringify(this.masStore.mas.inputs.designRequirements.magnetizingInductance), this.magnetizingInductance);
                 })
             }
         },

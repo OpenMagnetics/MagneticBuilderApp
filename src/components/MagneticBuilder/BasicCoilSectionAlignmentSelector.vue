@@ -30,6 +30,10 @@ export default {
             type: Object,
             required: true,
         },
+        mkf: {
+            type: Object,
+            required: true,
+        },
     },
     data() {
         const windingOrientations = {};
@@ -122,8 +126,8 @@ export default {
     },
     methods: {
         getSectionOrientations() {
-            this.$mkf.ready.then(_ => {
-                const handle = this.$mkf.get_available_winding_orientations();
+            this.mkf.ready.then(_ => {
+                const handle = this.mkf.get_available_winding_orientations();
                 for (var i = handle.size() - 1; i >= 0; i--) {
                     const type = handle.get(i);
                     this.sectionsOrientations[type] = toTitleCase(type);
@@ -131,8 +135,8 @@ export default {
             });
         },
         getWindingOrientations() {
-            this.$mkf.ready.then(_ => {
-                const handle = this.$mkf.get_available_winding_orientations();
+            this.mkf.ready.then(_ => {
+                const handle = this.mkf.get_available_winding_orientations();
                 for (var i = handle.size() - 1; i >= 0; i--) {
                     const type = handle.get(i);
                     this.windingOrientations[type] = toTitleCase(type);
@@ -140,8 +144,8 @@ export default {
             });
         },
         getCoilAlignments() {
-            this.$mkf.ready.then(_ => {
-                const handle = this.$mkf.get_available_coil_alignments();
+            this.mkf.ready.then(_ => {
+                const handle = this.mkf.get_available_coil_alignments();
                 for (var i = handle.size() - 1; i >= 0; i--) {
                     const type = handle.get(i);
                     this.coilAlignments[type] = toTitleCase(type);

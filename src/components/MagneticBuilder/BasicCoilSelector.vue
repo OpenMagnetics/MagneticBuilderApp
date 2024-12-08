@@ -7,7 +7,7 @@ import BasicCoilInfo from './BasicCoilInfo.vue'
 import BasicCoilSectionMarginsSelector from './BasicCoilSectionMarginsSelector.vue'
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
-import { useHistoryStore } from '/src/stores/history'
+import { useHistoryStore } from '../../stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -30,6 +30,10 @@ export default {
         isIsolatedApp: {
             type: Boolean,
             default: false,
+        },
+        mkf: {
+            type: Object,
+            required: true,
         },
     },
     data() {
@@ -290,7 +294,7 @@ export default {
         },
         wind() {
             this.$emit("fits", true);
-            this.$mkf.ready.then(_ => {
+            this.mkf.ready.then(_ => {
                 try {
                     const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 
@@ -322,7 +326,7 @@ export default {
                         pattern.push(Number(char) - 1);
                     });
 
-                    const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+                    const coilJson = this.mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
                     if (coilJson.startsWith("Exception")) {
                         this.tryingToSend = false;
@@ -330,7 +334,7 @@ export default {
                         return;
                     }
                     this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
-                    const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
+                    const fits = this.mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
                     this.$emit("fits", fits);
 
                     this.historyStore.addToHistory(this.masStore.mas);
@@ -486,6 +490,7 @@ export default {
                 :data="localData"
                 :showAlignmentOptions="showAlignmentOptions"
                 :masStore="masStore"
+                :mkf="mkf"
                 @coilUpdated="coilUpdated"
             />
         </div>
@@ -495,6 +500,7 @@ export default {
                 :data="localData.dataPerSection"
                 :showMarginOptions="showMarginOptions"
                 :masStore="masStore"
+                :mkf="mkf"
                 @marginUpdated="marginUpdated"
             />
         </div>
@@ -505,6 +511,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
                 :core="masStore.mas.magnetic.core"
                 :masStore="masStore"
+                :mkf="mkf"
             />
         </div>
 

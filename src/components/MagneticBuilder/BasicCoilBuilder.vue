@@ -26,6 +26,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        mkf: {
+            type: Object,
+            required: true,
+        },
     },
     data() {
         const coilFits = true;
@@ -90,6 +94,7 @@ export default {
             <BasicCoilSelector
                 :masStore="masStore"
                 :isIsolatedApp="isIsolatedApp"
+                :mkf="mkf"
                 @fits="fits"
             />
         </div>

@@ -27,6 +27,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        mkf: {
+            type: Object,
+            required: true,
+        },
     },
     data() {
         var numberWindings = 1;
@@ -159,11 +163,13 @@ export default {
                     class="mt-1"
                     v-if="selectedWindingIndex==key"
                     :masStore="masStore"
+                    :mkf="mkf"
                     :windingIndex="key"
                 />
                 <BasicWireSelector
                     v-if="selectedWindingIndex==key"
                     :masStore="masStore"
+                    :mkf="mkf"
                     :windingIndex="key"
                     :isIsolatedApp="isIsolatedApp"
                 />

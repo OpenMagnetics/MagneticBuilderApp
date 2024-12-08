@@ -1,8 +1,8 @@
 <script setup>
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
-import Module from '/src/assets/js/libAdvisers.wasm.js'
+import Module from '../../assets/js/libAdvisers.wasm.js'
 import { checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
-import { useHistoryStore } from '/src/stores/history'
+import { useHistoryStore } from '../../stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -23,6 +23,10 @@ export default {
             default: "/images/loading.gif",
         },
         masStore: {
+            type: Object,
+            required: true,
+        },
+        mkf: {
             type: Object,
             required: true,
         },
@@ -81,7 +85,7 @@ export default {
         this.blockingRebounds = true;
         setTimeout(() => this.blockingRebounds = false, 10);
 
-        checkAndFixMas(this.masStore.mas, this.$mkf).then(response => {
+        checkAndFixMas(this.masStore.mas, this.mkf).then(response => {
             this.masStore.mas = response;
             this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]);
         })

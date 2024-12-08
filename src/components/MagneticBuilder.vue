@@ -1,5 +1,5 @@
 <script setup>
-import { useHistoryStore } from '/src/stores/history'
+import { useHistoryStore } from '../stores/history'
 import BasicCoreBuilder from './MagneticBuilder/BasicCoreBuilder.vue'
 import BasicWireBuilder from './MagneticBuilder/BasicWireBuilder.vue'
 import BasicCoilBuilder from './MagneticBuilder/BasicCoilBuilder.vue'
@@ -19,6 +19,10 @@ export default {
         isIsolatedApp: {
             type: Boolean,
             default: false,
+        },
+        mkf: {
+            type: Object,
+            required: true,
         },
     },
     data() {
@@ -114,6 +118,7 @@ export default {
                     :masStore="masStore"
                     :useVisualizers="true"
                     :isIsolatedApp="isIsolatedApp"
+                    :mkf="mkf"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : 'col-4'">
@@ -121,6 +126,7 @@ export default {
                     :masStore="masStore"
                     :useVisualizers="true"
                     :isIsolatedApp="isIsolatedApp"
+                    :mkf="mkf"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : 'col-4'">
@@ -128,6 +134,7 @@ export default {
                     :masStore="masStore"
                     :useVisualizers="true"
                     :isIsolatedApp="isIsolatedApp"
+                    :mkf="mkf"
                 />
             </div>
         </div>

@@ -30,6 +30,10 @@ export default {
             type: Object,
             required: true,
         },
+        mkf: {
+            type: Object,
+            required: true,
+        },
     },
     data() {
         const forceUpdate = 0;
@@ -85,9 +89,9 @@ export default {
     methods: {
         topOrInnerMarginUpdated(sectionIndex) {
             if (!this.blockingRebounds) {
-                this.$mkf.ready.then(_ => {
+                this.mkf.ready.then(_ => {
                     const isMarginHorizontal = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
-                    const fits = this.$mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data[sectionIndex].topOrLeftMargin, isMarginHorizontal);
+                    const fits = this.mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data[sectionIndex].topOrLeftMargin, isMarginHorizontal);
 
                     if (fits) {
                         this.$emit('marginUpdated', sectionIndex);
@@ -101,9 +105,9 @@ export default {
         },
         BottomOrOuterMarginUpdated(sectionIndex) {
             if (!this.blockingRebounds) {
-                this.$mkf.ready.then(_ => {
+                this.mkf.ready.then(_ => {
                     const isMarginHorizontal = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
-                    const fits = this.$mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data[sectionIndex].bottomOrRightMargin, isMarginHorizontal);
+                    const fits = this.mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data[sectionIndex].bottomOrRightMargin, isMarginHorizontal);
 
                     if (fits) {
                         this.$emit('marginUpdated', sectionIndex);

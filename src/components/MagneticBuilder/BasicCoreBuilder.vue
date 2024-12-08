@@ -22,6 +22,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        mkf: {
+            type: Object,
+            required: true,
+        },
     },
     data() {
         return {
@@ -52,6 +56,7 @@ export default {
         <div class="row">
             <BasicCoreSelector 
                 :masStore="masStore"
+                :mkf="mkf"
                 :isIsolatedApp="isIsolatedApp"
             />
         </div>
