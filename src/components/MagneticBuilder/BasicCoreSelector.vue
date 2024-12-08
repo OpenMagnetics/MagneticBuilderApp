@@ -507,6 +507,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                 :enableAdvise="!loading"
                 :enableCustomize="false"
+                :allowAdvise="!isIsolatedApp"
                 @adviseCore="adviseCoreRequested"
                 @customizeCore="customizeCore"
                 @loadCore="loadCore"

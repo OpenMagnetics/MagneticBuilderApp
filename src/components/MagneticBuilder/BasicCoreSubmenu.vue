@@ -19,7 +19,11 @@ export default {
         enableLoad: {
             type: Boolean,
             default: false,
-        }
+        },
+        allowAdvise: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         return {
@@ -40,9 +44,9 @@ export default {
 <template>
     <div class="container">
         <div class="row">
-            <button :disabled="!enableAdvise" :data-cy="dataTestLabel + '-Core-Advise-button'" class="btn btn-primary mx-auto d-block mt-1 col-4" @click="$emit('adviseCore')" >Advise core</button>
-            <button :disabled="!enableCustomize" :data-cy="dataTestLabel + '-Core-Customize-button'" class="btn btn-success mx-auto d-block mt-1 col-4" @click="$emit('customizeCore')" >Customize</button>
-            <button :disabled="!enableLoad" :data-cy="dataTestLabel + '-Core-Load-button'" class="btn btn-secondary mx-auto d-block mt-1 col-4" @click="$emit('loadCore')" >{{'Load core from library'}}</button>
+            <button v-if="allowAdvise" :disabled="!enableAdvise" :data-cy="dataTestLabel + '-Core-Advise-button'" :class="allowAdvise? 'col-4' : 'col-0' " class="btn btn-primary mx-auto d-block mt-1 col-4" @click="$emit('adviseCore')" >Advise core</button>
+            <button :disabled="!enableCustomize" :data-cy="dataTestLabel + '-Core-Customize-button'" :class="allowAdvise? 'col-4' : 'col-6' " class="btn btn-success mx-auto d-block mt-1 col-4" @click="$emit('customizeCore')" >Customize</button>
+            <button :disabled="!enableLoad" :data-cy="dataTestLabel + '-Core-Load-button'" :class="allowAdvise? 'col-4' : 'col-6' " class="btn btn-secondary mx-auto d-block mt-1 col-4" @click="$emit('loadCore')" >{{'Load core from library'}}</button>
         </div>
     </div>
 </template>
