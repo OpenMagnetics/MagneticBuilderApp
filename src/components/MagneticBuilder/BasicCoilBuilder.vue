@@ -79,8 +79,8 @@ export default {
             <Magnetic2DVisualizer 
                 :modelValue="masStore.mas"
                 :enableZoom="false"
-                :enableOptions="true"
-                :enableHideOnFitting="true"
+                :enableOptions="!isIsolatedApp"
+                :enableHideOnFitting="!isIsolatedApp"
                 :coilFits="coilFits"
                 :showFieldPlotInit="Boolean($userStore.magnetic2DVisualizerPlotMagneticField)"
                 :includeFringingInit="Boolean($userStore.magnetic2DVisualizerPlotFringingField)"
