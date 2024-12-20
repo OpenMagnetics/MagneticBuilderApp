@@ -117,6 +117,15 @@ export default {
 
 <template>
     <div class="container">
+
+
+    <h2>Current time</h2>
+    <py-script class="display: none">
+        from datetime import datetime
+        now = datetime.now()
+        print(now.strftime("%m/%d/%Y, %H:%M:%S"))
+    </py-script>
+
         <div class="row">
             <div :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoreBuilder 
@@ -145,3 +154,23 @@ export default {
         </div>
     </div>
 </template>
+
+<style>
+    /* py-config - not a component */
+    py-config {
+      display: none
+    }
+
+    /* py-{el} - components not defined */
+    py-script:not(:defined) {
+      display: none
+    }
+
+    py-repl:not(:defined) {
+      display: none
+    }
+
+    .py-overlay, .py-pop-up, .label {
+      display: none;
+    }
+</style>
