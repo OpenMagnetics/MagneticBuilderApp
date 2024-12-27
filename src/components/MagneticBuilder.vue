@@ -24,6 +24,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableCoil: {
+            type: Boolean,
+            default: true,
+        },
         mkf: {
             type: Object,
             required: true,
@@ -117,17 +121,8 @@ export default {
 
 <template>
     <div class="container">
-
-
-    <h2>Current time</h2>
-    <py-script class="display: none">
-        from datetime import datetime
-        now = datetime.now()
-        print(now.strftime("%m/%d/%Y, %H:%M:%S"))
-    </py-script>
-
         <div class="row">
-            <div :class="isMobile()? 'col-12' : 'col-4'">
+            <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers"
@@ -135,7 +130,7 @@ export default {
                     :mkf="mkf"
                 />
             </div>
-            <div :class="isMobile()? 'col-12' : 'col-4'">
+            <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
                 <BasicWireBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers"
@@ -143,7 +138,7 @@ export default {
                     :mkf="mkf"
                 />
             </div>
-            <div :class="isMobile()? 'col-12' : 'col-4'">
+            <div v-if="enableCoil" :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoilBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers"
@@ -154,23 +149,3 @@ export default {
         </div>
     </div>
 </template>
-
-<style>
-    /* py-config - not a component */
-    py-config {
-      display: none
-    }
-
-    /* py-{el} - components not defined */
-    py-script:not(:defined) {
-      display: none
-    }
-
-    py-repl:not(:defined) {
-      display: none
-    }
-
-    .py-overlay, .py-pop-up, .label {
-      display: none;
-    }
-</style>
