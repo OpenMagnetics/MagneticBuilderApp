@@ -221,7 +221,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -241,7 +241,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -260,7 +260,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -280,7 +280,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <div class="col-12 mt-3 mb-2 p-0">
@@ -306,7 +306,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -326,7 +326,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -345,7 +345,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -366,7 +366,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -386,7 +386,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -406,7 +406,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -425,7 +425,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 

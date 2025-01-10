@@ -198,7 +198,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -217,7 +217,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -235,7 +235,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -254,7 +254,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -272,7 +272,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassCurrentDensity"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -292,7 +292,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -309,7 +309,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassouterDimensionsWidth"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -329,7 +329,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassSkinAcFactor"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -346,7 +346,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassouterDimensionsHeight"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -367,7 +367,7 @@ export default {
                 :dimensionStyleClass="'col-8'"
                 :inputStyleClass="inputStyleClassTurnsRatio"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 

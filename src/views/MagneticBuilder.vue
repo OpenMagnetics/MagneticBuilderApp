@@ -42,6 +42,9 @@ export default {
     computed: {
     },
     mounted() {
+        this.$settingsStore.labelBgColor = 'bg-dark';
+        this.$settingsStore.inputBgColor = 'bg-light';
+        this.$settingsStore.textColor = 'text-white';
     },
     created() {
     },
@@ -70,7 +73,7 @@ export default {
                             <MagneticBuilder 
                                 :masStore="masStore"
                                 :dataTestLabel="`${dataTestLabel}-MagneticBuilder`"
-                                :isIsolatedApp="true"
+                                :isIsolatedApp="false"
                                 :mkf="$mkf"
                             />
                         </div>
