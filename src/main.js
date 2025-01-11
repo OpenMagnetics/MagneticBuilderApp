@@ -12,6 +12,7 @@ import axios from "axios";
 import { useUserStore } from '/src/stores/user'
 import { useSettingsStore } from '/src/stores/settings'
 import Module from '/src/assets/js/libMKF.wasm.js';
+import VueApexCharts from "vue3-apexcharts";
 
 
 const axiosInstance = axios.create()
@@ -21,6 +22,7 @@ pinia.use(piniaPluginPersistedstate)
 const app = createApp(App);
 app.use(router);
 app.use(pinia)
+app.use(VueApexCharts);
 app.use(VueCookies, { expires: '7d'})
 app.directive("tooltip", tooltip);
 app.config.globalProperties.$axios = axiosInstance

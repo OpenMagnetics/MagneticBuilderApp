@@ -43,9 +43,17 @@ export default {
             type: Object,
             required: true,
         },
-        isIsolatedApp: {
+        simulationEnabled: {
             type: Boolean,
-            default: false,
+            default: true,
+        },
+        submenuEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        adviseEnabled: {
+            type: Boolean,
+            default: true,
         },
     },
     data() {
@@ -296,6 +304,7 @@ export default {
             const aux = this.masStore.mas.magnetic.core;
             aux.functionalDescription.material = value
             this.masStore.mas.magnetic.core = aux;
+            this.shapeUpdated(this.localData.shape)
             this.historyStore.addToHistory(this.masStore.mas);
         },
         numberStacksUpdated(value) {
@@ -493,9 +502,9 @@ export default {
                 @update="gappingUpdated"
             />
 
-            <div class="col-12">
+            <div v-if= "simulationEnabled" class="col-12">
                 <BasicCoreInfo 
-                    v-if="!loading & !isIsolatedApp"
+                    v-if="!loading"
                     :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
                     :core="masStore.mas.magnetic.core"
                     :masStore="masStore"
@@ -503,11 +512,13 @@ export default {
                 />
             </div>
 
-            <BasicCoreSubmenu class="col-12 mb-1 text-start"
+            <BasicCoreSubmenu 
+                v-if="submenuEnabled"
+                class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                 :enableAdvise="!loading"
                 :enableCustomize="false"
-                :allowAdvise="!isIsolatedApp"
+                :allowAdvise="adviseEnabled"
                 @adviseCore="adviseCoreRequested"
                 @customizeCore="customizeCore"
                 @loadCore="loadCore"

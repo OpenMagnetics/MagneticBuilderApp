@@ -2,6 +2,7 @@
 import { useMasStore } from '/src/stores/mas'
 import { useHistoryStore } from '/src/stores/history'
 import { checkAndFixMas, download } from '/WebSharedComponents/assets/js/utils.js'
+import Settings from './MagneticBuilder/Settings.vue'
 </script>
 
 
@@ -62,6 +63,14 @@ export default {
             this.masExported = true
             setTimeout(() => this.masExported = false, 2000);
         },
+        openSettings() {
+            console.log("openSettings");
+            this.masExported = true
+            setTimeout(() => this.masExported = false, 2000);
+        },
+        onSettingsUpdated() {
+            console.log("onSettingsUpdated");
+        },
         readMASFile(event) {
             const fr = new FileReader();
 
@@ -91,12 +100,16 @@ export default {
 </script>
 
 <template>
+    <Settings 
+        :modalName="'MagneticBuilderSettingsModal'"
+        @onSettingsUpdated="onSettingsUpdated"
+    />
     <div class="container">
         <div class="row ">
             <button :disabled="!historyStore.isBackPossible()" class="btn btn-primary offset-sm-0 offset-lg-1 col-2 col-lg-1" @click="undo">
                 <i class="fa-solid fa-arrow-rotate-left"></i>
             </button>
-            <button :disabled="!historyStore.isForwardPossible()" class="btn btn-primary offset-sm-0 offset-lg-1 col-2 col-lg-1" @click="redo">
+            <button :disabled="!historyStore.isForwardPossible()" class="btn btn-primary col-2 col-lg-1" @click="redo">
                 <i class="fa-solid fa-arrow-rotate-right"></i>
             </button>
             <input data-cy="CoreImport-MAS-file-button" type="file" ref="masFileReader" @change="readMASFile()" class="btn btn-primary mt-1 rounded-3" hidden />
@@ -106,9 +119,19 @@ export default {
             <button v-else class="btn btn-primary offset-1 col-3" @click="load">
                 {{'Loading'}}
             </button>
-            <button class="btn btn-primary offset-1 col-3" @click="exportMAS">
+            <button class="btn btn-primary col-3" @click="exportMAS">
                 {{'Export MAS'}}
             </button>
+            <button 
+                class="btn btn-primary offset-1 col-1"
+                data-bs-toggle="modal"
+                data-bs-target="#MagneticBuilderSettingsModal"
+                @click="openSettings" 
+                >
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+
         </div>
     </div>
 </template>

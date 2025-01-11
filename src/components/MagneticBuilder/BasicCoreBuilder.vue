@@ -18,13 +18,21 @@ export default {
             type: Boolean,
             default: true,
         },
-        isIsolatedApp: {
-            type: Boolean,
-            default: false,
-        },
         mkf: {
             type: Object,
             required: true,
+        },
+        simulationEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        submenuEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        adviseEnabled: {
+            type: Boolean,
+            default: true,
         },
     },
     data() {
@@ -58,7 +66,9 @@ export default {
             <BasicCoreSelector 
                 :masStore="masStore"
                 :mkf="mkf"
-                :isIsolatedApp="isIsolatedApp"
+                :simulationEnabled="simulationEnabled"
+                :submenuEnabled="submenuEnabled"
+                :adviseEnabled="adviseEnabled"
             />
         </div>
     </div>

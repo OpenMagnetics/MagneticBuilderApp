@@ -1,7 +1,6 @@
 <script setup>
-import { removeTrailingZeroes, deepCopy, isMobile } from '/WebSharedComponents/assets/js/utils.js'
+import { removeTrailingZeroes, deepCopy, isMobile} from '/WebSharedComponents/assets/js/utils.js'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
-import LineChartComparator from '/WebSharedComponents/Common/LineChartComparator.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -36,28 +35,11 @@ export default {
         const magnetizingInductance = 0;
         const magnetizingInductanceCheck = false;
 
-        const impedanceOverFrequencyData = [{
-            label: 'impedanceOverFrequency',
-            data: {
-                x: [],
-                y: [],
-            },
-            colorLabel: 'info',
-            type: 'linear',
-            position: 'left',
-            yUnit: 'Ω',
-            xMaximum: 1,
-            xMinimum: 0,
-            yMaximum: 1,
-            yMinimum: 0,
-        }]
-
         return {
             coreTemperatureDependantParametersData,
             coreLossesData,
             magnetizingInductance,
             magnetizingInductanceCheck,
-            impedanceOverFrequencyData,
         }
     },
     computed: {
@@ -108,34 +90,8 @@ export default {
     mounted () {
         this.calculateCoreEffectiveParameters();
         this.calculateCoreLosses();
-        this.sweepImpedanceOverFrequency();
     },
     methods: {
-        sweepImpedanceOverFrequency() {
-            this.mkf.ready.then(_ => {
-                const aux = deepCopy(this.core);
-
-                const curve2DJson = this.mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 400000, 1000, "Impedance over frequency");
-                if (curve2DJson.startsWith("Exception")) {
-                    console.error(curve2DJson);
-                    return;
-                }
-                else {
-                    const curve2D = JSON.parse(curve2DJson);
-                    this.impedanceOverFrequencyData[0].data = {
-                        x: curve2D.xPoints,
-                        y: curve2D.yPoints,
-                    };
-                    this.impedanceOverFrequencyData[0].xMaximum =Math.max(...curve2D.xPoints);
-                    this.impedanceOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
-                    this.impedanceOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
-                    this.impedanceOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
-                }
-
-            }).catch(error => {
-                console.error(error);
-            });
-        },
         calculateCoreEffectiveParameters() {
             if (this.core['functionalDescription']['shape'] != "") {
                 if (this.core['processedDescription'] == null) {
@@ -447,10 +403,6 @@ export default {
                 :labelBgColor="$settingsStore.labelBgColor"
                 :inputBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
-            />
-            <LineChartComparator 
-                :inputData="impedanceOverFrequencyData"
-                :xUnit="'Hz'"
             />
 
         </div>

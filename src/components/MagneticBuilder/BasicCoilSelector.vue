@@ -25,13 +25,21 @@ export default {
             type: Object,
             required: true,
         },
-        isIsolatedApp: {
-            type: Boolean,
-            default: false,
-        },
         mkf: {
             type: Object,
             required: true,
+        },
+        simulationEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        submenuEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        adviseEnabled: {
+            type: Boolean,
+            default: true,
         },
     },
     data() {
@@ -503,7 +511,7 @@ export default {
             />
         </div>
 
-        <div v-if="!isIsolatedApp" class="col-12">
+        <div v-if="simulationEnabled" class="col-12">
             <BasicCoilInfo
                 v-if="!loading"
                 :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
@@ -513,7 +521,9 @@ export default {
             />
         </div>
 
-        <BasicCoilSubmenu class="col-12 mb-1 text-start"
+        <BasicCoilSubmenu
+            v-if="submenuEnabled"
+            class="col-12 mb-1 text-start"
             :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
             :enableAlignmentOptions="!loading"
             :enableCustomize="false"

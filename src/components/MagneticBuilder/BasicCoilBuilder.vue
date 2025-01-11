@@ -22,13 +22,21 @@ export default {
             type: Boolean,
             default: true,
         },
-        isIsolatedApp: {
-            type: Boolean,
-            default: false,
-        },
         mkf: {
             type: Object,
             required: true,
+        },
+        simulationEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        submenuEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        adviseEnabled: {
+            type: Boolean,
+            default: true,
         },
     },
     data() {
@@ -79,8 +87,8 @@ export default {
             <Magnetic2DVisualizer 
                 :modelValue="masStore.mas"
                 :enableZoom="false"
-                :enableOptions="!isIsolatedApp"
-                :enableHideOnFitting="!isIsolatedApp"
+                :enableOptions="simulationEnabled"
+                :enableHideOnFitting="simulationEnabled"
                 :coilFits="coilFits"
                 :showFieldPlotInit="Boolean($userStore.magnetic2DVisualizerPlotMagneticField)"
                 :includeFringingInit="Boolean($userStore.magnetic2DVisualizerPlotFringingField)"
@@ -94,7 +102,9 @@ export default {
         <div class="row mb-2" v-show="masStore.mas.magnetic.coil.sectionsDescription != null">
             <BasicCoilSelector
                 :masStore="masStore"
-                :isIsolatedApp="isIsolatedApp"
+                :simulationEnabled="simulationEnabled"
+                :submenuEnabled="submenuEnabled"
+                :adviseEnabled="adviseEnabled"
                 :mkf="mkf"
                 @fits="fits"
             />

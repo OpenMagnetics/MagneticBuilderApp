@@ -46,9 +46,17 @@ export default {
             type: Object,
             required: true,
         },
-        isIsolatedApp: {
+        simulationEnabled: {
             type: Boolean,
-            default: false,
+            default: true,
+        },
+        submenuEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        adviseEnabled: {
+            type: Boolean,
+            default: true,
         },
     },
     data() {
@@ -682,7 +690,7 @@ export default {
                 @update="wireUpdated"
             />
 
-            <div v-if="!isIsolatedApp" class="col-12">
+            <div v-if="simulationEnabled" class="col-12">
                 <BasicWireInfo 
                     v-if="!loading"
                     :dataTestLabel="dataTestLabel + '-BasicWireInfo'"
@@ -693,12 +701,14 @@ export default {
                 />
             </div>
 
-            <BasicWireSubmenu class="col-12 mb-1 text-start"
+            <BasicWireSubmenu
+                v-if="submenuEnabled"
+                class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicWireSubmenu'"
                 :enableCustomize="false"
                 :severalWires="masStore.mas.magnetic.coil.functionalDescription.length > 1"
                 :enableAdvise="!loading"
-                :allowAdvise="!isIsolatedApp"
+                :allowAdvise="adviseEnabled"
                 @adviseWire="adviseWireRequested"
                 @adviseAllWires="adviseAllWiresRequested"
                 @customizeCore="customizeWire"

@@ -3,7 +3,10 @@ import { useHistoryStore } from '../stores/history'
 import BasicCoreBuilder from './MagneticBuilder/BasicCoreBuilder.vue'
 import BasicWireBuilder from './MagneticBuilder/BasicWireBuilder.vue'
 import BasicCoilBuilder from './MagneticBuilder/BasicCoilBuilder.vue'
+import GraphInfo from './MagneticBuilder/GraphInfo.vue'
 import { isMobile } from '/WebSharedComponents/assets/js/utils.js'
+import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
+
 </script>
 
 <script>
@@ -35,7 +38,10 @@ export default {
     },
     data() {
         const historyStore = useHistoryStore();
+        const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
+
         return {
+            magneticBuilderSettingsStore,
             historyStore,
         }
     },
@@ -125,15 +131,20 @@ export default {
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
-                    :useVisualizers="useVisualizers"
-                    :isIsolatedApp="isIsolatedApp"
+                    :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
+                    :simulationEnabled="magneticBuilderSettingsStore.simulationEnabled"
+                    :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
+                    :adviseEnabled="isIsolatedApp"
                     :mkf="mkf"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
                 <BasicWireBuilder 
                     :masStore="masStore"
-                    :useVisualizers="useVisualizers"
+                    :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
+                    :simulationEnabled="magneticBuilderSettingsStore.simulationEnabled"
+                    :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
+                    :adviseEnabled="isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
                     :mkf="mkf"
                 />
@@ -141,11 +152,19 @@ export default {
             <div v-if="enableCoil" :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoilBuilder 
                     :masStore="masStore"
-                    :useVisualizers="useVisualizers"
-                    :isIsolatedApp="isIsolatedApp"
+                    :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
+                    :simulationEnabled="magneticBuilderSettingsStore.simulationEnabled"
+                    :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
+                    :adviseEnabled="isIsolatedApp"
                     :mkf="mkf"
                 />
             </div>
+        </div>
+        <div v-if="magneticBuilderSettingsStore.graphsEnabled" class="row">
+                <GraphInfo 
+                    :masStore="masStore"
+                    :mkf="mkf"
+                />
         </div>
     </div>
 </template>

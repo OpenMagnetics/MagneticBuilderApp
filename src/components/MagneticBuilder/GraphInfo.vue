@@ -1,0 +1,98 @@
+<script setup>
+import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
+import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
+import ImpedanceOverFrequency from './Graphs/ImpedanceOverFrequency.vue'
+import ResistancesOverFrequency from './Graphs/ResistancesOverFrequency.vue'
+</script>
+
+<script>
+
+export default {
+    props: {
+        dataTestLabel: {
+            type: String,
+            default: '',
+        },
+        loadingGif: {
+            type: String,
+            default: "/images/loading.gif",
+        },
+        masStore: {
+            type: Object,
+            required: true,
+        },
+        mkf: {
+            type: Object,
+            required: true,
+        }
+    },
+    data() {
+        const errorMessage = "";
+        const localData = {
+            graph: 'impedanceOverFrequency'
+        }
+
+        const availableGraphs = {
+            'impedanceOverFrequency': 'Impedance Over Frequency',
+            // 'resistancesOverFrequency': 'Resistances Over Frequency',
+        }
+
+        return {
+            errorMessage,
+            localData,
+            availableGraphs,
+        }
+    },
+    computed: {
+    },
+    watch: {
+    },
+    mounted () {
+    },
+    methods: {
+        graphTypeUpdated() {
+        },
+    }
+}
+</script>
+
+<template>
+    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2">
+        <div class="row">
+            <div class="col-3">
+                <ElementFromList
+                    class="col-12 mb-1 text-start"
+                    :dataTestLabel="dataTestLabel + '-GraphsSelector'"
+                    :name="'graph'"
+                    :titleSameRow="true"
+                    :justifyContent="true"
+                    v-model="localData"
+                    :options="availableGraphs"
+                    @update="graphTypeUpdated"
+                    :labelStyleClass="'col-6'"
+                    :selectStyleClass="'col-6'"
+                    :labelBgColor="$settingsStore.labelBgColor"
+                    :inputBgColor="$settingsStore.inputBgColor"
+                    :textColor="$settingsStore.textColor"
+                />
+            </div>
+            <ImpedanceOverFrequency 
+                v-if="errorMessage == '' && localData.graph == 'impedanceOverFrequency'" 
+                class="col-9"
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+                :mkf="mkf"
+            />
+            <ResistancesOverFrequency 
+                v-if="errorMessage == '' && localData.graph == 'resistancesOverFrequency'" 
+                class="col-9"
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+                :mkf="mkf"
+            />
+            <label v-else :data-cy="dataTestLabel + '-ErrorMEssage'" class="text-danger m-0 col-9 " style="font-size: 0.9em"> {{errorMessage}}</label>
+
+
+        </div>
+    </div>
+</template>
