@@ -73,7 +73,7 @@ export default {
                             <MagneticBuilder 
                                 :masStore="masStore"
                                 :dataTestLabel="`${dataTestLabel}-MagneticBuilder`"
-                                :isIsolatedApp="false"
+                                :isIsolatedApp="true"
                                 :mkf="$mkf"
                             />
                         </div>

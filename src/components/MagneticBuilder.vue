@@ -132,7 +132,7 @@ export default {
                 <BasicCoreBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
-                    :simulationEnabled="magneticBuilderSettingsStore.simulationEnabled"
+                    :simulationEnabled="!isIsolatedApp && magneticBuilderSettingsStore.simulationEnabled"
                     :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
                     :adviseEnabled="isIsolatedApp"
                     :mkf="mkf"
@@ -142,7 +142,7 @@ export default {
                 <BasicWireBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
-                    :simulationEnabled="magneticBuilderSettingsStore.simulationEnabled"
+                    :simulationEnabled="!isIsolatedApp && magneticBuilderSettingsStore.simulationEnabled"
                     :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
                     :adviseEnabled="isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
@@ -153,7 +153,7 @@ export default {
                 <BasicCoilBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
-                    :simulationEnabled="magneticBuilderSettingsStore.simulationEnabled"
+                    :simulationEnabled="!isIsolatedApp && magneticBuilderSettingsStore.simulationEnabled"
                     :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
                     :adviseEnabled="isIsolatedApp"
                     :mkf="mkf"
