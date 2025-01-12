@@ -3,7 +3,6 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import BasicWireSubmenu from './BasicWireSubmenu.vue'
 import BasicWireInfo from './BasicWireInfo.vue'
-import Module from '../../assets/js/libAdvisers.wasm.js'
 import { useDataCacheStore } from '../../stores/dataCache'
 import { toTitleCase, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
@@ -11,18 +10,6 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 </script>
 
 <script>
-var advisers = {
-    ready: new Promise(resolve => {
-        Module({
-            onRuntimeInitialized () {
-                advisers = Object.assign(this, {
-                    ready: Promise.resolve()
-                });
-                resolve();
-            }
-        });
-    })
-};
 
 export default {
     props: {
@@ -43,6 +30,10 @@ export default {
             required: true,
         },
         mkf: {
+            type: Object,
+            required: true,
+        },
+        mkfAdvisers: {
             type: Object,
             required: true,
         },
@@ -431,13 +422,13 @@ export default {
             setTimeout(() => this.adviseAllWires(), 100);
         },
         adviseAllWires() {
-            advisers.ready.then(_ => {
+            this.mkfAdvisers.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
 
                     checkAndFixMas(this.masStore.mas, this.mkf).then(response => {
                         this.masStore.mas = response;
 
-                        const resultMasWithCoil = advisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
+                        const resultMasWithCoil = this.mkfAdvisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
                         if (resultMasWithCoil.startsWith("Exception")) {
                             this.errorMessages = "Our advisers could not find a wire. Sorry, you are on your own!";
                             this.loading = false;
@@ -463,13 +454,13 @@ export default {
             });
         },
         adviseWire() {
-            advisers.ready.then(_ => {
+            this.mkfAdvisers.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
 
                     checkAndFixMas(this.masStore.mas, this.mkf).then(response => {
                         this.masStore.mas = response;
 
-                        const resultMasWithCoil = advisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
+                        const resultMasWithCoil = this.mkfAdvisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
                         if (resultMasWithCoil.startsWith("Exception")) {
                             this.errorMessages = "Our advisers could not find a wire. Sorry, you are on your own!";
                             this.loading = false;

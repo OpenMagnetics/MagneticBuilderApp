@@ -3,7 +3,6 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import CoreGappingSelector from '/WebSharedComponents/Common/CoreGappingSelector.vue'
 import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
-import Module from '../../assets/js/libAdvisers.wasm.js'
 import { coreAdviserWeights } from '/WebSharedComponents/assets/js/defaults.js'
 import BasicCoreInfo from './BasicCoreInfo.vue'
 import { useHistoryStore } from '../../stores/history'
@@ -12,18 +11,6 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 </script>
 
 <script>
-var advisers = {
-    ready: new Promise(resolve => {
-        Module({
-            onRuntimeInitialized () {
-                advisers = Object.assign(this, {
-                    ready: Promise.resolve()
-                });
-                resolve();
-            }
-        });
-    })
-};
 
 export default {
     props: {
@@ -40,6 +27,10 @@ export default {
             required: true,
         },
         mkf: {
+            type: Object,
+            required: true,
+        },
+        mkfAdvisers: {
             type: Object,
             required: true,
         },
@@ -322,16 +313,16 @@ export default {
             setTimeout(() => this.adviseCore(), 100);
         },
         adviseCore() {
-            advisers.ready.then(_ => {
+            this.mkfAdvisers.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
-                    const settings = JSON.parse(advisers.get_settings());
+                    const settings = JSON.parse(this.mkfAdvisers.get_settings());
                     settings["coreIncludeDistributedGaps"] = this.$settingsStore.adviserAllowDistributedGaps == "1";
                     settings["coreIncludeMargin"] = true;
                     settings["coreIncludeStacks"] = this.$settingsStore.adviserAllowStacks == "1";
                     settings["useToroidalCores"] = this.$settingsStore.adviserToroidalCores == "1";
-                    advisers.set_settings(JSON.stringify(settings));
+                    this.mkfAdvisers.set_settings(JSON.stringify(settings));
 
-                    const result = advisers.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);
+                    const result = this.mkfAdvisers.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);
                     if (result.startsWith("Exception")) {
                         console.error(result);
                         return;

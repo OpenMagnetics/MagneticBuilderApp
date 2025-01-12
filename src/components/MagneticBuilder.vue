@@ -31,7 +31,15 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableGraphs: {
+            type: Boolean,
+            default: true,
+        },
         mkf: {
+            type: Object,
+            required: true,
+        },
+        mkfAdvisers: {
             type: Object,
             required: true,
         },
@@ -46,6 +54,32 @@ export default {
         }
     },
     computed: {
+        visualizersEnabled() {
+            if (this.isIsolatedApp) {
+                return true;
+            }
+            else {
+                this.magneticBuilderSettingsStore.visualizersEnabled;
+            }
+        },
+        simulationEnabled() {
+            if (this.isIsolatedApp) {
+                return true;
+            }
+            else {
+                this.magneticBuilderSettingsStore.simulationEnabled;
+            }
+            
+        },
+        submenuEnabled() {
+            if (this.isIsolatedApp) {
+                return true;
+            }
+            else {
+                this.magneticBuilderSettingsStore.submenuEnabled;
+            }
+            
+        },
     },
     watch: { 
     },
@@ -131,36 +165,38 @@ export default {
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
-                    :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
-                    :simulationEnabled="!isIsolatedApp && magneticBuilderSettingsStore.simulationEnabled"
-                    :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
-                    :adviseEnabled="isIsolatedApp"
+                    :useVisualizers="useVisualizers && visualizersEnabled"
+                    :simulationEnabled="!isIsolatedApp && simulationEnabled"
+                    :submenuEnabled="submenuEnabled"
+                    :adviseEnabled="!isIsolatedApp"
                     :mkf="mkf"
+                    :mkfAdvisers="mkfAdvisers"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
                 <BasicWireBuilder 
                     :masStore="masStore"
-                    :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
-                    :simulationEnabled="!isIsolatedApp && magneticBuilderSettingsStore.simulationEnabled"
-                    :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
-                    :adviseEnabled="isIsolatedApp"
+                    :useVisualizers="useVisualizers && visualizersEnabled"
+                    :simulationEnabled="!isIsolatedApp && simulationEnabled"
+                    :submenuEnabled="submenuEnabled"
+                    :adviseEnabled="!isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
                     :mkf="mkf"
+                    :mkfAdvisers="mkfAdvisers"
                 />
             </div>
             <div v-if="enableCoil" :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoilBuilder 
                     :masStore="masStore"
-                    :useVisualizers="useVisualizers && magneticBuilderSettingsStore.visualizersEnabled"
-                    :simulationEnabled="!isIsolatedApp && magneticBuilderSettingsStore.simulationEnabled"
-                    :submenuEnabled="magneticBuilderSettingsStore.submenuEnabled"
-                    :adviseEnabled="isIsolatedApp"
+                    :useVisualizers="useVisualizers && visualizersEnabled"
+                    :simulationEnabled="!isIsolatedApp && simulationEnabled"
+                    :submenuEnabled="submenuEnabled"
+                    :adviseEnabled="!isIsolatedApp"
                     :mkf="mkf"
                 />
             </div>
         </div>
-        <div v-if="magneticBuilderSettingsStore.graphsEnabled" class="row">
+        <div v-if="enableGraphs && magneticBuilderSettingsStore.graphsEnabled" class="row">
                 <GraphInfo 
                     :masStore="masStore"
                     :mkf="mkf"

@@ -22,6 +22,10 @@ export default {
             type: Object,
             required: true,
         },
+        mkfAdvisers: {
+            type: Object,
+            required: true,
+        },
         simulationEnabled: {
             type: Boolean,
             default: true,
@@ -66,6 +70,7 @@ export default {
             <BasicCoreSelector 
                 :masStore="masStore"
                 :mkf="mkf"
+                :mkfAdvisers="mkfAdvisers"
                 :simulationEnabled="simulationEnabled"
                 :submenuEnabled="submenuEnabled"
                 :adviseEnabled="adviseEnabled"
