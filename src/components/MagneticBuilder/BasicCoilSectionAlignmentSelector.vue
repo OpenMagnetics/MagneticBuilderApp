@@ -190,6 +190,25 @@ export default {
                 @update="coilUpdated"
                 @update:modelValue="data = $event"
             />
+            <ElementFromList
+                v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
+                v-if="showAlignmentOptions"
+                class="col-12 mb-2 text-start"
+                :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
+                :name="'sectionsAlignment'"
+                :replaceTitle="'Section Alignment'"
+                :titleSameRow="true"
+                :justifyContent="true"
+                :modelValue="data"
+                :options="coilAlignments"
+                :labelStyleClass="'col-6'"
+                :selectStyleClass="'col-5'"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
+                @update="coilUpdated"
+                @update:modelValue="data = $event"
+            />
 
             <SectionSelector
                 v-show="showAlignmentOptions" 
@@ -226,33 +245,14 @@ export default {
                 :justifyContent="true"
                 v-model="data.dataPerSection[selectedSectionIndex]"
                 :options="coilAlignments"
-                :labelStyleClass="'col-7'"
-                :selectStyleClass="'col-6'"
+                :labelStyleClass="'col-6'"
+                :selectStyleClass="'col-5'"
                 :labelBgColor="$settingsStore.labelBgColor"
                 :inputBgColor="$settingsStore.inputBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
             />
 
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
-                v-if="showAlignmentOptions"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
-                :name="'sectionsAlignment'"
-                :replaceTitle="'Section Alignment'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                :modelValue="data"
-                :options="coilAlignments"
-                :labelStyleClass="'col-7'"
-                :selectStyleClass="'col-5'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
-                :textColor="$settingsStore.textColor"
-                @update="coilUpdated"
-                @update:modelValue="data = $event"
-            />
             <ArrayProportions
                 v-tooltip="tooltipsMagneticBuilder.proportions"
                 v-if="showAlignmentOptions && masStore.mas.magnetic.coil.functionalDescription.length > 1"

@@ -487,6 +487,9 @@ export default {
                 :name="'pattern'"
                 :replaceTitle="'Section Interleaving Order'"
                 :allowedCharacters="windingIndexesCharacters"
+                :labelBgColor="$settingsStore.labelBgColor"
+                :inputBgColor="$settingsStore.inputBgColor"
+                :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
             />
         </div>

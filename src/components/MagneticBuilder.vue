@@ -31,6 +31,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableSimulation: {
+            type: Boolean,
+            default: true,
+        },
+        enableAdvisers: {
+            type: Boolean,
+            default: true,
+        },
         enableGraphs: {
             type: Boolean,
             default: true,
@@ -59,15 +67,15 @@ export default {
                 return true;
             }
             else {
-                this.magneticBuilderSettingsStore.visualizersEnabled;
+                return this.magneticBuilderSettingsStore.visualizersEnabled;
             }
         },
         simulationEnabled() {
             if (this.isIsolatedApp) {
-                return true;
+                return false;
             }
             else {
-                this.magneticBuilderSettingsStore.simulationEnabled;
+                return this.enableSimulation && this.magneticBuilderSettingsStore.simulationEnabled;
             }
             
         },
@@ -76,7 +84,7 @@ export default {
                 return true;
             }
             else {
-                this.magneticBuilderSettingsStore.submenuEnabled;
+                return this.magneticBuilderSettingsStore.submenuEnabled;
             }
             
         },
@@ -162,24 +170,24 @@ export default {
 <template>
     <div class="container">
         <div class="row">
-            <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
+            <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :simulationEnabled="!isIsolatedApp && simulationEnabled"
+                    :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
-                    :adviseEnabled="!isIsolatedApp"
+                    :adviseEnabled="enableAdvisers && !isIsolatedApp"
                     :mkf="mkf"
                     :mkfAdvisers="mkfAdvisers"
                 />
             </div>
-            <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'col-6'">
+            <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
                 <BasicWireBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :simulationEnabled="!isIsolatedApp && simulationEnabled"
+                    :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
-                    :adviseEnabled="!isIsolatedApp"
+                    :adviseEnabled="enableAdvisers && !isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
                     :mkf="mkf"
                     :mkfAdvisers="mkfAdvisers"
@@ -189,12 +197,13 @@ export default {
                 <BasicCoilBuilder 
                     :masStore="masStore"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :simulationEnabled="!isIsolatedApp && simulationEnabled"
+                    :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
-                    :adviseEnabled="!isIsolatedApp"
+                    :adviseEnabled="enableAdvisers && !isIsolatedApp"
                     :mkf="mkf"
                 />
             </div>
+            <div v-else class="col-2"/>
         </div>
         <div v-if="enableGraphs && magneticBuilderSettingsStore.graphsEnabled" class="row">
                 <GraphInfo 

@@ -90,7 +90,7 @@ export default {
             <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription">
                 <h2 class="accordion-header" :id="'wireBuilderAccordionHeading-' + key">
                     <button
-                        :class="selectedWindingIndex == key? 'text-success' : isWireMissing(key)? 'text-danger collapsed' : 'collapsed'"
+                        :class="selectedWindingIndex == key? 'text-success' : isWireMissing(key)? 'text-danger collapsed' : $settingsStore.textColor + ' collapsed'"
                         class="fs-6 accordion-button bg-light p-2"
                         :ref="'select-winding-' + (key + 1)"
                         type="button"

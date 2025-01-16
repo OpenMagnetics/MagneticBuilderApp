@@ -19,7 +19,11 @@ export default {
         mkf: {
             type: Object,
             required: true,
-        }
+        },
+        loadingGif: {
+            type: String,
+            default: "/images/loading.gif",
+        },
     },
     data() {
 
@@ -41,11 +45,17 @@ export default {
             unit: 'Hz',
         }
         const forceUpdate = 0;
+        const loading = false;
+        const recentChange = false;
+        const tryingToSend = false;
 
         return {
             impedanceOverFrequencyData,
             frequencyData,
             forceUpdate,
+            loading,
+            recentChange,
+            tryingToSend,
         }
     },
     computed: {
@@ -54,26 +64,52 @@ export default {
         'masStore.mas.magnetic.core': {
             handler(newValue, oldValue) {
                 console.log("handler core")
-                this.sweepImpedanceOverFrequency();
+                this.loading = true;
+                this.recentChange = true;
+                setTimeout(() => {this.tryToSend(); }, 10);
             },
           deep: true
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                this.sweepImpedanceOverFrequency();
+                console.log("handler coil")
+                this.loading = true;
+                this.recentChange = true;
+                setTimeout(() => {this.tryToSend(); }, 10);
             },
           deep: true
         },
     },
     mounted () {
-        this.sweepImpedanceOverFrequency();
+        this.loading = true;
+        this.recentChange = true;
+        setTimeout(() => {this.tryToSend(); }, 10);
     },
     methods: {
+        tryToSend() {
+            if (!this.tryingToSend) {
+                this.recentChange = false;
+                this.tryingToSend = true;
+                setTimeout(() => {
+                    if (this.recentChange) {
+                        this.tryingToSend = false;
+                        this.tryToSend();
+                    }
+                    else {
+                        this.tryingToSend = false;
+                        this.sweepImpedanceOverFrequency();
+                    }
+                }
+                , 500);
+            }
+        },
         sweepImpedanceOverFrequency() {
             this.mkf.ready.then(_ => {
+                console.log("sweepImpedanceOverFrequency")
                 const curve2DJson = this.mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 4000000, 1000, "Impedance over frequency");
                 if (curve2DJson.startsWith("Exception")) {
                     console.error(curve2DJson);
+                    this.loading = false;
                     return;
                 }
                 else {
@@ -88,11 +124,13 @@ export default {
                     this.impedanceOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
                     this.forceUpdate += 1;
                     this.errorMessage = "";
+                    this.loading = false;
                 }
 
             }).catch(error => {
                 console.error(error);
                 this.errorMessage = "Material is missing complex permeability, please choose another";
+                this.loading = false;
             });
         },
     }
@@ -100,10 +138,22 @@ export default {
 </script>
 
 <template>
-    <LineVisualizer 
-        :data="impedanceOverFrequencyData"
-        :xAxisOptions="frequencyData"
-        :title="'Impedance over Frequency'"
-        :forceUpdate="forceUpdate"
-    />
+    <div>
+        <div class="row">
+            <div class="col-3">
+                <slot/>
+            </div>
+            <div class="col-9">
+
+                <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: auto; height: 60%;;" :src="loadingGif">
+                <LineVisualizer 
+                    v-show="!loading"
+                    :data="impedanceOverFrequencyData"
+                    :xAxisOptions="frequencyData"
+                    :title="'Impedance over Frequency'"
+                    :forceUpdate="forceUpdate"
+                />
+            </div>
+        </div>
+    </div>
 </template>

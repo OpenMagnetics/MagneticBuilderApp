@@ -140,7 +140,7 @@ export default {
         </div>
         <h4 v-else class="mb-5" > {{"Wires Description"}} </h4>
 
-        <div v-if="useVisualizers && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire.type != null" class="row">
+        <div v-if="useVisualizers && simulationEnabled && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire.type != null" class="row">
             <h5 class="offset-0 col-8 text-end">Plot current density</h5>
             <div class="col-4 container">
                 <div class="row">
