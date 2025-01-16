@@ -57,7 +57,7 @@ export default {
 </script>
 
 <template>
-    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2">
+    <div class="container-flex mt-2 mb-3 pb-3 border-top pt-2">
         <div class="row">
             <ImpedanceOverFrequency 
                 v-if="errorMessage == '' && localData.graph == 'impedanceOverFrequency'" 
