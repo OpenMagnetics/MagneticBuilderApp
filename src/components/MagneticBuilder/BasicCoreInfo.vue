@@ -28,6 +28,10 @@ export default {
             type: Object,
             required: true,
         },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         const coreTemperatureDependantParametersData = {};
@@ -73,6 +77,13 @@ export default {
     },
     watch: {
         'core': {
+            handler(newValue, oldValue) {
+                this.calculateCoreEffectiveParameters();
+                this.calculateCoreLosses();
+            },
+          deep: true
+        },
+        'operatingPointIndex': {
             handler(newValue, oldValue) {
                 this.calculateCoreEffectiveParameters();
                 this.calculateCoreLosses();
@@ -156,12 +167,13 @@ export default {
                     this.coreLossesData = JSON.parse(this.mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
                                                                                 JSON.stringify(this.masStore.mas.magnetic.coil),
                                                                                 JSON.stringify(this.masStore.mas.inputs),
-                                                                                JSON.stringify(modelsData)));
-                    this.coreTemperatureDependantParametersData = JSON.parse(this.mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature));
+                                                                                JSON.stringify(modelsData), 
+                                                                                this.operatingPointIndex));
+                    this.coreTemperatureDependantParametersData = JSON.parse(this.mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature));
 
                     this.magnetizingInductance = JSON.parse(this.mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(this.masStore.mas.magnetic.core),
                                                                                                              JSON.stringify(this.masStore.mas.magnetic.coil),
-                                                                                                             JSON.stringify(this.masStore.mas.inputs.operatingPoints[0]),
+                                                                                                             JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]),
                                                                                                              JSON.stringify(modelsData)));
 
                     this.magnetizingInductanceCheck = this.mkf.check_requirement(JSON.stringify(this.masStore.mas.inputs.designRequirements.magnetizingInductance), this.magnetizingInductance);

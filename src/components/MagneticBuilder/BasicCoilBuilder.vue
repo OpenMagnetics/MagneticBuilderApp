@@ -38,6 +38,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         const coilFits = true;
@@ -102,6 +110,8 @@ export default {
         <div class="row mb-2" v-show="masStore.mas.magnetic.coil.sectionsDescription != null">
             <BasicCoilSelector
                 :masStore="masStore"
+                :readOnly="readOnly"
+                :operatingPointIndex="operatingPointIndex"
                 :simulationEnabled="simulationEnabled"
                 :submenuEnabled="submenuEnabled"
                 :adviseEnabled="adviseEnabled"

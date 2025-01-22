@@ -41,6 +41,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -480,6 +488,7 @@ export default {
             <ListOfCharacters
                 v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"
                 v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 1"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-SectionsInterleaving'"
                 :modelValue="localData.pattern" 
@@ -499,6 +508,7 @@ export default {
                 :data="localData"
                 :showAlignmentOptions="showAlignmentOptions"
                 :masStore="masStore"
+                :readOnly="readOnly"
                 :mkf="mkf"
                 @coilUpdated="coilUpdated"
             />
@@ -509,6 +519,7 @@ export default {
                 :data="localData.dataPerSection"
                 :showMarginOptions="showMarginOptions"
                 :masStore="masStore"
+                :readOnly="readOnly"
                 :mkf="mkf"
                 @marginUpdated="marginUpdated"
             />
@@ -520,12 +531,14 @@ export default {
                 :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
                 :core="masStore.mas.magnetic.core"
                 :masStore="masStore"
+                :operatingPointIndex="operatingPointIndex"
                 :mkf="mkf"
             />
         </div>
 
         <BasicCoilSubmenu
             v-if="submenuEnabled"
+            :readOnly="readOnly"
             class="col-12 mb-1 text-start"
             :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
             :enableAlignmentOptions="!loading"

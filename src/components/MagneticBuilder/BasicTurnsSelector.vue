@@ -30,6 +30,10 @@ export default {
             type: Object,
             required: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -159,6 +163,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireNumberTurns"
                 v-if="!loading"
+                :disabled="readOnly"
                 :name="'numberTurns'"
                 :replaceTitle="'No. Turns'"
                 :unit="null"
@@ -178,6 +183,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireNumberParallels"
                 v-if="!loading"
+                :disabled="readOnly"
                 :name="'numberParallels'"
                 :replaceTitle="'No. Parallels'"
                 :unit="null"

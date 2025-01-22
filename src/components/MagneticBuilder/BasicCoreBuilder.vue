@@ -38,6 +38,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         return {
@@ -69,8 +77,10 @@ export default {
         <div class="row">
             <BasicCoreSelector 
                 :masStore="masStore"
+                :readOnly="readOnly"
                 :mkf="mkf"
                 :mkfAdvisers="mkfAdvisers"
+                :operatingPointIndex="operatingPointIndex"
                 :simulationEnabled="simulationEnabled"
                 :submenuEnabled="submenuEnabled"
                 :adviseEnabled="adviseEnabled"

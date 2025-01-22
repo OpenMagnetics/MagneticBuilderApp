@@ -33,6 +33,10 @@ export default {
             type: Object,
             required: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const forceUpdate = 0;
@@ -141,6 +145,7 @@ export default {
             <Dimension 
                 v-tooltip="topOrLeftMarginTooltip"
                 v-if="showMarginOptions"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :name="'topOrLeftMargin'"
                 :replaceTitle="'Top Margin'"
@@ -164,6 +169,7 @@ export default {
             <Dimension
                 v-tooltip="bottomOrRightMarginTooltip"
                 v-if="showMarginOptions"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :name="'bottomOrRightMargin'"
                 :replaceTitle="'Bottom Margin'"

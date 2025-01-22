@@ -49,6 +49,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         const dataCacheStore = useDataCacheStore();
@@ -260,6 +268,8 @@ export default {
                 }
 
                 wire.coating = coating;
+                wire.material = "copper";
+                console.warn(wire)
 
                 this.$userStore.wire2DVisualizerPlotCurrentViews[this.windingIndex] = null;
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
@@ -503,6 +513,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.wireType"
                 v-if="!loading"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-WireType'"
                 :name="'type'"
@@ -522,6 +533,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.wireStandard"
                 v-if="!loading && localData.type == 'round' || localData.type == 'litz' && localData.standard != null"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-WireStandard'"
                 :name="'standard'"
@@ -539,6 +551,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.wireRoundConductingDiameter"
                 v-if="!loading && localData.type == 'round'"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-WireConductingDiameter'"
                 :replaceTitle="'Cond. diameter'"
@@ -557,6 +570,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.wireLitzStrandConductingDiameter"
                 v-if="!loading && localData.type == 'litz'"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-StrandConductingDiameter'"
                 :replaceTitle="'Cond. diameter'"
@@ -575,6 +589,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.wireCoating"
                 v-if="!loading && localData.type != null"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-WireCoating'"
                 :name="'coating'"
@@ -592,6 +607,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireLitzNumberConductors"
                 v-if="!loading && localData.type == 'litz'"
+                :disabled="readOnly"
                 :name="'numberConductors'"
                 :replaceTitle="'No. Strands'"
                 :unit="null"
@@ -611,6 +627,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireRectangularConductingHeight"
                 v-if="!loading && localData.type == 'rectangular'"
+                :disabled="readOnly"
                 :name="'rectangularConductingHeight'"
                 :replaceTitle="'Cond. Height'"
                 :unit="'m'"
@@ -629,6 +646,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireRectangularConductingWidth"
                 v-if="!loading && localData.type == 'rectangular'"
+                :disabled="readOnly"
                 :name="'rectangularConductingWidth'"
                 :replaceTitle="'Cond. Width'"
                 :unit="'m'"
@@ -647,6 +665,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireFoilConductingHeight"
                 v-if="!loading && localData.type == 'foil'"
+                :disabled="readOnly"
                 :name="'foilConductingHeight'"
                 :replaceTitle="'Cond. Height'"
                 :unit="'m'"
@@ -665,6 +684,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireFoilConductingWidth"
                 v-if="!loading && localData.type == 'foil'"
+                :disabled="readOnly"
                 :name="'foilConductingWidth'"
                 :replaceTitle="'Cond. Width'"
                 :unit="'m'"
@@ -687,13 +707,14 @@ export default {
                     :dataTestLabel="dataTestLabel + '-BasicWireInfo'"
                     :wire="masStore.mas.magnetic.coil.functionalDescription[windingIndex].wire"
                     :masStore="masStore"
+                    :operatingPointIndex="operatingPointIndex"
                     :mkf="mkf"
                     :windingIndex="windingIndex"
                 />
             </div>
 
             <BasicWireSubmenu
-                v-if="submenuEnabled"
+                v-if="submenuEnabled && !readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicWireSubmenu'"
                 :enableCustomize="false"

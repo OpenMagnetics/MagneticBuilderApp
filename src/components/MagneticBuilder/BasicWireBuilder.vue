@@ -47,6 +47,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         var numberWindings = 1;
@@ -154,6 +162,7 @@ export default {
         <div v-if="isIsolatedApp" class="row">
             <ElementFromList class="border-bottom py-2 px-4 col-12 text-start"
                 :name="'numberWindings'"
+                :disabled="readOnly"
                 :dataTestLabel="dataTestLabel + '-NumberWindings'"
                 :options="Array.from({length: 12}, (_, i) => i + 1)"
                 :titleSameRow="true"
@@ -182,6 +191,7 @@ export default {
                 <BasicTurnsSelector
                     class="mt-1"
                     v-if="selectedWindingIndex==key"
+                    :readOnly="readOnly"
                     :masStore="masStore"
                     :mkf="mkf"
                     :windingIndex="key"
@@ -189,8 +199,10 @@ export default {
                 <BasicWireSelector
                     v-if="selectedWindingIndex==key"
                     :masStore="masStore"
+                    :readOnly="readOnly"
                     :mkf="mkf"
                     :mkfAdvisers="mkfAdvisers"
+                    :operatingPointIndex="operatingPointIndex"
                     :windingIndex="key"
                     :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"

@@ -46,6 +46,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -391,6 +399,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreShapeFamily"
                 v-if="!loading"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-ShapeFamilies'"
                 :name="'shapeFamily'"
@@ -407,6 +416,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreShape"
                 v-if="!loading && localData.shapeFamily != null && coreShapeNames[localData.shapeFamily] != null && coreShapeNames[localData.shapeFamily].length > 0"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-ShapeNames'"
                 :name="'shape'"
@@ -426,6 +436,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreMaterialManufacturer"
                 v-if="localData.shape != '' && localData.shapeFamily != null && !loading"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-MaterialManufacturers'"
                 :name="'materialManufacturer'"
@@ -444,6 +455,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreMaterial"
                 v-if="localData.shape != '' && !loading && localData.materialManufacturer != null && coreMaterialNames[localData.materialManufacturer] != null && coreMaterialNames[localData.materialManufacturer].length > 0"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-MaterialNames'"
                 :name="'material'"
@@ -465,6 +477,7 @@ export default {
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.coreNumberStacks"
                 v-if="isStackable() && localData.shape != '' && !loading"
+                :disabled="readOnly"
                 :name="'numberStacks'"
                 :replaceTitle="'Number of Stacks'"
                 :unit="null"
@@ -482,6 +495,7 @@ export default {
 
             <CoreGappingSelector class="col-12 mb-1 text-start"
                 v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set'"
+                :disabled="readOnly"
                 :title="'Gap Info: '"
                 :dataTestLabel="dataTestLabel + '-Gap'"
                 :forceUpdate="forceUpdate"
@@ -500,11 +514,12 @@ export default {
                     :core="masStore.mas.magnetic.core"
                     :masStore="masStore"
                     :mkf="mkf"
+                    :operatingPointIndex="operatingPointIndex"
                 />
             </div>
 
             <BasicCoreSubmenu 
-                v-if="submenuEnabled"
+                v-if="submenuEnabled && !readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                 :enableAdvise="!loading"

@@ -34,6 +34,10 @@ export default {
             type: Object,
             required: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const windingOrientations = {};
@@ -174,6 +178,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.windingsOrientation"
                 v-if="showAlignmentOptions"
+                :disabled="readOnly"
                 class="col-12 mb-2 text-start"
                 :dataTestLabel="dataTestLabel + '-sectionsOrientation'"
                 :name="'sectionsOrientation'"
@@ -193,6 +198,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
                 v-if="showAlignmentOptions"
+                :disabled="readOnly"
                 class="col-12 mb-2 text-start"
                 :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
                 :name="'sectionsAlignment'"
@@ -238,6 +244,7 @@ export default {
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.turnsAlignment"
                 v-if="showAlignmentOptions"
+                :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-TurnsAlignment'"
                 :name="'turnsAlignment'"
@@ -256,6 +263,7 @@ export default {
             <ArrayProportions
                 v-tooltip="tooltipsMagneticBuilder.proportions"
                 v-if="showAlignmentOptions && masStore.mas.magnetic.coil.functionalDescription.length > 1"
+                :disabled="readOnly"
                 class="col-12 my-1 text-start"
                 :dataTestLabel="dataTestLabel + '-ProportionPerWinding'"
                 :modelValue="data.proportionPerWinding"

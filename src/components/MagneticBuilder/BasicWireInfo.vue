@@ -33,6 +33,10 @@ export default {
             type: Object,
             required: true,
         },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         const dcResistancePerMeter = 0;
@@ -130,6 +134,12 @@ export default {
             },
           deep: true
         },
+        'operatingPointIndex': {
+            handler(newValue, oldValue) {
+                this.calculateWireData();
+            },
+          deep: true
+        },
     },
     mounted () {
         this.calculateWireData();
@@ -147,7 +157,7 @@ export default {
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != null) {
                 this.mkf.ready.then(_ => {
                     const wireString = JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
-                    const currentString = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[this.windingIndex].current);
+                    const currentString = JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[this.windingIndex].current);
                     var wireMaterial = wireMaterialDefault;
                     if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.material != null) {
                         wireMaterial = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.material;
@@ -155,22 +165,22 @@ export default {
 
                     this.turnsRatio = this.masStore.mas.magnetic.coil.functionalDescription[0].numberTurns / this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberTurns;
 
-                    this.dcResistancePerMeter = this.mkf.calculate_dc_resistance_per_meter(wireString, this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature);
+                    this.dcResistancePerMeter = this.mkf.calculate_dc_resistance_per_meter(wireString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
 
-                    this.skinAcResistancePerMeter = this.mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature);
+                    this.skinAcResistancePerMeter = this.mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
 
-                    this.skinAcFactor = this.mkf.calculate_skin_ac_factor(wireString, currentString, this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature);
+                    this.skinAcFactor = this.mkf.calculate_skin_ac_factor(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
 
-                    this.dcLossesPerMeter = this.mkf.calculate_dc_losses_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature);
+                    this.dcLossesPerMeter = this.mkf.calculate_dc_losses_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
 
-                    this.skinAcLossesPerMeter = this.mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature);
+                    this.skinAcLossesPerMeter = this.mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
 
                     const outerDimensionsHandle = this.mkf.get_outer_dimensions(wireString);
                     this.outerDimensions = [outerDimensionsHandle.get(0), outerDimensionsHandle.get(1)];
 
-                    this.effectiveCurrentDensity = this.mkf.calculate_effective_current_density(wireString, currentString, this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature) / 1000000 / this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberParallels;
+                    this.effectiveCurrentDensity = this.mkf.calculate_effective_current_density(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature) / 1000000 / this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberParallels;
 
-                    this.effectiveSkinDepth = this.mkf.calculate_effective_skin_depth(wireMaterial, currentString, this.masStore.mas.inputs.operatingPoints[0].conditions.ambientTemperature);
+                    this.effectiveSkinDepth = this.mkf.calculate_effective_skin_depth(wireMaterial, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
 
                 }).catch(error => {
                     console.error(error);

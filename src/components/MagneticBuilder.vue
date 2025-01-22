@@ -43,6 +43,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        readOnly: {
+            type: Boolean,
+            default: false,
+        },
         mkf: {
             type: Object,
             required: true,
@@ -50,6 +54,10 @@ export default {
         mkfAdvisers: {
             type: Object,
             required: true,
+        },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
         },
     },
     data() {
@@ -173,17 +181,20 @@ export default {
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
+                    :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
                     :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
                     :adviseEnabled="enableAdvisers && !isIsolatedApp"
                     :mkf="mkf"
                     :mkfAdvisers="mkfAdvisers"
+                    :operatingPointIndex="operatingPointIndex"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
                 <BasicWireBuilder 
                     :masStore="masStore"
+                    :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
                     :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
@@ -191,16 +202,19 @@ export default {
                     :isIsolatedApp="isIsolatedApp"
                     :mkf="mkf"
                     :mkfAdvisers="mkfAdvisers"
+                    :operatingPointIndex="operatingPointIndex"
                 />
             </div>
             <div v-if="enableCoil" :class="isMobile()? 'col-12' : 'col-4'">
                 <BasicCoilBuilder 
                     :masStore="masStore"
+                    :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
                     :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
                     :adviseEnabled="enableAdvisers && !isIsolatedApp"
                     :mkf="mkf"
+                    :operatingPointIndex="operatingPointIndex"
                 />
             </div>
             <div v-else class="col-2"/>
