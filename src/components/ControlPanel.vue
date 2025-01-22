@@ -80,7 +80,7 @@ export default {
                     checkAndFixMas(newMas, this.$mkf).then(response => {
                         this.masStore.mas = response;
                         this.masStore.importedMas();
-                        this.$userStore.magneticBuilderSubsection = "magneticBuilder";
+                        this.$userStore.toolboxStates[this.$userStore.toolboxStates.selectedApplication].magneticBuilder.subsection = "magneticBuilder";
                         for (var i = 0; i < this.masStore.magneticManualOperatingPoints.length; i++) {
                             this.masStore.magneticManualOperatingPoints[i] = true;
                         }

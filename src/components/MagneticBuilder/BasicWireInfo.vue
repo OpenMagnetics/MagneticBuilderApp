@@ -18,7 +18,7 @@ export default {
             default: "/images/loading.gif",
         },
         wire: {
-            type: Object,
+            type: [String, Object],
             required: true,
         },
         windingIndex: {

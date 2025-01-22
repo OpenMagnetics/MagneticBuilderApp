@@ -75,10 +75,10 @@ export default {
     },
     methods: {
         swapFieldPlot(newValue) {
-            this.$userStore.magnetic2DVisualizerPlotMagneticField = newValue;
+            this.$userStore.magnetic2DVisualizerState.plotMagneticField = newValue == '1';
         },
         swapIncludeFringing(newValue) {
-            this.$userStore.magnetic2DVisualizerPlotFringingField = newValue;
+            this.$userStore.magnetic2DVisualizerState.plotFringingField = newValue == '1';
         },
         fits(coilFits) {
             this.coilFits = coilFits;
@@ -99,8 +99,8 @@ export default {
                 :enableOptions="simulationEnabled"
                 :enableHideOnFitting="simulationEnabled"
                 :coilFits="coilFits"
-                :showFieldPlotInit="Boolean($userStore.magnetic2DVisualizerPlotMagneticField)"
-                :includeFringingInit="Boolean($userStore.magnetic2DVisualizerPlotFringingField)"
+                :showFieldPlotInit="$userStore.magnetic2DVisualizerState.plotMagneticField"
+                :includeFringingInit="$userStore.magnetic2DVisualizerState.plotFringingField"
                 :backgroundColor="$settingsStore.labelBgColor"
                 @swapFieldPlot="swapFieldPlot"
                 @swapIncludeFringing="swapIncludeFringing"

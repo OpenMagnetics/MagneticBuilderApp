@@ -57,6 +57,7 @@ export default {
         },
     },
     data() {
+        const wire2DVisualizerPlotCurrentDensity = this.$userStore.wire2DVisualizerState.plotCurrentDensity? '1' : '0';
         var numberWindings = 1;
         if (this.masStore.mas.inputs.designRequirements.turnsRatios != null) {
             numberWindings = this.masStore.mas.inputs.designRequirements.turnsRatios.length + 1;
@@ -68,6 +69,7 @@ export default {
         return {
             numberWindingsAux,
             selectedWindingIndex,
+            wire2DVisualizerPlotCurrentDensity,
         }
     },
     computed: {
@@ -126,6 +128,9 @@ export default {
         windingIndexChanged(windingIndex) {
             this.selectedWindingIndex = windingIndex;
         },
+        onPlotCurrentChange(event) {
+            this.$userStore.wire2DVisualizerState.plotCurrentDensity = event.target.value == '1';
+        },
     }
 }
 </script>
@@ -141,7 +146,7 @@ export default {
                 :wire="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire"
                 :windingIndex="selectedWindingIndex"
                 :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
-                :includeCurrentDensity="$userStore.wire2DVisualizerPlotCurrentDensity == 1"
+                :includeCurrentDensity="wire2DVisualizerPlotCurrentDensity == '1'"
                 :loadingGif="'/images/loading.gif'"
                 :backgroundColor="$settingsStore.labelBgColor"
             />
@@ -153,7 +158,17 @@ export default {
             <div class="col-4 container">
                 <div class="row">
                     <label  class="fs-6 p-0 ps-3 pe-3 text-end text-white col-4 ">No</label>
-                    <input :data-cy="'Settings-Modal-with-without-stock-button'" v-model="$userStore.wire2DVisualizerPlotCurrentDensity" type="range" class="form-range col-2 pt-2" min="0" max="1" step="1" style="width: 30px">
+                    <input
+                        :data-cy="'Settings-Modal-with-without-stock-button'"
+                        v-model="wire2DVisualizerPlotCurrentDensity"
+                        type="range"
+                        class="form-range col-2 pt-2"
+                        min="0"
+                        max="1"
+                        step="1"
+                        style="width: 30px"
+                        @change="onPlotCurrentChange($event)"
+                    >
                     <label  class="fs-6 p-0 ps-3 text-white col-3  text-start">Yes</label>
                 </div>
             </div>
