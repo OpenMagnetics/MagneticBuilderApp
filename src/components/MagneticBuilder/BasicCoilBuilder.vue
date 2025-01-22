@@ -94,6 +94,7 @@ export default {
         <div v-if="useVisualizers" class="row mb-3" style="height: 50vh">
             <Magnetic2DVisualizer 
                 :modelValue="masStore.mas"
+                :operatingPointIndex="operatingPointIndex"
                 :enableZoom="false"
                 :enableOptions="simulationEnabled"
                 :enableHideOnFitting="simulationEnabled"

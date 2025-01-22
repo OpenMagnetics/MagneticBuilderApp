@@ -140,7 +140,7 @@ export default {
                 :dataTestLabel="`${dataTestLabel}-Wire2DVisualizer`"
                 :wire="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire"
                 :windingIndex="selectedWindingIndex"
-                :operatingPoint="masStore.mas.inputs.operatingPoints[0]"
+                :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
                 :includeCurrentDensity="$userStore.wire2DVisualizerPlotCurrentDensity == 1"
                 :loadingGif="'/images/loading.gif'"
                 :backgroundColor="$settingsStore.labelBgColor"
