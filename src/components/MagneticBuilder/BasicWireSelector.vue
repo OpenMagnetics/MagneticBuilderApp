@@ -610,6 +610,8 @@ export default {
                 :allowNegative="false"
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
+                :labelStyleClass="'col-xs-12 col-md-5'"
+                :dimensionStyleClass="'col-xs-8 col-md-7'"
                 :styleClassInput="'offset-6 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
                 :inputBgColor="$settingsStore.inputBgColor"
