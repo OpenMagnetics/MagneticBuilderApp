@@ -26,14 +26,6 @@ export default {
             type: Object,
             required: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
-        mkfAdvisers: {
-            type: Object,
-            required: true,
-        },
         simulationEnabled: {
             type: Boolean,
             default: true,
@@ -141,8 +133,8 @@ export default {
             if (typeof(core.functionalDescription.shape) == 'string') {
                 if (core.functionalDescription.shape != "") {
                     this.localData["shape"] = deepCopy(core.functionalDescription.shape);
-                    this.mkf.ready.then(_ => {
-                        const shapeResult = this.mkf.get_shape_data(core.functionalDescription.shape);
+                    this.$mkf.ready.then(_ => {
+                        const shapeResult = this.$mkf.get_shape_data(core.functionalDescription.shape);
                         if (shapeResult.startsWith("Exception")) {
                             console.error(core.functionalDescription.shape);
                             console.error(shapeResult);
@@ -162,8 +154,8 @@ export default {
             if (typeof(core.functionalDescription.material) == 'string') {
                 if (core.functionalDescription.material != "") {
                     this.localData["material"] = deepCopy(core.functionalDescription.material);
-                    this.mkf.ready.then(_ => {
-                        const materialResult = this.mkf.get_material_data(core.functionalDescription.material);
+                    this.$mkf.ready.then(_ => {
+                        const materialResult = this.$mkf.get_material_data(core.functionalDescription.material);
                         if (materialResult.startsWith("Exception")) {
                             console.error(materialResult);
                         }
@@ -182,8 +174,8 @@ export default {
             this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
         },
         getShapeNames() {
-            this.mkf.ready.then(_ => {
-                const coreShapeFamiliesHandle = this.mkf.get_available_core_shape_families();
+            this.$mkf.ready.then(_ => {
+                const coreShapeFamiliesHandle = this.$mkf.get_available_core_shape_families();
                 for (var i = coreShapeFamiliesHandle.size() - 1; i >= 0; i--) {
                     const shapeFamily = coreShapeFamiliesHandle.get(i)
                     if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
@@ -197,10 +189,10 @@ export default {
 
                 var coreShapeNamesHandle;
                 if (this.onlyManufacturer != '' && this.onlyManufacturer != null) {
-                    coreShapeNamesHandle = this.mkf.get_available_core_shapes_by_manufacturer(this.onlyManufacturer);
+                    coreShapeNamesHandle = this.$mkf.get_available_core_shapes_by_manufacturer(this.onlyManufacturer);
                 }
                 else {
-                    coreShapeNamesHandle = this.mkf.get_available_core_shapes();
+                    coreShapeNamesHandle = this.$mkf.get_available_core_shapes();
                 }
 
                 this.coreShapeFamilies.forEach((shapeFamily) => {
@@ -225,8 +217,8 @@ export default {
             });
         },
         getMaterialNames() {
-            this.mkf.ready.then(_ => {
-                const coreMaterialManufacturersHandle = this.mkf.get_available_core_manufacturers();
+            this.$mkf.ready.then(_ => {
+                const coreMaterialManufacturersHandle = this.$mkf.get_available_core_manufacturers();
                 for (var i = coreMaterialManufacturersHandle.size() - 1; i >= 0; i--) {
                     this.coreMaterialManufacturers.push(coreMaterialManufacturersHandle.get(i));
                 }
@@ -236,7 +228,7 @@ export default {
                 this.coreMaterialManufacturers.forEach((manufacturer) => {
                     this.coreMaterialNames[manufacturer] = []
                     if (!(this.onlyManufacturer != '' && this.onlyManufacturer != null && manufacturer != this.onlyManufacturer)) {
-                        const coreMaterialNamesHandle = this.mkf.get_available_core_materials(manufacturer);
+                        const coreMaterialNamesHandle = this.$mkf.get_available_core_materials(manufacturer);
                         for (var i = coreMaterialNamesHandle.size() - 1; i >= 0; i--) {
                             this.coreMaterialNames[manufacturer].push(coreMaterialNamesHandle.get(i));
                         }
@@ -251,12 +243,12 @@ export default {
             this.masStore.mas.magnetic.core.processedDescription = null;
             this.masStore.mas.magnetic.core.geometricalDescription = null;
 
-            this.mkf.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
                 var mas = deepCopy(this.masStore.mas);
                 mas.magnetic.core.geometricalDescription = null;
                 mas.magnetic.core.processedDescription = null;
 
-                const shapeResult = this.mkf.get_shape_data(value);
+                const shapeResult = this.$mkf.get_shape_data(value);
                 if (shapeResult.startsWith("Exception")) {
                     console.error(shapeResult);
                 }
@@ -272,7 +264,7 @@ export default {
                         mas = response;
                         console.log(mas)
 
-                        const coreResult = this.mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
+                        const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
                         if (coreResult.startsWith("Exception")) {
                             console.error(coreResult);
                         }
@@ -283,7 +275,7 @@ export default {
                             this.masStore.mas.magnetic.coil.turnsDescription = null;
                             this.masStore.mas.magnetic.coil.layersDescription = null;
                             this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                            const bobbinResult = this.mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+                            const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
                             if (bobbinResult.startsWith("Exception")) {
                                 console.error(bobbinResult);
                             }
@@ -321,16 +313,16 @@ export default {
             setTimeout(() => this.adviseCore(), 100);
         },
         adviseCore() {
-            this.mkfAdvisers.ready.then(_ => {
+            this.$mkfAdvisers.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
-                    const settings = JSON.parse(this.mkfAdvisers.get_settings());
+                    const settings = JSON.parse(this.$mkfAdvisers.get_settings());
                     settings["coreIncludeDistributedGaps"] = this.$settingsStore.adviserAllowDistributedGaps == "1";
                     settings["coreIncludeMargin"] = true;
                     settings["coreIncludeStacks"] = this.$settingsStore.adviserAllowStacks == "1";
                     settings["useToroidalCores"] = this.$settingsStore.adviserToroidalCores == "1";
-                    this.mkfAdvisers.set_settings(JSON.stringify(settings));
+                    this.$mkfAdvisers.set_settings(JSON.stringify(settings));
 
-                    const result = this.mkfAdvisers.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);
+                    const result = this.$mkfAdvisers.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);
                     if (result.startsWith("Exception")) {
                         console.error(result);
                         return;
@@ -343,13 +335,13 @@ export default {
                     if (data.length > 0) {
                         this.masStore.mas.magnetic.core = data[0].mas.magnetic.core;
 
-                        this.mkf.ready.then(_ => {
+                        this.$mkf.ready.then(_ => {
 
                             this.masStore.mas.magnetic.coil.bobbin = "Dummy";
                             this.masStore.mas.magnetic.coil.turnsDescription = null;
                             this.masStore.mas.magnetic.coil.layersDescription = null;
                             this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                            const bobbinResult = this.mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+                            const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
                             if (bobbinResult.startsWith("Exception")) {
                                 console.error(bobbinResult);
                             }
@@ -358,7 +350,7 @@ export default {
                             }
 
                             const numberTurns = [];
-                            const numberTurnsHandle = this.mkf.calculate_number_turns(data[0].mas.magnetic.coil.functionalDescription[0].numberTurns, JSON.stringify(this.masStore.mas.inputs.designRequirements));
+                            const numberTurnsHandle = this.$mkf.calculate_number_turns(data[0].mas.magnetic.coil.functionalDescription[0].numberTurns, JSON.stringify(this.masStore.mas.inputs.designRequirements));
 
                             const windings = this.masStore.mas.magnetic.coil.functionalDescription;
                             for (var i = 0; i < numberTurnsHandle.size(); i++) {
@@ -513,7 +505,6 @@ export default {
                     :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
                     :core="masStore.mas.magnetic.core"
                     :masStore="masStore"
-                    :mkf="mkf"
                     :operatingPointIndex="operatingPointIndex"
                 />
             </div>

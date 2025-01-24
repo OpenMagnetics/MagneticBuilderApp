@@ -16,10 +16,6 @@ export default {
             type: Object,
             required: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
         loadingGif: {
             type: String,
             default: "/images/loading.gif",
@@ -104,9 +100,9 @@ export default {
             }
         },
         sweepImpedanceOverFrequency() {
-            this.mkf.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
                 console.log("sweepImpedanceOverFrequency")
-                const curve2DJson = this.mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 4000000, 1000, "Impedance over frequency");
+                const curve2DJson = this.$mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 4000000, 1000, "Impedance over frequency");
                 if (curve2DJson.startsWith("Exception")) {
                     console.error(curve2DJson);
                     this.loading = false;

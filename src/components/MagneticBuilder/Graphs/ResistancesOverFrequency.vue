@@ -16,10 +16,6 @@ export default {
             type: Object,
             required: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
         loadingGif: {
             type: String,
             default: "/images/loading.gif",
@@ -94,7 +90,7 @@ export default {
             setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
         },
         sweepResistancesOverFrequency() {
-            this.mkf.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
                 var windingIndex = 0;
                 this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem, index) => {
                     if (elem.name == this.localData.selectedWinding) {
@@ -102,7 +98,7 @@ export default {
                     }
                 })
 
-                const curve2DJson = this.mkf.sweep_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 4000000, 1000, windingIndex, 25, "Resistance over frequency")
+                const curve2DJson = this.$mkf.sweep_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 4000000, 1000, windingIndex, 25, "Resistance over frequency")
                 if (curve2DJson.startsWith("Exception")) {
                     this.loading = false;
                     console.error(curve2DJson);

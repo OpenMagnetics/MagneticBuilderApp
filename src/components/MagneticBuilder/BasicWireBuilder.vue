@@ -23,14 +23,6 @@ export default {
             type: Boolean,
             default: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
-        mkfAdvisers: {
-            type: Object,
-            required: true,
-        },
         simulationEnabled: {
             type: Boolean,
             default: true,
@@ -208,15 +200,12 @@ export default {
                     v-if="selectedWindingIndex==key"
                     :readOnly="readOnly"
                     :masStore="masStore"
-                    :mkf="mkf"
                     :windingIndex="key"
                 />
                 <BasicWireSelector
                     v-if="selectedWindingIndex==key"
                     :masStore="masStore"
                     :readOnly="readOnly"
-                    :mkf="mkf"
-                    :mkfAdvisers="mkfAdvisers"
                     :operatingPointIndex="operatingPointIndex"
                     :windingIndex="key"
                     :simulationEnabled="simulationEnabled"

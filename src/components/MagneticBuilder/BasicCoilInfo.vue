@@ -25,10 +25,6 @@ export default {
             type: Object,
             required: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
         operatingPointIndex: {
             type: Number,
             default: 0,
@@ -156,7 +152,7 @@ export default {
         },
         simulate() {
             if (this.core['functionalDescription']['shape'] != "" && this.core['functionalDescription']['material'] != "") {
-                this.mkf.ready.then(_ => {
+                this.$mkf.ready.then(_ => {
 
                     if (!('gapReluctance' in this.$userStore.selectedModels)) {
                         this.$userStore.selectedModels['gapReluctance'] = Defaults.reluctanceModelDefault
@@ -189,7 +185,7 @@ export default {
                     const modelsString = JSON.stringify(modelsData);
 
                     if (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels) {
-                        const result = this.mkf.simulate(inputsString,
+                        const result = this.$mkf.simulate(inputsString,
                                                       magneticsString,
                                                       modelsString);
 

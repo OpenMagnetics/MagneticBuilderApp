@@ -25,10 +25,6 @@ export default {
             type: Object,
             required: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
         simulationEnabled: {
             type: Boolean,
             default: true,
@@ -308,7 +304,7 @@ export default {
         },
         wind() {
             this.$emit("fits", true);
-            this.mkf.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
                 try {
                     const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 
@@ -340,7 +336,7 @@ export default {
                         pattern.push(Number(char) - 1);
                     });
 
-                    const coilJson = this.mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+                    const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
                     if (coilJson.startsWith("Exception")) {
                         this.tryingToSend = false;
@@ -348,7 +344,7 @@ export default {
                         return;
                     }
                     this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
-                    const fits = this.mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
+                    const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
                     this.$emit("fits", fits);
 
                     this.historyStore.addToHistory(this.masStore.mas);
@@ -509,7 +505,6 @@ export default {
                 :showAlignmentOptions="showAlignmentOptions"
                 :masStore="masStore"
                 :readOnly="readOnly"
-                :mkf="mkf"
                 @coilUpdated="coilUpdated"
             />
         </div>
@@ -520,7 +515,6 @@ export default {
                 :showMarginOptions="showMarginOptions"
                 :masStore="masStore"
                 :readOnly="readOnly"
-                :mkf="mkf"
                 @marginUpdated="marginUpdated"
             />
         </div>
@@ -532,7 +526,6 @@ export default {
                 :core="masStore.mas.magnetic.core"
                 :masStore="masStore"
                 :operatingPointIndex="operatingPointIndex"
-                :mkf="mkf"
             />
         </div>
 

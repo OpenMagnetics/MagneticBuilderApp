@@ -20,10 +20,6 @@ export default {
         masStore: {
             type: Object,
             required: true,
-        },
-        mkf: {
-            type: Object,
-            required: true,
         }
     },
     data() {
@@ -63,7 +59,6 @@ export default {
                 v-if="errorMessage == '' && localData.graph == 'impedanceOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
-                :mkf="mkf"
             >
                 <ElementFromList
                     class="col-12 mb-1 text-start"
@@ -85,7 +80,6 @@ export default {
                 v-if="errorMessage == '' && localData.graph == 'resistancesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
-                :mkf="mkf"
             >
                 <ElementFromList
                     class="col-12 mb-1 text-start"

@@ -29,14 +29,6 @@ export default {
             type: Object,
             required: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
-        mkfAdvisers: {
-            type: Object,
-            required: true,
-        },
         simulationEnabled: {
             type: Boolean,
             default: true,
@@ -83,9 +75,9 @@ export default {
             foilConductingWidth: 0.0001,
         };
         if (typeof(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire) == 'string' && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "Dummy") {
-            this.mkf.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
 
-                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = JSON.parse(this.mkf.get_wire_data(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])));
+                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = JSON.parse(this.$mkf.get_wire_data(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])));
 
             });
         }
@@ -139,7 +131,7 @@ export default {
         },
         assignLocalData(wire) {
             this.errorMessages = "";
-            this.mkf.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
                 if (wire != "" && wire.type != null) {
 
                     this.localData["type"] = wire.type;
@@ -149,26 +141,26 @@ export default {
 
                     if (wire.type == "round") {
                         this.localData["roundConductingDiameter"] = wire.standardName;
-                        this.localData["coating"] = this.mkf.get_coating_label(JSON.stringify(wire));
+                        this.localData["coating"] = this.$mkf.get_coating_label(JSON.stringify(wire));
                     }
                     else if (wire.type == "litz") {
                         if (typeof(wire.strand) == 'string') {
-                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = JSON.parse(this.mkf.get_wire_data_by_name(wire.strand));
+                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = JSON.parse(this.$mkf.get_wire_data_by_name(wire.strand));
                         }
                         this.localData["litzStrandConductingDiameter"] = wire.strand.standardName;
                         this.localData["numberConductors"] = wire.numberConductors;
                     }
                     else if (wire.type == "rectangular") {
-                        this.localData["rectangularConductingHeight"] = this.mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingHeight));
-                        this.localData["rectangularConductingWidth"] = this.mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingWidth));
+                        this.localData["rectangularConductingHeight"] = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingHeight));
+                        this.localData["rectangularConductingWidth"] = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingWidth));
                     }
                     else if (wire.type == "foil") {
                         if (this.masStore.mas.magnetic.coil.bobbin != "Dummy"){
                             this.localData["foilConductingHeight"] = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height * 0.9 // hardcoded;
                         }
-                        this.localData["foilConductingWidth"] = this.mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingWidth));
+                        this.localData["foilConductingWidth"] = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingWidth));
                     }
-                    this.localData["coating"] = this.mkf.get_coating_label(JSON.stringify(wire));
+                    this.localData["coating"] = this.$mkf.get_coating_label(JSON.stringify(wire));
                     this.forceUpdate += 1;
                 }
                 this.getWireTypes();
@@ -179,7 +171,7 @@ export default {
         },
         assignWire() {
             this.errorMessages = "";
-            this.mkf.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
 
                 var wire = {};
 
@@ -188,7 +180,7 @@ export default {
                 }
                 var coating = null;
                 if (this.localData["coating"] != null) {
-                    coating = JSON.parse(this.mkf.get_wire_coating_by_label(this.localData["coating"]));
+                    coating = JSON.parse(this.$mkf.get_wire_coating_by_label(this.localData["coating"]));
                 }
 
                 wire.standard = "IEC 60317";
@@ -198,29 +190,29 @@ export default {
                     if (this.localData["standard"] != null) {
                         wire.standard = this.localData["standard"];
                     }
-                    wire = JSON.parse(this.mkf.get_wire_data_by_standard_name(this.localData["roundConductingDiameter"]));
+                    wire = JSON.parse(this.$mkf.get_wire_data_by_standard_name(this.localData["roundConductingDiameter"]));
                 }
                 else if (this.localData["type"] == "litz") {
                     if (this.localData["standard"] != null) {
                         wire.standard = this.localData["standard"];
                     }
                     wire.type = "litz";
-                    wire.strand = JSON.parse(this.mkf.get_wire_data_by_standard_name(this.localData["litzStrandConductingDiameter"]));
+                    wire.strand = JSON.parse(this.$mkf.get_wire_data_by_standard_name(this.localData["litzStrandConductingDiameter"]));
                     wire.numberConductors = this.localData["numberConductors"];
                     if (coating != null) {
                         if (wire.outerDiameter == null) {
                             wire.outerDiameter = {};
                         }
 
-                        var strandConductingDiameter = this.mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.strand.conductingDiameter));  
+                        var strandConductingDiameter = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.strand.conductingDiameter));  
                         if (coating.type == "bare") {
-                            wire.outerDiameter.nominal = this.mkf.get_wire_outer_diameter_bare_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, wire.standard);
+                            wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_bare_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, wire.standard);
                         }
                         if (coating.type == "served") {
-                            wire.outerDiameter.nominal = this.mkf.get_wire_outer_diameter_served_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, coating.numberLayers, wire.standard);
+                            wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_served_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, coating.numberLayers, wire.standard);
                         }
                         if (coating.type == "insulated") {
-                            wire.outerDiameter.nominal = this.mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
+                            wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
                         }
                     }
                 }
@@ -241,8 +233,8 @@ export default {
                         if (wire.outerWidth == null) {
                             wire.outerWidth = {};
                         }
-                        wire.outerHeight.nominal = this.mkf.get_wire_outer_height_rectangular(this.localData["rectangularConductingHeight"], coating.grade, wire.standard);
-                        wire.outerWidth.nominal = this.mkf.get_wire_outer_width_rectangular(this.localData["rectangularConductingWidth"], coating.grade, wire.standard);
+                        wire.outerHeight.nominal = this.$mkf.get_wire_outer_height_rectangular(this.localData["rectangularConductingHeight"], coating.grade, wire.standard);
+                        wire.outerWidth.nominal = this.$mkf.get_wire_outer_width_rectangular(this.localData["rectangularConductingWidth"], coating.grade, wire.standard);
                     }
                 }
                 else if (this.localData["type"] == "foil") {
@@ -278,8 +270,8 @@ export default {
             });
         },
         getWireTypes() {
-            this.mkf.ready.then(_ => {
-                const wireTypesHandle = this.mkf.get_available_wire_types();
+            this.$mkf.ready.then(_ => {
+                const wireTypesHandle = this.$mkf.get_available_wire_types();
                 for (var i = wireTypesHandle.size() - 1; i >= 0; i--) {
                     const type = wireTypesHandle.get(i);
                     this.wireTypes[type] = toTitleCase(type);
@@ -288,8 +280,8 @@ export default {
             });
         },
         getWireStandards() {
-            this.mkf.ready.then(_ => {
-                const wireStandardsHandle = this.mkf.get_available_wire_standards();
+            this.$mkf.ready.then(_ => {
+                const wireStandardsHandle = this.$mkf.get_available_wire_standards();
                 this.wireStandards = [];
                 for (var i = wireStandardsHandle.size() - 1; i >= 0; i--) {
                     const standard = wireStandardsHandle.get(i);
@@ -304,9 +296,9 @@ export default {
                     this.wireConductingDiameters = this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard];
                 }
                 else {
-                    this.mkf.ready.then(_ => {
+                    this.$mkf.ready.then(_ => {
                         const aux = {};
-                        const wireConductingDiametersHandle = this.mkf.get_unique_wire_diameters(JSON.stringify(this.localData.standard));
+                        const wireConductingDiametersHandle = this.$mkf.get_unique_wire_diameters(JSON.stringify(this.localData.standard));
                         for (var i = wireConductingDiametersHandle.size() - 1; i >= 0; i--) {
                             const wireDiameter = wireConductingDiametersHandle.get(i);
                             const key = Number(wireDiameter.split(" ")[0]);
@@ -339,9 +331,9 @@ export default {
             else {
                 if (this.localData.type != null) {
 
-                    this.mkf.ready.then(_ => {
+                    this.$mkf.ready.then(_ => {
                         const aux = {};
-                        const wireCoatingsHandle = this.mkf.get_coating_labels_by_type(JSON.stringify(this.localData.type));
+                        const wireCoatingsHandle = this.$mkf.get_coating_labels_by_type(JSON.stringify(this.localData.type));
 
                         this.wireCoatings = [];
                         for (var i = wireCoatingsHandle.size() - 1; i >= 0; i--) {
@@ -364,16 +356,16 @@ export default {
         },
         wireCoatingUpdated() {
             this.assignWire();
-            // this.mkf.ready.then(_ => {
-            //     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.coating = JSON.parse(this.mkf.get_wire_coating_by_label(this.localData.coating));
+            // this.$mkf.ready.then(_ => {
+            //     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.coating = JSON.parse(this.$mkf.get_wire_coating_by_label(this.localData.coating));
             // });
         },
         wireUpdated() {
             this.assignWire();
             // this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.numberConductors = this.localData.numberConductors;
 
-            // this.mkf.ready.then(_ => {
-            //     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = JSON.parse(this.mkf.get_wire_data(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])));
+            // this.$mkf.ready.then(_ => {
+            //     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = JSON.parse(this.$mkf.get_wire_data(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])));
             // });
         },
         isAnyLitzLoaded() {
@@ -399,13 +391,13 @@ export default {
                     const oldType = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.type;
                     const effectiveFrequency = this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current.processed.effectiveFrequency;
 
-                    this.mkf.ready.then(_ => {
+                    this.$mkf.ready.then(_ => {
 
                         if ((newType == "litz" && !this.isAnyLitzLoaded()) ||
                             (newType == "round" && !this.isAnyRoundLoaded()) ||
                             (newType == "rectangular" && !this.isAnyRectangularLoaded()) ||
                             (newType == "foil" && !this.isAnyFoilLoaded())) {
-                            const wireString = this.mkf.get_equivalent_wire(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire), JSON.stringify(newType), effectiveFrequency);
+                            const wireString = this.$mkf.get_equivalent_wire(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire), JSON.stringify(newType), effectiveFrequency);
 
                             if (wireString.startsWith("Exception")) {
                                 console.error(wireString);
@@ -432,13 +424,13 @@ export default {
             setTimeout(() => this.adviseAllWires(), 100);
         },
         adviseAllWires() {
-            this.mkfAdvisers.ready.then(_ => {
+            this.$mkfAdvisers.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
 
-                    checkAndFixMas(this.masStore.mas, this.mkf).then(response => {
+                    checkAndFixMas(this.masStore.mas, this.$mkf).then(response => {
                         this.masStore.mas = response;
 
-                        const resultMasWithCoil = this.mkfAdvisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
+                        const resultMasWithCoil = this.$mkfAdvisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
                         if (resultMasWithCoil.startsWith("Exception")) {
                             this.errorMessages = "Our advisers could not find a wire. Sorry, you are on your own!";
                             this.loading = false;
@@ -464,13 +456,13 @@ export default {
             });
         },
         adviseWire() {
-            this.mkfAdvisers.ready.then(_ => {
+            this.$mkfAdvisers.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
 
-                    checkAndFixMas(this.masStore.mas, this.mkf).then(response => {
+                    checkAndFixMas(this.masStore.mas, this.$mkf).then(response => {
                         this.masStore.mas = response;
 
-                        const resultMasWithCoil = this.mkfAdvisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
+                        const resultMasWithCoil = this.$mkfAdvisers.calculate_advised_coil(JSON.stringify(this.masStore.mas));
                         if (resultMasWithCoil.startsWith("Exception")) {
                             this.errorMessages = "Our advisers could not find a wire. Sorry, you are on your own!";
                             this.loading = false;
@@ -708,7 +700,6 @@ export default {
                     :wire="masStore.mas.magnetic.coil.functionalDescription[windingIndex].wire"
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
-                    :mkf="mkf"
                     :windingIndex="windingIndex"
                 />
             </div>

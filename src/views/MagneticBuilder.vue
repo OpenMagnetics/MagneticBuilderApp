@@ -87,8 +87,6 @@ export default {
                                 :masStore="masStore"
                                 :dataTestLabel="`${dataTestLabel}-MagneticBuilder`"
                                 :isIsolatedApp="true"
-                                :mkf="$mkf"
-                                :mkfAdvisers="mkfAdvisers"
                             />
                         </div>
                     </div>

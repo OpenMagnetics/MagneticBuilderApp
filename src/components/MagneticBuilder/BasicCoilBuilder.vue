@@ -22,10 +22,6 @@ export default {
             type: Boolean,
             default: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
         simulationEnabled: {
             type: Boolean,
             default: true,
@@ -116,7 +112,6 @@ export default {
                 :simulationEnabled="simulationEnabled"
                 :submenuEnabled="submenuEnabled"
                 :adviseEnabled="adviseEnabled"
-                :mkf="mkf"
                 @fits="fits"
             />
         </div>

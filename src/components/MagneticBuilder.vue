@@ -47,14 +47,6 @@ export default {
             type: Boolean,
             default: false,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
-        mkfAdvisers: {
-            type: Object,
-            required: true,
-        },
         operatingPointIndex: {
             type: Number,
             default: 0,
@@ -186,8 +178,6 @@ export default {
                     :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
                     :adviseEnabled="enableAdvisers && !isIsolatedApp"
-                    :mkf="mkf"
-                    :mkfAdvisers="mkfAdvisers"
                     :operatingPointIndex="operatingPointIndex"
                 />
             </div>
@@ -200,8 +190,6 @@ export default {
                     :submenuEnabled="submenuEnabled"
                     :adviseEnabled="enableAdvisers && !isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
-                    :mkf="mkf"
-                    :mkfAdvisers="mkfAdvisers"
                     :operatingPointIndex="operatingPointIndex"
                 />
             </div>
@@ -213,7 +201,6 @@ export default {
                     :simulationEnabled="simulationEnabled"
                     :submenuEnabled="submenuEnabled"
                     :adviseEnabled="enableAdvisers && !isIsolatedApp"
-                    :mkf="mkf"
                     :operatingPointIndex="operatingPointIndex"
                 />
             </div>
@@ -222,7 +209,6 @@ export default {
         <div v-if="enableGraphs" class="row">
                 <GraphInfo 
                     :masStore="masStore"
-                    :mkf="mkf"
                 />
         </div>
     </div>

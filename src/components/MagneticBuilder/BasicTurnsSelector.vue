@@ -26,10 +26,6 @@ export default {
             type: Object,
             required: true,
         },
-        mkf: {
-            type: Object,
-            required: true,
-        },
         readOnly: {
             type: Boolean,
             default: false,
@@ -89,7 +85,7 @@ export default {
         this.blockingRebounds = true;
         setTimeout(() => this.blockingRebounds = false, 10);
 
-        checkAndFixMas(this.masStore.mas, this.mkf).then(response => {
+        checkAndFixMas(this.masStore.mas, this.$mkf).then(response => {
             this.masStore.mas = response;
             this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]);
         })
