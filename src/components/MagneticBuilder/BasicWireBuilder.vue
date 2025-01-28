@@ -139,7 +139,7 @@ export default {
                 :windingIndex="selectedWindingIndex"
                 :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
                 :includeCurrentDensity="wire2DVisualizerPlotCurrentDensity == '1'"
-                :loadingGif="'/images/loading.gif'"
+                :loadingGif="$settingsStore.loadingGif"
                 :backgroundColor="$settingsStore.labelBgColor"
             />
         </div>

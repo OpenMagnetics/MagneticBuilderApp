@@ -16,10 +16,6 @@ export default {
             type: Object,
             required: true,
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
     },
     data() {
 
@@ -153,7 +149,7 @@ export default {
                 </div>
             </div>
             <div class="col-9">
-                <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
+                <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
                 <LineVisualizer 
                     v-show="!loading"
                     :data="resistancesOverFrequencyData"

@@ -13,10 +13,6 @@ export default {
             type: String,
             default: '',
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         core: {
             type: Object,
             required: true,
@@ -201,7 +197,6 @@ export default {
                         }
                         else {
                             const mas = JSON.parse(result);
-                            console.warn(mas.outputs)
                             this.updateFields(mas.outputs);
                             this.masStore.mas.outputs = deepCopy(mas.outputs);
                             this.tryingToSend = false;
@@ -225,7 +220,7 @@ export default {
 <template>
     <h5 v-if="core['functionalDescription']['material'] == null" class="text-danger my-2">Select core material</h5>
 
-    <img :data-cy="dataTestLabel + '-BasicCoilInfo-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
+    <img :data-cy="dataTestLabel + '-BasicCoilInfo-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
 
     <div v-else class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2">
         <div class="row" v-tooltip="styleTooltip">

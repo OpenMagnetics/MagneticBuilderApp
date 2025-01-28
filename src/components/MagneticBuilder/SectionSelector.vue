@@ -14,10 +14,6 @@ export default {
             type: Number,
             default: 0,
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         masStore: {
             type: Object,
             required: true,
@@ -90,7 +86,7 @@ export default {
 <template>
     <div class="container"  ref="coilSelectorContainer">
         <div v-if="numberSections > 1" class="row mb-2">
-            <img :data-cy="dataTestLabel + '-BasicCoilBuilder-loading'" v-if="masStore.mas.magnetic.coil.sectionsDescription == null" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
+            <img :data-cy="dataTestLabel + '-BasicCoilBuilder-loading'" v-if="masStore.mas.magnetic.coil.sectionsDescription == null" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <div v-else class="accordion row m-0 p-0" id="coilBuilderAccordion bg-dark">
                 <div :class="'col-lg-' + Number(12 / numberSections)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="key in range(0, numberSections)">
                     <h2 class="accordion-header" :id="'coreCalculatorheading-' + key">

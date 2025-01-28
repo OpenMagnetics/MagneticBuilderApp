@@ -13,10 +13,6 @@ export default {
             type: String,
             default: '',
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         wire: {
             type: [String, Object],
             required: true,

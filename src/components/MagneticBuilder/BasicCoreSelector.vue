@@ -18,10 +18,6 @@ export default {
             type: String,
             default: '',
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         masStore: {
             type: Object,
             required: true,
@@ -177,13 +173,12 @@ export default {
             this.$mkf.ready.then(_ => {
                 const coreShapeFamiliesHandle = this.$mkf.get_available_core_shape_families();
                 for (var i = coreShapeFamiliesHandle.size() - 1; i >= 0; i--) {
-                    const shapeFamily = coreShapeFamiliesHandle.get(i)
+                    const shapeFamily = coreShapeFamiliesHandle.get(i).toUpperCase()
                     if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
                         !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM") && !shapeFamily.includes("C")) {
                         this.coreShapeFamilies.push(shapeFamily);
                     }
                 }
-
 
                 this.coreShapeFamilies = this.coreShapeFamilies.sort();
 
@@ -220,7 +215,9 @@ export default {
             this.$mkf.ready.then(_ => {
                 const coreMaterialManufacturersHandle = this.$mkf.get_available_core_manufacturers();
                 for (var i = coreMaterialManufacturersHandle.size() - 1; i >= 0; i--) {
-                    this.coreMaterialManufacturers.push(coreMaterialManufacturersHandle.get(i));
+                    const manufacturer = coreMaterialManufacturersHandle.get(i);
+                    console.log(manufacturer)
+                    this.coreMaterialManufacturers.push(manufacturer);
                 }
 
                 this.coreMaterialManufacturers = this.coreMaterialManufacturers.sort();
@@ -387,7 +384,7 @@ export default {
 <template>
     <div class="container">
         <div class="row" v-tooltip="styleTooltip">
-            <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
+            <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreShapeFamily"
                 v-if="!loading"

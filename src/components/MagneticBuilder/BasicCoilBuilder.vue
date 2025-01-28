@@ -10,10 +10,6 @@ export default {
             type: String,
             default: '',
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         masStore: {
             type: Object,
             required: true,
@@ -100,6 +96,7 @@ export default {
                 :backgroundColor="$settingsStore.labelBgColor"
                 @swapFieldPlot="swapFieldPlot"
                 @swapIncludeFringing="swapIncludeFringing"
+                :loadingGif="$settingsStore.loadingGif"
                 />
         </div>
         <h4 v-else class="mb-5" > {{"Coil Description"}} </h4>

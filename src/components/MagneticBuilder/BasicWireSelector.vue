@@ -3,7 +3,7 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import BasicWireSubmenu from './BasicWireSubmenu.vue'
 import BasicWireInfo from './BasicWireInfo.vue'
-import { useDataCacheStore } from '../../stores/dataCache'
+// import { useDataCacheStore } from '../../stores/dataCache'
 import { toTitleCase, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
@@ -20,10 +20,6 @@ export default {
         windingIndex: {
             type: Number,
             default: 0,
-        },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
         },
         masStore: {
             type: Object,
@@ -51,7 +47,7 @@ export default {
         },
     },
     data() {
-        const dataCacheStore = useDataCacheStore();
+        // const dataCacheStore = useDataCacheStore();
         const historyStore = useHistoryStore();
         const loading = false; 
         const forceUpdate = 0; 
@@ -83,7 +79,7 @@ export default {
         }
 
         return {
-            dataCacheStore,
+            // dataCacheStore,
             historyStore,
             localData,
             wireTypes,
@@ -292,10 +288,10 @@ export default {
         },
         getWireDiameters() {
             try {
-                if (this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] != null && this.dataCacheStore.isWireDataValid()) {
-                    this.wireConductingDiameters = this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard];
-                }
-                else {
+                // if (this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] != null && this.dataCacheStore.isWireDataValid()) {
+                //     this.wireConductingDiameters = this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard];
+                // }
+                // else {
                     this.$mkf.ready.then(_ => {
                         const aux = {};
                         const wireConductingDiametersHandle = this.$mkf.get_unique_wire_diameters(JSON.stringify(this.localData.standard));
@@ -311,24 +307,24 @@ export default {
                         orderedKeys.forEach((key) => {
                             this.wireConductingDiameters.push(aux[key]);
                         });
-                        this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] = this.wireConductingDiameters;
-                        this.dataCacheStore.setWireDataTimestamp();
+                        // this.dataCacheStore.wireData.wireConductingDiametersPerStandard[this.localData.standard] = this.wireConductingDiameters;
+                        // this.dataCacheStore.setWireDataTimestamp();
                     });
-                }
+                // }
             }
             catch (e) {
                 setTimeout(() => this.getWireDiameters(), 100);
             }
         },
         getWireCoatings() {
-            if (this.dataCacheStore.wireData.wireCoatingsPerWireType[this.localData.type] != null &&
-                this.dataCacheStore.isWireDataValid()) {
-                this.wireCoatings = this.dataCacheStore.wireData.wireCoatingsPerWireType[this.localData.type];
-                if (this.wireCoatings.length > 0 && !this.wireCoatings.includes(this.localData["coating"])) {
-                    this.localData["coating"] = this.wireCoatings[0];
-                }
-            }
-            else {
+            // if (this.dataCacheStore.wireData.wireCoatingsPerWireType[this.localData.type] != null &&
+            //     this.dataCacheStore.isWireDataValid()) {
+            //     this.wireCoatings = this.dataCacheStore.wireData.wireCoatingsPerWireType[this.localData.type];
+            //     if (this.wireCoatings.length > 0 && !this.wireCoatings.includes(this.localData["coating"])) {
+            //         this.localData["coating"] = this.wireCoatings[0];
+            //     }
+            // }
+            // else {
                 if (this.localData.type != null) {
 
                     this.$mkf.ready.then(_ => {
@@ -340,7 +336,7 @@ export default {
                             const wireCoating = wireCoatingsHandle.get(i);
                             this.wireCoatings.push(wireCoating);
                         }
-                        this.dataCacheStore.wireData.wireCoatingsPerWireType[this.localData.type] = this.wireCoatings;
+                        // this.dataCacheStore.wireData.wireCoatingsPerWireType[this.localData.type] = this.wireCoatings;
 
                         if (this.wireCoatings.length > 0 && !this.wireCoatings.includes(this.localData["coating"])) {
                             this.localData["coating"] = this.wireCoatings[0];
@@ -348,7 +344,7 @@ export default {
 
                     });
                 }
-            }
+            // }
         },
         wireStandardUpdated() {
             this.getWireDiameters();
@@ -501,7 +497,7 @@ export default {
 <template>
     <div class="container">
         <div class="row" v-tooltip="styleTooltip">
-            <img :data-cy="dataTestLabel + '-BasicWireSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
+            <img :data-cy="dataTestLabel + '-BasicWireSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.wireType"
                 v-if="!loading"

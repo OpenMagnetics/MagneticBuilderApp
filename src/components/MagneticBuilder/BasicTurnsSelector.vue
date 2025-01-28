@@ -18,10 +18,6 @@ export default {
             type: Number,
             default: 0,
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         masStore: {
             type: Object,
             required: true,
@@ -155,7 +151,7 @@ export default {
 <template>
     <div class="container">
         <div class="row" v-tooltip="styleTooltip">
-            <img :data-cy="dataTestLabel + '-BasicWireSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
+            <img :data-cy="dataTestLabel + '-BasicWireSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.wireNumberTurns"
                 v-if="!loading"

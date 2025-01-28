@@ -21,10 +21,6 @@ export default {
             type: Boolean,
             default: false,
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         masStore: {
             type: Object,
             required: true,

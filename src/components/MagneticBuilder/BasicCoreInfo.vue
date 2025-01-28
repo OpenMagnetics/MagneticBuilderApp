@@ -12,10 +12,6 @@ export default {
             type: String,
             default: '',
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         core: {
             type: Object,
             required: true,
@@ -160,6 +156,7 @@ export default {
                     const modelsData = {coreLosses: this.$userStore.selectedModels['coreLosses'].toUpperCase(),
                                   coreTemperature: this.$userStore.selectedModels['coreTemperature'].toUpperCase(),
                                   gapReluctance: this.$userStore.selectedModels['gapReluctance'].toUpperCase().replace(" ", "_")};
+                    console.log(this.masStore.mas.inputs)
                     this.coreLossesData = JSON.parse(this.$mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
                                                                                 JSON.stringify(this.masStore.mas.magnetic.coil),
                                                                                 JSON.stringify(this.masStore.mas.inputs),

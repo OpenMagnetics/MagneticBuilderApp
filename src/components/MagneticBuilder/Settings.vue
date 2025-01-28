@@ -60,7 +60,7 @@ export default {
         <div class="modal-dialog modal-lg modal-dialog-scrollable settings">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
-                    <p :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title fs-5" :id="modalName + '-settingsModalLabel'">Settings</p>
+                    <p :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title fs-5" :id="modalName + '-settingsModalLabel'">Magnetic Builder Settings</p>
                     <button ref="closeSettingsModalRef" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="settingsModalClose"></button>
                 </div>
                 <div class="modal-body container">

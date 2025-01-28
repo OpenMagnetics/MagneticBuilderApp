@@ -16,10 +16,6 @@ export default {
             type: Object,
             required: true,
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
     },
     data() {
 
@@ -55,6 +51,21 @@ export default {
         }
     },
     computed: {
+        impedancePoints() {
+            const points = [];
+            this.masStore.mas.inputs.designRequirements.minimumImpedance.forEach((elem) => {
+                points.push({
+                    data: {
+                        x: elem.frequency,
+                        y: elem.impedance.magnitude
+                    },
+                    unit: 'Ω',
+                    colorLabel: 'danger',
+
+                });
+            })
+            return points;
+        }
     },
     watch: {
         'masStore.mas.magnetic.core': {
@@ -141,10 +152,11 @@ export default {
             </div>
             <div class="col-9">
 
-                <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: auto; height: 60%;;" :src="loadingGif">
+                <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: auto; height: 60%;;" :src="$settingsStore.loadingGif">
                 <LineVisualizer 
                     v-show="!loading"
                     :data="impedanceOverFrequencyData"
+                    :points="impedancePoints"
                     :xAxisOptions="frequencyData"
                     :title="'Impedance over Frequency'"
                     :forceUpdate="forceUpdate"

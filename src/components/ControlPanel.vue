@@ -9,6 +9,7 @@ import Settings from './MagneticBuilder/Settings.vue'
 <script>
 
 export default {
+    emits: ["toolSelected"],
     props: {
         dataTestLabel: {
             type: String,
@@ -80,7 +81,7 @@ export default {
                     checkAndFixMas(newMas, this.$mkf).then(response => {
                         this.masStore.mas = response;
                         this.masStore.importedMas();
-                        this.$userStore.toolboxStates[this.$userStore.toolboxStates.selectedApplication].magneticBuilder.subsection = "magneticBuilder";
+                        this.$userStore.toolboxStates[this.$userStore.selectedApplication].magneticBuilder.subsection = "magneticBuilder";
                         for (var i = 0; i < this.masStore.magneticManualOperatingPoints.length; i++) {
                             this.masStore.magneticManualOperatingPoints[i] = true;
                         }

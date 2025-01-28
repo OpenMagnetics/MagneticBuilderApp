@@ -50,9 +50,6 @@ router.beforeEach((to, from, next) => {
             })
         };
 
-    	// if (app.config.globalProperties.$dataCacheStore == null) {
-    	// 	app.config.globalProperties.$dataCacheStore = useDataCacheStore();
-    	// }
     }
 
     console.log("Loaded");

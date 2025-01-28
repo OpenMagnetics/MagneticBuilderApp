@@ -17,10 +17,6 @@ export default {
             type: String,
             default: '',
         },
-        loadingGif: {
-            type: String,
-            default: "/images/loading.gif",
-        },
         masStore: {
             type: Object,
             required: true,
@@ -159,6 +155,7 @@ export default {
                 if (!this.blockingRebounds && this.masStore.mas.magnetic.coil.turnsDescription == null && this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
                     this.recentChange = true;
                     this.blockingRebounds = true;
+                    this.assignCoilData();
                     setTimeout(() => {this.tryToWind();}, 10);
                     setTimeout(() => this.blockingRebounds = false, 10);
                 }
@@ -335,7 +332,6 @@ export default {
                     this.localData.pattern.split('').forEach((char) => {
                         pattern.push(Number(char) - 1);
                     });
-
                     const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
                     if (coilJson.startsWith("Exception")) {
@@ -480,7 +476,7 @@ export default {
 <template>
     <div class="container" v-tooltip="styleTooltip">
         <div class="row"  ref="coilSelectorContainer">
-            <img :data-cy="dataTestLabel + '-BasicCoilSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="loadingGif">
+            <img :data-cy="dataTestLabel + '-BasicCoilSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <ListOfCharacters
                 v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"
                 v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 1"

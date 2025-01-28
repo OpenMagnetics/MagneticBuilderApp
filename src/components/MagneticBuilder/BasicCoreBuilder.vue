@@ -61,7 +61,7 @@ export default {
                 :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
                 :core="masStore.mas.magnetic.core"
                 :fullCoreModel="true"
-                :loadingGif="'/images/loading.gif'"
+                :loadingGif="$settingsStore.loadingGif"
                 :backgroundColor="$settingsStore.labelBgColor"
             />
         </div>
