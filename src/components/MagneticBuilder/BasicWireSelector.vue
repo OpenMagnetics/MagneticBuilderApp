@@ -403,7 +403,7 @@ export default {
                             this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
                             this.assignLocalData(wire);
                         }
-                        // this.assignWire();
+                        this.assignWire();
                     });
                 }
             }

@@ -131,7 +131,7 @@ export default {
     <h5 v-if="masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape ==''" class="text-danger my-2">Select a core first</h5>
 
     <div v-else class="container">
-        <div v-if="useVisualizers && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire != null" class="row mb-2" style="max-height: 30vh">
+        <div v-if="useVisualizers && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire != null" class="row mb-2" style="max-height: 20vh">
             <Wire2DVisualizer 
                 v-if="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire.type != null"
                 :dataTestLabel="`${dataTestLabel}-Wire2DVisualizer`"

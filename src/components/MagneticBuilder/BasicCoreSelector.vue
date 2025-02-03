@@ -175,7 +175,7 @@ export default {
                 for (var i = coreShapeFamiliesHandle.size() - 1; i >= 0; i--) {
                     const shapeFamily = coreShapeFamiliesHandle.get(i).toUpperCase()
                     if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
-                        !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM") && !shapeFamily.includes("C")) {
+                        !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
                         this.coreShapeFamilies.push(shapeFamily);
                     }
                 }
@@ -216,7 +216,6 @@ export default {
                 const coreMaterialManufacturersHandle = this.$mkf.get_available_core_manufacturers();
                 for (var i = coreMaterialManufacturersHandle.size() - 1; i >= 0; i--) {
                     const manufacturer = coreMaterialManufacturersHandle.get(i);
-                    console.log(manufacturer)
                     this.coreMaterialManufacturers.push(manufacturer);
                 }
 
