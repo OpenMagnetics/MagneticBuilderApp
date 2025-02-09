@@ -1,6 +1,5 @@
 <script setup>
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
-import Module from '../../assets/js/libAdvisers.wasm.js'
 import { checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
