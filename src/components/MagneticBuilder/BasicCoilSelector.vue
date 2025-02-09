@@ -489,7 +489,7 @@ export default {
                 :replaceTitle="'Section Interleaving Order'"
                 :allowedCharacters="windingIndexesCharacters"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="coilUpdated"
             />

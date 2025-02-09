@@ -152,7 +152,7 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="topOrInnerMarginUpdated(selectedSectionIndex)"
             />
@@ -176,7 +176,7 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="BottomOrOuterMarginUpdated(selectedSectionIndex)"
             />

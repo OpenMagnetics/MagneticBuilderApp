@@ -271,6 +271,7 @@ export default {
                             this.masStore.mas.magnetic.coil.turnsDescription = null;
                             this.masStore.mas.magnetic.coil.layersDescription = null;
                             this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                            console.log(this.masStore.mas.magnetic.coil)
                             const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
                             if (bobbinResult.startsWith("Exception")) {
                                 console.error(bobbinResult);
@@ -395,10 +396,10 @@ export default {
                 :justifyContent="true"
                 v-model="localData"
                 :options="coreShapeFamilies"
-                :labelStyleClass="'col-6'"
+                :labelWidthProportionClass="'col-6'"
                 :selectStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <ElementFromList
@@ -414,10 +415,10 @@ export default {
                 :optionsToDisable="coreShapeFamilies"
                 :options="coreShapeNames[localData.shapeFamily]"
                 @update="shapeUpdated"
-                :labelStyleClass="'col-6'"
+                :labelWidthProportionClass="'col-6'"
                 :selectStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -433,10 +434,10 @@ export default {
                 :justifyContent="true"
                 v-model="localData"
                 :options="coreMaterialManufacturers"
-                :labelStyleClass="'col-6'"
+                :labelWidthProportionClass="'col-6'"
                 :selectStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -453,10 +454,10 @@ export default {
                 :optionsToDisable="coreMaterialManufacturers"
                 :options="coreMaterialNames[localData.materialManufacturer]"
                 @update="materialUpdated"
-                :labelStyleClass="'col-6'"
+                :labelWidthProportionClass="'col-6'"
                 :selectStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2">Select a family and a shape for the core</h5>
@@ -477,7 +478,7 @@ export default {
                 :modelValue="localData"
                 @update="numberStacksUpdated"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -490,12 +491,12 @@ export default {
                 :autoupdate="false"
                 :core="masStore.mas.magnetic.core"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="gappingUpdated"
             />
 
-            <div v-if= "simulationEnabled" class="col-12">
+            <div v-if= "simulationEnabled" class="col-12 p-0">
                 <BasicCoreInfo 
                     v-if="!loading"
                     :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"

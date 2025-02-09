@@ -257,7 +257,6 @@ export default {
 
                 wire.coating = coating;
                 wire.material = "copper";
-                console.warn(wire)
 
                 this.$userStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
@@ -509,10 +508,10 @@ export default {
                 :justifyContent="true"
                 v-model="localData"
                 :options="wireTypes"
-                :labelStyleClass="'col-5'"
+                :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="wireTypeUpdated"
             />
@@ -527,10 +526,10 @@ export default {
                 :name="'standard'"
                 :titleSameRow="true"
                 :justifyContent="true"
-                :labelStyleClass="'col-5'"
+                :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 v-model="localData"
                 :options="wireStandards"
@@ -546,10 +545,10 @@ export default {
                 :name="'roundConductingDiameter'"
                 :titleSameRow="true"
                 :justifyContent="true"
-                :labelStyleClass="'col-5'"
+                :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 v-model="localData"
                 :options="wireConductingDiameters"
@@ -563,10 +562,10 @@ export default {
                 :dataTestLabel="dataTestLabel + '-StrandConductingDiameter'"
                 :replaceTitle="'Cond. diameter'"
                 :name="'litzStrandConductingDiameter'"
-                :labelStyleClass="'col-5'"
+                :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 :titleSameRow="true"
                 :justifyContent="true"
@@ -583,10 +582,10 @@ export default {
                 :name="'coating'"
                 :titleSameRow="true"
                 :justifyContent="true"
-                :labelStyleClass="'col-4'"
+                :labelWidthProportionClass="'col-4'"
                 :selectStyleClass="'col-8'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 v-model="localData"
                 :options="wireCoatings"
@@ -606,11 +605,11 @@ export default {
                 :allowNegative="false"
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
-                :labelStyleClass="'col-xs-12 col-md-5'"
-                :dimensionStyleClass="'col-xs-8 col-md-7'"
+                :labelWidthProportionClass="'col-xs-12 col-md-5'"
+                :valueWidthProportionClass="'col-xs-8 col-md-7'"
                 :styleClassInput="'offset-6 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="wireUpdated"
             />
@@ -629,7 +628,7 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="wireUpdated"
             />
@@ -648,7 +647,7 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="wireUpdated"
             />
@@ -667,7 +666,7 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="wireUpdated"
             />
@@ -686,12 +685,12 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="wireUpdated"
             />
 
-            <div v-if="simulationEnabled" class="col-12">
+            <div v-if="simulationEnabled" class="col-12 p-0">
                 <BasicWireInfo 
                     v-if="!loading"
                     :dataTestLabel="dataTestLabel + '-BasicWireInfo'"

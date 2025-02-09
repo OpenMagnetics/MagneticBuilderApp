@@ -101,7 +101,7 @@ export default {
         </div>
         <h4 v-else class="mb-5" > {{"Coil Description"}} </h4>
 
-        <div class="row mb-2" v-show="masStore.mas.magnetic.coil.sectionsDescription != null">
+        <div class="row mb-2">
             <BasicCoilSelector
                 :masStore="masStore"
                 :readOnly="readOnly"

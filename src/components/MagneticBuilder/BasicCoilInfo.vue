@@ -236,11 +236,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.windingLosses"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -256,11 +256,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.totalLosses"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -275,11 +275,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.ohmicLosses"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -295,11 +295,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.acLosses"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <div class="col-12 mt-3 mb-2 p-0">
@@ -321,11 +321,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.ohmicLossesPerWinding[selectedWindingIndex]"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -341,11 +341,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.skinLossesPerWinding[selectedWindingIndex]"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -360,11 +360,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.proximityLossesPerWinding[selectedWindingIndex]"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -381,11 +381,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.windingLossesPerWinding[selectedWindingIndex]"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 
@@ -401,11 +401,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.dcResistancePerWinding[selectedWindingIndex]"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -421,11 +421,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.effectiveResistancePerWinding[selectedWindingIndex]"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
             <DimensionReadOnly 
@@ -440,11 +440,11 @@ export default {
                 :numberDecimals="2"
                 :value="outputsData.leakageInductancePerWinding[selectedWindingIndex]"
                 :disableShortenLabels="true"
-                :labelStyleClass="'col-4'"
-                :dimensionStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-4'"
+                :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.labelBgColor"
+                :valueBgColor="$settingsStore.labelBgColor"
                 :textColor="$settingsStore.textColor"
             />
 

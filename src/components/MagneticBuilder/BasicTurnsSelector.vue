@@ -168,7 +168,7 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-6 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="turnsUpdated"
             />
@@ -188,7 +188,7 @@ export default {
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-6 col-6'"
                 :labelBgColor="$settingsStore.labelBgColor"
-                :inputBgColor="$settingsStore.inputBgColor"
+                :valueBgColor="$settingsStore.valueBgColor"
                 :textColor="$settingsStore.textColor"
                 @update="turnsUpdated"
             />

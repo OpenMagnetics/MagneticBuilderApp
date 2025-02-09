@@ -56,7 +56,7 @@ export default {
     },
     mounted() {
         this.$settingsStore.labelBgColor = 'bg-dark';
-        this.$settingsStore.inputBgColor = 'bg-light';
+        this.$settingsStore.valueBgColor = 'bg-light';
         this.$settingsStore.textColor = 'text-white';
     },
     created() {

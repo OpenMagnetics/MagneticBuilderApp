@@ -65,10 +65,10 @@ export default {
                     v-model="localData"
                     :options="availableGraphs"
                     @update="graphTypeUpdated"
-                    :labelStyleClass="'col-6'"
+                    :labelWidthProportionClass="'col-6'"
                     :selectStyleClass="'col-6'"
                     :labelBgColor="$settingsStore.labelBgColor"
-                    :inputBgColor="$settingsStore.inputBgColor"
+                    :valueBgColor="$settingsStore.valueBgColor"
                     :textColor="$settingsStore.textColor"
                 />
             </ImpedanceOverFrequency> 
@@ -86,10 +86,10 @@ export default {
                     v-model="localData"
                     :options="availableGraphs"
                     @update="graphTypeUpdated"
-                    :labelStyleClass="'col-6'"
+                    :labelWidthProportionClass="'col-6'"
                     :selectStyleClass="'col-6'"
                     :labelBgColor="$settingsStore.labelBgColor"
-                    :inputBgColor="$settingsStore.inputBgColor"
+                    :valueBgColor="$settingsStore.valueBgColor"
                     :textColor="$settingsStore.textColor"
                 />
             </ResistancesOverFrequency> 

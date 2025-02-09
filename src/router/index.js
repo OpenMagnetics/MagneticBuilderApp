@@ -11,6 +11,11 @@ const routes = [
         name: 'MagneticBuilder',
         component: () => import('../views/MagneticBuilder.vue')
     },
+    {
+        path: '/engine_loader',
+        name: 'EngineLoader',
+        component: () => import('../views/EngineLoader.vue')
+    },
 
 ]
 const router = createRouter({
