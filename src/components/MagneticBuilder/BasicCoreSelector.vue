@@ -310,16 +310,16 @@ export default {
             setTimeout(() => this.adviseCore(), 100);
         },
         adviseCore() {
-            this.$mkfAdvisers.ready.then(_ => {
+            this.$mkf.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
-                    const settings = JSON.parse(this.$mkfAdvisers.get_settings());
+                    const settings = JSON.parse(this.$mkf.get_settings());
                     settings["coreIncludeDistributedGaps"] = this.$settingsStore.adviserAllowDistributedGaps == "1";
                     settings["coreIncludeMargin"] = true;
                     settings["coreIncludeStacks"] = this.$settingsStore.adviserAllowStacks == "1";
                     settings["useToroidalCores"] = this.$settingsStore.adviserToroidalCores == "1";
-                    this.$mkfAdvisers.set_settings(JSON.stringify(settings));
+                    this.$mkf.set_settings(JSON.stringify(settings));
 
-                    const result = this.$mkfAdvisers.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);
+                    const result = this.$mkf.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);
                     if (result.startsWith("Exception")) {
                         console.error(result);
                         return;

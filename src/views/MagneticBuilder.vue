@@ -7,22 +7,9 @@ import MagneticBuilder from '/src/components/MagneticBuilder.vue'
 import ControlPanel from '/src/components/ControlPanel.vue'
 
 import { useMasStore } from '/src/stores/mas'
-import Module from '/src/assets/js/libAdvisers.wasm.js'
 </script>
 
 <script>
-var mkfAdvisers = {
-    ready: new Promise(resolve => {
-        Module({
-            onRuntimeInitialized () {
-                mkfAdvisers = Object.assign(this, {
-                    ready: Promise.resolve()
-                });
-                resolve();
-            }
-        });
-    })
-};
 
 export default {
     props: {
