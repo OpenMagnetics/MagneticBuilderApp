@@ -1,5 +1,6 @@
 <script setup>
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
+import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
 </script>
@@ -39,7 +40,9 @@ export default {
         const forceUpdate = 0;
         const loading = false;
         const localData = {
-            selectedWinding: this.masStore.mas.magnetic.coil.functionalDescription[0].name
+            selectedWinding: this.masStore.mas.magnetic.coil.functionalDescription[0].name,
+            minimumFrequency: 1e3,
+            maximumFrequency: 4e6,
         }
 
         return {
@@ -94,7 +97,7 @@ export default {
                     }
                 })
 
-                const curve2DJson = this.$mkf.sweep_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 4000000, 1000, windingIndex, 25, "Resistance over frequency")
+                const curve2DJson = this.$mkf.sweep_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, 1000, windingIndex, 25, "Resistance over frequency")
                 if (curve2DJson.startsWith("Exception")) {
                     this.loading = false;
                     console.error(curve2DJson);
@@ -137,14 +140,36 @@ export default {
                     <slot/>
                 </div>
                 <div class="row">
-                    <ElementFromList class="border-bottom py-2"
-                        :name="'selectedWinding'"
-                        :dataTestLabel="dataTestLabel + '-NumberWindings'"
-                        :options="windingNames"
-                        :titleSameRow="true"
-                        v-model="localData"
-                        @update="updatedNumberElements"
-                    />
+                <Dimension class="col-12 mb-1 text-start"
+                    :name="'minimumFrequency'"
+                    :unit="'Hz'"
+                    :dataTestLabel="dataTestLabel + '-MinimumFrequency'"
+                    :min="0"
+                    :justifyContent="true"
+                    :defaultValue="1"
+                    :allowNegative="false"
+                    :allowZero="false"
+                    :modelValue="localData"
+                    @update="sweepResistancesOverFrequency"
+                    :labelBgColor="$settingsStore.labelBgColor"
+                    :valueBgColor="$settingsStore.valueBgColor"
+                    :textColor="$settingsStore.textColor"
+                />
+                <Dimension class="col-12 mb-1 text-start"
+                    :name="'maximumFrequency'"
+                    :unit="'Hz'"
+                    :dataTestLabel="dataTestLabel + '-MaximumFrequency'"
+                    :min="0"
+                    :justifyContent="true"
+                    :defaultValue="1"
+                    :allowNegative="false"
+                    :allowZero="false"
+                    :modelValue="localData"
+                    @update="sweepResistancesOverFrequency"
+                    :labelBgColor="$settingsStore.labelBgColor"
+                    :valueBgColor="$settingsStore.valueBgColor"
+                    :textColor="$settingsStore.textColor"
+                />
 
                 </div>
             </div>

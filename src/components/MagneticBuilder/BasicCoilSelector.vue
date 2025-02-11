@@ -6,6 +6,8 @@ import BasicCoilSectionMarginsSelector from './BasicCoilSectionMarginsSelector.v
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
+import { useStyleStore } from '../../stores/style'
+
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -45,6 +47,8 @@ export default {
     data() {
         const historyStore = useHistoryStore();
         const showAlignmentOptions = false;
+        const styleStore = useStyleStore();
+
         const showMarginOptions = false;
         const loading = false;
         const blockingRebounds = false;
@@ -70,6 +74,7 @@ export default {
 
         return {
             blockingRebounds,
+            styleStore,
             historyStore,
             localData,
             forceUpdate,

@@ -198,11 +198,65 @@ export const useStyleStore = defineStore("style", () => {
 
     });
 
+    const magneticBuilder = ref({
+        main: {
+            "background": theme["white"],
+            "color": theme["success"],
+            "border-color": theme["secondary"],
+        },
+        customizeButton: {
+            "background": theme["danger"],
+            "color": theme["dark"],
+        },
+        loadFromLibraryButton: {
+            "background": theme["danger"],
+            "color": theme["dark"],
+        },
+        adviseButton: {
+            "background": theme["danger"],
+            "color": theme["dark"],
+        },
+        showAlignmentOptionsButton: {
+            "background": theme["success"],
+            "color": theme["dark"],
+        },
+        showMarginOptionsButton: {
+            "background": theme["success"],
+            "color": theme["dark"],
+        },
+
+        inputFontSize: {
+            // "font-size": '2rem',
+            "font-size": '1rem',
+        },
+        inputTitleFontSize: {
+            // "font-size": '2.5rem',
+            "font-size": '1.25rem',
+        },
+        inputLabelBgColor:{
+            "background": theme["success"],
+        },
+        inputValueBgColor:{
+            "background": theme["info"],
+        },
+        inputTextColor:{
+            "color": theme["dark"],
+        },
+        addElementButtonColor: {
+            "color": theme["secondary"],
+        },
+        removeElementButtonColor: {
+            "color": theme["danger"],
+        },
+
+    });
+
 
     return {
         storyline,
         designRequirements,
         operatingPoints,
+        magneticBuilder,
     }
 },
 {

@@ -1,5 +1,6 @@
 <script setup>
 import { useHistoryStore } from '../stores/history'
+import { useStyleStore } from '/src/stores/style'
 import BasicCoreBuilder from './MagneticBuilder/BasicCoreBuilder.vue'
 import BasicWireBuilder from './MagneticBuilder/BasicWireBuilder.vue'
 import BasicCoilBuilder from './MagneticBuilder/BasicCoilBuilder.vue'
@@ -54,11 +55,13 @@ export default {
     },
     data() {
         const historyStore = useHistoryStore();
+        const styleStore = useStyleStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
 
         return {
             magneticBuilderSettingsStore,
             historyStore,
+            styleStore,
         }
     },
     computed: {
@@ -168,7 +171,7 @@ export default {
 </script>
 
 <template>
-    <div class="container">
+    <div class="container" :style="styleStore.magneticBuilder.main">
         <div class="row">
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
                 <BasicCoreBuilder 

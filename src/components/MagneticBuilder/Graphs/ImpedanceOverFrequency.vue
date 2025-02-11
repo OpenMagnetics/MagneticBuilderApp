@@ -1,5 +1,7 @@
 <script setup>
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
+import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
+
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
 </script>
@@ -41,6 +43,10 @@ export default {
         const recentChange = false;
         const tryingToSend = false;
 
+        const localData = {
+            minimumFrequency: 1e3,
+            maximumFrequency: 4e6,
+        }
         return {
             impedanceOverFrequencyData,
             frequencyData,
@@ -48,22 +54,25 @@ export default {
             loading,
             recentChange,
             tryingToSend,
+            localData,
         }
     },
     computed: {
         impedancePoints() {
             const points = [];
-            this.masStore.mas.inputs.designRequirements.minimumImpedance.forEach((elem) => {
-                points.push({
-                    data: {
-                        x: elem.frequency,
-                        y: elem.impedance.magnitude
-                    },
-                    unit: 'Ω',
-                    colorLabel: 'danger',
+            if (this.masStore.mas.inputs.designRequirements.minimumImpedance != null) {
+                this.masStore.mas.inputs.designRequirements.minimumImpedance.forEach((elem) => {
+                    points.push({
+                        data: {
+                            x: elem.frequency,
+                            y: elem.impedance.magnitude
+                        },
+                        unit: 'Ω',
+                        colorLabel: 'danger',
 
-                });
-            })
+                    });
+                })
+            }
             return points;
         }
     },
@@ -113,7 +122,7 @@ export default {
         sweepImpedanceOverFrequency() {
             this.$mkf.ready.then(_ => {
                 console.log("sweepImpedanceOverFrequency")
-                const curve2DJson = this.$mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), 1000, 4000000, 1000, "Impedance over frequency");
+                const curve2DJson = this.$mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, 1000, "Impedance over frequency");
                 if (curve2DJson.startsWith("Exception")) {
                     console.error(curve2DJson);
                     this.loading = false;
@@ -149,11 +158,43 @@ export default {
         <div class="row">
             <div class="col-3">
                 <slot/>
+                <Dimension class="col-12 mb-1 text-start"
+                    :name="'minimumFrequency'"
+                    :unit="'Hz'"
+                    :dataTestLabel="dataTestLabel + '-MinimumFrequency'"
+                    :min="0"
+                    :justifyContent="true"
+                    :defaultValue="1"
+                    :allowNegative="false"
+                    :allowZero="false"
+                    :modelValue="localData"
+                    @update="sweepImpedanceOverFrequency"
+                    :labelBgColor="$settingsStore.labelBgColor"
+                    :valueBgColor="$settingsStore.valueBgColor"
+                    :textColor="$settingsStore.textColor"
+                />
+                <Dimension class="col-12 mb-1 text-start"
+                    :name="'maximumFrequency'"
+                    :unit="'Hz'"
+                    :dataTestLabel="dataTestLabel + '-MaximumFrequency'"
+                    :min="0"
+                    :justifyContent="true"
+                    :defaultValue="1"
+                    :allowNegative="false"
+                    :allowZero="false"
+                    :modelValue="localData"
+                    @update="sweepImpedanceOverFrequency"
+                    :labelBgColor="$settingsStore.labelBgColor"
+                    :valueBgColor="$settingsStore.valueBgColor"
+                    :textColor="$settingsStore.textColor"
+                />
             </div>
             <div class="col-9">
 
                 <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: auto; height: 60%;;" :src="$settingsStore.loadingGif">
+                <label v-if="errorMessage != ''" :data-cy="dataTestLabel + '-BottomOrRightMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{errorMessage}}</label>
                 <LineVisualizer 
+                    v-else
                     v-show="!loading"
                     :data="impedanceOverFrequencyData"
                     :points="impedancePoints"

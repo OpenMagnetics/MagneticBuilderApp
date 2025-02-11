@@ -1,5 +1,6 @@
 <script setup>
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
+import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import ImpedanceOverFrequency from './Graphs/ImpedanceOverFrequency.vue'
 import ResistancesOverFrequency from './Graphs/ResistancesOverFrequency.vue'
@@ -21,7 +22,7 @@ export default {
     data() {
         const errorMessage = "";
         const localData = {
-            graph: 'impedanceOverFrequency'
+            graph: 'impedanceOverFrequency',
         }
 
         const availableGraphs = {
@@ -92,6 +93,7 @@ export default {
                     :valueBgColor="$settingsStore.valueBgColor"
                     :textColor="$settingsStore.textColor"
                 />
+
             </ResistancesOverFrequency> 
             <label v-else :data-cy="dataTestLabel + '-ErrorMEssage'" class="text-danger m-0 col-12 " style="font-size: 0.9em"> {{errorMessage}}</label>
 
