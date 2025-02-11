@@ -5,7 +5,6 @@ import BasicWireSubmenu from './BasicWireSubmenu.vue'
 import BasicWireInfo from './BasicWireInfo.vue'
 import { toTitleCase, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
-import { useStyleStore } from '/src/stores/style'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -48,7 +47,6 @@ export default {
     },
     data() {
         const historyStore = useHistoryStore();
-        const styleStore = useStyleStore();
         const loading = false; 
         const forceUpdate = 0; 
         const wireTypes = {};
@@ -80,7 +78,6 @@ export default {
 
         return {
             historyStore,
-            styleStore,
             localData,
             wireTypes,
             wireConductingDiameters,
@@ -510,11 +507,11 @@ export default {
                 :options="wireTypes"
                 :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="wireTypeUpdated"
             />
             <h5 v-if="!loading && localData.type == null" class="text-danger my-2">Select a type for the wire</h5>
@@ -530,11 +527,11 @@ export default {
                 :justifyContent="true"
                 :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 v-model="localData"
                 :options="wireStandards"
                 @update="wireStandardUpdated"
@@ -551,11 +548,11 @@ export default {
                 :justifyContent="true"
                 :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 v-model="localData"
                 :options="wireConductingDiameters"
                 @update="wireUpdated"
@@ -570,11 +567,11 @@ export default {
                 :name="'litzStrandConductingDiameter'"
                 :labelWidthProportionClass="'col-5'"
                 :selectStyleClass="'col-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 :titleSameRow="true"
                 :justifyContent="true"
                 v-model="localData"
@@ -592,11 +589,11 @@ export default {
                 :justifyContent="true"
                 :labelWidthProportionClass="'col-4'"
                 :selectStyleClass="'col-8'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 v-model="localData"
                 :options="wireCoatings"
                 @update="wireCoatingUpdated"
@@ -618,11 +615,11 @@ export default {
                 :labelWidthProportionClass="'col-xs-12 col-md-5'"
                 :valueWidthProportionClass="'col-xs-8 col-md-7'"
                 :styleClassInput="'offset-6 col-6'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="wireUpdated"
             />
             <Dimension class="col-12 mb-1 text-start"
@@ -639,11 +636,11 @@ export default {
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="wireUpdated"
             />
             <Dimension class="col-12 mb-1 text-start"
@@ -660,11 +657,11 @@ export default {
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="wireUpdated"
             />
             <Dimension class="col-12 mb-1 text-start"
@@ -681,11 +678,11 @@ export default {
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="wireUpdated"
             />
             <Dimension class="col-12 mb-1 text-start"
@@ -702,11 +699,11 @@ export default {
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="wireUpdated"
             />
 

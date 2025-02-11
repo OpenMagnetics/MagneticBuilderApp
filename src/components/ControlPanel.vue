@@ -105,26 +105,51 @@ export default {
         :modalName="'MagneticBuilderSettingsModal'"
         @onSettingsUpdated="onSettingsUpdated"
     />
-    <div class="container">
+    <div class="container" :style="$styleStore.controlPanel.main">
         <div class="row ">
-            <button :disabled="!historyStore.isBackPossible()" class="btn btn-primary offset-sm-0 offset-lg-1 col-2 col-lg-1" @click="undo">
+            <button
+                :style="$styleStore.controlPanel.button"
+                :disabled="!historyStore.isBackPossible()"
+                class="btn offset-sm-0 offset-lg-1 col-2 col-lg-1"
+                @click="undo"
+            >
                 <i class="fa-solid fa-arrow-rotate-left"></i>
             </button>
-            <button :disabled="!historyStore.isForwardPossible()" class="btn btn-primary col-2 col-lg-1" @click="redo">
+            <button
+                :style="$styleStore.controlPanel.button"
+                :disabled="!historyStore.isForwardPossible()"
+                class="btn col-2 col-lg-1"
+                @click="redo"
+            >
                 <i class="fa-solid fa-arrow-rotate-right"></i>
             </button>
-            <input data-cy="CoreImport-MAS-file-button" type="file" ref="masFileReader" @change="readMASFile()" class="btn btn-primary mt-1 rounded-3" hidden />
-            <button v-if="!loading" class="btn btn-primary offset-1 col-3" @click="load">
+            <input data-cy="CoreImport-MAS-file-button" type="file" ref="masFileReader" @change="readMASFile()" class="btn mt-1 rounded-3" hidden />
+            <button
+                :style="$styleStore.controlPanel.button"
+                v-if="!loading"
+                class="btn offset-1 col-3"
+                @click="load"
+            >
                 {{'Load MAS'}}
             </button>
-            <button v-else class="btn btn-primary offset-1 col-3" @click="load">
+            <button
+                v-else
+                :style="$styleStore.controlPanel.button"
+                class="btn offset-1 col-3"
+                @click="load"
+            >
                 {{'Loading'}}
             </button>
-            <button class="btn btn-primary col-3" @click="exportMAS">
+            <button
+                :style="$styleStore.controlPanel.button"
+                class="btn col-3"
+                @click="exportMAS"
+            >
                 {{'Export MAS'}}
             </button>
             <button 
-                class="btn btn-primary offset-1 col-1"
+                :style="$styleStore.controlPanel.button"
+                class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
                 data-bs-toggle="modal"
                 data-bs-target="#MagneticBuilderSettingsModal"
                 @click="openSettings" 

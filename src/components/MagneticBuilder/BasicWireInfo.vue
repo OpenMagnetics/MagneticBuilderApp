@@ -184,7 +184,7 @@ export default {
 </script>
 
 <template>
-    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start">
+    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
         <div class="row" v-tooltip="styleTooltip">
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.dcResistancePerMeter"
@@ -199,9 +199,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -218,9 +220,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -236,9 +240,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -255,9 +261,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -273,9 +281,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="inputStyleClassCurrentDensity"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -293,9 +303,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -310,9 +322,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="inputStyleClassouterDimensionsWidth"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -330,9 +344,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="inputStyleClassSkinAcFactor"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -347,9 +363,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="inputStyleClassouterDimensionsHeight"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <DimensionReadOnly 
@@ -368,9 +386,11 @@ export default {
                 :labelWidthProportionClass="'col-4'"
                 :valueWidthProportionClass="'col-8'"
                 :inputStyleClass="inputStyleClassTurnsRatio"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
 

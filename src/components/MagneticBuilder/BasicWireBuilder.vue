@@ -140,7 +140,7 @@ export default {
                 :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
                 :includeCurrentDensity="wire2DVisualizerPlotCurrentDensity == '1'"
                 :loadingGif="$settingsStore.loadingGif"
-                :backgroundColor="$settingsStore.labelBgColor"
+                :backgroundColor="$styleStore.magneticBuilder.main.background"
             />
         </div>
         <h4 v-else class="mb-5" > {{"Wires Description"}} </h4>
@@ -149,19 +149,30 @@ export default {
             <h5 class="offset-0 col-8 text-end">Plot current density</h5>
             <div class="col-4 container">
                 <div class="row">
-                    <label  class="fs-6 p-0 ps-3 pe-3 text-end text-white col-4 ">No</label>
+                    <label
+                        :style="$styleStore.magneticBuilder.wireVisualizerButton"
+                        class="fs-6 p-0 ps-3 pe-3 text-end col-4"
+                    >
+                        No
+                    </label>
                     <input
+                        :style="$styleStore.magneticBuilder.wireVisualizerButton"
                         :data-cy="'Settings-Modal-with-without-stock-button'"
                         v-model="wire2DVisualizerPlotCurrentDensity"
                         type="range"
-                        class="form-range col-2 pt-2"
+                        class="slider form-range col-2 pt-2"
                         min="0"
                         max="1"
                         step="1"
                         style="width: 30px"
                         @change="onPlotCurrentChange($event)"
                     >
-                    <label  class="fs-6 p-0 ps-3 text-white col-3  text-start">Yes</label>
+                    <label
+                        :style="$styleStore.magneticBuilder.wireVisualizerButton"
+                        class="fs-6 p-0 ps-3 col-3 text-start"
+                    >
+                        Yes
+                    </label>
                 </div>
             </div>
         </div>
@@ -216,3 +227,15 @@ export default {
         </div>
     </div>
 </template>
+
+
+<style type="text/css">
+/* --------------------------- webkit browsers */
+.slider::-webkit-slider-thumb {
+  background-color: var(--bs-primary);
+}
+/* -------------------------- Firefox */
+.slider::-moz-range-thumb { 
+  background-color: var(--bs-primary);
+}
+</style>

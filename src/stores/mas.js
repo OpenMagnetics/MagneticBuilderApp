@@ -44,43 +44,6 @@ export const useMasStore = defineStore("mas", () => {
         console.log("Resetting!!!!!!!!!!!!!")
     }
 
-    function initializeOperatingPoints() {
-
-        if (this.mas.inputs.operatingPoints.length == 0) {
-            this.mas.inputs.operatingPoints.push(
-                {
-                    name: "Operating Point No. 1",
-                    conditions: {ambientTemperature: 42},
-                    excitationsPerWinding: []
-                }
-            );
-        }
-        this.magneticCircuitSimulatorConfirmedColumns.push([]);
-        this.magneticCircuitSimulatorColumnNames.push([]);
-
-        for (var windingIndex = 0; windingIndex < this.mas.inputs.designRequirements.turnsRatios.length + 1; windingIndex++) {
-            this.mas.inputs.operatingPoints[0].excitationsPerWinding.push(deepCopy(Defaults.defaultOperatingPointExcitation));
-            this.magneticCircuitSimulatorConfirmedColumns[0].push(false);
-        }
-    }
-
-
-    function addNewOperatingPoint(currentOperatingPointIndex) {
-        var newOperatingPoint = deepCopy(this.mas.inputs.operatingPoints[currentOperatingPointIndex]);
-        newOperatingPoint.name = 'Operating Point No. ' + (this.mas.inputs.operatingPoints.length + 1);
-        newOperatingPoint.excitationsPerWinding = [newOperatingPoint.excitationsPerWinding[0]];
-
-        this.magneticCircuitSimulatorConfirmedColumns.push([]);
-        this.magneticCircuitSimulatorColumnNames.push([]);
-        this.mas.inputs.operatingPoints.push(newOperatingPoint);
-    }
-
-    function removeOperatingPoint(index) {
-        this.magneticCircuitSimulatorConfirmedColumns.splice(index, 1);
-        this.magneticCircuitSimulatorColumnNames.splice(index, 1);
-        this.mas.inputs.operatingPoints.splice(index, 1);
-    }
-
     return {
         setMas,
         mas,
@@ -98,9 +61,6 @@ export const useMasStore = defineStore("mas", () => {
         magneticCircuitSimulatorColumnNames,
         magneticCircuitSimulatorAllLastReadColumnNames,
         magneticCircuitSimulatorConfirmedColumns,
-        initializeOperatingPoints,
-        addNewOperatingPoint,
-        removeOperatingPoint,
     }
 },
 {

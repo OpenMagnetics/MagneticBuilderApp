@@ -6,7 +6,6 @@ import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights } from '/WebSharedComponents/assets/js/defaults.js'
 import BasicCoreInfo from './BasicCoreInfo.vue'
 import { useHistoryStore } from '../../stores/history'
-import { useStyleStore } from '/src/stores/style'
 
 import { deepCopy, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
@@ -47,7 +46,6 @@ export default {
     },
     data() {
         const historyStore = useHistoryStore();
-        const styleStore = useStyleStore();
         const coreShapeNames = {}; 
         const coreShapeFamilies = []; 
         const coreMaterialNames = {}; 
@@ -65,7 +63,6 @@ export default {
 
         return {
             historyStore,
-            styleStore,
             localData,
             onlyManufacturer,
             coreShapeNames,
@@ -402,11 +399,11 @@ export default {
                 :options="coreShapeFamilies"
                 :labelWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreShape"
@@ -423,11 +420,11 @@ export default {
                 @update="shapeUpdated"
                 :labelWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <ElementFromList
@@ -444,11 +441,11 @@ export default {
                 :options="coreMaterialManufacturers"
                 :labelWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <ElementFromList
@@ -466,11 +463,11 @@ export default {
                 @update="materialUpdated"
                 :labelWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2">Select a family and a shape for the core</h5>
 
@@ -489,11 +486,12 @@ export default {
                 :allowNegative="false"
                 :modelValue="localData"
                 @update="numberStacksUpdated"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.valueBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
-
             <CoreGappingSelector class="col-12 mb-1 text-start"
                 v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set'"
                 :disabled="readOnly"
@@ -502,11 +500,11 @@ export default {
                 :forceUpdate="forceUpdate"
                 :autoupdate="false"
                 :core="masStore.mas.magnetic.core"
-                :valueFontSize="styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor='styleStore.magneticBuilder.inputLabelBgColor'
-                :valueBgColor='styleStore.magneticBuilder.inputValueBgColor'
-                :textColor='styleStore.magneticBuilder.inputTextColor'
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="gappingUpdated"
             />
 

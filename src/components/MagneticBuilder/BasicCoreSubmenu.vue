@@ -44,9 +44,38 @@ export default {
 <template>
     <div class="container">
         <div class="row">
-            <button v-if="allowAdvise" :disabled="!enableAdvise" :data-cy="dataTestLabel + '-Core-Advise-button'" :class="allowAdvise? 'col-4' : 'col-0' " class="btn btn-primary mx-auto d-block mt-1 col-4" @click="$emit('adviseCore')" >Advise core</button>
-            <button :disabled="!enableCustomize" :data-cy="dataTestLabel + '-Core-Customize-button'" :class="allowAdvise? 'col-4' : 'col-6' " class="btn btn-success mx-auto d-block mt-1 col-4" @click="$emit('customizeCore')" >Customize</button>
-            <button :disabled="!enableLoad" :data-cy="dataTestLabel + '-Core-Load-button'" :class="allowAdvise? 'col-4' : 'col-6' " class="btn btn-secondary mx-auto d-block mt-1 col-4" @click="$emit('loadCore')" >{{'Load core from library'}}</button>
+
+            <button
+                :style="$styleStore.magneticBuilder.adviseButton"
+                v-if="allowAdvise"
+                :disabled="!enableAdvise"
+                :data-cy="dataTestLabel + '-Core-Advise-button'"
+                :class="allowAdvise? 'col-4' : 'col-0' "
+                class="btn mx-auto d-block mt-1 col-4"
+                @click="$emit('adviseCore')"
+            >
+                {{'Advise core'}}
+            </button>
+            <button
+                :style="$styleStore.magneticBuilder.customizeButton"
+                :disabled="!enableCustomize"
+                :data-cy="dataTestLabel + '-Core-Customize-button'"
+                :class="allowAdvise? 'col-4' : 'col-6' "
+                class="btn mx-auto d-block mt-1 col-4"
+                @click="$emit('customizeCore')"
+            >
+                {{'Customize'}}
+            </button>
+            <button
+                :style="$styleStore.magneticBuilder.loadFromLibraryButton"
+                :disabled="!enableLoad"
+                :data-cy="dataTestLabel + '-Core-Load-button'"
+                :class="allowAdvise? 'col-4' : 'col-6' "
+                class="btn mx-auto d-block mt-1 col-4"
+                @click="$emit('loadCore')"
+            >
+                {{'Load core from library'}}
+            </button>
         </div>
     </div>
 </template>

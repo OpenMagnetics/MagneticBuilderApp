@@ -151,9 +151,11 @@ export default {
                 :modelValue="data[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.valueBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="topOrInnerMarginUpdated(selectedSectionIndex)"
             />
             <label :data-cy="dataTestLabel + '-TopOrLeftMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{topOrLeftMarginErrorMessage}}</label>
@@ -175,9 +177,11 @@ export default {
                 :modelValue="data[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.valueBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="BottomOrOuterMarginUpdated(selectedSectionIndex)"
             />
             <label :data-cy="dataTestLabel + '-BottomOrRightMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{bottomOrRightMarginErrorMessage}}</label>

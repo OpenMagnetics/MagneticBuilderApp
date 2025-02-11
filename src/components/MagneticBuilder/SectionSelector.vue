@@ -1,4 +1,5 @@
 <script setup>
+import { combinedStyle } from '/WebSharedComponents/assets/js/utils.js'
 import { toTitleCase, checkAndFixMas, deepCopy, range } from '/WebSharedComponents/assets/js/utils.js'
 </script>
 
@@ -91,8 +92,11 @@ export default {
                 <div :class="'col-lg-' + Number(12 / numberSections)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="key in range(0, numberSections)">
                     <h2 class="accordion-header" :id="'coreCalculatorheading-' + key">
                         <button
-                            :class="sectionIndex == key? 'text-success' : $settingsStore.textColor + ' collapsed'"
-                            class="fs-6 accordion-button bg-light p-1"
+                        :style="combinedStyle([sectionIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
+
+
+                            :class="sectionIndex == key? 'collapsed' : ''"
+                            class="accordion-button p-1"
                             type="button"
                             data-bs-toggle="collapse"
                             aria-expanded="false"

@@ -62,7 +62,7 @@ export default {
                 :core="masStore.mas.magnetic.core"
                 :fullCoreModel="true"
                 :loadingGif="$settingsStore.loadingGif"
-                :backgroundColor="$settingsStore.labelBgColor"
+                :backgroundColor="$styleStore.magneticBuilder.main.background"
             />
         </div>
         <h4 v-else class="mb-5" > {{"Core Description"}} </h4>

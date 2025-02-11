@@ -1,4 +1,5 @@
 <script setup>
+import { combinedStyle } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -90,8 +91,10 @@ export default {
             <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription">
                 <h2 class="accordion-header" :id="'wireBuilderAccordionHeading-' + key">
                     <button
-                        :class="selectedWindingIndex == key? 'text-success' : isWireMissing(key)? 'text-danger collapsed' : $settingsStore.textColor + ' collapsed'"
-                        class="fs-6 accordion-button bg-light p-2"
+                        :style="combinedStyle([selectedWindingIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : isWireMissing(key)? $styleStore.magneticBuilder.inputErrorTextColor : $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
+
+                        :class="selectedWindingIndex == key? 'collapsed' : ''"
+                        class="accordion-button p-2"
                         :ref="'select-winding-' + (key + 1)"
                         type="button"
                         data-bs-toggle="collapse"

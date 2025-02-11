@@ -178,7 +178,7 @@ export default {
 </script>
 
 <template>
-    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start">
+    <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
         <div v-if="core.processedDescription != null" class="row" v-tooltip="styleTooltip">
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveLength"
@@ -194,9 +194,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveArea"
@@ -213,9 +215,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveVolume"
@@ -231,9 +235,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.minimumArea"
@@ -250,9 +256,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.initialPermeability"
@@ -269,9 +277,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectivePermeability"
@@ -289,9 +299,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.permeance"
@@ -308,9 +320,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.saturatingMagneticFluxDensity"
@@ -328,9 +342,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
@@ -347,9 +363,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="inputStyleClassMagneticFluxDensity"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
@@ -367,9 +385,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="inputStyleClassMagneticFluxDensity"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
@@ -385,9 +405,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="inputStyleClassMagnetizingInductance"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.coreLosses"
@@ -405,9 +427,11 @@ export default {
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
                 :inputStyleClass="'col-6'"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.labelBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
         </div>

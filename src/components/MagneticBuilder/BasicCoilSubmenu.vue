@@ -56,9 +56,36 @@ export default {
 <template>
     <div class="container">
         <div class="row">
-            <button :disabled="!enableAlignmentOptions" :data-cy="dataTestLabel + '-Coil-ShowAlignmentOptions-button'" :class="(showAlignmentOptions? 'btn-secondary' : 'btn-primary') + ' ' + (readOnly? 'col-6' : 'col-4')" class="btn btn-primary mx-auto d-block mt-1" @click="swapShowAlignmentOptions" >{{showAlignmentOptions? 'Hide alignment options' : 'Show alignment options'}}</button>
-            <button :disabled="!enableMarginOptions" :data-cy="dataTestLabel + '-Coil-ShowMarginOptions-button'" :class="(showMarginOptions? 'btn-secondary' : 'btn-primary') + ' ' + (readOnly? 'col-6' : 'col-4')" class="btn btn-primary mx-auto d-block mt-1" @click="swapShowMarginOptions" >{{showMarginOptions? 'Hide margin options' : 'Show margin options'}}</button>
-            <button v-if="!readOnly" :disabled="!enableCustomize" :data-cy="dataTestLabel + '-Coil-Customize-button'" class="btn btn-success mx-auto d-block mt-1" @click="$emit('customizeCoil')" >Customize</button>
+            <button
+                :style="showAlignmentOptions? $styleStore.magneticBuilder.hideAlignmentOptionsButton: $styleStore.magneticBuilder.showAlignmentOptionsButton"
+                :disabled="!enableAlignmentOptions"
+                :data-cy="dataTestLabel + '-Coil-ShowAlignmentOptions-button'"
+                :class="readOnly? 'col-6' : 'col-4'"
+                class="btn mx-auto d-block mt-1"
+                @click="swapShowAlignmentOptions"
+            >
+                {{showAlignmentOptions? 'Hide alignment options' : 'Show alignment options'}}
+            </button>
+            <button
+                :style="showMarginOptions? $styleStore.magneticBuilder.hideMarginOptionsButton: $styleStore.magneticBuilder.showMarginOptionsButton"
+                :disabled="!enableMarginOptions"
+                :data-cy="dataTestLabel + '-Coil-ShowMarginOptions-button'"
+                :class="readOnly? 'col-6' : 'col-4'"
+                class="btn mx-auto d-block mt-1"
+                @click="swapShowMarginOptions"
+            >
+                {{showMarginOptions? 'Hide margin options' : 'Show margin options'}}
+            </button>
+            <button
+                :style="$styleStore.magneticBuilder.customizeButton"
+                v-if="!readOnly"
+                :disabled="!enableCustomize"
+                :data-cy="dataTestLabel + '-Coil-Customize-button'"
+                class="btn mx-auto d-block mt-1"
+                @click="$emit('customizeCoil')"
+            >
+                {{'Customize'}}
+            </button>
         </div>
     </div>
 </template>

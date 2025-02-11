@@ -6,7 +6,6 @@ import BasicCoilSectionMarginsSelector from './BasicCoilSectionMarginsSelector.v
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
-import { useStyleStore } from '../../stores/style'
 
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
@@ -47,7 +46,6 @@ export default {
     data() {
         const historyStore = useHistoryStore();
         const showAlignmentOptions = false;
-        const styleStore = useStyleStore();
 
         const showMarginOptions = false;
         const loading = false;
@@ -74,7 +72,6 @@ export default {
 
         return {
             blockingRebounds,
-            styleStore,
             historyStore,
             localData,
             forceUpdate,
@@ -491,11 +488,13 @@ export default {
                 :modelValue="localData.pattern" 
                 @updateModelValue="localData.pattern = $event"
                 :name="'pattern'"
-                :replaceTitle="'Section Interleaving Order'"
+                :replaceTitle="'Section Interl. Order'"
                 :allowedCharacters="windingIndexesCharacters"
-                :labelBgColor="$settingsStore.labelBgColor"
-                :valueBgColor="$settingsStore.valueBgColor"
-                :textColor="$settingsStore.textColor"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="coilUpdated"
             />
         </div>
