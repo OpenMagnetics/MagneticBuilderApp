@@ -22,7 +22,6 @@ export default {
         newPowerMagneticToolDesign() {
             this.$userStore.resetMagneticTool();
             this.masStore.resetMas("power");
-            console.log(this.$route.name)
             if (this.$route.name != 'MagneticBuilder')
                 setTimeout(() => {this.$router.push('/magnetic_tool');}, 100);
             else

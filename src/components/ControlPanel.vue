@@ -36,7 +36,6 @@ export default {
     },
     methods: {
         undo() {
-            console.log("undo");
             const newMas = this.historyStore.back();
             this.masStore.mas = newMas;
             this.historyStore.historyPointerUpdated();
@@ -44,7 +43,6 @@ export default {
             setTimeout(() => {this.historyStore.unblockAdditions();}, 2000);
         },
         redo() {
-            console.log("redo");
             const newMas = this.historyStore.forward();
             this.masStore.mas = newMas;
             this.historyStore.historyPointerUpdated();
@@ -52,25 +50,20 @@ export default {
             setTimeout(() => {this.historyStore.unblockAdditions();}, 2000);
         },
         load() {
-            console.log("load");
             this.loading = true;
-            // console.log(this.$refs.masFileReader);
             this.$refs.masFileReader.click()
             setTimeout(() => {this.loading = false;}, 2000);
         },
         exportMAS() {
-            console.log("export");
             download(JSON.stringify(this.masStore.mas, null, 4), "custom_magnetic.json", "text/plain");
             this.masExported = true
             setTimeout(() => this.masExported = false, 2000);
         },
         openSettings() {
-            console.log("openSettings");
             this.masExported = true
             setTimeout(() => this.masExported = false, 2000);
         },
         onSettingsUpdated() {
-            console.log("onSettingsUpdated");
         },
         readMASFile(event) {
             const fr = new FileReader();
@@ -82,8 +75,9 @@ export default {
                         this.masStore.mas = response;
                         this.masStore.importedMas();
                         this.$userStore.toolboxStates[this.$userStore.selectedApplication].magneticBuilder.subsection = "magneticBuilder";
-                        for (var i = 0; i < this.masStore.magneticManualOperatingPoints.length; i++) {
-                            this.masStore.magneticManualOperatingPoints[i] = true;
+                        this.$stateStore.operatingPoints.modePerPoint = []
+                        for (var i = 0; i < this.masStore.mas.inputs.operatingPoints.length; i++) {
+                            this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.Manual);
                         }
                         this.historyStore.addToHistory(this.masStore.mas);
                         this.historyStore.blockAdditions();

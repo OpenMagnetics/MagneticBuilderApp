@@ -39,8 +39,6 @@ export default {
             this.settingsChanged = true;
         },
         onSettingsUpdated(event) {
-            console.log("onSettingsUpdated");
-            console.log(this.$refs.closeSettingsModalRef);
             this.$refs.closeSettingsModalRef.click();
             this.$emit('onSettingsUpdated');
         },

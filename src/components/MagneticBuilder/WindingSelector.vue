@@ -91,7 +91,7 @@ export default {
             <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription">
                 <h2 class="accordion-header" :id="'wireBuilderAccordionHeading-' + key">
                     <button
-                        :style="combinedStyle([selectedWindingIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : isWireMissing(key)? $styleStore.magneticBuilder.inputErrorTextColor : $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
+                        :style="combinedStyle([selectedWindingIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : isWireMissing(key)? $styleStore.magneticBuilder.inputErrorTextColor : $styleStore.magneticBuilder.inputTextColor, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
 
                         :class="selectedWindingIndex == key? 'collapsed' : ''"
                         class="accordion-button p-2"

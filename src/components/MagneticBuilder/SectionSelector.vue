@@ -92,7 +92,7 @@ export default {
                 <div :class="'col-lg-' + Number(12 / numberSections)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="key in range(0, numberSections)">
                     <h2 class="accordion-header" :id="'coreCalculatorheading-' + key">
                         <button
-                        :style="combinedStyle([sectionIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
+                        :style="combinedStyle([sectionIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : $styleStore.magneticBuilder.inputTextColor, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
 
 
                             :class="sectionIndex == key? 'collapsed' : ''"

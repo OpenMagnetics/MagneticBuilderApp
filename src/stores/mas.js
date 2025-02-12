@@ -41,7 +41,7 @@ export const useMasStore = defineStore("mas", () => {
         this.magneticCircuitSimulatorColumnNames = [];
         this.magneticCircuitSimulatorAllLastReadColumnNames = [];
         this.magneticCircuitSimulatorConfirmedColumns = [];
-        console.log("Resetting!!!!!!!!!!!!!")
+        console.log("Resetting MAS")
     }
 
     return {

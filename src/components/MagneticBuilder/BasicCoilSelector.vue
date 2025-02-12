@@ -1,6 +1,7 @@
 <script setup>
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
 import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
+import AdvancedCoilInfo from './AdvancedCoilInfo.vue'
 import BasicCoilInfo from './BasicCoilInfo.vue'
 import BasicCoilSectionMarginsSelector from './BasicCoilSectionMarginsSelector.vue'
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
@@ -469,7 +470,6 @@ export default {
             this.showMarginOptions = showMarginOptions;
         },
         customizeCoil() {
-            console.log("customizeCoil");
         },
     }
 }
@@ -521,8 +521,15 @@ export default {
 
         <div v-if="simulationEnabled" class="col-12">
             <BasicCoilInfo
-                v-if="!loading"
+                v-if="!loading && !$settingsStore.magneticBuilderSettings.advancedMode"
                 :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
+                :core="masStore.mas.magnetic.core"
+                :masStore="masStore"
+                :operatingPointIndex="operatingPointIndex"
+            />
+            <AdvancedCoilInfo
+                v-if="!loading && $settingsStore.magneticBuilderSettings.advancedMode"
+                :dataTestLabel="dataTestLabel + '-AdvancedCoilInfo'"
                 :core="masStore.mas.magnetic.core"
                 :masStore="masStore"
                 :operatingPointIndex="operatingPointIndex"

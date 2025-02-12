@@ -2,6 +2,7 @@
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import BasicWireSubmenu from './BasicWireSubmenu.vue'
+import AdvancedWireInfo from './AdvancedWireInfo.vue'
 import BasicWireInfo from './BasicWireInfo.vue'
 import { toTitleCase, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
@@ -117,7 +118,6 @@ export default {
     },
     methods: {
         cleanCoil() {
-            console.log("cleanCoil Wire")
             this.masStore.mas.magnetic.coil.turnsDescription = null;
             this.masStore.mas.magnetic.coil.layersDescription = null;
             this.masStore.mas.magnetic.coil.sectionsDescription = null;
@@ -481,10 +481,8 @@ export default {
             });
         },
         customizeWire() {
-            console.log("customizeWire");
         },
         loadWire() {
-            console.log("loadWire");
         },
     }
 }
@@ -709,8 +707,16 @@ export default {
 
             <div v-if="simulationEnabled" class="col-12 p-0">
                 <BasicWireInfo 
-                    v-if="!loading"
+                    v-if="!loading && !$settingsStore.magneticBuilderSettings.advancedMode"
                     :dataTestLabel="dataTestLabel + '-BasicWireInfo'"
+                    :wire="masStore.mas.magnetic.coil.functionalDescription[windingIndex].wire"
+                    :masStore="masStore"
+                    :operatingPointIndex="operatingPointIndex"
+                    :windingIndex="windingIndex"
+                />
+                <AdvancedWireInfo 
+                    v-if="!loading && $settingsStore.magneticBuilderSettings.advancedMode"
+                    :dataTestLabel="dataTestLabel + '-AdvancedWireInfo'"
                     :wire="masStore.mas.magnetic.coil.functionalDescription[windingIndex].wire"
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"

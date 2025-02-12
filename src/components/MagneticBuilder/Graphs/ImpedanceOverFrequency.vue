@@ -79,7 +79,6 @@ export default {
     watch: {
         'masStore.mas.magnetic.core': {
             handler(newValue, oldValue) {
-                console.log("handler core")
                 this.loading = true;
                 this.recentChange = true;
                 setTimeout(() => {this.tryToSend(); }, 10);
@@ -88,7 +87,6 @@ export default {
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                console.log("handler coil")
                 this.loading = true;
                 this.recentChange = true;
                 setTimeout(() => {this.tryToSend(); }, 10);
@@ -121,7 +119,6 @@ export default {
         },
         sweepImpedanceOverFrequency() {
             this.$mkf.ready.then(_ => {
-                console.log("sweepImpedanceOverFrequency")
                 const curve2DJson = this.$mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, 1000, "Impedance over frequency");
                 if (curve2DJson.startsWith("Exception")) {
                     console.error(curve2DJson);

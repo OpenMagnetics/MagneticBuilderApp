@@ -58,21 +58,17 @@ export default {
         },
         topOrLeftMarginTooltip() {
             if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
-                console.log(tooltipsMagneticBuilder.leftMargin)
                 return tooltipsMagneticBuilder.leftMargin;
             }
             else {
-                console.log(tooltipsMagneticBuilder.topMargin)
                 return tooltipsMagneticBuilder.topMargin;
             }
         },
         bottomOrRightMarginTooltip() {
             if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
-                console.log(tooltipsMagneticBuilder.rightMargin)
                 return tooltipsMagneticBuilder.rightMargin;
             }
             else {
-                console.log(tooltipsMagneticBuilder.bottomMargin)
                 return tooltipsMagneticBuilder.bottomMargin;
             }
         },

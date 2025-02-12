@@ -4,6 +4,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import CoreGappingSelector from '/WebSharedComponents/Common/CoreGappingSelector.vue'
 import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights } from '/WebSharedComponents/assets/js/defaults.js'
+import AdvancedCoreInfo from './AdvancedCoreInfo.vue'
 import BasicCoreInfo from './BasicCoreInfo.vue'
 import { useHistoryStore } from '../../stores/history'
 
@@ -259,7 +260,6 @@ export default {
 
                     checkAndFixMas(mas).then(response => {
                         mas = response;
-                        console.log(mas)
 
                         const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
                         if (coreResult.startsWith("Exception")) {
@@ -272,7 +272,6 @@ export default {
                             this.masStore.mas.magnetic.coil.turnsDescription = null;
                             this.masStore.mas.magnetic.coil.layersDescription = null;
                             this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                            console.log(this.masStore.mas.magnetic.coil)
                             const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
                             if (bobbinResult.startsWith("Exception")) {
                                 console.error(bobbinResult);
@@ -373,10 +372,8 @@ export default {
             });
         },
         customizeCore() {
-            console.log("customizeCore");
         },
         loadCore() {
-            console.log("loadCore");
         },
     }
 }
@@ -509,9 +506,17 @@ export default {
             />
 
             <div v-if= "simulationEnabled" class="col-12 p-0">
+
                 <BasicCoreInfo 
-                    v-if="!loading"
+                    v-if="!loading && !$settingsStore.magneticBuilderSettings.advancedMode"
                     :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
+                    :core="masStore.mas.magnetic.core"
+                    :masStore="masStore"
+                    :operatingPointIndex="operatingPointIndex"
+                />
+                <AdvancedCoreInfo 
+                    v-if="!loading && $settingsStore.magneticBuilderSettings.advancedMode"
+                    :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
                     :core="masStore.mas.magnetic.core"
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
