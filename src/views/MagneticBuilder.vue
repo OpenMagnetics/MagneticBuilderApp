@@ -42,9 +42,6 @@ export default {
     computed: {
     },
     mounted() {
-        this.$settingsStore.labelBgColor = 'bg-dark';
-        this.$settingsStore.valueBgColor = 'bg-light';
-        this.$settingsStore.textColor = 'text-white';
     },
     created() {
     },

@@ -42,6 +42,7 @@ export default {
         const loading = false;
         const recentChange = false;
         const tryingToSend = false;
+        const errorMessage = "";
 
         const localData = {
             minimumFrequency: 1e3,
@@ -55,6 +56,7 @@ export default {
             recentChange,
             tryingToSend,
             localData,
+            errorMessage,
         }
     },
     computed: {
@@ -166,9 +168,11 @@ export default {
                     :allowZero="false"
                     :modelValue="localData"
                     @update="sweepImpedanceOverFrequency"
-                    :labelBgColor="$settingsStore.labelBgColor"
-                    :valueBgColor="$settingsStore.valueBgColor"
-                    :textColor="$settingsStore.textColor"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
                 <Dimension class="col-12 mb-1 text-start"
                     :name="'maximumFrequency'"
@@ -181,9 +185,11 @@ export default {
                     :allowZero="false"
                     :modelValue="localData"
                     @update="sweepImpedanceOverFrequency"
-                    :labelBgColor="$settingsStore.labelBgColor"
-                    :valueBgColor="$settingsStore.valueBgColor"
-                    :textColor="$settingsStore.textColor"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
             </div>
             <div class="col-9">
@@ -198,6 +204,10 @@ export default {
                     :xAxisOptions="frequencyData"
                     :title="'Impedance over Frequency'"
                     :forceUpdate="forceUpdate"
+                    :bgColor="$styleStore.magneticBuilder.graphBgColor.background"
+                    :lineColor="$styleStore.magneticBuilder.graphLineColor.color"
+                    :pointsColor="$styleStore.magneticBuilder.graphPointsColor.color"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor.color"
                 />
             </div>
         </div>

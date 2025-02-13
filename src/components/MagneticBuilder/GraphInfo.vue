@@ -68,9 +68,11 @@ export default {
                     @update="graphTypeUpdated"
                     :labelWidthProportionClass="'col-6'"
                     :selectStyleClass="'col-6'"
-                    :labelBgColor="$settingsStore.labelBgColor"
-                    :valueBgColor="$settingsStore.valueBgColor"
-                    :textColor="$settingsStore.textColor"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
             </ImpedanceOverFrequency> 
             <ResistancesOverFrequency 
@@ -89,9 +91,11 @@ export default {
                     @update="graphTypeUpdated"
                     :labelWidthProportionClass="'col-6'"
                     :selectStyleClass="'col-6'"
-                    :labelBgColor="$settingsStore.labelBgColor"
-                    :valueBgColor="$settingsStore.valueBgColor"
-                    :textColor="$settingsStore.textColor"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
 
             </ResistancesOverFrequency> 

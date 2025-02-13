@@ -114,7 +114,6 @@ export default {
                     this.resistancesOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
                     this.resistancesOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
                     this.forceUpdate += 1;
-                    this.errorMessage = "";
                     this.loading = false;
                 }
 
@@ -151,9 +150,11 @@ export default {
                     :allowZero="false"
                     :modelValue="localData"
                     @update="sweepResistancesOverFrequency"
-                    :labelBgColor="$settingsStore.labelBgColor"
-                    :valueBgColor="$settingsStore.valueBgColor"
-                    :textColor="$settingsStore.textColor"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
                 <Dimension class="col-12 mb-1 text-start"
                     :name="'maximumFrequency'"
@@ -166,9 +167,11 @@ export default {
                     :allowZero="false"
                     :modelValue="localData"
                     @update="sweepResistancesOverFrequency"
-                    :labelBgColor="$settingsStore.labelBgColor"
-                    :valueBgColor="$settingsStore.valueBgColor"
-                    :textColor="$settingsStore.textColor"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
 
                 </div>
@@ -181,6 +184,10 @@ export default {
                     :xAxisOptions="frequencyData"
                     :title="'Resistances over Frequency'"
                     :forceUpdate="forceUpdate"
+                    :bgColor="$styleStore.magneticBuilder.graphBgColor.background"
+                    :lineColor="$styleStore.magneticBuilder.graphLineColor.color"
+                    :pointsColor="$styleStore.magneticBuilder.graphPointsColor.color"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor.color"
                 />
             </div>
         </div>
