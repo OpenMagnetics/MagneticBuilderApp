@@ -63,9 +63,8 @@ export default {
     watch: {
         'core': {
             handler(newValue, oldValue) {
-                this.tryToSimulate();
                 this.recentChange = true;
-                this.loading = true;
+                this.tryToSimulate();
             },
           deep: true
         },
@@ -77,9 +76,8 @@ export default {
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                this.tryToSimulate();
                 this.recentChange = true;
-                this.loading = true;
+                this.tryToSimulate();
             },
           deep: true
         },
@@ -101,9 +99,11 @@ export default {
                     }
                     else {
                         this.simulate();
+                        this.tryingToSend = false;
+                        this.loading = true;
                     }
                 }
-                , 100);
+                , this.$settingsStore.waitingTimeAfterChange);
             }
         },
         updateFields(outputs) {
@@ -188,7 +188,6 @@ export default {
                         this.lastSimulatedModels = modelsString;
 
                         if (result.startsWith("Exception")) {
-                            this.tryingToSend = false;
                             this.loading = false;
                             console.error(result);
                             return;
@@ -197,12 +196,10 @@ export default {
                             const mas = JSON.parse(result);
                             this.updateFields(mas.outputs);
                             this.masStore.mas.outputs = deepCopy(mas.outputs);
-                            this.tryingToSend = false;
                             this.loading = false;
                         }
                     }
                     else {
-                        this.tryingToSend = false;
                         this.loading = false;
                     }
                 }).catch(error => {

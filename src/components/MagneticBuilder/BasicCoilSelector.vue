@@ -374,7 +374,7 @@ export default {
                         this.wind();
                     }
                 }
-                , 100);
+                , this.$settingsStore.waitingTimeAfterChange);
             }
         },
         assignLocalData(magnetic) {

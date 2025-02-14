@@ -74,7 +74,7 @@ export default {
                 return this.magneticBuilderSettingsStore.visualizersEnabled;
             }
         },
-        enableSimulation() {
+        enableSimulationComputed() {
             if (this.isIsolatedApp) {
                 return false;
             }
@@ -176,7 +176,7 @@ export default {
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :enableSimulation="enableSimulation"
+                    :enableSimulation="enableSimulationComputed"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
@@ -187,7 +187,7 @@ export default {
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :enableSimulation="enableSimulation"
+                    :enableSimulation="enableSimulationComputed"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
@@ -199,7 +199,7 @@ export default {
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :enableSimulation="enableSimulation"
+                    :enableSimulation="enableSimulationComputed"
                     :enableOptions="enableCoilOptions"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"

@@ -41,6 +41,8 @@ export default {
         const effectiveSkinDepth = 0;
         const turnsRatio = 1;
         const compliesWithTurnsRatio = true;
+        const recentChange = false;
+        const tryingToSend = false;
 
         return {
             dcResistancePerMeter,
@@ -53,6 +55,8 @@ export default {
             effectiveSkinDepth,
             turnsRatio,
             compliesWithTurnsRatio,
+            recentChange,
+            tryingToSend,
         }
     },
     computed: {
@@ -119,7 +123,8 @@ export default {
     watch: {
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                this.calculateWireData();
+                this.recentChange = true;
+                this.tryToSimulate();
             },
           deep: true
         },
@@ -140,6 +145,23 @@ export default {
         });
     },
     methods: {
+        tryToSimulate() {
+            if (!this.tryingToSend) {
+                this.recentChange = false;
+                this.tryingToSend = true;
+                setTimeout(() => {
+                    if (this.recentChange) {
+                        this.tryingToSend = false;
+                        this.tryToSimulate();
+                    }
+                    else {
+                        this.calculateWireData();
+                        this.tryingToSend = false;
+                    }
+                }
+                , this.$settingsStore.waitingTimeAfterChange);
+            }
+        },
         computeIfCompliesWithTurnsRatio() {
             this.$mkf.ready.then(_ => {
                 if (this.windingIndex > 0) {

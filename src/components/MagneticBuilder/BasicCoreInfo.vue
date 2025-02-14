@@ -30,12 +30,16 @@ export default {
         const coreLossesData = {};
         const magnetizingInductance = 0;
         const magnetizingInductanceCheck = false;
+        const recentChange = false;
+        const tryingToSend = false;
 
         return {
             coreTemperatureDependantParametersData,
             coreLossesData,
             magnetizingInductance,
             magnetizingInductanceCheck,
+            recentChange,
+            tryingToSend,
         }
     },
     computed: {
@@ -57,8 +61,8 @@ export default {
     watch: {
         'core': {
             handler(newValue, oldValue) {
-                this.calculateCoreEffectiveParameters();
-                this.calculateCoreLosses();
+                this.recentChange = true;
+                this.tryToSimulate();
             },
           deep: true
         },
@@ -71,8 +75,8 @@ export default {
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                this.calculateCoreEffectiveParameters();
-                this.calculateCoreLosses();
+                this.recentChange = true;
+                this.tryToSimulate();
             },
           deep: true
         },
@@ -82,6 +86,24 @@ export default {
         this.calculateCoreLosses();
     },
     methods: {
+        tryToSimulate() {
+            if (!this.tryingToSend) {
+                this.recentChange = false;
+                this.tryingToSend = true;
+                setTimeout(() => {
+                    if (this.recentChange) {
+                        this.tryingToSend = false;
+                        this.tryToSimulate();
+                    }
+                    else {
+                        this.calculateCoreEffectiveParameters();
+                        this.calculateCoreLosses();
+                        this.tryingToSend = false;
+                    }
+                }
+                , this.$settingsStore.waitingTimeAfterChange);
+            }
+        },
         calculateCoreEffectiveParameters() {
             if (this.core['functionalDescription']['shape'] != "") {
                 if (this.core['processedDescription'] == null) {
