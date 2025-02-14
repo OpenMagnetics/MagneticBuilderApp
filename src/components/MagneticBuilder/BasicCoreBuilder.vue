@@ -18,15 +18,15 @@ export default {
             type: Boolean,
             default: true,
         },
-        simulationEnabled: {
+        enableSimulation: {
             type: Boolean,
             default: true,
         },
-        submenuEnabled: {
+        enableSubmenu: {
             type: Boolean,
             default: true,
         },
-        adviseEnabled: {
+        enableAdvise: {
             type: Boolean,
             default: true,
         },
@@ -71,9 +71,9 @@ export default {
                 :masStore="masStore"
                 :readOnly="readOnly"
                 :operatingPointIndex="operatingPointIndex"
-                :simulationEnabled="simulationEnabled"
-                :submenuEnabled="submenuEnabled"
-                :adviseEnabled="adviseEnabled"
+                :enableSimulation="enableSimulation"
+                :enableSubmenu="enableSubmenu"
+                :enableAdvise="enableAdvise"
             />
         </div>
     </div>

@@ -148,7 +148,8 @@ export default {
                                                                                 JSON.stringify(this.masStore.mas.inputs),
                                                                                 JSON.stringify(modelsData), 
                                                                                 this.operatingPointIndex));
-                    this.coreTemperatureDependantParametersData = JSON.parse(this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature));
+                    this.coreTemperatureDependantParametersData = JSON.parse(this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), 25));
+                    // this.coreTemperatureDependantParametersData = JSON.parse(this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature));
 
                     this.coreTemperatureDependantParametersData["saturationProportion"] = this.coreLossesData.magneticFluxDensityPeak / this.coreTemperatureDependantParametersData.magneticFluxDensitySaturation * 100;
 

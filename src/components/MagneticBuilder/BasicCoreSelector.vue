@@ -24,15 +24,15 @@ export default {
             type: Object,
             required: true,
         },
-        simulationEnabled: {
+        enableSimulation: {
             type: Boolean,
             default: true,
         },
-        submenuEnabled: {
+        enableSubmenu: {
             type: Boolean,
             default: true,
         },
-        adviseEnabled: {
+        enableAdvise: {
             type: Boolean,
             default: true,
         },
@@ -505,7 +505,7 @@ export default {
                 @update="gappingUpdated"
             />
 
-            <div v-if= "simulationEnabled" class="col-12 p-0">
+            <div v-if= "enableSimulation" class="col-12 p-0">
 
                 <BasicCoreInfo 
                     v-if="!loading && !$settingsStore.magneticBuilderSettings.advancedMode"
@@ -524,12 +524,12 @@ export default {
             </div>
 
             <BasicCoreSubmenu 
-                v-if="submenuEnabled && !readOnly"
+                v-if="enableSubmenu && !readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                 :enableAdvise="!loading"
                 :enableCustomize="false"
-                :allowAdvise="adviseEnabled"
+                :allowAdvise="enableAdvise"
                 @adviseCore="adviseCoreRequested"
                 @customizeCore="customizeCore"
                 @loadCore="loadCore"

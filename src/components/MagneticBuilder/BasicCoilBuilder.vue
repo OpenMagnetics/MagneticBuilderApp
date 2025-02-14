@@ -18,15 +18,19 @@ export default {
             type: Boolean,
             default: true,
         },
-        simulationEnabled: {
+        enableSimulation: {
             type: Boolean,
             default: true,
         },
-        submenuEnabled: {
+        enableSubmenu: {
             type: Boolean,
             default: true,
         },
-        adviseEnabled: {
+        enableOptions: {
+            type: Boolean,
+            default: true,
+        },
+        enableAdvise: {
             type: Boolean,
             default: true,
         },
@@ -88,8 +92,8 @@ export default {
                 :modelValue="masStore.mas"
                 :operatingPointIndex="operatingPointIndex"
                 :enableZoom="false"
-                :enableOptions="simulationEnabled"
-                :enableHideOnFitting="simulationEnabled"
+                :enableOptions="enableOptions"
+                :enableHideOnFitting="enableSimulation"
                 :coilFits="coilFits"
                 :showFieldPlotInit="$userStore.magnetic2DVisualizerState.plotMagneticField"
                 :includeFringingInit="$userStore.magnetic2DVisualizerState.plotFringingField"
@@ -107,9 +111,9 @@ export default {
                 :masStore="masStore"
                 :readOnly="readOnly"
                 :operatingPointIndex="operatingPointIndex"
-                :simulationEnabled="simulationEnabled"
-                :submenuEnabled="submenuEnabled"
-                :adviseEnabled="adviseEnabled"
+                :enableSimulation="enableSimulation"
+                :enableSubmenu="enableSubmenu"
+                :enableAdvise="enableAdvise"
                 @fits="fits"
             />
         </div>

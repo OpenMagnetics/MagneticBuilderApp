@@ -23,15 +23,15 @@ export default {
             type: Object,
             required: true,
         },
-        simulationEnabled: {
+        enableSimulation: {
             type: Boolean,
             default: true,
         },
-        submenuEnabled: {
+        enableSubmenu: {
             type: Boolean,
             default: true,
         },
-        adviseEnabled: {
+        enableAdvise: {
             type: Boolean,
             default: true,
         },
@@ -519,7 +519,7 @@ export default {
             />
         </div>
 
-        <div v-if="simulationEnabled" class="col-12">
+        <div v-if="enableSimulation" class="col-12">
             <BasicCoilInfo
                 v-if="!loading && !$settingsStore.magneticBuilderSettings.advancedMode"
                 :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
@@ -537,7 +537,7 @@ export default {
         </div>
 
         <BasicCoilSubmenu
-            v-if="submenuEnabled"
+            v-if="enableSubmenu"
             :readOnly="readOnly"
             class="col-12 mb-1 text-start"
             :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"

@@ -21,8 +21,8 @@ export default {
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const localData = {
             visualizersEnabled: magneticBuilderSettingsStore.visualizersEnabled? '1' : '0',
-            simulationEnabled: magneticBuilderSettingsStore.simulationEnabled? '1' : '0',
-            submenuEnabled: magneticBuilderSettingsStore.submenuEnabled? '1' : '0',
+            enableSimulation: magneticBuilderSettingsStore.enableSimulation? '1' : '0',
+            enableSubmenu: magneticBuilderSettingsStore.enableSubmenu? '1' : '0',
             graphsEnabled: magneticBuilderSettingsStore.graphsEnabled? '1' : '0',
         }
 
@@ -74,7 +74,7 @@ export default {
                         <h5 class="offset-0 col-6 text-end">Enable Simulation</h5>
                         <div class="col-sm-6 col-md-6 col-lg-4">
                             <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.simulationEnabled" @change="onSettingChanged($event, 'simulationEnabled')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
+                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableSimulation" @change="onSettingChanged($event, 'enableSimulation')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
                             <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
                         </div>
                     </div>
@@ -82,7 +82,7 @@ export default {
                         <h5 class="offset-0 col-6 text-end">Enable Submenu</h5>
                         <div class="col-sm-6 col-md-6 col-lg-4">
                             <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.submenuEnabled" @change="onSettingChanged($event, 'submenuEnabled')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
+                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableSubmenu" @change="onSettingChanged($event, 'enableSubmenu')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
                             <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
                         </div>
                     </div>

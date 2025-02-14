@@ -39,6 +39,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableCoilOptions: {
+            type: Boolean,
+            default: true,
+        },
         enableGraphs: {
             type: Boolean,
             default: true,
@@ -70,21 +74,21 @@ export default {
                 return this.magneticBuilderSettingsStore.visualizersEnabled;
             }
         },
-        simulationEnabled() {
+        enableSimulation() {
             if (this.isIsolatedApp) {
                 return false;
             }
             else {
-                return this.enableSimulation && this.magneticBuilderSettingsStore.simulationEnabled;
+                return this.enableSimulation && this.magneticBuilderSettingsStore.enableSimulation;
             }
             
         },
-        submenuEnabled() {
+        enableSubmenu() {
             if (this.isIsolatedApp) {
                 return true;
             }
             else {
-                return this.magneticBuilderSettingsStore.submenuEnabled;
+                return this.magneticBuilderSettingsStore.enableSubmenu;
             }
             
         },
@@ -172,9 +176,9 @@ export default {
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :simulationEnabled="simulationEnabled"
-                    :submenuEnabled="submenuEnabled"
-                    :adviseEnabled="enableAdvisers && !isIsolatedApp"
+                    :enableSimulation="enableSimulation"
+                    :enableSubmenu="enableSubmenu"
+                    :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
                 />
             </div>
@@ -183,9 +187,9 @@ export default {
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :simulationEnabled="simulationEnabled"
-                    :submenuEnabled="submenuEnabled"
-                    :adviseEnabled="enableAdvisers && !isIsolatedApp"
+                    :enableSimulation="enableSimulation"
+                    :enableSubmenu="enableSubmenu"
+                    :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
                 />
@@ -195,9 +199,10 @@ export default {
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && visualizersEnabled"
-                    :simulationEnabled="simulationEnabled"
-                    :submenuEnabled="submenuEnabled"
-                    :adviseEnabled="enableAdvisers && !isIsolatedApp"
+                    :enableSimulation="enableSimulation"
+                    :enableOptions="enableCoilOptions"
+                    :enableSubmenu="enableSubmenu"
+                    :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
                 />
             </div>

@@ -25,15 +25,15 @@ export default {
             type: Object,
             required: true,
         },
-        simulationEnabled: {
+        enableSimulation: {
             type: Boolean,
             default: true,
         },
-        submenuEnabled: {
+        enableSubmenu: {
             type: Boolean,
             default: true,
         },
-        adviseEnabled: {
+        enableAdvise: {
             type: Boolean,
             default: true,
         },
@@ -705,7 +705,7 @@ export default {
                 @update="wireUpdated"
             />
 
-            <div v-if="simulationEnabled" class="col-12 p-0">
+            <div v-if="enableSimulation" class="col-12 p-0">
                 <BasicWireInfo 
                     v-if="!loading && !$settingsStore.magneticBuilderSettings.advancedMode"
                     :dataTestLabel="dataTestLabel + '-BasicWireInfo'"
@@ -725,13 +725,13 @@ export default {
             </div>
 
             <BasicWireSubmenu
-                v-if="submenuEnabled && !readOnly"
+                v-if="enableSubmenu && !readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicWireSubmenu'"
                 :enableCustomize="false"
                 :severalWires="masStore.mas.magnetic.coil.functionalDescription.length > 1"
                 :enableAdvise="!loading"
-                :allowAdvise="adviseEnabled"
+                :allowAdvise="enableAdvise"
                 @adviseWire="adviseWireRequested"
                 @adviseAllWires="adviseAllWiresRequested"
                 @customizeCore="customizeWire"
