@@ -96,7 +96,7 @@ export default {
 
 <template>
     <Settings 
-        :modalName="'MagneticBuilderSettingsModal'"
+        :modalName="'MagneticBuilderConfigurationModal'"
         @onSettingsUpdated="onSettingsUpdated"
     />
     <div class="container" :style="$styleStore.controlPanel.main">
@@ -145,7 +145,7 @@ export default {
                 :style="$styleStore.controlPanel.button"
                 class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
                 data-bs-toggle="modal"
-                data-bs-target="#MagneticBuilderSettingsModal"
+                data-bs-target="#MagneticBuilderConfigurationModal"
                 @click="openSettings" 
                 >
                 <i class="fa-solid fa-gear"></i>

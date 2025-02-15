@@ -211,6 +211,7 @@ export default {
         <div v-if="enableGraphs" class="row">
                 <GraphInfo 
                     :masStore="masStore"
+                    :operatingPointIndex="operatingPointIndex"
                 />
         </div>
     </div>

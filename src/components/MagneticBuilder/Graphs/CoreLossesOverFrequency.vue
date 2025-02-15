@@ -17,11 +17,15 @@ export default {
             type: Object,
             required: true,
         },
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
 
-        const resistancesOverFrequencyData = [{
-            label: 'Resistance',
+        const coreLossesOverFrequencyData = [{
+            label: 'Losses',
             data: {
                 x: [0, 1],
                 y: [0, 1],
@@ -29,7 +33,7 @@ export default {
             colorLabel: 'info',
             type: 'log', // log or value
             position: 'left',
-            unit: 'Ω',
+            unit: 'W',
         }]
         const frequencyData = {
             label: 'Frequency',
@@ -46,7 +50,7 @@ export default {
         }
 
         return {
-            resistancesOverFrequencyData,
+            coreLossesOverFrequencyData,
             frequencyData,
             forceUpdate,
             localData,
@@ -59,30 +63,30 @@ export default {
         'masStore.mas.magnetic.core': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
+                setTimeout(() => {this.sweepCoreLossesOverFrequency(); }, 10);
             },
           deep: true
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
+                setTimeout(() => {this.sweepCoreLossesOverFrequency(); }, 10);
             },
           deep: true
         },
     },
     mounted () {
         this.loading = true;
-        setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
+        setTimeout(() => {this.sweepCoreLossesOverFrequency(); }, 10);
     },
     methods: {
         updatedNumberElements() {
             this.loading = true;
-            setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
+            setTimeout(() => {this.sweepCoreLossesOverFrequency(); }, 10);
         },
-        sweepResistancesOverFrequency() {
+        sweepCoreLossesOverFrequency() {
             this.$mkf.ready.then(_ => {
-                const curve2DJson = this.$mkf.sweep_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, this.localData.numberPoints, 25, "Resistance over frequency")
+                const curve2DJson = this.$mkf.sweep_core_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.localData.minimumFrequency, this.localData.maximumFrequency, this.localData.numberPoints, 25, "Core Losses over frequency")
                 if (curve2DJson.startsWith("Exception")) {
                     this.loading = false;
                     console.error(curve2DJson);
@@ -90,14 +94,14 @@ export default {
                 }
                 else {
                     const curve2D = JSON.parse(curve2DJson);
-                    this.resistancesOverFrequencyData[0].data = {
+                    this.coreLossesOverFrequencyData[0].data = {
                         x: curve2D.xPoints,
                         y: curve2D.yPoints,
                     };
-                    this.resistancesOverFrequencyData[0].xMaximum =Math.max(...curve2D.xPoints);
-                    this.resistancesOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
-                    this.resistancesOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
-                    this.resistancesOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
+                    this.coreLossesOverFrequencyData[0].xMaximum =Math.max(...curve2D.xPoints);
+                    this.coreLossesOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
+                    this.coreLossesOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
+                    this.coreLossesOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
                     this.forceUpdate += 1;
                     this.loading = false;
                 }
@@ -105,7 +109,7 @@ export default {
             }).catch(error => {
                 console.error(error);
                 this.loading = false;
-                this.resistancesOverFrequencyData[0].data = {
+                this.coreLossesOverFrequencyData[0].data = {
                     x: [],
                     y: [],
                 };
@@ -134,7 +138,7 @@ export default {
                         :allowNegative="false"
                         :allowZero="false"
                         :modelValue="localData"
-                        @update="sweepResistancesOverFrequency"
+                        @update="sweepCoreLossesOverFrequency"
                         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -151,7 +155,7 @@ export default {
                         :allowNegative="false"
                         :allowZero="false"
                         :modelValue="localData"
-                        @update="sweepResistancesOverFrequency"
+                        @update="sweepCoreLossesOverFrequency"
                         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -171,7 +175,7 @@ export default {
                         :modelValue="localData"
                         :labelWidthProportionClass="'col-6'"
                         :valueWidthProportionClass="'col-6'"
-                        @update="sweepResistancesOverFrequency"
+                        @update="sweepCoreLossesOverFrequency"
                         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -182,12 +186,12 @@ export default {
                 </div>
             </div>
             <div class="col-9">
-                <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
+                <img :data-cy="dataTestLabel + '-CoreLossesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
                 <LineVisualizer 
                     v-show="!loading"
-                    :data="resistancesOverFrequencyData"
+                    :data="coreLossesOverFrequencyData"
                     :xAxisOptions="frequencyData"
-                    :title="'Total Resistance over Frequency'"
+                    :title="'Core Losses over Frequency'"
                     :forceUpdate="forceUpdate"
                     :bgColor="$styleStore.magneticBuilder.graphBgColor.background"
                     :lineColor="$styleStore.magneticBuilder.graphLineColor.color"

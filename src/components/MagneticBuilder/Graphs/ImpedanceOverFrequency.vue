@@ -47,6 +47,7 @@ export default {
         const localData = {
             minimumFrequency: 1e3,
             maximumFrequency: 4e6,
+            numberPoints: 200,
         }
         return {
             impedanceOverFrequencyData,
@@ -121,7 +122,7 @@ export default {
         },
         sweepImpedanceOverFrequency() {
             this.$mkf.ready.then(_ => {
-                const curve2DJson = this.$mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, 1000, "Impedance over frequency");
+                const curve2DJson = this.$mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, this.localData.numberPoints, "Impedance over frequency");
                 if (curve2DJson.startsWith("Exception")) {
                     console.error(curve2DJson);
                     this.loading = false;
@@ -159,6 +160,7 @@ export default {
                 <slot/>
                 <Dimension class="col-12 mb-1 text-start"
                     :name="'minimumFrequency'"
+                    :replaceTitle="'Min. Frequency'"
                     :unit="'Hz'"
                     :dataTestLabel="dataTestLabel + '-MinimumFrequency'"
                     :min="0"
@@ -176,6 +178,7 @@ export default {
                 />
                 <Dimension class="col-12 mb-1 text-start"
                     :name="'maximumFrequency'"
+                    :replaceTitle="'Max. Frequency'"
                     :unit="'Hz'"
                     :dataTestLabel="dataTestLabel + '-MaximumFrequency'"
                     :min="0"
@@ -184,6 +187,26 @@ export default {
                     :allowNegative="false"
                     :allowZero="false"
                     :modelValue="localData"
+                    @update="sweepImpedanceOverFrequency"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
+                />
+                <Dimension class="col-12 mb-1 text-start"
+                    :name="'numberPoints'"
+                    :replaceTitle="'No. Points'"
+                    :unit="null"
+                    :dataTestLabel="dataTestLabel + '-NumberPoints'"
+                    :min="0"
+                    :justifyContent="true"
+                    :defaultValue="1"
+                    :allowNegative="false"
+                    :allowZero="false"
+                    :modelValue="localData"
+                    :labelWidthProportionClass="'col-6'"
+                    :valueWidthProportionClass="'col-6'"
                     @update="sweepImpedanceOverFrequency"
                     :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                     :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"

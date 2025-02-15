@@ -40,6 +40,7 @@ export default {
         const forceUpdate = 0;
         const loading = false;
         const localData = {
+            selectedWinding: this.masStore.mas.magnetic.coil.functionalDescription[0].name,
             minimumFrequency: 1e3,
             maximumFrequency: 4e6,
             numberPoints: 200,
@@ -54,6 +55,14 @@ export default {
         }
     },
     computed: {
+        windingNames() {
+            const windingNames = [];
+            this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem) => {
+                windingNames.push(elem.name);
+            })
+
+            return windingNames;
+        }
     },
     watch: {
         'masStore.mas.magnetic.core': {
@@ -82,7 +91,14 @@ export default {
         },
         sweepResistancesOverFrequency() {
             this.$mkf.ready.then(_ => {
-                const curve2DJson = this.$mkf.sweep_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, this.localData.numberPoints, 25, "Resistance over frequency")
+                var windingIndex = 0;
+                this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem, index) => {
+                    if (elem.name == this.localData.selectedWinding) {
+                        windingIndex = index;
+                    }
+                })
+
+                const curve2DJson = this.$mkf.sweep_winding_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.localData.minimumFrequency, this.localData.maximumFrequency, this.localData.numberPoints, windingIndex, 25, "Resistance over frequency")
                 if (curve2DJson.startsWith("Exception")) {
                     this.loading = false;
                     console.error(curve2DJson);
@@ -124,6 +140,14 @@ export default {
                     <slot/>
                 </div>
                 <div class="row">
+                    <ElementFromList class="border-bottom py-2"
+                        :name="'selectedWinding'"
+                        :dataTestLabel="dataTestLabel + '-NumberWindings'"
+                        :options="windingNames"
+                        :titleSameRow="true"
+                        v-model="localData"
+                        @update="updatedNumberElements"
+                    />
                     <Dimension class="col-12 mb-1 text-start"
                         :name="'minimumFrequency'"
                         :unit="'Hz'"
@@ -187,7 +211,7 @@ export default {
                     v-show="!loading"
                     :data="resistancesOverFrequencyData"
                     :xAxisOptions="frequencyData"
-                    :title="'Total Resistance over Frequency'"
+                    :title="'Resistances over Frequency'"
                     :forceUpdate="forceUpdate"
                     :bgColor="$styleStore.magneticBuilder.graphBgColor.background"
                     :lineColor="$styleStore.magneticBuilder.graphLineColor.color"
