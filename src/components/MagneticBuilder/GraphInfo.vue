@@ -6,7 +6,9 @@ import ImpedanceOverFrequency from './Graphs/ImpedanceOverFrequency.vue'
 import ResistancesOverFrequency from './Graphs/ResistancesOverFrequency.vue'
 import WindingResistancesOverFrequency from './Graphs/WindingResistancesOverFrequency.vue'
 import WindingLossesOverFrequency from './Graphs/WindingLossesOverFrequency.vue'
+import LossesOverFrequency from './Graphs/LossesOverFrequency.vue'
 import CoreLossesOverFrequency from './Graphs/CoreLossesOverFrequency.vue'
+import GraphCommonParameters from './Graphs/GraphCommonParameters.vue'
 </script>
 
 <script>
@@ -28,22 +30,9 @@ export default {
     },
     data() {
         const errorMessage = "";
-        const localData = {
-            graph: 'impedanceOverFrequency',
-        }
-
-        const availableGraphs = {
-            'impedanceOverFrequency': 'Impedance Over Frequency',
-            'resistancesOverFrequency': 'Total Resistance Over Frequency',
-            'windingResistancesOverFrequency': 'Resistances Per Winding Over Frequency',
-            'coreLossesOverFrequency': 'Core Losses Over Frequency',
-            'windingLossesOverFrequency': 'Winding Losses Over Frequency',
-        }
 
         return {
             errorMessage,
-            localData,
-            availableGraphs,
         }
     },
     computed: {
@@ -53,8 +42,6 @@ export default {
     mounted () {
     },
     methods: {
-        graphTypeUpdated() {
-        },
     }
 }
 </script>
@@ -63,124 +50,64 @@ export default {
     <div class="container-flex mt-2 mb-3 pb-3 border-top pt-2">
         <div class="row">
             <ImpedanceOverFrequency 
-                v-if="errorMessage == '' && localData.graph == 'impedanceOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'impedanceOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
-                <ElementFromList
-                    class="col-12 mb-1 text-start"
-                    :dataTestLabel="dataTestLabel + '-GraphsSelector'"
-                    :name="'graph'"
-                    :titleSameRow="true"
-                    :justifyContent="true"
-                    v-model="localData"
-                    :options="availableGraphs"
-                    @update="graphTypeUpdated"
-                    :labelWidthProportionClass="'col-6'"
-                    :selectStyleClass="'col-6'"
-                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                    :textColor="$styleStore.magneticBuilder.inputTextColor"
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
                 />
             </ImpedanceOverFrequency> 
             <ResistancesOverFrequency 
-                v-if="errorMessage == '' && localData.graph == 'resistancesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'resistancesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
-                <ElementFromList
-                    class="col-12 mb-1 text-start"
-                    :dataTestLabel="dataTestLabel + '-GraphsSelector'"
-                    :name="'graph'"
-                    :titleSameRow="true"
-                    :justifyContent="true"
-                    v-model="localData"
-                    :options="availableGraphs"
-                    @update="graphTypeUpdated"
-                    :labelWidthProportionClass="'col-6'"
-                    :selectStyleClass="'col-6'"
-                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                    :textColor="$styleStore.magneticBuilder.inputTextColor"
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
                 />
 
             </ResistancesOverFrequency> 
             <WindingResistancesOverFrequency 
-                v-if="errorMessage == '' && localData.graph == 'windingResistancesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'windingResistancesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
-                <ElementFromList
-                    class="col-12 mb-1 text-start"
-                    :dataTestLabel="dataTestLabel + '-GraphsSelector'"
-                    :name="'graph'"
-                    :titleSameRow="true"
-                    :justifyContent="true"
-                    v-model="localData"
-                    :options="availableGraphs"
-                    @update="graphTypeUpdated"
-                    :labelWidthProportionClass="'col-6'"
-                    :selectStyleClass="'col-6'"
-                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                    :textColor="$styleStore.magneticBuilder.inputTextColor"
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
                 />
 
             </WindingResistancesOverFrequency> 
             <WindingLossesOverFrequency 
-                v-if="errorMessage == '' && localData.graph == 'windingLossesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'windingLossesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
-                <ElementFromList
-                    class="col-12 mb-1 text-start"
-                    :dataTestLabel="dataTestLabel + '-GraphsSelector'"
-                    :name="'graph'"
-                    :titleSameRow="true"
-                    :justifyContent="true"
-                    v-model="localData"
-                    :options="availableGraphs"
-                    @update="graphTypeUpdated"
-                    :labelWidthProportionClass="'col-6'"
-                    :selectStyleClass="'col-6'"
-                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                    :textColor="$styleStore.magneticBuilder.inputTextColor"
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
                 />
 
             </WindingLossesOverFrequency>
             <CoreLossesOverFrequency 
-                v-if="errorMessage == '' && localData.graph == 'coreLossesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'coreLossesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
-                <ElementFromList
-                    class="col-12 mb-1 text-start"
-                    :dataTestLabel="dataTestLabel + '-GraphsSelector'"
-                    :name="'graph'"
-                    :titleSameRow="true"
-                    :justifyContent="true"
-                    v-model="localData"
-                    :options="availableGraphs"
-                    @update="graphTypeUpdated"
-                    :labelWidthProportionClass="'col-6'"
-                    :selectStyleClass="'col-6'"
-                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                    :textColor="$styleStore.magneticBuilder.inputTextColor"
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
                 />
 
             </CoreLossesOverFrequency> 
+            <LossesOverFrequency 
+                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'lossesOverFrequency'" 
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+            >
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
+                />
+
+            </LossesOverFrequency> 
             <label v-else :data-cy="dataTestLabel + '-ErrorMEssage'" class="text-danger m-0 col-12 " style="font-size: 0.9em"> {{errorMessage}}</label>
 
 

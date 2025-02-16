@@ -42,19 +42,17 @@ export default {
             unit: 'Hz',
         }
         const forceUpdate = 0;
+        const recentChange = false;
+        const tryingToSend = false;
         const loading = false;
-        const localData = {
-            minimumFrequency: 1e3,
-            maximumFrequency: 4e6,
-            numberPoints: 200,
-        }
 
         return {
             windingLossesOverFrequencyData,
             frequencyData,
             forceUpdate,
-            localData,
             loading,
+            recentChange,
+            tryingToSend,
         }
     },
     computed: {
@@ -63,14 +61,21 @@ export default {
         'masStore.mas.magnetic.core': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.sweepWindingLossesOverFrequency(); }, 10);
+                setTimeout(() => {this.tryToSend(); }, 10);
             },
           deep: true
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.sweepWindingLossesOverFrequency(); }, 10);
+                setTimeout(() => {this.tryToSend(); }, 10);
+            },
+          deep: true
+        },
+        '$stateStore.graphParameters': {
+            handler(newValue, oldValue) {
+                this.loading = true;
+                setTimeout(() => {this.tryToSend(); }, 10);
             },
           deep: true
         },
@@ -80,13 +85,28 @@ export default {
         setTimeout(() => {this.sweepWindingLossesOverFrequency(); }, 10);
     },
     methods: {
-        updatedNumberElements() {
-            this.loading = true;
-            setTimeout(() => {this.sweepWindingLossesOverFrequency(); }, 10);
+        tryToSend() {
+            if (!this.tryingToSend) {
+                this.recentChange = false;
+                this.tryingToSend = true;
+                setTimeout(() => {
+                    if (this.recentChange) {
+                        this.tryingToSend = false;
+                        this.tryToSend();
+                    }
+                    else {
+                        this.tryingToSend = false;
+                        this.sweepWindingLossesOverFrequency();
+                    }
+                }
+                , 500);
+            }
         },
         sweepWindingLossesOverFrequency() {
+            this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
+            this.windingLossesOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
             this.$mkf.ready.then(_ => {
-                const curve2DJson = this.$mkf.sweep_winding_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.localData.minimumFrequency, this.localData.maximumFrequency, this.localData.numberPoints, 25, "Winding Losses over frequency")
+                const curve2DJson = this.$mkf.sweep_winding_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Winding Losses over frequency")
                 if (curve2DJson.startsWith("Exception")) {
                     this.loading = false;
                     console.error(curve2DJson);
@@ -126,63 +146,6 @@ export default {
             <div class="col-3">
                 <div class="row">
                     <slot/>
-                </div>
-                <div class="row">
-                    <Dimension class="col-12 mb-1 text-start"
-                        :name="'minimumFrequency'"
-                        :unit="'Hz'"
-                        :dataTestLabel="dataTestLabel + '-MinimumFrequency'"
-                        :min="0"
-                        :justifyContent="true"
-                        :defaultValue="1"
-                        :allowNegative="false"
-                        :allowZero="false"
-                        :modelValue="localData"
-                        @update="sweepWindingLossesOverFrequency"
-                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="$styleStore.magneticBuilder.inputTextColor"
-                    />
-                    <Dimension class="col-12 mb-1 text-start"
-                        :name="'maximumFrequency'"
-                        :unit="'Hz'"
-                        :dataTestLabel="dataTestLabel + '-MaximumFrequency'"
-                        :min="0"
-                        :justifyContent="true"
-                        :defaultValue="1"
-                        :allowNegative="false"
-                        :allowZero="false"
-                        :modelValue="localData"
-                        @update="sweepWindingLossesOverFrequency"
-                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="$styleStore.magneticBuilder.inputTextColor"
-                    />
-                    <Dimension class="col-12 mb-1 text-start"
-                        :name="'numberPoints'"
-                        :replaceTitle="'No. Points'"
-                        :unit="null"
-                        :dataTestLabel="dataTestLabel + '-NumberPoints'"
-                        :min="0"
-                        :justifyContent="true"
-                        :defaultValue="1"
-                        :allowNegative="false"
-                        :allowZero="false"
-                        :modelValue="localData"
-                        :labelWidthProportionClass="'col-6'"
-                        :valueWidthProportionClass="'col-6'"
-                        @update="sweepWindingLossesOverFrequency"
-                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="$styleStore.magneticBuilder.inputTextColor"
-                    />
-
                 </div>
             </div>
             <div class="col-9">

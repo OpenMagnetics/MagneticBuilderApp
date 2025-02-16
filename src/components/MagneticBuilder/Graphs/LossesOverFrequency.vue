@@ -24,8 +24,8 @@ export default {
     },
     data() {
 
-        const coreLossesOverFrequencyData = [{
-            label: 'Losses',
+        const lossesOverFrequencyData = [{
+            label: 'Core Losses',
             data: {
                 x: [0, 1],
                 y: [0, 1],
@@ -33,6 +33,17 @@ export default {
             colorLabel: 'info',
             type: 'log', // log or value
             position: 'left',
+            unit: 'W',
+        },
+        {
+            label: 'Winding Losses',
+            data: {
+                x: [0, 1],
+                y: [0, 1],
+            },
+            colorLabel: 'success',
+            type: 'log', // log or value
+            position: 'right',
             unit: 'W',
         }]
         const frequencyData = {
@@ -47,7 +58,7 @@ export default {
         const loading = false;
 
         return {
-            coreLossesOverFrequencyData,
+            lossesOverFrequencyData,
             frequencyData,
             forceUpdate,
             loading,
@@ -82,7 +93,7 @@ export default {
     },
     mounted () {
         this.loading = true;
-        setTimeout(() => {this.sweepCoreLossesOverFrequency(); }, 10);
+        setTimeout(() => {this.sweepLossesOverFrequency(); }, 10);
     },
     methods: {
         tryToSend() {
@@ -96,40 +107,64 @@ export default {
                     }
                     else {
                         this.tryingToSend = false;
-                        this.sweepCoreLossesOverFrequency();
+                        this.sweepLossesOverFrequency();
                     }
                 }
                 , 500);
             }
         },
-        sweepCoreLossesOverFrequency() {
+        sweepLossesOverFrequency() {
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
-            this.coreLossesOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
+            this.lossesOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
+            this.lossesOverFrequencyData[1].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
             this.$mkf.ready.then(_ => {
-                const curve2DJson = this.$mkf.sweep_core_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Core Losses over frequency")
-                if (curve2DJson.startsWith("Exception")) {
-                    this.loading = false;
-                    console.error(curve2DJson);
-                    return;
+                {
+                    const curve2DJson = this.$mkf.sweep_core_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Core Losses over frequency")
+                    if (curve2DJson.startsWith("Exception")) {
+                        this.loading = false;
+                        console.error(curve2DJson);
+                        return;
+                    }
+                    else {
+                        const curve2D = JSON.parse(curve2DJson);
+                        this.lossesOverFrequencyData[0].data = {
+                            x: curve2D.xPoints,
+                            y: curve2D.yPoints,
+                        };
+                        this.lossesOverFrequencyData[0].xMaximum = Math.max(...curve2D.xPoints);
+                        this.lossesOverFrequencyData[0].xMinimum = Math.min(...curve2D.xPoints);
+                        this.lossesOverFrequencyData[0].yMaximum = Math.max(...curve2D.yPoints);
+                        this.lossesOverFrequencyData[0].yMinimum = Math.min(...curve2D.yPoints);
+                        this.forceUpdate += 1;
+                        this.loading = false;
+                    }
                 }
-                else {
-                    const curve2D = JSON.parse(curve2DJson);
-                    this.coreLossesOverFrequencyData[0].data = {
-                        x: curve2D.xPoints,
-                        y: curve2D.yPoints,
-                    };
-                    this.coreLossesOverFrequencyData[0].xMaximum =Math.max(...curve2D.xPoints);
-                    this.coreLossesOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
-                    this.coreLossesOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
-                    this.coreLossesOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
-                    this.forceUpdate += 1;
-                    this.loading = false;
+                {
+                    const curve2DJson = this.$mkf.sweep_winding_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Winding Losses over frequency")
+                    if (curve2DJson.startsWith("Exception")) {
+                        this.loading = false;
+                        console.error(curve2DJson);
+                        return;
+                    }
+                    else {
+                        const curve2D = JSON.parse(curve2DJson);
+                        this.lossesOverFrequencyData[1].data = {
+                            x: curve2D.xPoints,
+                            y: curve2D.yPoints,
+                        };
+                        this.lossesOverFrequencyData[1].xMaximum = Math.max(...curve2D.xPoints);
+                        this.lossesOverFrequencyData[1].xMinimum = Math.min(...curve2D.xPoints);
+                        this.lossesOverFrequencyData[1].yMaximum = Math.max(...curve2D.yPoints);
+                        this.lossesOverFrequencyData[1].yMinimum = Math.min(...curve2D.yPoints);
+                        this.forceUpdate += 1;
+                        this.loading = false;
+                    }
                 }
 
             }).catch(error => {
                 console.error(error);
                 this.loading = false;
-                this.coreLossesOverFrequencyData[0].data = {
+                this.lossesOverFrequencyData[0].data = {
                     x: [],
                     y: [],
                 };
@@ -152,7 +187,7 @@ export default {
                 <img :data-cy="dataTestLabel + '-CoreLossesOverFrequency-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
                 <LineVisualizer 
                     v-show="!loading"
-                    :data="coreLossesOverFrequencyData"
+                    :data="lossesOverFrequencyData"
                     :xAxisOptions="frequencyData"
                     :title="'Core Losses over Frequency'"
                     :forceUpdate="forceUpdate"
