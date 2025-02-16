@@ -208,7 +208,7 @@ export default {
             </div> 
             <div v-else class="col-2"/>
         </div>
-        <div v-if="enableGraphs && this.magneticBuilderSettingsStore.enableGraphs" class="row">
+        <div v-if="enableGraphs && magneticBuilderSettingsStore.enableGraphs" class="row">
                 <GraphInfo 
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
