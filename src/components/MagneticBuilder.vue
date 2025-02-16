@@ -66,12 +66,12 @@ export default {
         }
     },
     computed: {
-        visualizersEnabled() {
+        enableVisualizers() {
             if (this.isIsolatedApp) {
                 return true;
             }
             else {
-                return this.magneticBuilderSettingsStore.visualizersEnabled;
+                return this.magneticBuilderSettingsStore.enableVisualizers;
             }
         },
         enableSimulationComputed() {
@@ -175,7 +175,7 @@ export default {
                 <BasicCoreBuilder 
                     :masStore="masStore"
                     :readOnly="readOnly"
-                    :useVisualizers="useVisualizers && visualizersEnabled"
+                    :useVisualizers="useVisualizers && enableVisualizers"
                     :enableSimulation="enableSimulationComputed"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
@@ -186,7 +186,7 @@ export default {
                 <BasicWireBuilder 
                     :masStore="masStore"
                     :readOnly="readOnly"
-                    :useVisualizers="useVisualizers && visualizersEnabled"
+                    :useVisualizers="useVisualizers && enableVisualizers"
                     :enableSimulation="enableSimulationComputed"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
@@ -198,17 +198,17 @@ export default {
                 <BasicCoilBuilder 
                     :masStore="masStore"
                     :readOnly="readOnly"
-                    :useVisualizers="useVisualizers && visualizersEnabled"
+                    :useVisualizers="useVisualizers && enableVisualizers"
                     :enableSimulation="enableSimulationComputed"
                     :enableOptions="enableCoilOptions"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
                 />
-            </div>
+            </div> 
             <div v-else class="col-2"/>
         </div>
-        <div v-if="enableGraphs" class="row">
+        <div v-if="enableGraphs && this.magneticBuilderSettingsStore.enableGraphs" class="row">
                 <GraphInfo 
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"

@@ -20,10 +20,10 @@ export default {
     data() {
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const localData = {
-            visualizersEnabled: magneticBuilderSettingsStore.visualizersEnabled? '1' : '0',
+            enableVisualizers: magneticBuilderSettingsStore.enableVisualizers? '1' : '0',
             enableSimulation: magneticBuilderSettingsStore.enableSimulation? '1' : '0',
             enableSubmenu: magneticBuilderSettingsStore.enableSubmenu? '1' : '0',
-            graphsEnabled: magneticBuilderSettingsStore.graphsEnabled? '1' : '0',
+            enableGraphs: magneticBuilderSettingsStore.enableGraphs? '1' : '0',
         }
 
         const settingsChanged = false;
@@ -66,7 +66,7 @@ export default {
                         <h5 class="offset-0 col-6 text-end">Enable Visualization</h5>
                         <div class="col-sm-6 col-md-6 col-lg-4">
                             <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.visualizersEnabled" @change="onSettingChanged($event, 'visualizersEnabled')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
+                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableVisualizers" @change="onSettingChanged($event, 'enableVisualizers')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
                             <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
                         </div>
                     </div>
@@ -90,7 +90,7 @@ export default {
                         <h5 class="offset-0 col-6 text-end">Enable Graphs</h5>
                         <div class="col-sm-6 col-md-6 col-lg-4">
                             <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.graphsEnabled" @change="onSettingChanged($event, 'graphsEnabled')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
+                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableGraphs" @change="onSettingChanged($event, 'enableGraphs')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
                             <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
                         </div>
                     </div>
