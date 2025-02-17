@@ -30,7 +30,7 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: 'info',
+            colorLabel: '#b18aea',
             type: 'log', // log or value
             position: 'left',
             unit: 'W',
@@ -41,14 +41,14 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: 'success',
+            colorLabel: '#00b6ff',
             type: 'log', // log or value
             position: 'right',
             unit: 'W',
         }]
         const frequencyData = {
             label: 'Frequency',
-            colorLabel: 'info',
+            colorLabel: '#d4d4d4',
             type: 'log', // log or value
             unit: 'Hz',
         }
