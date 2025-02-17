@@ -64,6 +64,7 @@ export default {
             setTimeout(() => this.masExported = false, 2000);
         },
         onSettingsUpdated() {
+            setTimeout(() => {this.$router.push('/engine_loader');}, 100);
         },
         readMASFile(event) {
             const fr = new FileReader();
