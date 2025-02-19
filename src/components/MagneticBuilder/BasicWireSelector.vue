@@ -255,7 +255,7 @@ export default {
                 wire.coating = coating;
                 wire.material = "copper";
 
-                this.$userStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+                this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
                 this.cleanCoil();
                 // this.historyStore.addToHistory(this.masStore.mas);
@@ -437,7 +437,7 @@ export default {
                         this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
                         this.cleanCoil();
 
-                        this.$userStore.wire2DVisualizerState.plotCurrentViews = {};
+                        this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
                         setTimeout(() => this.loading = false, 100);
                     })
                 }
@@ -467,7 +467,7 @@ export default {
                         this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = masWithCoil.magnetic.coil.functionalDescription[this.windingIndex];
 
 
-                        this.$userStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+                        this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                         this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
                         this.cleanCoil();
 

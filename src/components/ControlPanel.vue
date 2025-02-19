@@ -75,7 +75,7 @@ export default {
                     checkAndFixMas(newMas, this.$mkf).then(response => {
                         this.masStore.mas = response;
                         this.masStore.importedMas();
-                        this.$userStore.toolboxStates[this.$userStore.selectedApplication].magneticBuilder.subsection = "magneticBuilder";
+                        this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";
                         this.$stateStore.operatingPoints.modePerPoint = []
                         for (var i = 0; i < this.masStore.mas.inputs.operatingPoints.length; i++) {
                             this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.Manual);

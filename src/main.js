@@ -43,7 +43,7 @@ router.beforeEach((to, from, next) => {
 
     if (loadData) {
         if (app.config.globalProperties.$mkf == null && to.name != "EngineLoader") {
-            app.config.globalProperties.$userStore.loadingPath = to.path
+            app.config.globalProperties.$stateStore.loadingPath = to.path
             router.push('/engine_loader')
         }
         else if (app.config.globalProperties.$mkf == null && (to.name == "EngineLoader")) {
@@ -103,7 +103,7 @@ router.beforeEach((to, from, next) => {
                                                 app.config.globalProperties.$mkf.load_wires("");
                                             }
                                         })
-                                        router.push(app.config.globalProperties.$userStore.loadingPath)
+                                        router.push(app.config.globalProperties.$stateStore.loadingPath)
                                     }).error((error) => {
                                         console.error(error)
                                     })

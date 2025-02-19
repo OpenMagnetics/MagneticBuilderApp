@@ -20,8 +20,8 @@ export default {
     },
     computed: {
         newPowerMagneticToolDesign() {
-            this.$userStore.resetMagneticTool();
-            this.masStore.resetMas("power");
+            this.$stateStore.resetMagneticTool();
+            this.masStore.resetMas("design");
             if (this.$route.name != 'MagneticBuilder')
                 setTimeout(() => {this.$router.push('/magnetic_tool');}, 100);
             else
@@ -64,7 +64,7 @@ export default {
                             <button data-cy="Header-new-magnetic-link" class="btn me-4 nav-link text-dark bg-primary border-dark" @click="newPowerMagneticToolDesign">New magnetic<i class="ms-2 fa-solid fa-toolbox"></i> </button>
                         </span>
                     </li>
-                    <li v-if="$userStore.isAnyDesignLoaded() && $route.name != 'MagneticTool'" class="nav-item">
+                    <li v-if="$stateStore.isAnyDesignLoaded() && $route.name != 'MagneticTool'" class="nav-item">
                         <span class="nav-item">
                             <button data-cy="Header-donate-link" class="btn me-4 nav-link text-dark bg-primary border-dark" @click="continueMagneticToolDesign">Continue design<i class="ms-2 fa-solid fa-box-open"></i> </button>
                         </span>

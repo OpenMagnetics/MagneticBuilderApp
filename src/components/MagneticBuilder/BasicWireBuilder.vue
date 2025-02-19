@@ -49,7 +49,7 @@ export default {
         },
     },
     data() {
-        const wire2DVisualizerPlotCurrentDensity = this.$userStore.wire2DVisualizerState.plotCurrentDensity? '1' : '0';
+        const wire2DVisualizerPlotCurrentDensity = this.$stateStore.wire2DVisualizerState.plotCurrentDensity? '1' : '0';
         var numberWindings = 1;
         if (this.masStore.mas.inputs.designRequirements.turnsRatios != null) {
             numberWindings = this.masStore.mas.inputs.designRequirements.turnsRatios.length + 1;
@@ -121,7 +121,7 @@ export default {
             this.selectedWindingIndex = windingIndex;
         },
         onPlotCurrentChange(event) {
-            this.$userStore.wire2DVisualizerState.plotCurrentDensity = event.target.value == '1';
+            this.$stateStore.wire2DVisualizerState.plotCurrentDensity = event.target.value == '1';
         },
     }
 }
