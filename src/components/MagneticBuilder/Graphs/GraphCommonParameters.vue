@@ -48,7 +48,7 @@ export default {
     <ElementFromList
         class="col-12 mb-1 text-start"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
-        :name="'type'"
+        :name="'graph'"
         :titleSameRow="true"
         :justifyContent="true"
         v-model="$stateStore.graphParameters"

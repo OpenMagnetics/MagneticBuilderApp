@@ -56,19 +56,38 @@ export default {
         const forceUpdate = 0; 
         var pattern = "";
 
-        var localData = {
-            sectionsOrientation: "overlapping",
-            sectionsAlignment: "inner or top",
-            dataPerSection: [{
-                layersOrientation: "overlapping",
-                turnsAlignment: "spread",
-                topOrLeftMargin: 0,
-                bottomOrRightMargin: 0,
-            }],
-            pattern: pattern,
-            repetitions: 1,
-            proportionPerWinding: [],
-        };
+        var localData = {};
+
+        if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+            localData = {
+                sectionsOrientation: "contiguous",
+                sectionsAlignment: "spread",
+                dataPerSection: [{
+                    layersOrientation: "overlapping",
+                    turnsAlignment: "centered",
+                    topOrLeftMargin: 0,
+                    bottomOrRightMargin: 0,
+                }],
+                pattern: pattern,
+                repetitions: 1,
+                proportionPerWinding: [],
+            };
+        }
+        else {
+            localData = {
+                sectionsOrientation: "overlapping",
+                sectionsAlignment: "inner or top",
+                dataPerSection: [{
+                    layersOrientation: "overlapping",
+                    turnsAlignment: "spread",
+                    topOrLeftMargin: 0,
+                    bottomOrRightMargin: 0,
+                }],
+                pattern: pattern,
+                repetitions: 1,
+                proportionPerWinding: [],
+            };
+        }
         this.resetProportionPerWinding(localData);
 
         return {

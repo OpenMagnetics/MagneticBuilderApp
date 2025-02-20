@@ -313,10 +313,20 @@ export default {
             this.$mkf.ready.then(_ => {
                 if (this.masStore.mas.inputs.operatingPoints.length > 0) {
                     const settings = JSON.parse(this.$mkf.get_settings());
-                    settings["coreIncludeDistributedGaps"] = this.$settingsStore.adviserAllowDistributedGaps == "1";
-                    settings["coreIncludeMargin"] = true;
-                    settings["coreIncludeStacks"] = this.$settingsStore.adviserAllowStacks == "1";
-                    settings["useToroidalCores"] = this.$settingsStore.adviserToroidalCores == "1";
+
+                    if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+                        settings["coreIncludeDistributedGaps"] = false;
+                        settings["coreIncludeMargin"] = true;
+                        settings["coreIncludeStacks"] = true;
+                        settings["useToroidalCores"] = true;
+                        settings["useConcentricCores"] = false;
+                    }
+                    else {
+                        settings["coreIncludeDistributedGaps"] = this.$settingsStore.adviserAllowDistributedGaps == "1";
+                        settings["coreIncludeMargin"] = true;
+                        settings["coreIncludeStacks"] = this.$settingsStore.adviserAllowStacks == "1";
+                        settings["useToroidalCores"] = this.$settingsStore.adviserToroidalCores == "1";
+                    }
                     this.$mkf.set_settings(JSON.stringify(settings));
 
                     const result = this.$mkf.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);

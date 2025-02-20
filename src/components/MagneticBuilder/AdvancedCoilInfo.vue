@@ -147,6 +147,7 @@ export default {
         simulate() {
             if (this.core['functionalDescription']['shape'] != "" && this.core['functionalDescription']['material'] != "") {
                 this.$mkf.ready.then(_ => {
+                    console.log("Coil simualtion")
 
                     if (!('gapReluctance' in this.$userStore.selectedModels)) {
                         this.$userStore.selectedModels['gapReluctance'] = Defaults.reluctanceModelDefault

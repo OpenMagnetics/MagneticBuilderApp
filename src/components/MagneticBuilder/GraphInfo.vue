@@ -50,7 +50,7 @@ export default {
     <div class="container-flex mt-2 mb-3 pb-3 border-top pt-2">
         <div class="row">
             <ImpedanceOverFrequency 
-                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'impedanceOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'impedanceOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
@@ -59,7 +59,7 @@ export default {
                 />
             </ImpedanceOverFrequency> 
             <ResistancesOverFrequency 
-                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'resistancesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'resistancesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
@@ -69,7 +69,7 @@ export default {
 
             </ResistancesOverFrequency> 
             <WindingResistancesOverFrequency 
-                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'windingResistancesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'windingResistancesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
@@ -79,7 +79,7 @@ export default {
 
             </WindingResistancesOverFrequency> 
             <WindingLossesOverFrequency 
-                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'windingLossesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'windingLossesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
@@ -89,7 +89,7 @@ export default {
 
             </WindingLossesOverFrequency>
             <CoreLossesOverFrequency 
-                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'coreLossesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'coreLossesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
@@ -99,7 +99,7 @@ export default {
 
             </CoreLossesOverFrequency> 
             <LossesOverFrequency 
-                v-if="errorMessage == '' && $stateStore.graphParameters.type == 'lossesOverFrequency'" 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'lossesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >

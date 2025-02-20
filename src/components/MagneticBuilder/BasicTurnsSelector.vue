@@ -132,6 +132,7 @@ export default {
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberParallels = this.localData["numberParallels"];
             }
             this.tryingToAssign = false;
+            this.$emit("turnsUpdated", this.windingIndex)
         },
         turnsUpdated() {
             if (this.localData["numberTurns"] != this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberTurns ||

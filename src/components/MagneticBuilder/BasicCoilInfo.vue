@@ -28,7 +28,10 @@ export default {
     },
     data() {
         const outputsData = {};
-        const selectedWindingIndex = 0;
+        var selectedWindingIndex = 0;
+        if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+            selectedWindingIndex = 1;
+        }
         const loading = false;
         const recentChange = false;
         const tryingToSend = false;
@@ -263,7 +266,7 @@ export default {
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <div
-                v-if="masStore.mas.magnetic.coil.functionalDescription.length > 2"
+                v-if="masStore.mas.magnetic.coil.functionalDescription.length > 2 && !$stateStore.hasCurrentApplicationMirroredWindings()"
                 class="col-12 mt-3 mb-2 p-0">
                 <WindingSelector
                     :dataTestLabel="`${dataTestLabel}-WindingSelector`"

@@ -59,9 +59,11 @@ export default {
     data() {
         const historyStore = useHistoryStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
+        const magneticBuilt = false;
 
         return {
             magneticBuilderSettingsStore,
+            magneticBuilt,
             historyStore,
         }
     },
@@ -106,8 +108,9 @@ export default {
         this.historyStore.blockAdditions();
         this.historyStore.$onAction((action) => {
             if (action.name == "addToHistory") {
-                this.$emit("canContinue", this.isMagneticBuilt());
-                if (this.isMagneticBuilt() && !this.isIsolatedApp) {
+                this.magneticBuilt = this.isMagneticBuilt();
+                this.$emit("canContinue", this.magneticBuilt);
+                if (this.magneticBuilt && !this.isIsolatedApp) {
                     this.insertIntermediateMas();
                 }
             }
@@ -208,11 +211,13 @@ export default {
             </div> 
             <div v-else class="col-2"/>
         </div>
-        <div v-if="enableGraphs && magneticBuilderSettingsStore.enableGraphs" class="row">
-                <GraphInfo 
-                    :masStore="masStore"
-                    :operatingPointIndex="operatingPointIndex"
-                />
+        <div v-if="enableGraphs && magneticBuilderSettingsStore.enableGraphs" class="row w-100">
+            <h5 v-if="!magneticBuilt" class="text-danger my-2">Select the magnetic first</h5>
+            <GraphInfo 
+                v-else
+                :masStore="masStore"
+                :operatingPointIndex="operatingPointIndex"
+            />
         </div>
     </div>
 </template>

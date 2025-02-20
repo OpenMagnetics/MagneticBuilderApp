@@ -1,5 +1,5 @@
 <script setup>
-import { toTitleCase } from '/WebSharedComponents/assets/js/utils.js'
+import { toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { isolationSideOrdered } from '/WebSharedComponents/assets/js/defaults.js'
 import Wire2DVisualizer from '/WebSharedComponents/Common/Wire2DVisualizer.vue'
 import BasicTurnsSelector from './BasicTurnsSelector.vue'
@@ -58,7 +58,9 @@ export default {
             numberWindings: numberWindings
         }
         const selectedWindingIndex = 0;
+        const blockingRebounds = false;
         return {
+            blockingRebounds,
             numberWindingsAux,
             selectedWindingIndex,
             wire2DVisualizerPlotCurrentDensity,
@@ -67,7 +69,6 @@ export default {
     computed: {
     },
     watch: {
-
     },
     mounted () {
 
@@ -78,6 +79,41 @@ export default {
         })
     },
     methods: {
+        turnsUpdated(modifiedWindingIndex) {
+            if (!this.blockingRebounds) {
+                this.blockingRebounds = true;
+                if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+                    const tempCoilFunctionalDescription = deepCopy(this.masStore.mas.magnetic.coil.functionalDescription)
+                    this.masStore.mas.magnetic.coil.functionalDescription.forEach((_, windingIndex) => {
+                        if (modifiedWindingIndex != windingIndex) {
+                            tempCoilFunctionalDescription[windingIndex].numberTurns = this.masStore.mas.magnetic.coil.functionalDescription[modifiedWindingIndex].numberTurns;
+                            tempCoilFunctionalDescription[windingIndex].numberParallels = this.masStore.mas.magnetic.coil.functionalDescription[modifiedWindingIndex].numberParallels;
+                            // this.masStore.mas.magnetic.coil.functionalDescription[windingIndex].wire = this.masStore.mas.magnetic.coil.functionalDescription[modifiedWindingIndex].wire;
+                        }
+                    })
+                    this.masStore.mas.magnetic.coil.functionalDescription = tempCoilFunctionalDescription;
+                }
+                setTimeout(() => this.blockingRebounds = false, 10);
+            }
+        },
+        wireUpdated(modifiedWindingIndex) {
+            console.log("wireUpdated")
+            console.log(modifiedWindingIndex)
+            if (!this.blockingRebounds) {
+                this.blockingRebounds = true;
+                if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+                    const tempCoilFunctionalDescription = deepCopy(this.masStore.mas.magnetic.coil.functionalDescription)
+                    this.masStore.mas.magnetic.coil.functionalDescription.forEach((_, windingIndex) => {
+                        if (modifiedWindingIndex != windingIndex) {
+                            tempCoilFunctionalDescription[windingIndex].wire = this.masStore.mas.magnetic.coil.functionalDescription[modifiedWindingIndex].wire;
+                        }
+                    })
+                    this.masStore.mas.magnetic.coil.functionalDescription = tempCoilFunctionalDescription;
+                }
+                setTimeout(() => this.blockingRebounds = false, 10);
+            }
+
+        },
         updatedNumberElements(newLength, name) {
             if (name == 'numberWindings') {
                 const newElementsCoil = [];
@@ -199,6 +235,7 @@ export default {
 
         <div class="row">
             <WindingSelector
+                v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
                 :dataTestLabel="`${dataTestLabel}-WindingSelector`"
                 :coil="masStore.mas.magnetic.coil"
                 :masStore="masStore"
@@ -214,6 +251,7 @@ export default {
                     :readOnly="readOnly"
                     :masStore="masStore"
                     :windingIndex="key"
+                    @turnsUpdated="turnsUpdated"
                 />
                 <BasicWireSelector
                     v-if="selectedWindingIndex==key"
@@ -224,6 +262,7 @@ export default {
                     :enableSimulation="enableSimulation"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvise"
+                    @wireUpdated="wireUpdated"
                 />
             </div>
         </div>

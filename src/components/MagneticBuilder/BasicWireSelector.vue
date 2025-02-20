@@ -77,7 +77,12 @@ export default {
             });
         }
 
+        const blockingRebounds = false;
+        const wireHash = "";
+
         return {
+            blockingRebounds,
+            wireHash,
             historyStore,
             localData,
             wireTypes,
@@ -105,6 +110,20 @@ export default {
         },
     },
     watch: {
+        'masStore.mas.magnetic.coil.functionalDescription': {
+            handler(newValue, oldValue) {
+                // console.log(newValue)
+                // console.log(this.windingIndex)
+                const newWireHash = JSON.stringify(newValue[this.windingIndex].wire);
+                if (!this.blockingRebounds && newWireHash != this.wireHash) {
+                    this.assignLocalData(newValue[this.windingIndex].wire)
+                    this.blockingRebounds = true;
+                    this.wireHash = newWireHash;
+                    setTimeout(() => this.blockingRebounds = false, 10);
+                }
+            },
+          deep: true
+        },
     },
     mounted () {
         if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != null) {
@@ -258,6 +277,7 @@ export default {
                 this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
                 this.cleanCoil();
+                this.$emit("wireUpdated", this.windingIndex);
                 // this.historyStore.addToHistory(this.masStore.mas);
             });
         },
