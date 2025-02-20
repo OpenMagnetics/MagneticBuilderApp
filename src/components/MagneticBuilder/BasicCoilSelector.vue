@@ -518,7 +518,10 @@ export default {
             />
         </div>
                
-        <div class="col-12">
+        <div
+            v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
+            class="col-12"
+        >
             <BasicCoilSectionAlignmentSelector 
                 :data="localData"
                 :showAlignmentOptions="showAlignmentOptions"

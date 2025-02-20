@@ -57,6 +57,7 @@ export default {
     <div class="container">
         <div class="row">
             <button
+                v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
                 :style="showAlignmentOptions? $styleStore.magneticBuilder.hideAlignmentOptionsButton: $styleStore.magneticBuilder.showAlignmentOptionsButton"
                 :disabled="!enableAlignmentOptions"
                 :data-cy="dataTestLabel + '-Coil-ShowAlignmentOptions-button'"
