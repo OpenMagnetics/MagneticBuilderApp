@@ -104,6 +104,7 @@ export default {
             this.masStore.mas.magnetic.manufacturerInfo.reference = "My custom magnetic";
         }
 
+        this.magneticBuilt = this.isMagneticBuilt();
         this.historyStore.addToHistory(this.masStore.mas);
         this.historyStore.blockAdditions();
         this.historyStore.$onAction((action) => {
