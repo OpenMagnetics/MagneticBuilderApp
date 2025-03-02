@@ -165,19 +165,41 @@ export default {
                     const modelsData = {coreLosses: this.$userStore.selectedModels['coreLosses'].toUpperCase(),
                                   coreTemperature: this.$userStore.selectedModels['coreTemperature'].toUpperCase(),
                                   gapReluctance: this.$userStore.selectedModels['gapReluctance'].toUpperCase().replace(" ", "_")};
-                    this.coreTemperatureDependantParametersData = JSON.parse(this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature));
 
-                    this.magnetizingInductance = JSON.parse(this.$mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(this.masStore.mas.magnetic.core),
-                                                                                                             JSON.stringify(this.masStore.mas.magnetic.coil),
-                                                                                                             JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]),
-                                                                                                             JSON.stringify(modelsData)));
+                    {
+                        const result = this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
+                        if (result.startsWith("Exception")) {
+                            console.error(result);
+                        }
+                        else {
+                            this.coreTemperatureDependantParametersData = JSON.parse(result);
+                        }
+                    }
+
+                    {
+                        const result = this.$mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(this.masStore.mas.magnetic.core), JSON.stringify(this.masStore.mas.magnetic.coil), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), JSON.stringify(modelsData));
+                        if (result == -1) {
+                            console.error(result);
+                        }
+                        else {
+                            this.magnetizingInductance = JSON.parse(result);
+                        }
+                    }
 
                     this.magnetizingInductanceCheck = this.$mkf.check_requirement(JSON.stringify(this.masStore.mas.inputs.designRequirements.magnetizingInductance), this.magnetizingInductance);
-                    this.coreLossesData = JSON.parse(this.$mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
-                                                                                JSON.stringify(this.masStore.mas.magnetic.coil),
-                                                                                JSON.stringify(this.masStore.mas.inputs),
-                                                                                JSON.stringify(modelsData), 
-                                                                                this.operatingPointIndex));
+                    {
+                        const result = this.$mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
+                                                                                    JSON.stringify(this.masStore.mas.magnetic.coil),
+                                                                                    JSON.stringify(this.masStore.mas.inputs),
+                                                                                    JSON.stringify(modelsData), 
+                                                                                    this.operatingPointIndex);
+                        if (result.startsWith("Exception")) {
+                            console.error(result);
+                        }
+                        else {
+                            this.coreLossesData = JSON.parse(result);
+                        }
+                    }
                 }).catch(error => {
                     console.error("Error calculating core losses");
                     console.error(error);
