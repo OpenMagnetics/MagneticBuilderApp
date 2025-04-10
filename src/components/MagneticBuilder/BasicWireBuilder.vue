@@ -76,8 +76,6 @@ export default {
     watch: {
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                console.log("wires updated");
-                console.log(this.$settingsStore.magneticBuilderSettings.autoRedraw);
 
                 if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                     this.wires = [];
@@ -129,8 +127,6 @@ export default {
             }
         },
         wireUpdated(modifiedWindingIndex) {
-            console.log("wireUpdated")
-            console.log(modifiedWindingIndex)
             if (!this.blockingRebounds) {
                 this.blockingRebounds = true;
                 if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {

@@ -53,8 +53,6 @@ export default {
     watch: {
         'masStore.mas.magnetic.core': {
             handler(newValue, oldValue) {
-                console.log("Core updated");
-                console.log(this.$settingsStore.magneticBuilderSettings.autoRedraw);
 
                 if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                     this.core = newValue;
@@ -70,7 +68,6 @@ export default {
     mounted () {
         this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
-                console.log("redraw");
                 this.core = deepCopy(this.masStore.mas.magnetic.core);
                 this.imageUpToDate = true;
             }

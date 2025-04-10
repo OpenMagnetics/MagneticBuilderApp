@@ -73,9 +73,6 @@ export default {
     watch: {
         'masStore.mas': {
             handler(newValue, oldValue) {
-                console.log("mas updated");
-                console.log(this.$settingsStore.magneticBuilderSettings.autoRedraw);
-
                 if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                     this.mas = deepCopy(this.masStore.mas);
                     this.imageUpToDate = true;
@@ -90,7 +87,6 @@ export default {
     mounted () {
         this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
-                console.log("redraw");
                 this.mas = deepCopy(this.masStore.mas);
                 this.imageUpToDate = true;
             }

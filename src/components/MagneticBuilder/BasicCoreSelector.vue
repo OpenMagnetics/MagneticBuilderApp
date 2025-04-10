@@ -184,33 +184,52 @@ export default {
 
                 this.coreShapeFamilies = this.coreShapeFamilies.sort();
 
-                var coreShapeNamesHandle;
                 if (this.onlyManufacturer != '' && this.onlyManufacturer != null) {
-                    coreShapeNamesHandle = this.$mkf.get_available_core_shapes_by_manufacturer(this.onlyManufacturer);
+                    var coreShapeNamesHandle = this.$mkf.get_available_core_shapes_by_manufacturer(this.onlyManufacturer);
+
+                    this.coreShapeFamilies.forEach((shapeFamily) => {
+                        if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
+                            !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
+                            this.coreShapeNames[shapeFamily] = [];
+                            console.log(shapeFamily)
+                            
+                            var numberShapes = 0;
+                            for (var i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
+                                const aux = coreShapeNamesHandle.get(i);
+                                if (aux.startsWith(shapeFamily + " ")) {
+                                    console.log(shapeFamily)
+                                    numberShapes += 1;
+                                    this.coreShapeNames[shapeFamily].push(aux);
+                                }
+                            }
+                            if (numberShapes == 0) {
+                                this.coreShapeNames[shapeFamily].pop();
+                            }
+
+                        }
+                    })
                 }
                 else {
-                    coreShapeNamesHandle = this.$mkf.get_available_core_shapes();
-                }
+                    this.coreShapeFamilies.forEach((shapeFamily) => {
+                        if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
+                            !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
+                            this.coreShapeNames[shapeFamily] = [];
+                            console.log(shapeFamily)
+                            var coreShapeNamesHandle = this.$mkf.get_available_core_shapes_by_family(shapeFamily.toLowerCase())
 
-                this.coreShapeFamilies.forEach((shapeFamily) => {
-                    if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
-                        !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
-                        this.coreShapeNames[shapeFamily] = [];
-                        var numberShapes = 0;
-                        for (var i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
-                            const aux = coreShapeNamesHandle.get(i);
-                            if (aux.startsWith(shapeFamily + " ")) {
+                            var numberShapes = 0;
+                            for (var i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
+                                const aux = coreShapeNamesHandle.get(i);
                                 numberShapes += 1;
                                 this.coreShapeNames[shapeFamily].push(aux);
                             }
-                        }
-                        if (numberShapes == 0) {
-                            this.coreShapeNames[shapeFamily].pop();
-                        }
+                            if (numberShapes == 0) {
+                                this.coreShapeNames[shapeFamily].pop();
+                            }
 
-                    }
-                    // this.coreShapeNames[shapeFamily] = this.coreShapeNames[shapeFamily].sort();
-                })
+                        }
+                    })
+                }
             });
         },
         getMaterialNames() {
@@ -371,6 +390,8 @@ export default {
                     }
                     else{
                         this.errorMessage = "No core can be advised. You are on your own."
+                        setTimeout(() => {this.errorMessage = ""}, 10000);
+
                     }
                     this.assignLocalData(this.masStore.mas.magnetic.core);
                     this.loading = false;

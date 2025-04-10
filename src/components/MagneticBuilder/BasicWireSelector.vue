@@ -56,7 +56,7 @@ export default {
         const wireWidths = [];
         const wireStandards = []; 
         const wireCoatings = []; 
-        const errorMessages = ""; 
+        const errorMessage = ""; 
         var localData = {
             type: null,
             standard: "IEC 60317",
@@ -93,7 +93,7 @@ export default {
             wireCoatings,
             forceUpdate,
             loading,
-            errorMessages,
+            errorMessage,
         }
     },
     computed: {
@@ -142,7 +142,7 @@ export default {
             this.masStore.mas.magnetic.coil.sectionsDescription = null;
         },
         assignLocalData(wire) {
-            this.errorMessages = "";
+            this.errorMessage = "";
             this.$mkf.ready.then(_ => {
                 if (wire != "" && wire.type != null) {
 
@@ -182,7 +182,7 @@ export default {
             });
         },
         assignWire() {
-            this.errorMessages = "";
+            this.errorMessage = "";
             this.$mkf.ready.then(_ => {
 
                 var wire = {};
@@ -444,12 +444,13 @@ export default {
 
                         const resultMasWithCoil = this.$mkf.calculate_advised_coil(JSON.stringify(this.masStore.mas));
                         if (resultMasWithCoil.startsWith("Exception")) {
-                            this.errorMessages = "Our advisers could not find a wire. Sorry, you are on your own!";
+                            this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
+                            setTimeout(() => {this.errorMessage = ""}, 10000);
                             this.loading = false;
                             console.error(resultMasWithCoil);
                             return;
                         }
-                        this.errorMessages = "";
+                        this.errorMessage = "";
                         const masWithCoil = JSON.parse(resultMasWithCoil);
 
                         this.masStore.mas.magnetic.coil.functionalDescription = masWithCoil.magnetic.coil.functionalDescription;
@@ -476,12 +477,12 @@ export default {
 
                         const resultMasWithCoil = this.$mkf.calculate_advised_coil(JSON.stringify(this.masStore.mas));
                         if (resultMasWithCoil.startsWith("Exception")) {
-                            this.errorMessages = "Our advisers could not find a wire. Sorry, you are on your own!";
+                            this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
                             this.loading = false;
                             console.error(resultMasWithCoil);
                             return;
                         }
-                        this.errorMessages = "";
+                        this.errorMessage = "";
                         const masWithCoil = JSON.parse(resultMasWithCoil);
 
                         this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = masWithCoil.magnetic.coil.functionalDescription[this.windingIndex];
@@ -758,7 +759,7 @@ export default {
                 @loadCore="loadWire"
             />
 
-            <label class="text-danger col-12 pt-1" style="font-size: 1em">{{errorMessages}}</label>
+            <label class="text-danger col-12 pt-1" style="font-size: 1em">{{errorMessage}}</label>
 
         </div>
     </div>
