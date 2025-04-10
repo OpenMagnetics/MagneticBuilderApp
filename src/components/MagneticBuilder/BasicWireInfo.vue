@@ -160,7 +160,6 @@ export default {
                     else {
                         this.calculateWireData();
                         this.tryingToSend = false;
-                        this.dataUptoDate = true;
                     }
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
@@ -214,6 +213,7 @@ export default {
                     this.effectiveSkinDepth = this.$mkf.calculate_effective_skin_depth(wireMaterial, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
 
                     this.computeIfCompliesWithTurnsRatio();
+                    this.dataUptoDate = true;
                 }).catch(error => {
                     console.error(error);
                 });

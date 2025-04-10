@@ -206,6 +206,7 @@ export default {
                     }
                     else {
                         this.loading = false;
+                        this.dataUptoDate = true;
                     }
                 })
             }
