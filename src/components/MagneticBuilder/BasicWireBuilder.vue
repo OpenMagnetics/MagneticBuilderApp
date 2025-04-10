@@ -59,19 +59,51 @@ export default {
         }
         const selectedWindingIndex = 0;
         const blockingRebounds = false;
+        const wires = [];
+        const imageUpToDate = false;
+
         return {
             blockingRebounds,
             numberWindingsAux,
             selectedWindingIndex,
             wire2DVisualizerPlotCurrentDensity,
+            wires,
+            imageUpToDate,
         }
     },
     computed: {
     },
     watch: {
+        'masStore.mas.magnetic.coil.functionalDescription': {
+            handler(newValue, oldValue) {
+                console.log("wires updated");
+                console.log(this.$settingsStore.magneticBuilderSettings.autoRedraw);
+
+                if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                    this.wires = [];
+                    this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem) => {
+                        this.wires.push(deepCopy(elem.wire));
+                    })
+                    this.imageUpToDate = true;
+                }
+                else {
+                    this.imageUpToDate = false;
+                }
+            },
+          deep: true
+        }
     },
     mounted () {
 
+        this.$stateStore.$onAction((action) => {
+            if (action.name == "redraw") {
+                this.wires = [];
+                this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem) => {
+                    this.wires.push(deepCopy(elem.wire));
+                })
+                this.imageUpToDate = true;
+            }
+        })
         this.masStore.$onAction((action) => {
             if (action.name == "importedMas") {
                 this.numberWindingsAux.numberWindings = this.masStore.mas.magnetic.coil.functionalDescription.length;
@@ -167,11 +199,16 @@ export default {
     <h5 v-if="masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape ==''" class="text-danger my-2">Select a core first</h5>
 
     <div v-else class="container">
-        <div v-if="useVisualizers && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire != null" class="row mb-2" style="max-height: 20vh">
+        <div
+            v-if="useVisualizers && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null && wires[selectedWindingIndex] != null"
+            class="row mb-2"
+            style="max-height: 20vh"
+            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
+        >
             <Wire2DVisualizer 
                 v-if="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire.type != null"
                 :dataTestLabel="`${dataTestLabel}-Wire2DVisualizer`"
-                :wire="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire"
+                :wire="wires[selectedWindingIndex]"
                 :windingIndex="selectedWindingIndex"
                 :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
                 :includeCurrentDensity="wire2DVisualizerPlotCurrentDensity == '1'"

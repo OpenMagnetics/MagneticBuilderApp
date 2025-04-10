@@ -515,7 +515,10 @@ export default {
                 @update="gappingUpdated"
             />
 
-            <div v-if= "enableSimulation" class="col-12 p-0">
+            <div
+                v-if= "enableSimulation"
+                class="col-12 p-0"
+                >
 
                 <BasicCoreInfo 
                     v-if="!loading && !$settingsStore.magneticBuilderSettings.advancedMode"

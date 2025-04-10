@@ -1,6 +1,7 @@
 <script setup>
 import Magnetic2DVisualizer from '/WebSharedComponents/Common/Magnetic2DVisualizer.vue'
 import BasicCoilSelector from './BasicCoilSelector.vue'
+import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 </script>
 
 <script>
@@ -45,8 +46,12 @@ export default {
     },
     data() {
         const coilFits = true;
+        const mas = {};
+        const imageUpToDate = false;
         return {
             coilFits,
+            mas,
+            imageUpToDate,
         }
     },
     computed: {
@@ -65,9 +70,31 @@ export default {
             return isMissingWires;
         }
     },
-    watch: { 
+    watch: {
+        'masStore.mas': {
+            handler(newValue, oldValue) {
+                console.log("mas updated");
+                console.log(this.$settingsStore.magneticBuilderSettings.autoRedraw);
+
+                if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                    this.mas = deepCopy(this.masStore.mas);
+                    this.imageUpToDate = true;
+                }
+                else {
+                    this.imageUpToDate = false;
+                }
+            },
+          deep: true
+        }
     },
     mounted () {
+        this.$stateStore.$onAction((action) => {
+            if (action.name == "redraw") {
+                console.log("redraw");
+                this.mas = deepCopy(this.masStore.mas);
+                this.imageUpToDate = true;
+            }
+        })
     },
     methods: {
         swapFieldPlot(newValue) {
@@ -87,9 +114,14 @@ export default {
     <h5 v-if="masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''" class="text-danger my-2">Select a core first</h5>
     <h5 v-if="missingWires" class="text-danger my-2">Select wires</h5>
     <div v-if="!missingWires && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''" class="container">
-        <div v-if="useVisualizers" class="row mb-3" style="height: 50vh">
+        <div
+            v-if="useVisualizers && mas.magnetic != null && mas.magnetic.core != null && mas.magnetic.core.functionalDescription.shape != ''"
+            class="row mb-3"
+            style="height: 50vh;"
+            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
+        >
             <Magnetic2DVisualizer 
-                :modelValue="masStore.mas"
+                :modelValue="mas"
                 :operatingPointIndex="operatingPointIndex"
                 :enableZoom="false"
                 :enableOptions="enableOptions"

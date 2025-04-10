@@ -32,6 +32,7 @@ export default {
         const magnetizingInductanceCheck = false;
         const recentChange = false;
         const tryingToSend = false;
+        const dataUptoDate = false;
 
         return {
             coreTemperatureDependantParametersData,
@@ -40,6 +41,7 @@ export default {
             magnetizingInductanceCheck,
             recentChange,
             tryingToSend,
+            dataUptoDate,
         }
     },
     computed: {
@@ -89,6 +91,7 @@ export default {
         tryToSimulate() {
             if (!this.tryingToSend) {
                 this.recentChange = false;
+                this.dataUptoDate = false;
                 this.tryingToSend = true;
                 setTimeout(() => {
                     if (this.recentChange) {
@@ -99,6 +102,7 @@ export default {
                         this.calculateCoreEffectiveParameters();
                         this.calculateCoreLosses();
                         this.tryingToSend = false;
+                        this.dataUptoDate = true;
                     }
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
@@ -194,7 +198,12 @@ export default {
 
 <template>
     <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
-        <div v-if="core.processedDescription != null" class="row" v-tooltip="styleTooltip">
+        <div
+            v-if="core.processedDescription != null"
+            class="row"
+            v-tooltip="styleTooltip"
+            :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
+        >
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
                 class="col-12 pe-4 ps-3"

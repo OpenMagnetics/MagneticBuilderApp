@@ -35,6 +35,7 @@ export default {
         const loading = false;
         const recentChange = false;
         const tryingToSend = false;
+        const dataUptoDate = false;
         const lastSimulatedInputs = "";
         const lastSimulatedMagnetics = "";
         const lastSimulatedModels = "";
@@ -48,6 +49,7 @@ export default {
             lastSimulatedInputs,
             lastSimulatedMagnetics,
             lastSimulatedModels,
+            dataUptoDate,
         }
     },
     computed: {
@@ -94,6 +96,7 @@ export default {
         tryToSimulate() {
             if (!this.tryingToSend) {
                 this.recentChange = false
+                this.dataUptoDate = false
                 this.tryingToSend = true
                 setTimeout(() => {
                     if (this.recentChange) {
@@ -200,6 +203,7 @@ export default {
                             this.updateFields(mas.outputs);
                             this.masStore.mas.outputs = deepCopy(mas.outputs);
                             this.loading = false;
+                            this.dataUptoDate = true;
                         }
                     }
                     else {
@@ -224,7 +228,11 @@ export default {
     <img :data-cy="dataTestLabel + '-BasicCoilInfo-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
 
     <div v-else class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2" :style="$styleStore.magneticBuilder.main">
-        <div class="row" v-tooltip="styleTooltip">
+        <div
+            class="row"
+            v-tooltip="styleTooltip"
+            :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
+        >
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.windingLosses"
                 v-if="outputsData.windingLosses != null"

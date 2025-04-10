@@ -43,6 +43,7 @@ export default {
         const compliesWithTurnsRatio = true;
         const recentChange = false;
         const tryingToSend = false;
+        const dataUptoDate = false;
 
         return {
             dcResistancePerMeter,
@@ -57,6 +58,7 @@ export default {
             compliesWithTurnsRatio,
             recentChange,
             tryingToSend,
+            dataUptoDate,
         }
     },
     computed: {
@@ -148,6 +150,7 @@ export default {
         tryToSimulate() {
             if (!this.tryingToSend) {
                 this.recentChange = false;
+                this.dataUptoDate = false;
                 this.tryingToSend = true;
                 setTimeout(() => {
                     if (this.recentChange) {
@@ -157,6 +160,7 @@ export default {
                     else {
                         this.calculateWireData();
                         this.tryingToSend = false;
+                        this.dataUptoDate = true;
                     }
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
@@ -221,7 +225,11 @@ export default {
 
 <template>
     <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
-        <div class="row" v-tooltip="styleTooltip">
+        <div
+            class="row"
+            v-tooltip="styleTooltip"
+            :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
+        >
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"

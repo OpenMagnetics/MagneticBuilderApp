@@ -1,6 +1,7 @@
 <script setup>
 import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import BasicCoreSelector from './BasicCoreSelector.vue'
+import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 </script>
 
 <script>
@@ -40,14 +41,40 @@ export default {
         },
     },
     data() {
+        const core = {};
+        const imageUpToDate = false; 
         return {
+            core,
+            imageUpToDate,
         }
     },
     computed: {
     },
     watch: {
+        'masStore.mas.magnetic.core': {
+            handler(newValue, oldValue) {
+                console.log("Core updated");
+                console.log(this.$settingsStore.magneticBuilderSettings.autoRedraw);
+
+                if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                    this.core = newValue;
+                    this.imageUpToDate = true;
+                }
+                else {
+                    this.imageUpToDate = false;
+                }
+            },
+          deep: true
+        }
     },
     mounted () {
+        this.$stateStore.$onAction((action) => {
+            if (action.name == "redraw") {
+                console.log("redraw");
+                this.core = deepCopy(this.masStore.mas.magnetic.core);
+                this.imageUpToDate = true;
+            }
+        })
     },
     methods: {
     }
@@ -56,10 +83,15 @@ export default {
 
 <template>
     <div class="container">
-        <div v-if="useVisualizers" class="row" style="height: 30vh">
+        <div
+            v-if="useVisualizers && core.functionalDescription != null"
+            class="row"
+            style="height: 30vh"
+            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
+        >
             <Core3DVisualizer 
                 :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
-                :core="masStore.mas.magnetic.core"
+                :core="core"
                 :fullCoreModel="true"
                 :loadingGif="$settingsStore.loadingGif"
                 :backgroundColor="$styleStore.magneticBuilder.main.background"
