@@ -191,13 +191,11 @@ export default {
                         if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
                             !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
                             this.coreShapeNames[shapeFamily] = [];
-                            console.log(shapeFamily)
                             
                             var numberShapes = 0;
                             for (var i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
                                 const aux = coreShapeNamesHandle.get(i);
                                 if (aux.startsWith(shapeFamily + " ")) {
-                                    console.log(shapeFamily)
                                     numberShapes += 1;
                                     this.coreShapeNames[shapeFamily].push(aux);
                                 }
@@ -214,7 +212,6 @@ export default {
                         if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
                             !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
                             this.coreShapeNames[shapeFamily] = [];
-                            console.log(shapeFamily)
                             var coreShapeNamesHandle = this.$mkf.get_available_core_shapes_by_family(shapeFamily.toLowerCase())
 
                             var numberShapes = 0;
@@ -229,6 +226,13 @@ export default {
 
                         }
                     })
+                }
+
+                if (this.masStore.mas.magnetic.core.functionalDescription.shape.type == "custom") {
+                    console.log(this.localData.shapeFamily)
+                    console.log(this.masStore.mas.magnetic.core.functionalDescription.shape.family)
+                    console.log(this.coreShapeNames)
+                    this.coreShapeNames[this.masStore.mas.magnetic.core.functionalDescription.shape.family.toUpperCase()].unshift(this.masStore.mas.magnetic.core.functionalDescription.shape.name);
                 }
             });
         },
@@ -402,8 +406,6 @@ export default {
                 }
             });
         },
-        customizeCore() {
-        },
         loadCore() {
         },
     }
@@ -562,10 +564,10 @@ export default {
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                 :enableAdvise="!loading"
-                :enableCustomize="false"
+                :enableCustomize="true"
                 :allowAdvise="enableAdvise"
                 @adviseCore="adviseCoreRequested"
-                @customizeCore="customizeCore"
+                @customizeCore="$emit('customizeCore')"
                 @loadCore="loadCore"
             />
             <label class="text-danger col-12 pt-1" style="font-size: 0.7em">{{errorMessage}}</label>

@@ -73,12 +73,20 @@ export default {
                 const newMas = JSON.parse(e.target.result);
                 if (newMas.magnetic != null) {
                     checkAndFixMas(newMas, this.$mkf).then(response => {
+                        console.warn(response)
+                        console.warn(response)
+                        console.warn(response)
                         this.masStore.mas = response;
                         this.masStore.importedMas();
                         this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";
                         this.$stateStore.operatingPoints.modePerPoint = []
                         for (var i = 0; i < this.masStore.mas.inputs.operatingPoints.length; i++) {
-                            this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.Manual);
+                            if (this.masStore.mas.inputs.operatingPoints[i].excitationsPerWinding[0].current.processed != null) {
+                                this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.Manual);
+                            }
+                            else {
+                                this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.HarmonicsList);
+                            }
                         }
                         this.historyStore.addToHistory(this.masStore.mas);
                         this.historyStore.blockAdditions();

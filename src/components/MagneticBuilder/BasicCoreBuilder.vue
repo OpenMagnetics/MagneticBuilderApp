@@ -103,6 +103,7 @@ export default {
                 :enableSimulation="enableSimulation"
                 :enableSubmenu="enableSubmenu"
                 :enableAdvise="enableAdvise"
+                @customizeCore="$emit('customizeCore')"
             />
         </div>
     </div>

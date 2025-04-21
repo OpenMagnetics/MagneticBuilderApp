@@ -3,6 +3,7 @@ import { useHistoryStore } from '../stores/history'
 import BasicCoreBuilder from './MagneticBuilder/BasicCoreBuilder.vue'
 import BasicWireBuilder from './MagneticBuilder/BasicWireBuilder.vue'
 import BasicCoilBuilder from './MagneticBuilder/BasicCoilBuilder.vue'
+import AdvancedCoreSelector from './MagneticBuilder/AdvancedCoreSelector.vue'
 import GraphInfo from './MagneticBuilder/GraphInfo.vue'
 import { isMobile } from '/WebSharedComponents/assets/js/utils.js'
 import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
@@ -168,13 +169,30 @@ export default {
             }
             return true;
         },
+        customizeCore() {
+            console.log('customizeCore');
+            this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Advanced;
+        }
     }
 }
 </script>
 
 <template>
     <div class="container" :style="$styleStore.magneticBuilder.main">
-        <div class="row">
+        <div
+            class="row"
+            v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced"
+        >
+            <AdvancedCoreSelector
+                :dataTestLabel="dataTestLabel + '-AdvancedCoreSelector'"
+                :masStore="masStore"
+                :enableSimulation="true"
+            />
+        </div>
+        <div 
+            v-else
+            class="row"
+        >
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
                 <BasicCoreBuilder 
                     :masStore="masStore"
@@ -184,6 +202,7 @@ export default {
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
+                    @customizeCore="customizeCore"
                 />
             </div>
             <div :class="isMobile()? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
