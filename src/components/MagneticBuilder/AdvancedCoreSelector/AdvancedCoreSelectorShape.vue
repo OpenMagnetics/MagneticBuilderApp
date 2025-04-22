@@ -1,8 +1,9 @@
 <script setup>
+import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { useHistoryStore } from '../../../stores/history'
-import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { deepCopy, isMobile } from '/WebSharedComponents/assets/js/utils.js'
 import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import Core2DVisualizer from '/WebSharedComponents/Common/Core2DVisualizer.vue'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
@@ -32,11 +33,11 @@ export default {
     },
     data() {
         const localData = {};
-        const localCore = deepCopy(this.core);
-        const errorMessage = "";
+        const localCoreToDraw = deepCopy(this.core);
         const errorMessages = {};
         const loading = false;
         const imageUpToDate = true;
+        const dataUptoDate = true;
         const availableFamilies = {};
         const availableFamilySubtypes = [];
         const dimensionsExceptionsPerFamily = {
@@ -55,9 +56,9 @@ export default {
 
         return {
             localData,
-            localCore,
+            localCoreToDraw,
             imageUpToDate,
-            errorMessage,
+            dataUptoDate,
             errorMessages,
             loading,
             availableFamilies,
@@ -75,9 +76,6 @@ export default {
         this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
                 this.redraw();
-            }
-            if (action.name == "applyChanges") {
-                this.applyChanges();
             }
         })
     },
@@ -164,11 +162,13 @@ export default {
 
                     if (!(this.localData.family == "rm" && this.localData.familySubtype == "2") && !(this.localData.family == "p" && this.localData.familySubtype != "2") && !(this.localData.family == "efd") && !(this.localData.family == "planar er") && !(this.localData.family == "ut") && this.localData.dimensions['C'] > 0) {
                         var c_f_condition = false;
-                        if (this.localData.family != "er" && this.localData.family != "e" && this.localData.family != "etd" && this.localData.family != "ec") {
-                            c_f_condition = this.localData.dimensions['F'] >= this.localData.dimensions['C'];
-                        }
-                        else {
-                            c_f_condition = this.localData.dimensions['F'] > this.localData.dimensions['C'];
+                        if (this.localData.family != "e") {
+                            if (this.localData.family != "er" && this.localData.family != "etd" && this.localData.family != "ec") {
+                                c_f_condition = this.localData.dimensions['F'] >= this.localData.dimensions['C'];
+                            }
+                            else {
+                                c_f_condition = this.localData.dimensions['F'] > this.localData.dimensions['C'];
+                            }
                         }
                         if (key == 'C'){
                             if (c_f_condition){
@@ -268,8 +268,10 @@ export default {
                 const newDimensions = {};
                 for (var i = 0; i < dimensionsHandle.size(); i++) {
                     const key = dimensionsHandle.get(i);
-                    if (this.dimensionsExceptionsPerFamily[this.localData.family].includes(key)) {
-                        continue;
+                    if (this.localData.family in this.dimensionsExceptionsPerFamily) {
+                        if (this.dimensionsExceptionsPerFamily[this.localData.family].includes(key)) {
+                            continue;
+                        }
                     }
                     if (key in this.localData.dimensions) {
                         newDimensions[key] = this.localData.dimensions[key];
@@ -282,46 +284,46 @@ export default {
             })
         },
         familyUpdated() {
+            this.core.functionalDescription.shape.family = deepCopy(this.localData.family);
             this.getFamilySubtypes();
         },
         familySubtypeUpdated() {
+            this.core.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
             this.getDimensionKeys();
+        },
+        dimensionUpdated() {
+            this.core.functionalDescription.shape.dimensions = {};
+            Object.keys(this.localData.dimensions).forEach((key) => {
+                this.core.functionalDescription.shape.dimensions[key] = {};
+                this.core.functionalDescription.shape.dimensions[key]["nominal"] = this.localData.dimensions[key];
+            })
+
+            this.calculateCoreEffectiveParameters();
+            this.computeErrorMessages();
         },
         redraw() {
             this.errorMessage = "";
-            this.localCore.functionalDescription.shape.dimensions = deepCopy(this.localData.dimensions);
-            this.localCore.functionalDescription.shape.family = deepCopy(this.localData.family);
-            this.localCore.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
+            this.localCoreToDraw.functionalDescription.shape.dimensions = deepCopy(this.localData.dimensions);
+            this.localCoreToDraw.functionalDescription.shape.family = deepCopy(this.localData.family);
+            this.localCoreToDraw.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
         },
-        applyChanges() {
-            this.errorMessage = "";
-            this.localCore.functionalDescription.shape.dimensions = {};
-            Object.keys(this.localData.dimensions).forEach((key) => {
-                this.localCore.functionalDescription.shape.dimensions[key] = {};
-                this.localCore.functionalDescription.shape.dimensions[key]["nominal"] = this.localData.dimensions[key];
-            })
+        calculateCoreEffectiveParameters() {
+            if (this.core['functionalDescription']['shape'] != "") {
+                this.$mkf.ready.then(_ => {
+                    const coreJson = this.$mkf.calculate_core_data(JSON.stringify(this.core), false);
+                    if (coreJson.startsWith("Exception")) {
+                        console.error(coreJson);
+                        return;
+                    }
+                    else {
+                        this.core.processedDescription = JSON.parse(coreJson).processedDescription;
+                    }
 
-            this.localCore.functionalDescription.shape.family = deepCopy(this.localData.family);
-            this.localCore.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
-            this.localCore.functionalDescription.shape.type = "custom";
-            this.localCore.functionalDescription.shape.name = this.localData.name;
-            this.localCore.geometricalDescription = null;
-            this.localCore.processedDescription = null;
-            this.localCore.distributorsInfo = null;
-            this.localCore.manufacturerInfo = null;
-            this.localCore.name = "Custom";
-
-            this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
-            this.$emit("customizedCore", deepCopy(this.localCore));
-            // this.core = deepCopy(this.localCore);
+                }).catch(error => {
+                    console.error(error);
+                });
+            }
         },
-        dimensionUpdated() {
-            this.computeErrorMessages();
-            this.errorMessage = "";
-        },
-        errorInDimensions() {
-            this.errorMessage = "There is an error in the dimensions, please review them";
-        }
     }
 }
 </script>
@@ -418,7 +420,89 @@ export default {
                         {{errorMessages[key]}}
                     </label>
                 </div>
-                <label class="text-danger col-12 pt-1" style="font-size: 1em">{{errorMessage}}</label>
+
+                <div class=" mt-5 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
+                    <div
+                        v-if="core.processedDescription != null"
+                        class="row"
+                        :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
+                    >
+                        <DimensionReadOnly 
+                            class="col-12 pe-4 ps-5"
+                            :name="'L'"
+                            :subscriptName="'eff'"
+                            :unit="'m'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-EffectiveLength'"
+                            :numberDecimals="2"
+                            :value="core.processedDescription.effectiveParameters.effectiveLength"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                        <DimensionReadOnly 
+                            :class="isMobile()? '' : 'border-start'"
+                            class="col-12 pe-4 ps-5"
+                            :name="'A'"
+                            :subscriptName="'eff'"
+                            :unit="'m²'"
+                            :power="2"
+                            :dataTestLabel="dataTestLabel + '-EffectiveArea'"
+                            :numberDecimals="1"
+                            :value="core.processedDescription.effectiveParameters.effectiveArea"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                        <DimensionReadOnly 
+                            class="col-12 pe-4 ps-5"
+                            :name="'V'"
+                            :subscriptName="'eff'"
+                            :unit="'m³'"
+                            :power="3"
+                            :dataTestLabel="dataTestLabel + '-EffectiveVolume'"
+                            :numberDecimals="1"
+                            :value="core.processedDescription.effectiveParameters.effectiveVolume"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                        <DimensionReadOnly 
+                            :class="isMobile()? '' : 'border-start'"
+                            class="col-12 pe-4 ps-5"
+                            :name="'A'"
+                            :subscriptName="'min'"
+                            :unit="'m²'"
+                            :power="2"
+                            :dataTestLabel="dataTestLabel + '-MinimumArea'"
+                            :numberDecimals="1"
+                            :value="core.processedDescription.effectiveParameters.minimumArea"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                </div>
 
             </div>
             <div class="col-md-5 col-sm-12">
@@ -431,11 +515,11 @@ export default {
                 >
                     <Core3DVisualizer 
                         :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
-                        :core="localCore"
+                        :core="localCoreToDraw"
                         :fullCoreModel="true"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main.background"
-                        @errorInDimensions="errorInDimensions"
+                        @errorInDimensions="$emit('errorInDimensions')"
                     />
                 </div>
             </div>
@@ -448,10 +532,10 @@ export default {
                 >
                     <Core2DVisualizer 
                         :dataTestLabel="`${dataTestLabel}-Core2DVisualizer`"
-                        :core="localCore"
+                        :core="localCoreToDraw"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main.background"
-                        @errorInDimensions="errorInDimensions"
+                        @errorInDimensions="$emit('errorInDimensions')"
                     />
                 </div>
             </div>
