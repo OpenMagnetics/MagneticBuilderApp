@@ -385,7 +385,7 @@ export default {
         <div class="row">
             <div
                 v-for="gapsPerColumn, columnIndex in reorderedColumns"
-                class="column-container col-3 row mb-1 text-center"
+                class="column-container col-3 row mb-1 text-center mx-0"
                 :style="{'background-image': `url(${columnImages[columnIndex]}`}"
             >
                 <div>
