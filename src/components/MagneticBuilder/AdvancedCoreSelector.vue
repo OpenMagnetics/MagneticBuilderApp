@@ -2,6 +2,7 @@
 import AdvancedCoreSelectorShape from './AdvancedCoreSelector/AdvancedCoreSelectorShape.vue'
 import AdvancedCoreSelectorGapping from './AdvancedCoreSelector/AdvancedCoreSelectorGapping.vue'
 import { useHistoryStore } from '../../stores/history'
+import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 
 </script>
 
@@ -28,6 +29,7 @@ export default {
         const errorMessage = "";
         const loading = false;
         const forceUpdate = 0;
+        const localCore = deepCopy(this.masStore.mas.magnetic.core);
 
         return {
             historyStore,
@@ -35,6 +37,7 @@ export default {
             errorMessage,
             loading,
             forceUpdate,
+            localCore,
         }
     },
     computed: {
@@ -44,11 +47,33 @@ export default {
     created () {
     },
     mounted () {
+        this.$stateStore.$onAction((action) => {
+            if (action.name == "applyChanges") {
+                this.applyChanges();
+            }
+        })
     },
     methods: {
         customizedCore(customCore) {
             this.masStore.mas.magnetic.core = customCore;
-        }
+        },
+        applyChanges() {
+            this.errorMessage = "";
+            this.localCore.functionalDescription.shape.type = "custom";
+            this.localCore.functionalDescription.shape.name = this.localData.name;
+            this.localCore.geometricalDescription = null;
+            this.localCore.processedDescription = null;
+            this.localCore.distributorsInfo = null;
+            this.localCore.manufacturerInfo = null;
+            this.localCore.name = "Custom";
+
+            this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
+            this.$emit("customizedCore", deepCopy(this.localCore));
+            // this.core = deepCopy(this.localCore);
+        },
+        errorInDimensions() {
+            this.errorMessage = "There is an error in the dimensions, please review them";
+        },
     }
 }
 </script>
@@ -60,17 +85,19 @@ export default {
             <AdvancedCoreSelectorShape
                 v-if="$stateStore.magneticBuilder.submode.core == $stateStore.MagneticBuilderCoreSubmodes.Shape"
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorShape'"
-                :core="masStore.mas.magnetic.core"
+                :core="localCore"
                 :enableSimulation="true"
                 @customizedCore="customizedCore"
+                @errorInDimensions="errorInDimensions"
             />
             <AdvancedCoreSelectorGapping
                 v-if="$stateStore.magneticBuilder.submode.core == $stateStore.MagneticBuilderCoreSubmodes.Gapping"
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorGapping'"
-                :core="masStore.mas.magnetic.core"
+                :core="localCore"
                 :enableSimulation="true"
                 @customizedCore="customizedCore"
             />
         </div>
+        <label class="text-danger col-12 pt-1" style="font-size: 1em">{{errorMessage}}</label>
     </div>
 </template>
