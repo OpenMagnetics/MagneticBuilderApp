@@ -289,12 +289,20 @@ export default {
             this.dataUptoDate = false;
             this.core.functionalDescription.shape.family = deepCopy(this.localData.family);
             this.getFamilySubtypes();
+
+            if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                this.redraw();
+            }
         },
         familySubtypeUpdated() {
             this.imageUpToDate = false;
             this.dataUptoDate = false;
             this.core.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
             this.getDimensionKeys();
+
+            if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                this.redraw();
+            }
         },
         dimensionUpdated() {
             this.imageUpToDate = false;
@@ -307,6 +315,10 @@ export default {
 
             this.calculateCoreEffectiveParameters();
             this.computeErrorMessages();
+
+            if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                this.redraw();
+            }
         },
         redraw() {
             this.errorMessage = "";

@@ -287,6 +287,9 @@ export default {
                     this.core.geometricalDescription = core.geometricalDescription;
                     this.calculateData();
                     this.imageUpToDate = false;
+                    if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                        this.redraw();
+                    }
                 }
             })
         },
