@@ -188,7 +188,7 @@ export default {
                 this.core.functionalDescription.gapping[elem.gaps[0].index].type = "additive";
                 this.core.functionalDescription.gapping[elem.gaps[0].index].coordinates[1] = 0;
             })
-
+            this.forceUpdate += 1;
         },
         unsetSpacer() {
             this.reorderedColumns.forEach((elem) => {
