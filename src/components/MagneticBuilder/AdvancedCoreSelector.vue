@@ -58,18 +58,20 @@ export default {
             this.masStore.mas.magnetic.core = customCore;
         },
         applyChanges() {
-            this.errorMessage = "";
+            // this.errorMessage = "";
             this.localCore.functionalDescription.shape.type = "custom";
-            this.localCore.functionalDescription.shape.name = this.localData.name;
-            this.localCore.geometricalDescription = null;
-            this.localCore.processedDescription = null;
-            this.localCore.distributorsInfo = null;
-            this.localCore.manufacturerInfo = null;
+            // this.localCore.functionalDescription.shape.name = this.localData.name;
+            // this.localCore.geometricalDescription = null;
+            // this.localCore.processedDescription = null;
+            // this.localCore.distributorsInfo = null;
+            // this.localCore.manufacturerInfo = null;
             this.localCore.name = "Custom";
 
+            // this.localCore.functionalDescription.gapping.name = this.localData.name;
+
+            // this.$emit("customizedCore", deepCopy(this.localCore));
+            this.masStore.mas.magnetic.core = deepCopy(this.localCore);
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
-            this.$emit("customizedCore", deepCopy(this.localCore));
-            // this.core = deepCopy(this.localCore);
         },
         errorInDimensions() {
             this.errorMessage = "There is an error in the dimensions, please review them";
@@ -87,15 +89,14 @@ export default {
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorShape'"
                 :core="localCore"
                 :enableSimulation="true"
-                @customizedCore="customizedCore"
                 @errorInDimensions="errorInDimensions"
             />
             <AdvancedCoreSelectorGapping
                 v-if="$stateStore.magneticBuilder.submode.core == $stateStore.MagneticBuilderCoreSubmodes.Gapping"
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorGapping'"
                 :core="localCore"
+                :inputs="masStore.mas.inputs"
                 :enableSimulation="true"
-                @customizedCore="customizedCore"
             />
         </div>
         <label class="text-danger col-12 pt-1" style="font-size: 1em">{{errorMessage}}</label>

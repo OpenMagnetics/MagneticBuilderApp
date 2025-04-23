@@ -129,7 +129,7 @@ export default {
             :allowNegative="true"
             :allowZero="true"
             :min="0.000001"
-            :max="0.1"
+            :max="1"
             :modelValue="gap.coordinates"
             :forceUpdate="forceUpdate"
             :labelWidthProportionClass="'col-sm-12 col-md-4'"
@@ -172,5 +172,6 @@ export default {
         >
             {{'Remove gap'}}
         </button>
+        <slot/>
     </div>
 </template>

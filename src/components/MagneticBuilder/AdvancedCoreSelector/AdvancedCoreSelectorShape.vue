@@ -54,6 +54,8 @@ export default {
         this.assignLocalData(this.core.functionalDescription.shape);
         this.getDimensionKeys();
 
+        this.core.functionalDescription.shape.name = this.core.functionalDescription.shape.name.startsWith("Custom")? this.core.functionalDescription.shape.name : "Custom " + this.core.functionalDescription.shape.name;
+
         return {
             localData,
             localCoreToDraw,
@@ -208,7 +210,6 @@ export default {
         assignLocalData(shape) {
             this.$mkf.ready.then(_ => {
                 const localData = {
-                    name: shape.name.startsWith("Custom")? shape.name : "Custom " + shape.name,
                     family: shape.family,
                     familySubtype: shape.familySubtype,
                     dimensions: {},
@@ -284,14 +285,20 @@ export default {
             })
         },
         familyUpdated() {
+            this.imageUpToDate = false;
+            this.dataUptoDate = false;
             this.core.functionalDescription.shape.family = deepCopy(this.localData.family);
             this.getFamilySubtypes();
         },
         familySubtypeUpdated() {
+            this.imageUpToDate = false;
+            this.dataUptoDate = false;
             this.core.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
             this.getDimensionKeys();
         },
         dimensionUpdated() {
+            this.imageUpToDate = false;
+            this.dataUptoDate = false;
             this.core.functionalDescription.shape.dimensions = {};
             Object.keys(this.localData.dimensions).forEach((key) => {
                 this.core.functionalDescription.shape.dimensions[key] = {};
@@ -306,6 +313,7 @@ export default {
             this.localCoreToDraw.functionalDescription.shape.dimensions = deepCopy(this.localData.dimensions);
             this.localCoreToDraw.functionalDescription.shape.family = deepCopy(this.localData.family);
             this.localCoreToDraw.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
+            this.imageUpToDate = true;
         },
         calculateCoreEffectiveParameters() {
             if (this.core['functionalDescription']['shape'] != "") {
@@ -318,6 +326,7 @@ export default {
                     else {
                         this.core.processedDescription = JSON.parse(coreJson).processedDescription;
                     }
+                    this.dataUptoDate = true;
 
                 }).catch(error => {
                     console.error(error);
@@ -357,7 +366,7 @@ export default {
                 <Text
                     class="col-10 offset-1 mb-1 text-start"
                     :name="'name'"
-                    v-model="localData"
+                    v-model="core.functionalDescription.shape"
                     :defaultValue="'Shape name'"
                     :dataTestLabel="dataTestLabel + '-ShapeName'"
                     :canBeEmpty="false"
@@ -446,7 +455,6 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                         <DimensionReadOnly 
-                            :class="isMobile()? '' : 'border-start'"
                             class="col-12 pe-4 ps-5"
                             :name="'A'"
                             :subscriptName="'eff'"
