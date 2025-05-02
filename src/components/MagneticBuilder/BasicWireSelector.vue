@@ -154,6 +154,7 @@ export default {
                     if (wire.type == "round") {
                         this.localData["roundConductingDiameter"] = wire.standardName;
                         this.localData["coating"] = this.$mkf.get_coating_label(JSON.stringify(wire));
+                        this.localData["numberConductors"] = 1;
                     }
                     else if (wire.type == "litz") {
                         if (typeof(wire.strand) == 'string') {
@@ -165,12 +166,14 @@ export default {
                     else if (wire.type == "rectangular") {
                         this.localData["rectangularConductingHeight"] = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingHeight));
                         this.localData["rectangularConductingWidth"] = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingWidth));
+                        this.localData["numberConductors"] = 1;
                     }
                     else if (wire.type == "foil") {
                         if (this.masStore.mas.magnetic.coil.bobbin != "Dummy"){
                             this.localData["foilConductingHeight"] = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height * 0.9 // hardcoded;
                         }
                         this.localData["foilConductingWidth"] = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingWidth));
+                        this.localData["numberConductors"] = 1;
                     }
                     this.localData["coating"] = this.$mkf.get_coating_label(JSON.stringify(wire));
                     this.forceUpdate += 1;
@@ -238,6 +241,7 @@ export default {
                     }
                     wire.conductingHeight.nominal = this.localData["rectangularConductingHeight"];
                     wire.conductingWidth.nominal = this.localData["rectangularConductingWidth"];
+                    wire.numberConductors = 1;
                     if (coating != null) {
                         if (wire.outerHeight == null) {
                             wire.outerHeight = {};
@@ -259,6 +263,7 @@ export default {
                     }
                     wire.conductingHeight.nominal = this.localData["foilConductingHeight"];
                     wire.conductingWidth.nominal = this.localData["foilConductingWidth"];
+                    wire.numberConductors = 1;
                     if (coating != null) {
                         if (wire.outerHeight == null) {
                             wire.outerHeight = {};
