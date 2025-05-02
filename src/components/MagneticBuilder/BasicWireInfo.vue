@@ -233,7 +233,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
-                class="col-12 ps-3 pe-4"
+                class="col-12 ps-4 pe-4"
                 :name="'Eff. Current Density'"
                 :unit="'A/mm²'"
                 :dataTestLabel="dataTestLabel + '-Jeff'"
@@ -251,7 +251,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
-                class="col-12 ps-3 pe-4"
+                class="col-12 ps-4 pe-4"
                 :name="'Eff. Skin Depth'"
                 :unit="'m'"
                 :dataTestLabel="dataTestLabel + '-EffectiveSkinDepth'"
@@ -270,7 +270,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.wireWidth"
-                class="col-12 ps-3 pe-4"
+                class="col-12 ps-4 pe-4"
                 :name="'Outer Width'"
                 :unit="'m'"
                 :dataTestLabel="dataTestLabel + '-OuterWidth'"
@@ -288,7 +288,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.wireHeight"
-                class="col-12 ps-3 pe-4"
+                class="col-12 ps-4 pe-4"
                 :name="'Outer Height'"
                 :unit="'m'"
                 :dataTestLabel="dataTestLabel + '-OuterHeight'"
@@ -306,7 +306,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.turnsRatio"
-                class="col-12 ps-3 pe-4"
+                class="col-12 ps-4 pe-4"
                 v-if="windingIndex > 0"
                 :name="'Turns Ratio'"
                 :unit="null"

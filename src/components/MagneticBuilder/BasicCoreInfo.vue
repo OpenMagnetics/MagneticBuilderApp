@@ -206,7 +206,7 @@ export default {
         >
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
-                class="col-12 pe-4 ps-3"
+                class="col-12 pe-4 ps-4"
                 :name="'L'"
                 :replaceTitle="'Magnetizing Inductance'"
                 :unit="'H'"
@@ -226,10 +226,9 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.coreLosses"
-                class="col-12 pe-4 ps-3"
-                :replaceTitle="'Core losses'"
+                class="col-12 pe-4 ps-4"
+                :replaceTitle="'Core Losses'"
                 :name="'P'"
-                :subscriptName="'core'"
                 :unit="'W'"
                 :power="1"
                 :dataTestLabel="dataTestLabel + '-CoreLosses'"
@@ -247,7 +246,7 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.saturationProportion"
-                class="col-12 pe-4 ps-3"
+                class="col-12 pe-4 ps-4"
                 :name="'Saturation Proportion'"
                 :unit="'%'"
                 :power="1"

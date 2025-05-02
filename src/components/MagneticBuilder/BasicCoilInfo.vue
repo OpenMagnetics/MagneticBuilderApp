@@ -236,7 +236,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.windingLosses"
                 v-if="outputsData.windingLosses != null"
-                class="col-12 text-start"
+                class="col-12 text-start ps-4 pe-4"
                 :name="'Winding losses'"
                 :unit="'W'"
                 :power="1"
@@ -256,7 +256,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.totalLosses"
                 v-if="outputsData.totalLosses != null"
-                class="col-12 text-start"
+                class="col-12 text-start ps-4 pe-4"
                 :name="'Total losses'"
                 :unit="'W'"
                 :power="1"
@@ -285,7 +285,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.leakageInductanceReflectedToPrimary"
                 v-if="outputsData.leakageInductancePerWinding != null && masStore.mas.magnetic.coil.functionalDescription.length > 1"
-                class="col-12 text-start"
+                class="col-12 text-start ps-4 pe-4"
                 :name="'Leakage Inductance'"
                 :unit="'H'"
                 :power="1"
