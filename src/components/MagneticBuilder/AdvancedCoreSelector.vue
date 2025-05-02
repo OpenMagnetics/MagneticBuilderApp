@@ -1,6 +1,7 @@
 <script setup>
 import AdvancedCoreSelectorShape from './AdvancedCoreSelector/AdvancedCoreSelectorShape.vue'
 import AdvancedCoreSelectorGapping from './AdvancedCoreSelector/AdvancedCoreSelectorGapping.vue'
+import AdvancedCoreSelectorMaterial from './AdvancedCoreSelector/AdvancedCoreSelectorMaterial.vue'
 import { useHistoryStore } from '../../stores/history'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 
@@ -51,6 +52,9 @@ export default {
             if (action.name == "applyChanges") {
                 this.applyChanges();
             }
+            if (action.name == "cancelChanges") {
+                this.cancelChanges();
+            }
         })
     },
     methods: {
@@ -58,19 +62,13 @@ export default {
             this.masStore.mas.magnetic.core = customCore;
         },
         applyChanges() {
-            // this.errorMessage = "";
             this.localCore.functionalDescription.shape.type = "custom";
-            // this.localCore.functionalDescription.shape.name = this.localData.name;
-            // this.localCore.geometricalDescription = null;
-            // this.localCore.processedDescription = null;
-            // this.localCore.distributorsInfo = null;
-            // this.localCore.manufacturerInfo = null;
             this.localCore.name = "Custom";
 
-            // this.localCore.functionalDescription.gapping.name = this.localData.name;
-
-            // this.$emit("customizedCore", deepCopy(this.localCore));
             this.masStore.mas.magnetic.core = deepCopy(this.localCore);
+            this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
+        },
+        cancelChanges() {
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
         },
         errorInDimensions() {
@@ -96,6 +94,12 @@ export default {
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorGapping'"
                 :core="localCore"
                 :inputs="masStore.mas.inputs"
+                :enableSimulation="true"
+            />
+            <AdvancedCoreSelectorMaterial
+                v-if="$stateStore.magneticBuilder.submode.core == $stateStore.MagneticBuilderCoreSubmodes.Material"
+                :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorMaterial'"
+                :core="localCore"
                 :enableSimulation="true"
             />
         </div>

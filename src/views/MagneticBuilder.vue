@@ -70,6 +70,7 @@ export default {
                             <MagneticBuilder 
                                 :masStore="masStore"
                                 :dataTestLabel="`${dataTestLabel}-MagneticBuilder`"
+                                :enableCoilOptions="false"
                                 :isIsolatedApp="true"
                             />
                         </div>

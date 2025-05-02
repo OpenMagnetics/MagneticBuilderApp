@@ -188,6 +188,7 @@ export default {
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != null) {
                 this.$mkf.ready.then(_ => {
                     console.log("Wire simulation")
+                    console.log(this.masStore.mas.inputs.operatingPoints)
                     const wireString = JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
                     const currentString = JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[this.windingIndex].current);
                     var wireMaterial = wireMaterialDefault;

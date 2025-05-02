@@ -88,7 +88,7 @@ export default {
         },
         enableSubmenu() {
             if (this.isIsolatedApp) {
-                return true;
+                return false;
             }
             else {
                 return this.magneticBuilderSettingsStore.enableSubmenu;
@@ -200,6 +200,7 @@ export default {
                     :useVisualizers="useVisualizers && enableVisualizers"
                     :enableSimulation="enableSimulationComputed"
                     :enableSubmenu="enableSubmenu"
+                    :enableCustomize="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
                     @customizeCore="customizeCore"

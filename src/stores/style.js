@@ -17,6 +17,13 @@ export const useStyleStore = defineStore("style", () => {
         transparent: style.getPropertyValue('--bs-transparent'),
     };
 
+    const engineLoader = ref({
+        main: {
+            "background": theme["dark"] + ' !important',
+            "color": theme["white"],
+        },
+    });
+
     const storyline = ref({
         main: {
             "background": "transparent",
@@ -200,30 +207,61 @@ export const useStyleStore = defineStore("style", () => {
 
     const magneticBuilder = ref({
         main: {
-            "background": theme["white"],
-            "color": theme["success"],
-            "border-color": theme["secondary"],
+            "background": theme["dark"],
+            "color": theme["white"],
+            "border-color":  theme["primary"] + ' !important',
         },
         customizeButton: {
-            "background": theme["danger"],
+            "background": theme["success"],
             "color": theme["dark"],
         },
         loadFromLibraryButton: {
-            "background": theme["danger"],
-            "color": theme["dark"],
+            "background": theme["secondary"],
+            "color": theme["white"],
         },
         adviseButton: {
-            "background": theme["danger"],
+            "background": theme["primary"],
             "color": theme["dark"],
         },
         showAlignmentOptionsButton: {
-            "background": theme["success"],
+            "background": theme["primary"],
             "color": theme["dark"],
         },
         showMarginOptionsButton: {
-            "background": theme["success"],
+            "background": theme["primary"],
             "color": theme["dark"],
         },
+        hideAlignmentOptionsButton: {
+            "background": theme["secondary"],
+            "color": theme["white"],
+        },
+        hideMarginOptionsButton: {
+            "background": theme["secondary"],
+            "color": theme["white"],
+        },
+        coilVisualizerButton: {
+            "background": theme["primary"],
+            "color": theme["dark"],
+        },
+        wireVisualizerButton: {
+            "background": "transparent",
+            "color": theme["white"],
+            "display": ['-webkit-slider-thumb']
+        },
+        graphBgColor:{
+            "background": theme["light"],
+        },
+        graphLineColor:{
+            "color": theme["white"],
+        },
+        graphPointsColor:{
+            "color": theme["danger"],
+        },
+
+        propertyBgColor:{
+            "color": theme["dark"],
+        },
+
 
         inputFontSize: {
             // "font-size": '2rem',
@@ -234,12 +272,34 @@ export const useStyleStore = defineStore("style", () => {
             "font-size": '1.25rem',
         },
         inputLabelBgColor:{
-            "background": theme["success"],
+            "background": theme["dark"] + ' !important',
+            "background-image": "none !important",
+        },
+        inputLabelDangerBgColor:{
+            "color": theme["danger"],
         },
         inputValueBgColor:{
-            "background": theme["info"],
+            "background": theme["light"],
         },
         inputTextColor:{
+            "color": theme["white"],
+        },
+        inputSelectedTextColor:{
+            "color": theme["success"],
+        },
+        inputErrorTextColor:{
+            "color": theme["danger"],
+        },
+        addButton: {
+            "background": theme["primary"],
+            "color": theme["dark"],
+        },
+        utilityButton: {
+            "background": theme["secondary"],
+            "color": theme["white"],
+        },
+        removeButton: {
+            "background": theme["danger"],
             "color": theme["dark"],
         },
         addElementButtonColor: {
@@ -248,15 +308,40 @@ export const useStyleStore = defineStore("style", () => {
         removeElementButtonColor: {
             "color": theme["danger"],
         },
+    });
 
+    const controlPanel = ref({
+        main: {
+            "background": theme["dark"],
+            "color": theme["white"],
+        },
+        button: {
+            "background": theme["primary"],
+            "color": theme["dark"],
+        },
+        activeButton: {
+            "background": theme["info"],
+            "color": theme["white"],
+        },
+        setting: {
+            "background": theme["dark"],
+            "color": theme["white"],
+        },
+        closeButton: {
+            "background": theme["primary"],
+            "color": theme["dark"],
+            "border-color":  theme["primary"] + ' !important',
+        },
     });
 
 
     return {
+        engineLoader,
         storyline,
         designRequirements,
         operatingPoints,
         magneticBuilder,
+        controlPanel,
     }
 },
 {

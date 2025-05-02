@@ -80,7 +80,9 @@ export default {
                 if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                     this.wires = [];
                     this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem) => {
-                        this.wires.push(deepCopy(elem.wire));
+                        if (elem.wire != null) {
+                            this.wires.push(deepCopy(elem.wire));
+                        }
                     })
                     this.imageUpToDate = true;
                 }
@@ -97,7 +99,9 @@ export default {
             if (action.name == "redraw") {
                 this.wires = [];
                 this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem) => {
-                    this.wires.push(deepCopy(elem.wire));
+                    if (elem.wire != null) {
+                        this.wires.push(deepCopy(elem.wire));
+                    }
                 })
                 this.imageUpToDate = true;
             }
@@ -143,6 +147,8 @@ export default {
 
         },
         updatedNumberElements(newLength, name) {
+            console.log(newLength)
+            console.log(name)
             if (name == 'numberWindings') {
                 const newElementsCoil = [];
                 const newElementsTurnsRatios = [];
@@ -154,6 +160,7 @@ export default {
                         newElementsTurnsRatios.push({'nominal': 1});
                     }
                 }
+            console.log("Mierda 1")
                 for (var i = 0; i < newLength; i++) {
                     if (i < this.masStore.mas.magnetic.coil.functionalDescription.length) {
                         newElementsCoil.push(this.masStore.mas.magnetic.coil.functionalDescription[i]);
@@ -162,6 +169,7 @@ export default {
                         newElementsCoil.push({'name': toTitleCase(isolationSideOrdered[i])});
                     }
                 }
+            console.log("Mierda 2")
                 for (var operationPointIndex = 0; operationPointIndex < this.masStore.mas.inputs.operatingPoints.length; operationPointIndex++) {
                     const newExcitationsPerWinding = [];
 
@@ -175,6 +183,9 @@ export default {
                     }
                     this.masStore.mas.inputs.operatingPoints[operationPointIndex].excitationsPerWinding = newExcitationsPerWinding;
                 }
+            console.log(newElementsTurnsRatios)
+            console.log(newElementsCoil)
+            console.log("Mierda 3")
 
                 this.masStore.mas.inputs.designRequirements.turnsRatios = newElementsTurnsRatios;
                 this.masStore.mas.magnetic.coil.functionalDescription = newElementsCoil;

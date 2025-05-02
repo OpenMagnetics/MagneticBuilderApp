@@ -2,20 +2,34 @@ import { defineStore } from 'pinia'
 import { ref, watch, computed  } from 'vue'
 
 export const useSettingsStore = defineStore("settings", () => {
-    const adviserSpiderBarChartNotBar = ref('0');
-    const adviserUseOnlyCoresInStock = ref('1');
-    const adviserAllowDistributedGaps = ref('1');
-    const adviserAllowStacks = ref('1');
-    const adviserToroidalCores = ref('1');
-    const catalogAdviserUseAllParts = ref(false);
-
-    const labelBgColor = ref('bg-dark');
-    const valueBgColor = ref('bg-light');
-    const textColor = ref('text-white');
     const loadingGif = ref("/images/loading.gif");
+    const waitingTimeAfterChange = 200;
+    const waitingTimeForPlottingAfterChange = 500;
+
+    const catalogAdviserSettings = ref({
+        advancedMode: false,
+        useAllParts: false,
+    })
 
     const coreAdviserSettings = ref({
         weights: null,
+    })
+
+    const adviserSettings = ref({
+        spiderBarChartNotBar: false,
+        useOnlyCoresInStock: true,
+        allowDistributedGaps: true,
+        allowStacks: true,
+        allowToroidalCores: true,
+    })
+
+    const magneticBuilderSettings = ref({
+        useOnlyCoresInStock: true,
+        allowDistributedGaps: true,
+        allowStacks: true,
+        allowToroidalCores: true,
+        advancedMode: false,
+        autoRedraw: true,
     })
 
     const magneticAdviserSettings = ref({
@@ -27,18 +41,22 @@ export const useSettingsStore = defineStore("settings", () => {
         advancedMode: false,
     })
 
-    const dump = computed(() => {
-        return {
-            "adviserSpiderBarChartNotBar": adviserSpiderBarChartNotBar.value,
-            "adviserUseOnlyCoresInStock": adviserUseOnlyCoresInStock.value,
-            "adviserAllowDistributedGaps": adviserAllowDistributedGaps.value,
-            "adviserAllowStacks": adviserAllowStacks.value,
-            "adviserToroidalCores": adviserToroidalCores.value,
-            "catalogAdviserUseAllParts": catalogAdviserUseAllParts.value,
-        }
-    })
-
     function reset() {
+        this.adviserSettings ={
+            spiderBarChartNotBar: false,
+            useOnlyCoresInStock: true,
+            allowDistributedGaps: true,
+            allowStacks: true,
+            allowToroidalCores: true,
+        };
+        this.magneticBuilderSettings = {
+            useOnlyCoresInStock: true,
+            allowDistributedGaps: true,
+            allowStacks: true,
+            allowToroidalCores: true,
+            advancedMode: false,
+            autoRedraw: true,
+        };
         this.coreAdviserSettings ={
             weights: null
         };
@@ -51,35 +69,28 @@ export const useSettingsStore = defineStore("settings", () => {
         };
 
 
-        this.adviserSpiderBarChartNotBar = false;
-        this.adviserUseOnlyCoresInStock = true;
-        this.adviserAllowDistributedGaps = true;
-        this.adviserAllowStacks = true;
-        this.adviserToroidalCores = true;
-        this.catalogAdviserUseAllParts = false;
+        this.catalogAdviserSettings = {
+            advancedMode: false,
+            useAllParts: null,
+        };
 
 
     }
 
     return {
+        adviserSettings,
+        magneticBuilderSettings,
         coreAdviserSettings,
         magneticAdviserSettings,
         operatingPointSettings,
 
-        adviserSpiderBarChartNotBar,
-        adviserUseOnlyCoresInStock,
-        adviserAllowDistributedGaps,
-        adviserAllowStacks,
-        adviserToroidalCores,
-        catalogAdviserUseAllParts,
+        catalogAdviserSettings,
 
-        dump,
         reset,
 
-        labelBgColor,
-        valueBgColor,
-        textColor,
         loadingGif,
+        waitingTimeAfterChange,
+        waitingTimeForPlottingAfterChange,
     }
 },
 {

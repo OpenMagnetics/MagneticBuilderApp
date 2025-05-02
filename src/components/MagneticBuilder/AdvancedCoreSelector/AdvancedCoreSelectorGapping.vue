@@ -415,7 +415,7 @@ export default {
         <div class="row">
             <div
                 v-for="gapsPerColumn, columnIndex in reorderedColumns"
-                class="column-container col-3 row mb-1 text-center mx-0"
+                class="column-container col-sm-4 col-md-3 row mb-1 text-center mx-0"
                 :style="{'background-image': `url(${columnImages[columnIndex]}`}"
             >
                 <div>
@@ -486,7 +486,7 @@ export default {
                     </div>
                 </div>
             </div>
-            <div class="col-3">
+            <div class="col-sm-12 col-md-3">
                 <h3 class= "mb-3"> {{'3D model'}} </h3>
                 <div
                     v-if="core.functionalDescription != null"

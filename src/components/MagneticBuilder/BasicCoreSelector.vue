@@ -36,6 +36,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableCustomize: {
+            type: Boolean,
+            default: true,
+        },
         readOnly: {
             type: Boolean,
             default: false,
@@ -564,7 +568,7 @@ export default {
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                 :enableAdvise="!loading"
-                :enableCustomize="true"
+                :enableCustomize="enableCustomize"
                 :allowAdvise="enableAdvise"
                 @adviseCore="adviseCoreRequested"
                 @customizeCore="$emit('customizeCore')"
