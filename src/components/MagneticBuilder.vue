@@ -232,7 +232,10 @@ export default {
             </div> 
             <div v-else class="col-2"/>
         </div>
-        <div v-if="enableGraphs && magneticBuilderSettingsStore.enableGraphs" class="row w-100">
+        <div
+            v-if="enableGraphs && magneticBuilderSettingsStore.enableGraphs && $stateStore.magneticBuilder.mode.core != $stateStore.MagneticBuilderModes.Advanced"
+            class="row w-100"
+        >
             <h5 v-if="!magneticBuilt" class="text-danger my-2">Select the magnetic first</h5>
             <GraphInfo 
                 v-else

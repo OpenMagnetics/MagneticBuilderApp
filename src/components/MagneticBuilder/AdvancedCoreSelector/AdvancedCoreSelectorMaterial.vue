@@ -1,10 +1,11 @@
 <script setup>
-import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
-import PropertyTool from '/WebSharedComponents/Common/PropertyTool.vue'
-import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
-import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
+import InitialPermeabilityVersusTemperature from './AdvancedCoreSelectorMaterial/InitialPermeabilityVersusTemperature.vue'
+import InitialPermeabilityVersusFrequency from './AdvancedCoreSelectorMaterial/InitialPermeabilityVersusFrequency.vue'
+import InitialPermeabilityVersusMagneticFieldDcBias from './AdvancedCoreSelectorMaterial/InitialPermeabilityVersusMagneticFieldDcBias.vue'
+import ComplexPermeabilityVersusFrequency from './AdvancedCoreSelectorMaterial/ComplexPermeabilityVersusFrequency.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
+import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 
 </script>
 
@@ -20,134 +21,36 @@ export default {
             type: Object,
             required: true,
         },
-        enableSimulation: {
-            type: Boolean,
-            default: true,
-        },
     },
     data() {
-        const initialPermeabilityVersusTemperatureIndexes = [];
-        const initialPermeabilityVersusFrequencyIndexes = [];
-        const initialPermeabilityVersusMagneticFieldDcBiasIndexes = [];
-        const errorMessages = {};
-        const loading = false;
-        const dataUptoDate = true;
-        const configurations = {
-            initialPermeability: {
-                    xAxisLabel: 'temperature',
-                    yAxisLabel: 'value',
-                    xAxisReplaceLabel: 'Temp.',
-                    yAxisReplaceLabel: 'Perm.',
-                    xAxisMode: 'linear',
-                    yAxisMode: 'linear',
-                    xAxisUnit: '°C',
-                    yAxisUnit: null,
-                    xAxisAllowNegative: true,
-                    yAxisAllowNegative: false,
-                    xAxisMin: -100,
-                    yAxisMin: 1,
-                    xAxisMax: 300,
-                    yAxisMax: 1e12,
-            },
-            complexPermeability: {
-                    xAxisLabel: 'frequency',
-                    yAxisLabel: 'value',
-                    xAxisReplaceLabel: 'Temp.',
-                    yAxisReplaceLabel: 'Perm.',
-                    xAxisMode: 'linear',
-                    yAxisMode: 'linear',
-                    xAxisUnit: 'Hz',
-                    yAxisUnit: null,
-                    xAxisAllowNegative: false,
-                    yAxisAllowNegative: false,
-                    xAxisMin: 1,
-                    yAxisMin: 1,
-                    xAxisMax: 1e9,
-                    yAxisMax: 1e12,
-            },
-        }
-
-        this.assignLocalData(this.core.functionalDescription.material);
-
         return {
-            initialPermeabilityVersusTemperatureIndexes,
-            initialPermeabilityVersusFrequencyIndexes,
-            initialPermeabilityVersusMagneticFieldDcBiasIndexes,
-            dataUptoDate,
-            errorMessages,
-            loading,
-            configurations,
         }
     },
     watch: { 
     },
     created () {
+        console.warn(deepCopy(this.core.functionalDescription.material))
+        if (typeof(this.core.functionalDescription.material) == "string") {
+            this.loadMaterialData();
+        }
     },
     mounted () {
     },
     methods: {
-        assignLocalData(material) {
+        loadMaterialData() {
             this.$mkf.ready.then(_ => {
-                if (typeof(material) == "string") {
-                    const materialJson = this.$mkf.get_material_data(material);
-                    if (materialJson.startsWith("Exception")) {
-                        console.error(materialJson);
-                        return;
-                    }
-                    else {
-                        this.core.functionalDescription.material = JSON.parse(materialJson);
-                    }
+                const materialJson = this.$mkf.get_material_data(this.core.functionalDescription.material);
+                if (materialJson.startsWith("Exception")) {
+                    console.error(materialJson);
+                    return;
                 }
-                if (typeof(this.core.functionalDescription.material.permeability.initial) == "object") {
-                    const stringVector = [];
-                    this.core.functionalDescription.material.permeability.initial.forEach((elem) => {
-                        stringVector.push(JSON.stringify(elem));
-                    })
-                    var handle = this.$mkf.get_only_temperature_dependent_indexes(JSON.stringify(stringVector));
-
-                    this.initialPermeabilityVersusTemperatureIndexes = [];
-                    for (var i = handle.size() - 1; i >= 0; i--) {
-                        const aux = handle.get(i);
-                        this.initialPermeabilityVersusTemperatureIndexes.push(aux);
-                    }
+                else {
+                    this.core.functionalDescription.material = JSON.parse(materialJson);
                 }
-
-                if (typeof(this.core.functionalDescription.material.permeability.initial) == "object") {
-                    const stringVector = [];
-                    this.core.functionalDescription.material.permeability.initial.forEach((elem) => {
-                        stringVector.push(JSON.stringify(elem));
-                    })
-                    var handle = this.$mkf.get_only_frequency_dependent_indexes(JSON.stringify(stringVector));
-
-                    this.initialPermeabilityVersusFrequencyIndexes = [];
-                    for (var i = handle.size() - 1; i >= 0; i--) {
-                        const aux = handle.get(i);
-                        this.initialPermeabilityVersusFrequencyIndexes.push(aux);
-                    }
-                }
-
-                if (typeof(this.core.functionalDescription.material.permeability.initial) == "object") {
-                    const stringVector = [];
-                    this.core.functionalDescription.material.permeability.initial.forEach((elem) => {
-                        stringVector.push(JSON.stringify(elem));
-                    })
-                    var handle = this.$mkf.get_only_magnetic_field_dc_bias_dependent_indexes(JSON.stringify(stringVector));
-
-                    this.initialPermeabilityVersusMagneticFieldDcBiasIndexes = [];
-                    for (var i = handle.size() - 1; i >= 0; i--) {
-                        const aux = handle.get(i);
-                        this.initialPermeabilityVersusMagneticFieldDcBiasIndexes.push(aux);
-                    }
-                }
-
+                console.log("this.core.functionalDescription.material.permeability.initial.length")
+                console.log(this.core.functionalDescription.material.permeability.initial.length)
             })
-        },
-        onRemovePoint() {
-            this.assignLocalData(this.core.functionalDescription.material);
-        },
-        onAddPoint() {
-            this.assignLocalData(this.core.functionalDescription.material);
-        },
+        }
     }
 }
 </script>
@@ -156,17 +59,73 @@ export default {
     <div class="container">
         <div class="row">
             <div class="col-sm-12 col-md-4">
-                <PropertyTool
+                <Text
+                    v-if="core.functionalDescription.material.name != null"
+                    class="col-10 offset-1 mb-1 text-start"
+                    :name="'name'"
+                    v-model="core.functionalDescription.material"
+                    :defaultValue="'Material name'"
+                    :dataTestLabel="dataTestLabel + '-MaterialName'"
+                    :canBeEmpty="false"
+                    :labelWidthProportionClass="'col-sm-12 col-md-5'"
+                    :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                    :valueFontSize="$styleStore.operatingPoints.inputFontSize"
+                    :titleFontSize="$styleStore.operatingPoints.inputTitleFontSize"
+                    :labelBgColor="$styleStore.operatingPoints.titleLabelBgColor"
+                    :valueBgColor="$styleStore.operatingPoints.inputValueBgColor"
+                    :textColor="$styleStore.operatingPoints.titleTextColor"
+                />
+
+<!--         <Dimension 
+            v-if="!readOnly && gap != null && gap.coordinates != null"
+            :name="'1'"
+            :replaceTitle="'Height'"
+            :unit="'m'"
+            class="col-12 mb-1 text-start"
+            :dataTestLabel="dataTestLabel + '-Length'"
+            :justifyContent="true"
+            :allowNegative="true"
+            :allowZero="true"
+            :min="0.000001"
+            :max="1"
+            :modelValue="gap.coordinates"
+            :forceUpdate="forceUpdate"
+            :labelWidthProportionClass="'col-sm-12 col-md-4'"
+            :valueWidthProportionClass="'col-sm-12 col-md-8'"
+            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+            :labelBgColor="{'background': 'transparent'}"
+            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+            :textColor="$styleStore.magneticBuilder.inputTextColor"
+            @update="$emit('gapHeightChanged', $event)"
+        /> -->
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <InitialPermeabilityVersusTemperature
                     v-if="core.functionalDescription.material.permeability != null"
-                    :dataTestLabel="dataTestLabel + '-PropertyTool'"
-                    :title="'Initial Permea. vs Temperature'"
-                    :indexesToUse="initialPermeabilityVersusTemperatureIndexes"
-                    :properties="[core.functionalDescription.material.permeability.initial]"
-                    :propertiesConfiguration="configurations.initialPermeability"
-                    :chartStyle="'height: 30vh'"
-                    :smoothLine="true"
-                    @onRemovePoint="onRemovePoint"
-                    @onAddPoint="onAddPoint"
+                    :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusTemperature'"
+                    :data="core.functionalDescription.material.permeability.initial"
+                />
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <InitialPermeabilityVersusFrequency
+                    v-if="core.functionalDescription.material.permeability != null"
+                    :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusFrequency'"
+                    :data="core.functionalDescription.material.permeability.initial"
+                />
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <InitialPermeabilityVersusMagneticFieldDcBias
+                    v-if="core.functionalDescription.material.permeability != null"
+                    :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusMagneticFieldDcBias'"
+                    :data="core.functionalDescription.material.permeability.initial"
+                />
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <ComplexPermeabilityVersusFrequency
+                    v-if="core.functionalDescription.material.permeability != null && core.functionalDescription.material.permeability.complex != null"
+                    :dataTestLabel="dataTestLabel + '-ComplexPermeabilityVersusFrequency'"
+                    :data="core.functionalDescription.material.permeability.complex"
                 />
             </div>
         </div>
