@@ -503,7 +503,7 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                         <DimensionReadOnly 
-                            :class="isMobile()? '' : 'border-start'"
+                            :class="isMobile($windowWidth)? '' : 'border-start'"
                             class="col-12 pe-4 ps-5"
                             :name="'A'"
                             :subscriptName="'min'"

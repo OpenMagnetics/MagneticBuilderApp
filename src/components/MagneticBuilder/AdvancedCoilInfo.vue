@@ -225,14 +225,14 @@ export default {
 
     <div v-else class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2" :style="$styleStore.magneticBuilder.main">
         <div
-            class="row"
+            class="row ps-2"
             v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.windingLosses"
                 v-if="outputsData.windingLosses != null"
-                class="col-xl-6 col-lg-12 text-start"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'winding'"
                 :unit="'W'"
@@ -253,8 +253,8 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.totalLosses"
                 v-if="outputsData.totalLosses != null"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 text-start"
+                :class="'border-start'"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'total'"
                 :unit="'W'"
@@ -275,7 +275,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.ohmicLosses"
                 v-if="outputsData.ohmicLosses != null"
-                class="col-xl-6 col-lg-12 text-start"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'DC'"
                 :unit="'W'"
@@ -296,8 +296,8 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.acLosses"
                 v-if="outputsData.acLosses != null"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 text-start"
+                :class="'border-start'"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'AC'"
                 :unit="'W'"
@@ -325,7 +325,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.ohmicLossesPerWinding"
                 v-if="outputsData.ohmicLossesPerWinding != null"
-                class="col-xl-6 col-lg-12 text-start"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'DC'"
                 :unit="'W'"
@@ -346,8 +346,8 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.skinLossesPerWinding"
                 v-if="outputsData.skinLossesPerWinding != null"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 text-start"
+                :class="'border-start'"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'skin'"
                 :unit="'W'"
@@ -368,7 +368,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.proximityLossesPerWinding"
                 v-if="outputsData.proximityLossesPerWinding != null"
-                class="col-xl-6 col-lg-12 text-start"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'prox.'"
                 :unit="'W'"
@@ -390,8 +390,8 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.windingLossesPerWinding"
                 v-if="outputsData.windingLossesPerWinding != null"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 text-start"
+                :class="'border-start'"
+                class="col-6 text-start ps-3"
                 :name="'P'"
                 :subscriptName="'winding'"
                 :unit="'W'"
@@ -413,7 +413,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.dcResistancePerWinding"
                 v-if="outputsData.dcResistancePerWinding != null"
-                class="col-xl-6 col-lg-12 text-start"
+                class="col-6 text-start ps-3"
                 :name="'R'"
                 :subscriptName="'DC'"
                 :unit="'Ω'"
@@ -434,8 +434,8 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveResistancePerWinding"
                 v-if="outputsData.effectiveResistancePerWinding != null"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 text-start"
+                :class="'border-start'"
+                class="col-6 text-start ps-3"
                 :name="'R'"
                 :subscriptName="'eff'"
                 :unit="'Ω'"
@@ -456,7 +456,7 @@ export default {
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.leakageInductanceReflectedToPrimary"
                 v-if="outputsData.leakageInductancePerWinding != null && selectedWindingIndex > 0"
-                class="col-xl-6 col-lg-12 text-start"
+                class="col-6 text-start ps-3"
                 :name="'L'"
                 :subscriptName="'lk'"
                 :unit="'H'"

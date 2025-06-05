@@ -1,4 +1,5 @@
 <script setup>
+import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
 import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import AdvancedCoilInfo from './AdvancedCoilInfo.vue'
@@ -71,6 +72,7 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
+                bobbinThickness: 0
             };
         }
         else {
@@ -86,6 +88,7 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
+                bobbinThickness: 0
             };
         }
         this.resetProportionPerWinding(localData);
@@ -407,6 +410,9 @@ export default {
                             if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation != null) {
                                 this.localData.sectionsOrientation = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
                             }
+                            if (magnetic.coil.bobbin.processedDescription.wallThickness != null && magnetic.coil.bobbin.processedDescription.columnThickness != null) {
+                                this.localData.bobbinThickness = Math.min(magnetic.coil.bobbin.processedDescription.wallThickness, magnetic.coil.bobbin.processedDescription.columnThickness);
+                            }
                         }
                     }
                 }
@@ -437,6 +443,8 @@ export default {
                         }
                     })
                 }
+
+                this.forceUpdate += 1;
             }
             catch (e) {
                 setTimeout(() => this.assignLocalData(magnetic), 50);
@@ -490,12 +498,50 @@ export default {
         },
         customizeCoil() {
         },
+        bobbinUpdated(thickness) {
+            this.$mkf.ready.then(_ => {
+
+                const bobbinJson = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), thickness);
+
+                if (bobbinJson.startsWith("Exception")) {
+                    this.tryingToSend = false;
+                    console.error(bobbinJson);
+                    return;
+                }
+
+                this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinJson);
+                this.coilUpdated();
+            })
+        },
     }
 }
 </script>
 
 <template>
     <div class="container" v-tooltip="styleTooltip">
+        <div class="row">
+            <Dimension 
+                :disabled="readOnly"
+                class="col-12 mb-1 ps-4 text-start"
+                :name="'bobbinThickness'"
+                :unit="'m'"
+                :dataTestLabel="dataTestLabel + '-BobbinThickness'"
+                :numberDecimals="6"
+                :min="1e-6"
+                :max="1"
+                :allowNegative="false"
+                :allowZero="true"
+                :modelValue="localData"
+                :forceUpdate="forceUpdate"
+                :styleClassInput="'offset-3 col-6'"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
+                @update="bobbinUpdated"
+            />
+        </div>
         <div class="row"  ref="coilSelectorContainer">
             <img :data-cy="dataTestLabel + '-BasicCoilSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <ListOfCharacters

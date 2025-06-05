@@ -229,13 +229,13 @@ export default {
 <template>
     <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
         <div
-            class="row"
+            class="row ps-2"
             v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.dcResistancePerMeter"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                class="col-6 ps-3 pe-5"
                 :name="'R'"
                 :subscriptName="'DC'"
                 :unit="'Ω/m'"
@@ -254,8 +254,8 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.skinResistancePerMeter"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                :class="'border-start'"
+                class="col-6 ps-3 pe-5"
                 :name="'R'"
                 :subscriptName="'sk.AC'"
                 :unit="'Ω/m'"
@@ -274,7 +274,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.ohmicLossesPerMeter"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                class="col-6 ps-3 pe-5"
                 :name="'P'"
                 :subscriptName="'DC'"
                 :unit="'W/m'"
@@ -293,8 +293,8 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.skinLossesPermeter"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                :class="'border-start'"
+                class="col-6 ps-3 pe-5"
                 :name="'P'"
                 :subscriptName="'sk.AC'"
                 :unit="'W/m'"
@@ -313,7 +313,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                class="col-6 ps-3 pe-5"
                 :name="'J'"
                 :subscriptName="'eff'"
                 :unit="'A/mm²'"
@@ -332,8 +332,8 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                :class="'border-start'"
+                class="col-6 ps-3 pe-5"
                 :name="'δ'"
                 :subscriptName="'eff'"
                 :unit="'m'"
@@ -353,7 +353,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.wireWidth"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                class="col-6 ps-3 pe-5"
                 :name="'Width'"
                 :unit="'m'"
                 :dataTestLabel="dataTestLabel + '-OuterWidth'"
@@ -371,8 +371,8 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.skinFactor"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                :class="'border-start'"
+                class="col-6 ps-3 pe-5"
                 :name="'F'"
                 :subscriptName="'skin'"
                 :unit="null"
@@ -392,7 +392,7 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.wireHeight"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                class="col-6 ps-3 pe-5"
                 :name="'Height'"
                 :unit="'m'"
                 :dataTestLabel="dataTestLabel + '-OuterHeight'"
@@ -410,8 +410,8 @@ export default {
 
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.turnsRatio"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 ps-3 pe-4"
+                :class="'border-start'"
+                class="col-6 ps-3 pe-5"
                 v-if="windingIndex > 0"
                 :name="'T'"
                 :subscriptName="'ratio'"

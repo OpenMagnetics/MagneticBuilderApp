@@ -218,13 +218,13 @@ export default {
     <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
         <div
             v-if="core.processedDescription != null"
-            class="row"
+            class="row ps-2"
             v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveLength"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                class="col-6 pe-4 ps-3"
                 :name="'L'"
                 :subscriptName="'eff'"
                 :unit="'m'"
@@ -243,8 +243,8 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveArea"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                :class="'border-start'"
+                class="col-6 pe-4 ps-3"
                 :name="'A'"
                 :subscriptName="'eff'"
                 :unit="'m²'"
@@ -263,7 +263,7 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectiveVolume"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                class="col-6 pe-4 ps-3"
                 :name="'V'"
                 :subscriptName="'eff'"
                 :unit="'m³'"
@@ -282,8 +282,8 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.minimumArea"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                :class="'border-start'"
+                class="col-6 pe-4 ps-3"
                 :name="'A'"
                 :subscriptName="'min'"
                 :unit="'m²'"
@@ -302,7 +302,7 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.initialPermeability"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                class="col-6 pe-4 ps-3"
                 :name="'μ'"
                 :subscriptName="'ini'"
                 :unit="null"
@@ -322,8 +322,8 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.effectivePermeability"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                :class="'border-start'"
+                class="col-6 pe-4 ps-3"
                 :name="'μ'"
                 :subscriptName="'eff'"
                 :unit="null"
@@ -343,7 +343,7 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.permeance"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                class="col-6 pe-4 ps-3"
                 :name="'A'"
                 :subscriptName="'L'"
                 :unit="'H/tu²'"
@@ -363,8 +363,8 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.saturatingMagneticFluxDensity"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                :class="'border-start'"
+                class="col-6 pe-4 ps-3"
                 :name="'B'"
                 :subscriptName="'sat'"
                 :unit="'T'"
@@ -384,7 +384,7 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                class="col-6 pe-4 ps-3"
                 :name="'B'"
                 :subscriptName="'peak'"
                 :unit="'T'"
@@ -404,8 +404,8 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                :class="'border-start'"
+                class="col-6 pe-4 ps-3"
                 :name="'B'"
                 :subscriptName="'ACpeak'"
                 :unit="'T'"
@@ -425,7 +425,7 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                class="col-6 pe-4 ps-3"
                 :name="'L'"
                 :unit="'H'"
                 :power="1"
@@ -444,8 +444,8 @@ export default {
             />
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.coreLosses"
-                :class="isMobile()? '' : 'border-start'"
-                class="col-xl-6 col-lg-12 pe-4 ps-3"
+                :class="'border-start'"
+                class="col-6 pe-4 ps-3"
                 :name="'P'"
                 :subscriptName="'core'"
                 :unit="'W'"
