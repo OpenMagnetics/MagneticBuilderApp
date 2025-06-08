@@ -32,6 +32,8 @@ export default {
     },
     data() {
         const masStore = useMasStore();
+        this.$settingsStore.magneticBuilderSettings.autoRedraw = true;
+        this.$settingsStore.magneticBuilderSettings.advancedMode = true;
         return {
             masStore,
             updateStoryline: 0,
@@ -54,7 +56,7 @@ export default {
         <main role="main" class="main">
             <div class="container mx-auto">
                 <div class="row">
-                    <div class="text-white bg-dark text-center col-xs-12 col-sm-12 col-md-11 bg-transparent px container" >
+                    <div class="px-5 container":style="$styleStore.magneticBuilder.main" >
                         <div class="mb-2 row px-3" >
 
                             <div data-cy="magnetic-synthesis-previous-tool-button-placeholder" class=" col-sm-12 col-md-2 mt-1"></div>

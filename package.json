@@ -13,6 +13,7 @@
     "@chenfengyuan/vue-number-input": "^2.0.1",
     "@popperjs/core": "^2.11.8",
     "@vueform/slider": "^2.1.10",
+    "@vueuse/core": "^12.4.0",
     "axios": "^1.7.7",
     "bootstrap": "^5.3.3",
     "chartjs-plugin-dragdata": "^2.3.1",
@@ -28,16 +29,17 @@
     "vue-echarts": "^7.0.3",
     "vue-good-table-next": "^0.2.2",
     "vue-router": "^4.4.5",
+    "vue-window-size": "^2.0.0",
     "vue3-cookies": "^1.0.6",
     "vue3-popper": "^1.5.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
-    "@vitejs/plugin-vue-jsx": "^3.0.0",
+    "@vitejs/plugin-vue-jsx": "^4.2.0",
     "cypress": "^13.14.2",
     "raw-loader": "^4.0.2",
     "sass": "^1.79.3",
-    "vite": "^5.4.7",
+    "vite": "^6.3.5",
     "vite-plugin-compression": "^0.5.1"
   }
 }

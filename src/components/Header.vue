@@ -1,89 +1,183 @@
 <script setup >
+import { combinedStyle, combinedClass } from '/WebSharedComponents/assets/js/utils.js'
 import { defineAsyncComponent } from "vue";
-import { useMasStore } from '/src/stores/mas'
-
+import { useElementVisibility  } from '@vueuse/core'
+import { ref } from 'vue'
+import '../assets/css/custom.css'
 </script>
 
 <script>
+
+const headerToggler = ref(null)
+const headerTogglerIsVisible = useElementVisibility(headerToggler)
 
 export default {
     components: {
         BugReporterModal: defineAsyncComponent(() => import('/src/components/BugReporter.vue') ),
     },
     data() {
-        const masStore = useMasStore();
         return {
-            masStore,
+            showModal: false,
+            loggedIn: false,
+            username: null,
         }
     },
     methods: {
-    },
-    computed: {
-        newPowerMagneticToolDesign() {
+        onShowModal() {
+            this.showModal = true
+        },
+        onNewPowerMagneticDesign() {
             this.$stateStore.resetMagneticTool();
-            this.masStore.resetMas("design");
+            this.$stateStore.selectWorkflow("design");
+            this.$stateStore.selectTool("agnosticTool");
+            this.$stateStore.selectApplication(this.$stateStore.SupportedApplications.Power);
+
             if (this.$route.name != 'MagneticBuilder')
                 setTimeout(() => {this.$router.push('/magnetic_tool');}, 100);
             else
-                setTimeout(() => {this.$router.go();}, 100);
+                setTimeout(() => {this.$router.push('/engine_loader');}, 100);
         },
         continueMagneticToolDesign() {
             if (this.$route.name != 'MagneticBuilder')
                 setTimeout(() => {this.$router.push('/magnetic_tool');}, 100);
             else
-                setTimeout(() => {this.$router.go();}, 100);
+                setTimeout(() => {this.$router.push('/engine_loader');}, 100);
         },
     },
+    computed: {
+    },
     created() {
+        if (this.$userStore.isLoggedIn.value && this.$cookies.get('username') == null) {
+            this.$userStore.reset();
+        }
     },
     mounted() {
+        this.$settingsStore.loadingGif = "/images/loading.gif";
         let fontawesome = document.createElement('script')
         fontawesome.setAttribute('src', 'https://kit.fontawesome.com/d5a40d6941.js')
         document.head.appendChild(fontawesome)
+
+        const style = getComputedStyle(document.body);
+        const theme = {
+            primary: style.getPropertyValue('--bs-primary'),
+            secondary: style.getPropertyValue('--bs-secondary'),
+            success: style.getPropertyValue('--bs-success'),
+            info: style.getPropertyValue('--bs-info'),
+            warning: style.getPropertyValue('--bs-warning'),
+            danger: style.getPropertyValue('--bs-danger'),
+            light: style.getPropertyValue('--bs-light'),
+            dark: style.getPropertyValue('--bs-dark'),
+            white: style.getPropertyValue('--bs-white'),
+            transparent: style.getPropertyValue('--bs-transparent'),
+        };
+        this.$styleStore.setTheme(theme);
     }
 }
 </script>
 
 <template>
-    <nav class="navbar navbar-expand-lg bg-dark navbar-dark text-primary mb-1 om-header" id="header_wrapper">
+    <!-- <NotificationsModal/> -->
+    <nav class="navbar navbar-expand-lg mb-1 om-header" id="header_wrapper" :style="$styleStore.header.main">
         <div class="container-fluid">
             <a data-cy="Header-logo-home-link" href="/" aria-label="Visit OpenMagnetics and Tear Down the Paywalls!">
                 <img src="/images/logo.svg" width="60" height="40" href="/" class="d-inline-block align-top me-3" alt="OpenMagnetics Logo">
             </a>
-            <a  data-cy="Header-brand-home-link" class="navbar-brand text-primary" href="/">OpenMagnetics's Magnetic Builder</a>
-            <button class="navbar-toggler text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <a
+                :style="$styleStore.header.title"
+                data-cy="Header-brand-home-link"
+                class="navbar-brand"
+                href="/"
+            >
+                {{'OpenMagnetics Magnetic Builder'}}
+            </a>
+            <button
+                :style="$styleStore.header.collapsedButton"
+                class="navbar-toggler"
+                ref="headerToggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNavDropdown"
+                aria-controls="navbarNavDropdown"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
             <span class="navbar-toggler-icon text-white"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNavDropdown">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a data-cy="Header-alfs-musings-link" class="nav-link text-primary me-3" href="https://www.linkedin.com/newsletters/7026708624966135808/"  target="_blank">Alf's Musings</a>
+                <ul class="navbar-nav ms-auto text-center">
+                    {{combinedClass([$styleStore.header.designSectionDropdown])}}
+                    <li 
+                        :class="headerTogglerIsVisible? 'w-100' : 'mx-1' "
+                        class="nav-item"
+                    >
+                        <button
+                            :style="$styleStore.header.designSectionDropdown"
+                            data-cy="Header-new-magnetic-link"
+                            :class="headerTogglerIsVisible? 'w-100' : 'mx-1' "
+                            class="btn btn-block nav-link px-2"
+                            @click="onNewPowerMagneticDesign"
+                        >
+                            <i class="me-2 fa-solid fa-toolbox"></i>{{'New Magnetic'}}
+                        </button>
                     </li>
-                    <li class="nav-item">
+                    <li 
+                        v-if="$stateStore.isAnyDesignLoaded() && $route.name != 'MagneticBuilder'"
+                        :class="headerTogglerIsVisible? 'w-100' : 'mx-0' "
+                        class="nav-item"
+                    >
                         <span class="nav-item">
-                            <button data-cy="Header-new-magnetic-link" class="btn me-4 nav-link text-dark bg-primary border-dark" @click="newPowerMagneticToolDesign">New magnetic<i class="ms-2 fa-solid fa-toolbox"></i> </button>
-                        </span>
-                    </li>
-                    <li v-if="$stateStore.isAnyDesignLoaded() && $route.name != 'MagneticTool'" class="nav-item">
-                        <span class="nav-item">
-                            <button data-cy="Header-donate-link" class="btn me-4 nav-link text-dark bg-primary border-dark" @click="continueMagneticToolDesign">Continue design<i class="ms-2 fa-solid fa-box-open"></i> </button>
+                            <button
+                                :style="$styleStore.header.continueDesignButton"
+                                data-cy="Header-donate-link"
+                                :class="headerTogglerIsVisible? 'w-100' : 'mx-1' "
+                                class="btn btn-block nav-link px-2"
+                                @click="continueMagneticToolDesign"
+                            >
+                                <i class="me-2 fa-solid fa-box-open"></i>{{'Continue design'}}
+                            </button>
                         </span>
                     </li>
                 </ul>
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto text-center">
                     <li class="nav-item">
                         <span class="nav-item">
-                            <a data-cy="Header-donate-link" href="https://en.liberapay.com/OpenMagnetics/" target="_blank" rel="noopener noreferrer" class="btn me-4 nav-link text-dark bg-info border-dark">Donate to OM <i class="fa-solid fa-circle-dollar-to-slot"></i> </a>
+                            <a
+                                :style="$styleStore.header.donateButton"
+                                data-cy="Header-donate-link"
+                                href="https://en.liberapay.com/OpenMagnetics/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="btn nav-link text-dark bg-info border-dark"
+                            >
+                                {{'Donate '}}<i class="fa-solid fa-circle-dollar-to-slot"></i></a>
                         </span>
                     </li>
                     <li class="nav-item">
                         <span class="nav-item">
-                            <button data-cy="Header-report-bug-modal-button" class="btn me-4 nav-link text-danger border-dark"  data-bs-toggle="modal" data-bs-target="#reportBugModal">Report bug <i class="fa-solid fa-bug"></i> </button>
+                            <button
+                                :style="$styleStore.header.bugButton"
+                                data-cy="Header-report-bug-modal-button"
+                                :class="headerTogglerIsVisible? 'w-100' : 'mx-1' "
+                                class="btn nav-link text-danger border-dark text-center"
+                                data-bs-toggle="modal"
+                                data-bs-target="#reportBugModal"
+                            >
+                                {{headerTogglerIsVisible? 'Report a bug' : 'Bug?'}} <i class="fa-solid fa-bug"></i>
+                            </button>
                         </span>
                     </li>
                     <li class="nav-item">
                         <span class="nav-item">
-                            <a data-cy="Header-repository-link" class="btn me-4 nav-link text-success border-dark" href="https://github.com/OpenMagnetics/" target="_blank" rel="noopener noreferrer">Beta <i class="fa-brands fa-github"></i> </a>
+                            <a
+                                :style="$styleStore.header.githubButton"
+                                data-cy="Header-repository-link"
+                                :class="headerTogglerIsVisible? 'w-100' : 'mx-1' "
+                                class="btn nav-link text-success border-dark"
+                                href="https://github.com/OpenMagnetics/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {{headerTogglerIsVisible? 'GitHub ' : ''}}<i class="fa-brands fa-github"></i>
+                            </a>
                         </span>
                     </li>
                 </ul>
