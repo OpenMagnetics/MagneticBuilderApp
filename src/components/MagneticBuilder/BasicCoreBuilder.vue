@@ -66,8 +66,6 @@ export default {
         }
     },
     mounted () {
-        this.core = deepCopy(this.masStore.mas.magnetic.core);
-        this.imageUpToDate = true;
         this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
                 this.core = deepCopy(this.masStore.mas.magnetic.core);

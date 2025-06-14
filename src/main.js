@@ -14,7 +14,6 @@ import { useSettingsStore } from '/src/stores/settings'
 import { useStateStore } from '/src/stores/state'
 import Module from '/src/assets/js/libMKF.wasm.js';
 import { useStyleStore } from '/src/stores/style'
-import { VueWindowSizePlugin } from 'vue-window-size/plugin';
 
 
 
@@ -27,7 +26,6 @@ app.use(router);
 app.use(pinia)
 app.use(VueCookies, { expires: '7d'})
 app.directive("tooltip", tooltip);
-app.use(VueWindowSizePlugin);
 app.config.globalProperties.$axios = axiosInstance
 app.config.globalProperties.$userStore = useUserStore()
 app.config.globalProperties.$settingsStore = useSettingsStore()

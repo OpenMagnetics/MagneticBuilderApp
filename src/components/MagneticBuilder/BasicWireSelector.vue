@@ -212,22 +212,30 @@ export default {
                         wire.standard = this.localData["standard"];
                     }
                     wire.type = "litz";
-                    wire.strand = JSON.parse(this.$mkf.get_wire_data_by_standard_name(this.localData["litzStrandConductingDiameter"]));
+
+                    if (typeof(wire.strand) == "string") {
+                        wire.strand = JSON.parse(this.$mkf.get_wire_data_by_standard_name(this.localData["litzStrandConductingDiameter"]));
+                    }
                     wire.numberConductors = this.localData["numberConductors"];
                     if (coating != null) {
                         if (wire.outerDiameter == null) {
                             wire.outerDiameter = {};
                         }
 
-                        var strandConductingDiameter = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.strand.conductingDiameter));  
-                        if (coating.type == "bare") {
-                            wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_bare_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, wire.standard);
+                        if (wire.outerDiameter.nominal == null && (wire.outerDiameter.minimum != null || wire.outerDiameter.maximum != null)) {
+                            wire.outerDiameter.nominal = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.outerDiameter));  
                         }
-                        if (coating.type == "served") {
-                            wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_served_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, coating.numberLayers, wire.standard);
-                        }
-                        if (coating.type == "insulated") {
-                            wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
+                        if (wire.outerDiameter.nominal == null && wire.outerDiameter.minimum == null && wire.outerDiameter.maximum == null) {
+                            var strandConductingDiameter = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.strand.conductingDiameter));  
+                            if (coating.type == "bare") {
+                                wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_bare_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, wire.standard);
+                            }
+                            if (coating.type == "served") {
+                                wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_served_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, coating.numberLayers, wire.standard);
+                            }
+                            if (coating.type == "insulated") {
+                                wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
+                            }
                         }
                     }
                 }
@@ -549,8 +557,8 @@ export default {
                 :name="'standard'"
                 :titleSameRow="true"
                 :justifyContent="true"
-                :labelWidthProportionClass="'col-5'"
-                :selectStyleClass="'col-7'"
+                :labelWidthProportionClass="'col-3'"
+                :selectStyleClass="'col-9'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -589,8 +597,8 @@ export default {
                 :dataTestLabel="dataTestLabel + '-StrandConductingDiameter'"
                 :replaceTitle="'Cond. diameter'"
                 :name="'litzStrandConductingDiameter'"
-                :labelWidthProportionClass="'col-5'"
-                :selectStyleClass="'col-7'"
+                :labelWidthProportionClass="'col-6'"
+                :selectStyleClass="'col-6'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -611,8 +619,8 @@ export default {
                 :name="'coating'"
                 :titleSameRow="true"
                 :justifyContent="true"
-                :labelWidthProportionClass="'col-4'"
-                :selectStyleClass="'col-8'"
+                :labelWidthProportionClass="'col-3'"
+                :selectStyleClass="'col-9'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -636,9 +644,8 @@ export default {
                 :allowNegative="false"
                 :modelValue="localData"
                 :forceUpdate="forceUpdate"
-                :labelWidthProportionClass="'col-xs-12 col-md-5'"
-                :valueWidthProportionClass="'col-xs-8 col-md-7'"
-                :styleClassInput="'offset-6 col-6'"
+                :labelWidthProportionClass="'col-xs-12 col-md-7'"
+                :valueWidthProportionClass="'col-xs-8 col-md-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
