@@ -112,8 +112,6 @@ export default {
     watch: {
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                // console.log(newValue)
-                // console.log(this.windingIndex)
                 const newWireHash = JSON.stringify(newValue[this.windingIndex].wire);
                 if (!this.blockingRebounds && newWireHash != this.wireHash) {
                     this.assignLocalData(newValue[this.windingIndex].wire)
@@ -386,6 +384,7 @@ export default {
         wireUpdated() {
             // So the outer diameter gets updated for Litz
             if (this.localData["type"] == "litz") {
+                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = this.localData["litzStrandConductingDiameter"];
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.outerDiameter = null;
             }
             this.assignWire();
