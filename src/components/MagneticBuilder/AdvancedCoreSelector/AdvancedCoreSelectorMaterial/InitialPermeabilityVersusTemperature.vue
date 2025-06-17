@@ -24,6 +24,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        equationBased: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const indexes = [];

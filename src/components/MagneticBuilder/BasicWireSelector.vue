@@ -4,7 +4,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import BasicWireSubmenu from './BasicWireSubmenu.vue'
 import AdvancedWireInfo from './AdvancedWireInfo.vue'
 import BasicWireInfo from './BasicWireInfo.vue'
-import { toTitleCase, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
+import { toTitleCase, checkAndFixMas, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
@@ -112,8 +112,6 @@ export default {
     watch: {
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                // console.log(newValue)
-                // console.log(this.windingIndex)
                 const newWireHash = JSON.stringify(newValue[this.windingIndex].wire);
                 if (!this.blockingRebounds && newWireHash != this.wireHash) {
                     this.assignLocalData(newValue[this.windingIndex].wire)
@@ -213,7 +211,7 @@ export default {
                     }
                     wire.type = "litz";
 
-                    if (typeof(wire.strand) == "string") {
+                    if (typeof(wire.strand) == "string" || wire.strand.coating == null) {
                         wire.strand = JSON.parse(this.$mkf.get_wire_data_by_standard_name(this.localData["litzStrandConductingDiameter"]));
                     }
                     wire.numberConductors = this.localData["numberConductors"];
@@ -237,6 +235,7 @@ export default {
                                 wire.outerDiameter.nominal = this.$mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
                             }
                         }
+
                     }
                 }
                 else if (this.localData["type"] == "rectangular") {
@@ -381,17 +380,14 @@ export default {
         },
         wireCoatingUpdated() {
             this.assignWire();
-            // this.$mkf.ready.then(_ => {
-            //     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.coating = JSON.parse(this.$mkf.get_wire_coating_by_label(this.localData.coating));
-            // });
         },
         wireUpdated() {
+            // So the outer diameter gets updated for Litz
+            if (this.localData["type"] == "litz") {
+                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = this.localData["litzStrandConductingDiameter"];
+                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.outerDiameter = null;
+            }
             this.assignWire();
-            // this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.numberConductors = this.localData.numberConductors;
-
-            // this.$mkf.ready.then(_ => {
-            //     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = JSON.parse(this.$mkf.get_wire_data(JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])));
-            // });
         },
         isAnyLitzLoaded() {
             return this.localData["litzStrandConductingDiameter"] != null
