@@ -9,6 +9,9 @@ import WindingLossesOverFrequency from './Graphs/WindingLossesOverFrequency.vue'
 import LossesOverFrequency from './Graphs/LossesOverFrequency.vue'
 import CoreLossesOverFrequency from './Graphs/CoreLossesOverFrequency.vue'
 import GraphCommonParameters from './Graphs/GraphCommonParameters.vue'
+import MagnetizingInductanceOverFrequency from './Graphs/MagnetizingInductanceOverFrequency.vue'
+import MagnetizingInductanceOverTemperature from './Graphs/MagnetizingInductanceOverTemperature.vue'
+import MagnetizingInductanceOverDcBias from './Graphs/MagnetizingInductanceOverDcBias.vue'
 </script>
 
 <script>
@@ -58,6 +61,42 @@ export default {
                     :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
                 />
             </ImpedanceOverFrequency> 
+            <MagnetizingInductanceOverFrequency 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'magnetizingInductanceOverFrequency'" 
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+            >
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
+                />
+
+            </MagnetizingInductanceOverFrequency> 
+            <MagnetizingInductanceOverTemperature 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'magnetizingInductanceOverTemperature'" 
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+            >
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
+                    :frequencyDependent="false"
+                    :temperatureDependent="true"
+                />
+
+            </MagnetizingInductanceOverTemperature> 
+
+            <MagnetizingInductanceOverDcBias 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'magnetizingInductanceOverDcBias'" 
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+            >
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
+                    :frequencyDependent="false"
+                    :dcBiasDependent="true"
+                />
+
+            </MagnetizingInductanceOverDcBias> 
+
             <ResistancesOverFrequency 
                 v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'resistancesOverFrequency'" 
                 :dataTestLabel="dataTestLabel"

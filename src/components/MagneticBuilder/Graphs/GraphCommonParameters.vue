@@ -13,6 +13,18 @@ export default {
             type: String,
             default: '',
         },
+        frequencyDependent: {
+            type: Boolean,
+            default: true,
+        },
+        temperatureDependent: {
+            type: Boolean,
+            default: false,
+        },
+        dcBiasDependent: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const availableGraphs = {
@@ -22,6 +34,9 @@ export default {
             'coreLossesOverFrequency': 'Core Losses Over Frequency',
             'windingLossesOverFrequency': 'Winding Losses Over Frequency',
             'lossesOverFrequency': 'Total Losses Over Frequency',
+            'magnetizingInductanceOverFrequency': 'Magnetizing Inductance Over Frequency',
+            'magnetizingInductanceOverTemperature': 'Magnetizing Inductance Over Temperature',
+            'magnetizingInductanceOverDcBias': 'Magnetizing Inductance Over DC Bias',
         }
         const availableModes = {
             'log': 'Log',
@@ -94,10 +109,11 @@ export default {
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
     <Dimension class="col-12 mb-1 text-start"
+        v-if="frequencyDependent"
         :name="'minimumFrequency'"
         :unit="'Hz'"
         :dataTestLabel="dataTestLabel + '-MinimumFrequency'"
-        :min="0"
+        :min="1"
         :justifyContent="true"
         :defaultValue="1"
         :allowNegative="false"
@@ -110,14 +126,87 @@ export default {
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
     <Dimension class="col-12 mb-1 text-start"
+        v-if="frequencyDependent"
         :name="'maximumFrequency'"
         :unit="'Hz'"
         :dataTestLabel="dataTestLabel + '-MaximumFrequency'"
-        :min="0"
+        :min="1"
         :justifyContent="true"
         :defaultValue="1"
         :allowNegative="false"
         :allowZero="false"
+        :modelValue="$stateStore.graphParameters"
+        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+        :textColor="$styleStore.magneticBuilder.inputTextColor"
+    />
+    <Dimension class="col-12 mb-1 text-start"
+        v-if="temperatureDependent"
+        :name="'minimumTemperature'"
+        :unit="'°C'"
+        :dataTestLabel="dataTestLabel + '-MinimumTemperature'"
+        :min="0.0001"
+        :max="1000"
+        :justifyContent="true"
+        :defaultValue="1"
+        :allowNegative="true"
+        :allowZero="true"
+        :modelValue="$stateStore.graphParameters"
+        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+        :textColor="$styleStore.magneticBuilder.inputTextColor"
+    />
+    <Dimension class="col-12 mb-1 text-start"
+        v-if="temperatureDependent"
+        :name="'maximumTemperature'"
+        :unit="'°C'"
+        :dataTestLabel="dataTestLabel + '-MaximumTemperature'"
+        :min="0.0001"
+        :max="1000"
+        :justifyContent="true"
+        :defaultValue="1"
+        :allowNegative="true"
+        :allowZero="true"
+        :modelValue="$stateStore.graphParameters"
+        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+        :textColor="$styleStore.magneticBuilder.inputTextColor"
+    />
+    <Dimension class="col-12 mb-1 text-start"
+        v-if="dcBiasDependent"
+        :name="'minimumDcBias'"
+        :unit="'A'"
+        :dataTestLabel="dataTestLabel + '-MinimumDcBias'"
+        :min="0"
+        :max="1000"
+        :justifyContent="true"
+        :defaultValue="1"
+        :allowNegative="false"
+        :allowZero="true"
+        :modelValue="$stateStore.graphParameters"
+        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+        :textColor="$styleStore.magneticBuilder.inputTextColor"
+    />
+    <Dimension class="col-12 mb-1 text-start"
+        v-if="dcBiasDependent"
+        :name="'maximumDcBias'"
+        :unit="'A'"
+        :dataTestLabel="dataTestLabel + '-MaximumDcBias'"
+        :min="0"
+        :max="1000"
+        :justifyContent="true"
+        :defaultValue="1"
+        :allowNegative="false"
+        :allowZero="true"
         :modelValue="$stateStore.graphParameters"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
