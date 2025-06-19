@@ -32,7 +32,7 @@ export default {
                 xAxisLabel: 'temperature',
                 yAxisLabel: 'magneticField',
                 xAxisReplaceLabel: 'Temp.',
-                yAxisReplaceLabel: ['Coercivity'],
+                yAxisReplaceLabel: ['Coerc.'],
                 xAxisMode: 'linear',
                 yAxisMode: 'linear',
                 xAxisUnit: '°C',

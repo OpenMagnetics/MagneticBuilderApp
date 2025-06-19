@@ -32,7 +32,7 @@ export default {
                 xAxisLabel: 'temperature',
                 yAxisLabel: 'magneticFluxDensity',
                 xAxisReplaceLabel: 'Temp.',
-                yAxisReplaceLabel: ['Saturation'],
+                yAxisReplaceLabel: ['Sat.'],
                 xAxisMode: 'linear',
                 yAxisMode: 'linear',
                 xAxisUnit: '°C',

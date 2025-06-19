@@ -27,24 +27,24 @@ export default {
     data() {
         const indexes = [];
         const configuration = {
-                xAxisLabel: 'frequency',
+                xAxisLabel: 'magneticFieldDcBias',
                 yAxisLabel: 'value',
-                xAxisReplaceLabel: 'Freq.',
+                xAxisReplaceLabel: 'H DC bias.',
                 yAxisReplaceLabel: ['Perm.'],
-                xAxisMode: 'log',
+                xAxisMode: 'linear',
                 yAxisMode: 'linear',
-                xAxisUnit: 'Hz',
-                xAxisEquationParameter: 'f',
+                xAxisUnit: 'A/m',
+                xAxisEquationParameter: 'H',
                 yAxisUnit: null,
                 xAxisAllowNegative: true,
                 yAxisAllowNegative: false,
                 xAxisDefaultValue: 25,
                 yAxisDefaultValue: 1,
-                xAxisNumberDecimals: 1,
+                xAxisNumberDecimals: 0,
                 yAxisNumberDecimals: 0,
-                xAxisMin: 50,
+                xAxisMin: 0,
                 yAxisMin: 1,
-                xAxisMax: 20e+6,
+                xAxisMax: 10000,
                 yAxisMax: 1e12,
                 xAxisNumberPoints: 20,
         }
@@ -66,14 +66,14 @@ export default {
     },
     methods: {
         assignLocalData() {
-            if (this.data.modifiers != null && this.data.modifiers.default.frequencyFactor != null) {
-                this.coefficients = this.data.modifiers.default.frequencyFactor;
+            if (this.data.modifiers != null && this.data.modifiers.default.magneticFieldDcBiasFactor != null) {
+                this.coefficients = this.data.modifiers.default.magneticFieldDcBiasFactor;
 
                 this.configuration["additionalScope"] = {"mu_ini": 60};
                 this.$mkf.ready.then(_ => {
                     const handle = this.$mkf.get_initial_permeability_equations(JSON.stringify(this.data));
 
-                    this.equation = handle.get("frequencyFactor");
+                    this.equation = handle.get("magneticFieldDcBiasFactor");
                 })
             }
 
@@ -84,12 +84,12 @@ export default {
 
 <template>
     <EquationPropertyTool
-        v-if="data != null && data.modifiers != null && data.modifiers.default != null && data.modifiers.default.frequencyFactor != null"
+        v-if="data != null && data.modifiers != null && data.modifiers.default != null && data.modifiers.default.magneticFieldDcBiasFactor != null"
         :dataTestLabel="dataTestLabel + '-EquationPropertyTool'"
-        :title="'Init. Permeability vs Frequency'"
+        :title="'Init. Permeability vs H DC bias'"
         :equations="[equation]"
         :baseValues="[data.value]"
-        :coefficients="[data.modifiers.default.frequencyFactor]"
+        :coefficients="[data.modifiers.default.magneticFieldDcBiasFactor]"
         :propertiesConfiguration="configuration"
         :chartStyle="'height: 30vh'"
         :smoothLine="true"

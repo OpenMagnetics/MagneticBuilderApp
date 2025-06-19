@@ -100,6 +100,9 @@ export default {
             }
         },
         sweepMagnetizingInductanceOverTemperature() {
+            if (this.$stateStore.graphParameters.minimumTemperature <= 0) {
+                this.$stateStore.graphParameters.xAxisMode = "linear";
+            }
             this.temperatureData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.magnetizingInductanceOverTemperatureData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
             this.$mkf.ready.then(_ => {

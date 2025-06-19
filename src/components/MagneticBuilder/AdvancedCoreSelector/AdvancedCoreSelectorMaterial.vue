@@ -4,6 +4,7 @@ import InitialPermeabilityVersusTemperatureEquationBased from './AdvancedCoreSel
 import InitialPermeabilityVersusFrequency from './AdvancedCoreSelectorMaterial/InitialPermeabilityVersusFrequency.vue'
 import InitialPermeabilityVersusFrequencyEquationBased from './AdvancedCoreSelectorMaterial/InitialPermeabilityVersusFrequencyEquationBased.vue'
 import InitialPermeabilityVersusMagneticFieldDcBias from './AdvancedCoreSelectorMaterial/InitialPermeabilityVersusMagneticFieldDcBias.vue'
+import InitialPermeabilityVersusMagneticFieldDcBiasEquationBased from './AdvancedCoreSelectorMaterial/InitialPermeabilityVersusMagneticFieldDcBiasEquationBased.vue'
 import ComplexPermeabilityVersusFrequency from './AdvancedCoreSelectorMaterial/ComplexPermeabilityVersusFrequency.vue'
 import CoercivityVersusTemperature from './AdvancedCoreSelectorMaterial/CoercivityVersusTemperature.vue'
 import RemanenceVersusTemperature from './AdvancedCoreSelectorMaterial/RemanenceVersusTemperature.vue'
@@ -329,7 +330,7 @@ export default {
                 </div>
             </div>
             <div class="col-sm-12 col-md-4">
-<!--                 <InitialPermeabilityVersusTemperature
+                <InitialPermeabilityVersusTemperature
                     v-if="core.functionalDescription.material.permeability != null && !isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusTemperature'"
                     :data="core.functionalDescription.material.permeability.initial"
@@ -338,7 +339,7 @@ export default {
                     v-if="core.functionalDescription.material.permeability != null && isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusTemperature'"
                     :data="core.functionalDescription.material.permeability.initial"
-                /> -->
+                />
                 <InitialPermeabilityVersusFrequency
                     v-if="core.functionalDescription.material.permeability != null && !isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusFrequency'"
@@ -349,8 +350,13 @@ export default {
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusFrequency'"
                     :data="core.functionalDescription.material.permeability.initial"
                 />
-<!--                 <InitialPermeabilityVersusMagneticFieldDcBias
-                    v-if="core.functionalDescription.material.permeability != null"
+                <InitialPermeabilityVersusMagneticFieldDcBias
+                    v-if="core.functionalDescription.material.permeability != null && !isInitialPermeabilityEquationBased"
+                    :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusMagneticFieldDcBias'"
+                    :data="core.functionalDescription.material.permeability.initial"
+                />
+                <InitialPermeabilityVersusMagneticFieldDcBiasEquationBased
+                    v-if="core.functionalDescription.material.permeability != null && isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusMagneticFieldDcBias'"
                     :data="core.functionalDescription.material.permeability.initial"
                 />
@@ -358,7 +364,7 @@ export default {
                     v-if="core.functionalDescription.material.permeability != null && core.functionalDescription.material.permeability.complex != null"
                     :dataTestLabel="dataTestLabel + '-ComplexPermeabilityVersusFrequency'"
                     :data="core.functionalDescription.material.permeability.complex"
-                /> -->
+                />
             </div>
             <div class="col-sm-12 col-md-4">
 <!--                 <BhCyclePerTemperature

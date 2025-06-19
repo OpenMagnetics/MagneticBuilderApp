@@ -100,6 +100,9 @@ export default {
             }
         },
         sweepMagnetizingInductanceOverDcBias() {
+            if (this.$stateStore.graphParameters.minimumDcBias <= 0) {
+                this.$stateStore.graphParameters.xAxisMode = "linear";
+            }
             this.dcBiasData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.magnetizingInductanceOverDcBiasData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
             this.$mkf.ready.then(_ => {
