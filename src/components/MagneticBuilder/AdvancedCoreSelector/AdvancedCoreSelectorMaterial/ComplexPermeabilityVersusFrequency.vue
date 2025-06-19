@@ -48,11 +48,13 @@ export default {
         }
 
         const localData = [];
+        const enableEditing = true;
 
         return {
             indexes,
             configuration,
             localData,
+            enableEditing,
         }
     },
     watch: { 
@@ -167,6 +169,7 @@ export default {
         :properties="localData"
         :propertiesConfiguration="configuration"
         :chartStyle="'height: 30vh'"
+        :enableEditing="enableEditing"
         :smoothLine="true"
         @onRemovePoint="onRemovePoint"
         @onAddPoint="onAddPoint"

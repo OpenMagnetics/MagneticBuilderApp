@@ -110,6 +110,10 @@ export default {
                 if (response.data.permeability != null && response.data.permeability.amplitude != null) {
                     this.core.functionalDescription.material.permeability.amplitude = response.data.permeability.amplitude;
                 }
+
+                if (this.core.functionalDescription.material.permeability.complex == null) {
+                    this.loadMaterialComplexPermeabilityData();
+                }
             })
             .catch(error => {
                 console.error(error);
@@ -126,8 +130,18 @@ export default {
                     this.core.functionalDescription.material = JSON.parse(materialJson);
                     this.loadAdvancedMaterialData();
                 }
-                console.log("this.core.functionalDescription.material")
-                console.log(this.core.functionalDescription.material)
+            })
+        },
+        loadMaterialComplexPermeabilityData() {
+            this.$mkf.ready.then(_ => {
+                const materialJson = this.$mkf.calculate_complex_permeability(JSON.stringify(this.core.functionalDescription.material));
+                if (materialJson.startsWith("Exception")) {
+                    console.error(materialJson);
+                    return;
+                }
+                else {
+                    this.core.functionalDescription.material.permeability.complex = JSON.parse(materialJson);
+                }
             })
         },
     }
@@ -367,12 +381,12 @@ export default {
                 />
             </div>
             <div class="col-sm-12 col-md-4">
-<!--                 <BhCyclePerTemperature
+                <BhCyclePerTemperature
                     v-if="core.functionalDescription.material.bhCycle != null"
                     :dataTestLabel="dataTestLabel + '-BhCyclePerTemperature'"
                     :data="core.functionalDescription.material.bhCycle"
                 />
-                <VolumetricLossesPerTemperature
+<!--                 <VolumetricLossesPerTemperature
                     v-if="core.functionalDescription.material.volumetricLosses != null"
                     :dataTestLabel="dataTestLabel + '-VolumetricLossesPerTemperature'"
                     :data="core.functionalDescription.material.volumetricLosses"
