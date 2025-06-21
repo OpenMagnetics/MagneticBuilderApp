@@ -351,6 +351,13 @@ export default {
 
 <template>
     <div class="container">
+        <div class="row">
+            <h2 
+                class="col-9 offset-1 mb-3 text-center"
+                >
+                {{'Core Gap Customizer'}}
+            </h2>
+        </div>
         <div
             v-if="'dimensions' in localData"
             class="row"

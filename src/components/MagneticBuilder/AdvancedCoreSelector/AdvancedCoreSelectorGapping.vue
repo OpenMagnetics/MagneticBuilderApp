@@ -413,6 +413,13 @@ export default {
 <template>
     <div class="container">
         <div class="row">
+            <h2 
+                class="col-9 offset-1 mb-3 text-center"
+                >
+                {{'Core Gap Customizer'}}
+            </h2>
+        </div>
+        <div class="row">
             <div
                 v-for="gapsPerColumn, columnIndex in reorderedColumns"
                 class="column-container col-sm-4 col-md-3 row mb-1 text-center mx-0"

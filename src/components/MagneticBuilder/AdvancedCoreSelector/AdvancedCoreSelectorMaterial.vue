@@ -12,6 +12,7 @@ import SaturationVersusTemperature from './AdvancedCoreSelectorMaterial/Saturati
 import ResistivityVersusTemperature from './AdvancedCoreSelectorMaterial/ResistivityVersusTemperature.vue'
 import BhCyclePerTemperature from './AdvancedCoreSelectorMaterial/BhCyclePerTemperature.vue'
 import VolumetricLossesPerTemperature from './AdvancedCoreSelectorMaterial/VolumetricLossesPerTemperature.vue'
+import VolumetricLossesPerTemperatureEquationBased from './AdvancedCoreSelectorMaterial/VolumetricLossesPerTemperatureEquationBased.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
@@ -87,6 +88,20 @@ export default {
                 return false;
             }
         },
+        isCoreLossesEquationBased() {
+            if (this.core.functionalDescription.material.volumetricLosses == null) {
+                return false;
+            }
+            var isCoreLossesEquationBased = false; 
+            this.core.functionalDescription.material.volumetricLosses.default.forEach((method) => {
+                if (!Array.isArray(method)) {
+                    if (method.method == "magnetics" || method.method == "micrometals") {
+                        isCoreLossesEquationBased = true;
+                    }
+                }
+            }) 
+            return isCoreLossesEquationBased;
+        },
     },
     methods: {
         loadAdvancedMaterialData() {
@@ -153,6 +168,11 @@ export default {
         <div class="row">
             <div class="col-sm-12 col-md-4">
                 <div>
+                    <h2 
+                        class="col-11 offset-1 mb-3 text-start"
+                        >
+                        {{'Core Material Customizer'}}
+                    </h2>
                     <Text
                         v-if="core.functionalDescription.material.name != null"
                         class="col-11 offset-1 mb-1 text-start"
@@ -348,36 +368,43 @@ export default {
                     v-if="core.functionalDescription.material.permeability != null && !isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusTemperature'"
                     :data="core.functionalDescription.material.permeability.initial"
+                    :chartStyle="'height: 19vh'"
                 />
                 <InitialPermeabilityVersusTemperatureEquationBased
                     v-if="core.functionalDescription.material.permeability != null && isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusTemperature'"
                     :data="core.functionalDescription.material.permeability.initial"
+                    :chartStyle="'height: 19vh'"
                 />
                 <InitialPermeabilityVersusFrequency
                     v-if="core.functionalDescription.material.permeability != null && !isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusFrequency'"
                     :data="core.functionalDescription.material.permeability.initial"
+                    :chartStyle="'height: 19vh'"
                 />
                 <InitialPermeabilityVersusFrequencyEquationBased
                     v-if="core.functionalDescription.material.permeability != null && isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusFrequency'"
                     :data="core.functionalDescription.material.permeability.initial"
+                    :chartStyle="'height: 19vh'"
                 />
                 <InitialPermeabilityVersusMagneticFieldDcBias
                     v-if="core.functionalDescription.material.permeability != null && !isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusMagneticFieldDcBias'"
                     :data="core.functionalDescription.material.permeability.initial"
+                    :chartStyle="'height: 19vh'"
                 />
                 <InitialPermeabilityVersusMagneticFieldDcBiasEquationBased
                     v-if="core.functionalDescription.material.permeability != null && isInitialPermeabilityEquationBased"
                     :dataTestLabel="dataTestLabel + '-InitialPermeabilityVersusMagneticFieldDcBias'"
                     :data="core.functionalDescription.material.permeability.initial"
+                    :chartStyle="'height: 19vh'"
                 />
                 <ComplexPermeabilityVersusFrequency
                     v-if="core.functionalDescription.material.permeability != null && core.functionalDescription.material.permeability.complex != null"
                     :dataTestLabel="dataTestLabel + '-ComplexPermeabilityVersusFrequency'"
                     :data="core.functionalDescription.material.permeability.complex"
+                    :chartStyle="'height: 19vh'"
                 />
             </div>
             <div class="col-sm-12 col-md-4">
@@ -386,11 +413,16 @@ export default {
                     :dataTestLabel="dataTestLabel + '-BhCyclePerTemperature'"
                     :data="core.functionalDescription.material.bhCycle"
                 />
-<!--                 <VolumetricLossesPerTemperature
-                    v-if="core.functionalDescription.material.volumetricLosses != null"
+                <VolumetricLossesPerTemperature
+                    v-if="core.functionalDescription.material.volumetricLosses != null && !isCoreLossesEquationBased"
                     :dataTestLabel="dataTestLabel + '-VolumetricLossesPerTemperature'"
                     :data="core.functionalDescription.material.volumetricLosses"
-                /> -->
+                />
+                <VolumetricLossesPerTemperatureEquationBased
+                    v-if="core.functionalDescription.material.volumetricLosses != null && isCoreLossesEquationBased"
+                    :dataTestLabel="dataTestLabel + '-VolumetricLossesPerTemperature'"
+                    :data="core.functionalDescription.material.volumetricLosses"
+                />
             </div>
         </div>
     </div>
