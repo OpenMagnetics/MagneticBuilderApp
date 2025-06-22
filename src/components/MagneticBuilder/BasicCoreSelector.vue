@@ -319,8 +319,23 @@ export default {
             const aux = this.masStore.mas.magnetic.core;
             aux.functionalDescription.material = value
             this.masStore.mas.magnetic.core = aux;
-            this.shapeUpdated(this.localData.shape)
-            this.historyStore.addToHistory(this.masStore.mas);
+            this.masStore.mas.magnetic.core.name = "Custom";
+            this.masStore.mas.magnetic.core.manufacturerInfo = null;
+
+            this.$mkf.ready.then(_ => {
+                var mas = deepCopy(this.masStore.mas);
+                mas.magnetic.core.geometricalDescription = null;
+                mas.magnetic.core.processedDescription = null;
+
+                const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
+                if (coreResult.startsWith("Exception")) {
+                    console.error(coreResult);
+                }
+                else {
+                    this.masStore.mas.magnetic.core = JSON.parse(coreResult);
+                    this.historyStore.addToHistory(this.masStore.mas);
+                }
+            });
         },
         numberStacksUpdated(value) {
             this.masStore.mas.magnetic.core.functionalDescription.numberStacks = value;

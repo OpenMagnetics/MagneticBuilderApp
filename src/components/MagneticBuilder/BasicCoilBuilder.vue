@@ -48,10 +48,15 @@ export default {
         const coilFits = true;
         const mas = {};
         const imageUpToDate = false;
+        const bobbinHash = "";
+        const inputsHash = "";
+
         return {
             coilFits,
             mas,
             imageUpToDate,
+            bobbinHash,
+            inputsHash,
         }
     },
     computed: {
@@ -73,12 +78,18 @@ export default {
     watch: {
         'masStore.mas': {
             handler(newValue, oldValue) {
-                if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
-                    this.mas = deepCopy(this.masStore.mas);
-                    this.imageUpToDate = true;
-                }
-                else {
-                    this.imageUpToDate = false;
+                const newBobbinHash = JSON.stringify(newValue.magnetic.coil.bobbin);
+                const newInputsHash = JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].current);
+                if (newBobbinHash != this.bobbinHash || newInputsHash != this.inputsHash) {
+                    this.bobbinHash = newBobbinHash;
+                    this.inputsHash = newInputsHash;
+                    if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                        this.mas = deepCopy(this.masStore.mas);
+                        this.imageUpToDate = true;
+                    }
+                    else {
+                        this.imageUpToDate = false;
+                    }
                 }
             },
           deep: true
@@ -87,8 +98,14 @@ export default {
     mounted () {
         this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
-                this.mas = deepCopy(this.masStore.mas);
-                this.imageUpToDate = true;
+                const newBobbinHash = JSON.stringify(this.masStore.mas.magnetic.coil.bobbin);
+                const newInputsHash = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current);
+                if (!this.imageUpToDate || newBobbinHash != this.bobbinHash || newInputsHash != this.inputsHash) {
+                    this.bobbinHash = newBobbinHash;
+                    this.inputsHash = newInputsHash;
+                    this.mas = deepCopy(this.masStore.mas);
+                    this.imageUpToDate = true;
+                }
             }
         })
     },

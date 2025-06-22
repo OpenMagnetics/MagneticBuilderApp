@@ -86,7 +86,6 @@ export default {
     mounted () {
         this.calculateCoreEffectiveParameters();
         this.calculateCoreLosses();
-        this.dataUptoDate = true;
     },
     methods: {
         tryToSimulate() {
