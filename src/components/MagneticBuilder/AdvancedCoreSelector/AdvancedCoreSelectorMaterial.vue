@@ -12,6 +12,7 @@ import SaturationVersusTemperature from './AdvancedCoreSelectorMaterial/Saturati
 import ResistivityVersusTemperature from './AdvancedCoreSelectorMaterial/ResistivityVersusTemperature.vue'
 import BhCyclePerTemperature from './AdvancedCoreSelectorMaterial/BhCyclePerTemperature.vue'
 import VolumetricLossesPerTemperature from './AdvancedCoreSelectorMaterial/VolumetricLossesPerTemperature.vue'
+import LossFactorVersusFrequency from './AdvancedCoreSelectorMaterial/LossFactorVersusFrequency.vue'
 import VolumetricLossesPerTemperatureEquationBased from './AdvancedCoreSelectorMaterial/VolumetricLossesPerTemperatureEquationBased.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
@@ -101,6 +102,20 @@ export default {
                 }
             }) 
             return isCoreLossesEquationBased;
+        },
+        isCoreLossesLossFactorBased() {
+            if (this.core.functionalDescription.material.volumetricLosses == null) {
+                return false;
+            }
+            var isCoreLossesLossFactorBased = false; 
+            this.core.functionalDescription.material.volumetricLosses.default.forEach((method) => {
+                if (!Array.isArray(method)) {
+                    if (method.method == "lossFactor") {
+                        isCoreLossesLossFactorBased = true;
+                    }
+                }
+            }) 
+            return isCoreLossesLossFactorBased;
         },
     },
     methods: {
@@ -412,6 +427,11 @@ export default {
                     v-if="core.functionalDescription.material.bhCycle != null"
                     :dataTestLabel="dataTestLabel + '-BhCyclePerTemperature'"
                     :data="core.functionalDescription.material.bhCycle"
+                />
+                <LossFactorVersusFrequency
+                    v-if="core.functionalDescription.material.volumetricLosses != null && isCoreLossesLossFactorBased"
+                    :dataTestLabel="dataTestLabel + '-LossFactorVersusFrequency'"
+                    :data="core.functionalDescription.material.volumetricLosses"
                 />
                 <VolumetricLossesPerTemperature
                     v-if="core.functionalDescription.material.volumetricLosses != null && !isCoreLossesEquationBased"
