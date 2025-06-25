@@ -3,6 +3,7 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import ImpedanceOverFrequency from './Graphs/ImpedanceOverFrequency.vue'
+import QFactorOverFrequency from './Graphs/QFactorOverFrequency.vue'
 import ResistancesOverFrequency from './Graphs/ResistancesOverFrequency.vue'
 import WindingResistancesOverFrequency from './Graphs/WindingResistancesOverFrequency.vue'
 import WindingLossesOverFrequency from './Graphs/WindingLossesOverFrequency.vue'
@@ -60,7 +61,16 @@ export default {
                 <GraphCommonParameters
                     :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
                 />
-            </ImpedanceOverFrequency> 
+            </ImpedanceOverFrequency>
+            <QFactorOverFrequency 
+                v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'qFactorOverFrequency'" 
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+            >
+                <GraphCommonParameters
+                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
+                />
+            </QFactorOverFrequency> 
             <MagnetizingInductanceOverFrequency 
                 v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'magnetizingInductanceOverFrequency'" 
                 :dataTestLabel="dataTestLabel"

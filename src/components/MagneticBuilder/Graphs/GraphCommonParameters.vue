@@ -29,6 +29,7 @@ export default {
     data() {
         const availableGraphs = {
             'impedanceOverFrequency': 'Impedance Over Frequency',
+            'qFactorOverFrequency': 'Q Factor Over Frequency',
             'resistancesOverFrequency': 'Total Resistance Over Frequency',
             'windingResistancesOverFrequency': 'Resistances Per Winding Over Frequency',
             'coreLossesOverFrequency': 'Core Losses Over Frequency',
