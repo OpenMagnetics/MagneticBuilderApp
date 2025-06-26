@@ -104,13 +104,11 @@ export default {
         this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
-                this.forceUpdate += 1;
             }
         })
         this.masStore.$onAction((action) => {
             if (action.name == "importedMas") {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
-                this.forceUpdate += 1;
             }
         })
     },
@@ -174,6 +172,7 @@ export default {
             }
             this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
             this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+            this.forceUpdate += 1;
         },
         getShapeNames() {
             this.$mkf.ready.then(_ => {
@@ -233,9 +232,6 @@ export default {
                 }
 
                 if (this.masStore.mas.magnetic.core.functionalDescription.shape.type == "custom") {
-                    console.log(this.localData.shapeFamily)
-                    console.log(this.masStore.mas.magnetic.core.functionalDescription.shape.family)
-                    console.log(this.coreShapeNames)
                     this.coreShapeNames[this.masStore.mas.magnetic.core.functionalDescription.shape.family.toUpperCase()].unshift(this.masStore.mas.magnetic.core.functionalDescription.shape.name);
                 }
             });
@@ -520,7 +516,6 @@ export default {
             />
             <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2">Select a family and a shape for the core</h5>
 
-
             <Dimension class="col-12 mb-1 text-start"
                 v-tooltip="tooltipsMagneticBuilder.coreNumberStacks"
                 v-if="isStackable() && localData.shape != '' && !loading"
@@ -528,6 +523,7 @@ export default {
                 :name="'numberStacks'"
                 :replaceTitle="'Number of Stacks'"
                 :unit="null"
+                :forceUpdate="forceUpdate"
                 :dataTestLabel="dataTestLabel + '-NumberStacks'"
                 :min="1"
                 :justifyContent="true"
