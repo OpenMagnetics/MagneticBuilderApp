@@ -48,14 +48,14 @@ export default {
         const coilFits = true;
         const mas = {};
         const imageUpToDate = false;
-        const bobbinHash = "";
+        const coilHash = "";
         const inputsHash = "";
 
         return {
             coilFits,
             mas,
             imageUpToDate,
-            bobbinHash,
+            coilHash,
             inputsHash,
         }
     },
@@ -78,10 +78,10 @@ export default {
     watch: {
         'masStore.mas': {
             handler(newValue, oldValue) {
-                const newBobbinHash = JSON.stringify(newValue.magnetic.coil.bobbin);
+                const newCoilHash = JSON.stringify(newValue.magnetic.coil);
                 const newInputsHash = JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].current);
-                if (newBobbinHash != this.bobbinHash || newInputsHash != this.inputsHash) {
-                    this.bobbinHash = newBobbinHash;
+                if (newCoilHash != this.coilHash || newInputsHash != this.inputsHash) {
+                    this.coilHash = newCoilHash;
                     this.inputsHash = newInputsHash;
                     if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                         this.mas = deepCopy(this.masStore.mas);
@@ -98,10 +98,10 @@ export default {
     mounted () {
         this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
-                const newBobbinHash = JSON.stringify(this.masStore.mas.magnetic.coil.bobbin);
+                const newCoilHash = JSON.stringify(this.masStore.mas.magnetic.coil);
                 const newInputsHash = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current);
-                if (!this.imageUpToDate || newBobbinHash != this.bobbinHash || newInputsHash != this.inputsHash) {
-                    this.bobbinHash = newBobbinHash;
+                if (!this.imageUpToDate || newCoilHash != this.coilHash || newInputsHash != this.inputsHash) {
+                    this.coilHash = newCoilHash;
                     this.inputsHash = newInputsHash;
                     this.mas = deepCopy(this.masStore.mas);
                     this.imageUpToDate = true;
