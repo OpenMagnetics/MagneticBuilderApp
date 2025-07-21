@@ -264,6 +264,7 @@ export default {
             this.masStore.mas.magnetic.core.processedDescription = null;
             this.masStore.mas.magnetic.core.geometricalDescription = null;
 
+            console.log(this.localData.material != null)
             this.$mkf.ready.then(_ => {
                 var mas = deepCopy(this.masStore.mas);
                 mas.magnetic.core.geometricalDescription = null;
@@ -275,39 +276,45 @@ export default {
                 }
                 else {
                     const shape = JSON.parse(shapeResult);
-                    mas.magnetic.core.functionalDescription.shape = shape;
-
-                    if (!this.isStackable(shape)) {
-                        mas.magnetic.core.functionalDescription.numberStacks = 1;
+                    if (this.localData.material == null) {
+                        this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
                     }
+                    else {
+                        mas.magnetic.core.functionalDescription.shape = shape;
 
-                    checkAndFixMas(mas).then(response => {
-                        mas = response;
-
-                        const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
-                        if (coreResult.startsWith("Exception")) {
-                            console.error(coreResult);
+                        if (!this.isStackable(shape)) {
+                            mas.magnetic.core.functionalDescription.numberStacks = 1;
                         }
-                        else {
-                            this.masStore.mas.magnetic.core = JSON.parse(coreResult);
 
-                            this.masStore.mas.magnetic.coil.bobbin = "Dummy";
-                            this.masStore.mas.magnetic.coil.turnsDescription = null;
-                            this.masStore.mas.magnetic.coil.layersDescription = null;
-                            this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                            const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
-                            if (bobbinResult.startsWith("Exception")) {
-                                console.error(bobbinResult);
+                        checkAndFixMas(mas).then(response => {
+                            mas = response;
+
+                            const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
+                            if (coreResult.startsWith("Exception")) {
+                                console.error(coreResult);
                             }
                             else {
-                                this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinResult);
-                                this.historyStore.addToHistory(this.masStore.mas);
+                                this.masStore.mas.magnetic.core = JSON.parse(coreResult);
+
+                                this.masStore.mas.magnetic.coil.bobbin = "Dummy";
+                                this.masStore.mas.magnetic.coil.turnsDescription = null;
+                                this.masStore.mas.magnetic.coil.layersDescription = null;
+                                this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                                this.masStore.mas.magnetic.manufacturerInfo = null;
+                                const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+                                if (bobbinResult.startsWith("Exception")) {
+                                    console.error(bobbinResult);
+                                }
+                                else {
+                                    this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinResult);
+                                    this.historyStore.addToHistory(this.masStore.mas);
+                                }
                             }
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error.data)
-                    });
+                        })
+                        .catch(error => {
+                            console.error(error.data)
+                        });
+                    }
                 }
             });
         },

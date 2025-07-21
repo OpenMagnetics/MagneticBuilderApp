@@ -81,7 +81,10 @@ export default {
         'masStore.mas': {
             handler(newValue, oldValue) {
                 const newCoilHash = JSON.stringify(newValue.magnetic.coil);
-                const newInputsHash = JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].current);
+                var newInputsHash = "";
+                if (newValue.inputs.operatingPoints.length > 0) {
+                    newInputsHash = JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(newValue.inputs.operatingPoints[0].excitationsPerWinding[0].current);
+                }
                 if (newCoilHash != this.coilHash || newInputsHash != this.inputsHash) {
                     this.coilHash = newCoilHash;
                     this.inputsHash = newInputsHash;
@@ -117,11 +120,13 @@ export default {
     methods: {
         tryPlot(force) {
             const newCoilHash = JSON.stringify(this.masStore.mas.magnetic.coil);
-            const newInputsHash = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current);
+            var newInputsHash = "";
+            if (this.masStore.mas.inputs.operatingPoints.length > 0) {
+                newInputsHash = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current);
+            }
             if (force || !this.imageUpToDate || newCoilHash != this.coilHash || newInputsHash != this.inputsHash) {
                 this.coilHash = newCoilHash;
                 this.inputsHash = newInputsHash;
-                console.warn("updateplot")
                 this.mas = null;
                 this.mas = deepCopy(this.masStore.mas);
                 this.imageUpToDate = true;
@@ -142,7 +147,6 @@ export default {
             if (this.retries > 0) {
                 setTimeout(() => {
                     this.imageUpToDate = false;
-                    console.warn("tryPlot")
                     this.tryPlot(true);
                     this.retries -= 1;
                 }, 1000);
