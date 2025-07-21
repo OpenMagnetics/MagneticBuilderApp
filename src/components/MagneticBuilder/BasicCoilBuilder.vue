@@ -50,12 +50,14 @@ export default {
         const imageUpToDate = false;
         const coilHash = "";
         const inputsHash = "";
+        const retries = 0;
 
         return {
             coilFits,
             mas,
             imageUpToDate,
             coilHash,
+            retries,
             inputsHash,
         }
     },
@@ -96,20 +98,35 @@ export default {
         }
     },
     mounted () {
+        this.masStore.$onAction((action) => {
+            if (action.name == "updatedTurnsRatios") {
+                this.retries = 1;
+                this.imageUpToDate = false;
+                this.tryPlot(false);
+            }
+        })
+
         this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
-                const newCoilHash = JSON.stringify(this.masStore.mas.magnetic.coil);
-                const newInputsHash = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current);
-                if (!this.imageUpToDate || newCoilHash != this.coilHash || newInputsHash != this.inputsHash) {
-                    this.coilHash = newCoilHash;
-                    this.inputsHash = newInputsHash;
-                    this.mas = deepCopy(this.masStore.mas);
-                    this.imageUpToDate = true;
-                }
+                this.retries = 1;
+                this.imageUpToDate = false;
+                this.tryPlot(false);
             }
         })
     },
     methods: {
+        tryPlot(force) {
+            const newCoilHash = JSON.stringify(this.masStore.mas.magnetic.coil);
+            const newInputsHash = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current);
+            if (force || !this.imageUpToDate || newCoilHash != this.coilHash || newInputsHash != this.inputsHash) {
+                this.coilHash = newCoilHash;
+                this.inputsHash = newInputsHash;
+                console.warn("updateplot")
+                this.mas = null;
+                this.mas = deepCopy(this.masStore.mas);
+                this.imageUpToDate = true;
+            }
+        },
         swapFieldPlot(newValue) {
             this.$stateStore.magnetic2DVisualizerState.plotMagneticField = newValue == '1';
         },
@@ -118,6 +135,18 @@ export default {
         },
         fits(coilFits) {
             this.coilFits = coilFits;
+        },
+        errorInImage() {
+            this.imageUpToDate = false;
+
+            if (this.retries > 0) {
+                setTimeout(() => {
+                    this.imageUpToDate = false;
+                    console.warn("tryPlot")
+                    this.tryPlot(true);
+                    this.retries -= 1;
+                }, 1000);
+            }
         },
     }
 }
@@ -129,7 +158,8 @@ export default {
     <div v-if="!missingWires && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''" class="container">
         <div
             v-if="useVisualizers && mas.magnetic != null && mas.magnetic.core != null && mas.magnetic.core.functionalDescription.shape != ''"
-            class="row mb-3"
+            class="row"
+            :class="enableOptions? 'mb-3' : ''"
             style="height: 50vh;"
             :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
@@ -146,6 +176,7 @@ export default {
                 :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
                 @swapFieldPlot="swapFieldPlot"
                 @swapIncludeFringing="swapIncludeFringing"
+                @errorInImage="errorInImage"
                 :loadingGif="$settingsStore.loadingGif"
                 />
         </div>

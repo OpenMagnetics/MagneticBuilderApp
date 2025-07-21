@@ -10,6 +10,10 @@ export default {
             type: Object,
             required: true,
         },
+        masStore: {
+            type: Object,
+            required: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -38,6 +42,12 @@ export default {
     watch: { 
     },
     mounted () {
+        this.masStore.$onAction((action) => {
+            if (action.name == "updatedTurnsRatios") {
+                this.selectedWindingIndex = Math.min(this.selectedWindingIndex, this.masStore.mas.inputs.designRequirements.turnsRatios.length);
+                this.$emit("windingIndexChanged", this.selectedWindingIndex);
+            }
+        })
     },
     methods: {
         getWindingLabel(key) {

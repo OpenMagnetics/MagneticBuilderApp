@@ -20,6 +20,7 @@
     "comlink": "^4.4.1",
     "cors": "^2.8.5",
     "echarts": "^5.5.1",
+    "mathjs": "^14.5.3",
     "pinia": "^2.2.2",
     "pinia-plugin-persistedstate": "^4.0.2",
     "three": "^0.168.0",

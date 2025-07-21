@@ -15,6 +15,14 @@ export default {
             type: String,
             default: '',
         },
+        showConfigurationButton: {
+            type: Boolean,
+            default: true,
+        },
+        showResetButton: {
+            type: Boolean,
+            default: false,
+        }
     },
     data() {
         const masStore = useMasStore();
@@ -35,6 +43,10 @@ export default {
     mounted () {
     },
     methods: {
+        reset() {
+            this.masStore.resetMas('power')
+            setTimeout(() => {this.$router.push('/engine_loader');}, 100);
+        },
         undo() {
             const newMas = this.historyStore.back();
             this.masStore.mas = newMas;
@@ -151,6 +163,7 @@ export default {
                 {{'Export MAS'}}
             </button>
             <button 
+                v-if="showConfigurationButton"
                 :style="$styleStore.controlPanel.button"
                 class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
                 data-bs-toggle="modal"
@@ -158,6 +171,14 @@ export default {
                 @click="openSettings" 
                 >
                 <i class="fa-solid fa-gear"></i>
+            </button>
+            <button 
+                v-if="showResetButton"
+                :style="$styleStore.controlPanel.button"
+                class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
+                @click="reset" 
+                >
+                <i class="fa-solid fa-power-off"></i>
             </button>
 
 

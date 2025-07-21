@@ -186,6 +186,14 @@ export default {
             this.errorMessage = "";
             this.$mkf.ready.then(_ => {
 
+                // So the outer diameter gets updated for Litz
+                if (this.localData["type"] == "litz") {
+                    if (typeof(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire) != "string") {
+                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = this.localData["litzStrandConductingDiameter"];
+                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.outerDiameter = null;
+                    }
+                }
+
                 var wire = {};
 
                 if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "Dummy") {
@@ -211,7 +219,7 @@ export default {
                     }
                     wire.type = "litz";
 
-                    if (typeof(wire.strand) == "string" || wire.strand.coating == null) {
+                    if (typeof(wire.strand) == "string" || wire.strand == null || (wire.strand != null && wire.strand.coating == null)) {
                         wire.strand = JSON.parse(this.$mkf.get_wire_data_by_standard_name(this.localData["litzStrandConductingDiameter"]));
                     }
                     wire.numberConductors = this.localData["numberConductors"];
@@ -382,11 +390,6 @@ export default {
             this.assignWire();
         },
         wireUpdated() {
-            // So the outer diameter gets updated for Litz
-            if (this.localData["type"] == "litz") {
-                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = this.localData["litzStrandConductingDiameter"];
-                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.outerDiameter = null;
-            }
             this.assignWire();
         },
         isAnyLitzLoaded() {
