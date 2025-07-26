@@ -3,7 +3,7 @@
 
 <script>
 export default {
-    emits: ["showAlignmentOptions", "customizeCoil", "showMarginOptions"],
+    emits: ["showAlignmentOptions", "customizeCoil", "showInsulationOptions"],
     props: {
         dataTestLabel: {
             type: String,
@@ -13,7 +13,7 @@ export default {
             type: Boolean,
             default: true,
         },
-        enableMarginOptions: {
+        enableInsulationOptions: {
             type: Boolean,
             default: true,
         },
@@ -28,10 +28,10 @@ export default {
     },
     data() {
         const showAlignmentOptions = false;
-        const showMarginOptions = false;
+        const showInsulationOptions = false;
         return {
             showAlignmentOptions,
-            showMarginOptions,
+            showInsulationOptions,
         }
     },
     computed: {
@@ -45,9 +45,9 @@ export default {
             this.showAlignmentOptions = !this.showAlignmentOptions;
             this.$emit('showAlignmentOptions', this.showAlignmentOptions);
         },
-        swapShowMarginOptions() {
-            this.showMarginOptions = !this.showMarginOptions;
-            this.$emit('showMarginOptions', this.showMarginOptions);
+        swapShowInsulationOptions() {
+            this.showInsulationOptions = !this.showInsulationOptions;
+            this.$emit('showInsulationOptions', this.showInsulationOptions);
         },
     }
 }
@@ -68,14 +68,14 @@ export default {
                 {{showAlignmentOptions? 'Hide alignment options' : 'Show alignment options'}}
             </button>
             <button
-                :style="showMarginOptions? $styleStore.magneticBuilder.hideMarginOptionsButton: $styleStore.magneticBuilder.showMarginOptionsButton"
-                :disabled="!enableMarginOptions"
-                :data-cy="dataTestLabel + '-Coil-ShowMarginOptions-button'"
+                :style="showInsulationOptions? $styleStore.magneticBuilder.hideInsulationOptionsButton: $styleStore.magneticBuilder.showInsulationOptionsButton"
+                :disabled="!enableInsulationOptions"
+                :data-cy="dataTestLabel + '-Coil-ShowInsulationOptions-button'"
                 :class="readOnly? 'col-6' : 'col-4'"
                 class="btn mx-auto d-block mt-1"
-                @click="swapShowMarginOptions"
+                @click="swapShowInsulationOptions"
             >
-                {{showMarginOptions? 'Hide margin options' : 'Show margin options'}}
+                {{showInsulationOptions? 'Hide insulation options' : 'Show insulation options'}}
             </button>
             <button
                 :style="$styleStore.magneticBuilder.customizeButton"

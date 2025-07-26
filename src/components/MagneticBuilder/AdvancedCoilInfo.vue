@@ -317,6 +317,7 @@ export default {
             />
             <div class="col-12 mt-3 mb-2 p-0">
                 <WindingSelector
+                    :masStore="masStore"
                     :dataTestLabel="`${dataTestLabel}-WindingSelector`"
                     :coil="masStore.mas.magnetic.coil"
                     @windingIndexChanged="windingIndexChanged"

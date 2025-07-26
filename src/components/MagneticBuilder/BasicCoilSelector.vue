@@ -4,7 +4,7 @@ import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vu
 import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import AdvancedCoilInfo from './AdvancedCoilInfo.vue'
 import BasicCoilInfo from './BasicCoilInfo.vue'
-import BasicCoilSectionMarginsSelector from './BasicCoilSectionMarginsSelector.vue'
+import BasicCoilSectionInsulationSelector from './BasicCoilSectionInsulationSelector.vue'
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
@@ -49,7 +49,7 @@ export default {
         const historyStore = useHistoryStore();
         const showAlignmentOptions = false;
 
-        const showMarginOptions = false;
+        const showInsulationOptions = false;
         const loading = false;
         const blockingRebounds = false;
         const recentChange = false;
@@ -63,6 +63,8 @@ export default {
             localData = {
                 sectionsOrientation: "contiguous",
                 sectionsAlignment: "spread",
+                interlayerThickness: 0,
+                intersectionThickness: 0,
                 dataPerSection: [{
                     layersOrientation: "overlapping",
                     turnsAlignment: "centered",
@@ -79,6 +81,8 @@ export default {
             localData = {
                 sectionsOrientation: "overlapping",
                 sectionsAlignment: "inner or top",
+                interlayerThickness: 0,
+                intersectionThickness: 0,
                 dataPerSection: [{
                     layersOrientation: "overlapping",
                     turnsAlignment: "spread",
@@ -99,7 +103,7 @@ export default {
             localData,
             forceUpdate,
             showAlignmentOptions,
-            showMarginOptions,
+            showInsulationOptions,
             loading,
             recentChange,
             tryingToSend,
@@ -365,6 +369,7 @@ export default {
                         return;
                     }
                     this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
+                    // this.assignLocalData(this.masStore.mas.magnetic);
                     const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
                     this.$emit("fits", fits);
 
@@ -400,54 +405,76 @@ export default {
             }
         },
         assignLocalData(magnetic) {
-            try {
-                if (magnetic.coil.bobbin != "" && magnetic.coil.bobbin != "Dummy") {
-                    if (magnetic.coil.bobbin.processedDescription != null) {
-                        if (magnetic.coil.bobbin.processedDescription.windingWindows != null) {
-                            if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment != null) {
-                                this.localData.sectionsAlignment = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment;
-                            }
-                            if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation != null) {
-                                this.localData.sectionsOrientation = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
-                            }
-                            if (magnetic.coil.bobbin.processedDescription.wallThickness != null && magnetic.coil.bobbin.processedDescription.columnThickness != null) {
-                                this.localData.bobbinThickness = Math.min(magnetic.coil.bobbin.processedDescription.wallThickness, magnetic.coil.bobbin.processedDescription.columnThickness);
+            if (!this.blockingRebounds) {
+                try {
+                    if (magnetic.coil.bobbin != "" && magnetic.coil.bobbin != "Dummy") {
+                        if (magnetic.coil.bobbin.processedDescription != null) {
+                            if (magnetic.coil.bobbin.processedDescription.windingWindows != null) {
+                                if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment != null) {
+                                    this.localData.sectionsAlignment = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment;
+                                }
+                                if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation != null) {
+                                    this.localData.sectionsOrientation = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
+                                }
+                                if (magnetic.coil.bobbin.processedDescription.wallThickness != null && magnetic.coil.bobbin.processedDescription.columnThickness != null) {
+                                    this.localData.bobbinThickness = Math.min(magnetic.coil.bobbin.processedDescription.wallThickness, magnetic.coil.bobbin.processedDescription.columnThickness);
+                                }
                             }
                         }
                     }
-                }
-                if (magnetic.coil.sectionsDescription != null && magnetic.coil.layersDescription != null) {
-                    var conductionSectionIndex = 0;
-                    magnetic.coil.sectionsDescription.forEach((section) => {
-                        if (section.type == "conduction") {
-                            if (this.localData.dataPerSection.length <= conductionSectionIndex) {
-                                this.localData.dataPerSection.push({
-                                    layersOrientation: "overlapping",
-                                    turnsAlignment: "spread",
-                                });
-                            }
-                            this.localData.dataPerSection[conductionSectionIndex].layersOrientation = section.layersOrientation;
-
-                            magnetic.coil.layersDescription.forEach((layer, layerIndex) => {
-                                if (layer.section == section.name) {
-                                    this.localData.dataPerSection[conductionSectionIndex].turnsAlignment = layer.turnsAlignment;
+                    if (magnetic.coil.sectionsDescription != null && magnetic.coil.layersDescription != null) {
+                        var conductionSectionIndex = 0;
+                        magnetic.coil.sectionsDescription.forEach((section) => {
+                            if (section.type == "conduction") {
+                                if (this.localData.dataPerSection.length <= conductionSectionIndex) {
+                                    this.localData.dataPerSection.push({
+                                        layersOrientation: "overlapping",
+                                        turnsAlignment: "spread",
+                                    });
                                 }
-                            })
+                                this.localData.dataPerSection[conductionSectionIndex].layersOrientation = section.layersOrientation;
 
-                            if (section.margin != null) {
-                                this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin = section.margin[0];
-                                this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin = section.margin[1];
+                                magnetic.coil.layersDescription.forEach((layer, layerIndex) => {
+                                    if (layer.section == section.name) {
+                                        if (layer.type == "conduction") {
+                                            this.localData.dataPerSection[conductionSectionIndex].turnsAlignment = layer.turnsAlignment;
+                                        }
+                                        else {
+
+                                            if (section.layersOrientation == "overlapping") {
+                                                this.localData.interlayerThickness = layer.dimensions[0];
+                                            }
+                                            else {
+                                                this.localData.interlayerThickness = layer.dimensions[1];
+                                            }
+
+                                        }
+                                    }
+                                })
+
+                                if (section.margin != null) {
+                                    this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin = section.margin[0];
+                                    this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin = section.margin[1];
+                                }
+
+                                conductionSectionIndex += 1;
                             }
+                            else {
+                                if (this.localData.sectionsOrientation == "overlapping") {
+                                    this.localData.intersectionThickness = section.dimensions[0];
+                                }
+                                else {
+                                    this.localData.intersectionThickness = section.dimensions[1];
+                                }
+                            }
+                        })
+                    }
 
-                            conductionSectionIndex += 1;
-                        }
-                    })
+                    this.forceUpdate += 1;
                 }
-
-                this.forceUpdate += 1;
-            }
-            catch (e) {
-                setTimeout(() => this.assignLocalData(magnetic), 50);
+                catch (e) {
+                    // setTimeout(() => this.assignLocalData(magnetic), 50);
+                }
             }
         },
         assignCoilData() {
@@ -493,8 +520,8 @@ export default {
         swapShowAlignmentOptions(showAlignmentOptions) {
             this.showAlignmentOptions = showAlignmentOptions;
         },
-        swapShowMarginOptions(showMarginOptions) {
-            this.showMarginOptions = showMarginOptions;
+        swapShowInsulationOptions(showInsulationOptions) {
+            this.showInsulationOptions = showInsulationOptions;
         },
         customizeCoil() {
         },
@@ -578,9 +605,9 @@ export default {
         </div>
 
         <div class="row mb-4" v-show="masStore.mas.magnetic.coil.sectionsDescription != null">
-            <BasicCoilSectionMarginsSelector
-                :data="localData.dataPerSection"
-                :showMarginOptions="showMarginOptions"
+            <BasicCoilSectionInsulationSelector
+                :data="localData"
+                :showInsulationOptions="showInsulationOptions"
                 :masStore="masStore"
                 :readOnly="readOnly"
                 @marginUpdated="marginUpdated"
@@ -612,7 +639,7 @@ export default {
             :enableAlignmentOptions="!loading"
             :enableCustomize="false"
             @showAlignmentOptions="swapShowAlignmentOptions"
-            @showMarginOptions="swapShowMarginOptions"
+            @showInsulationOptions="swapShowInsulationOptions"
             @customizeCore="customizeCoil"
         />
     </div>

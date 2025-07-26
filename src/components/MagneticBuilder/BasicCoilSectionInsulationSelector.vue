@@ -17,7 +17,7 @@ export default {
             type: Object,
             default: 0,
         },
-        showMarginOptions: {
+        showInsulationOptions: {
             type: Boolean,
             default: false,
         },
@@ -78,11 +78,39 @@ export default {
     mounted () {
     },
     methods: {
+        interlayerThicknessUpdated(value) {
+            if (!this.blockingRebounds) {
+                this.$mkf.ready.then(_ => {
+                    const result = this.$mkf.set_interlayer_insulation(JSON.stringify(this.masStore.mas.magnetic.coil), value);
+
+                    if (result.startsWith("Exception")) {
+                        console.error(result);
+                    }
+                    else{
+                        this.masStore.mas.magnetic.coil = JSON.parse(result);
+                    }
+                });
+            }
+        },
+        intersectionThicknessUpdated(value) {
+            if (!this.blockingRebounds) {
+                this.$mkf.ready.then(_ => {
+                    const result = this.$mkf.set_intersection_insulation(JSON.stringify(this.masStore.mas.magnetic.coil), value, 1);
+
+                    if (result.startsWith("Exception")) {
+                        console.error(result);
+                    }
+                    else{
+                        this.masStore.mas.magnetic.coil = JSON.parse(result);
+                    }
+                });
+            }
+        },
         topOrInnerMarginUpdated(sectionIndex) {
             if (!this.blockingRebounds) {
                 this.$mkf.ready.then(_ => {
                     const isMarginHorizontal = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
-                    const fits = this.$mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data[sectionIndex].topOrLeftMargin, isMarginHorizontal);
+                    const fits = this.$mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data.dataPerSection[sectionIndex].topOrLeftMargin, isMarginHorizontal);
 
                     if (fits) {
                         this.$emit('marginUpdated', sectionIndex);
@@ -94,11 +122,11 @@ export default {
                 });
             }
         },
-        BottomOrOuterMarginUpdated(sectionIndex) {
+        bottomOrOuterMarginUpdated(sectionIndex) {
             if (!this.blockingRebounds) {
                 this.$mkf.ready.then(_ => {
                     const isMarginHorizontal = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
-                    const fits = this.$mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data[sectionIndex].bottomOrRightMargin, isMarginHorizontal);
+                    const fits = this.$mkf.check_if_fits(JSON.stringify(this.masStore.mas.magnetic.coil.bobbin), this.data.dataPerSection[sectionIndex].bottomOrRightMargin, isMarginHorizontal);
 
                     if (fits) {
                         this.$emit('marginUpdated', sectionIndex);
@@ -122,9 +150,55 @@ export default {
 
 <template>
     <div class="container">
-        <div class="row" v-tooltip="styleTooltip">
+        <div class="row ms-1" v-tooltip="styleTooltip">
+            <Dimension 
+                v-if="showInsulationOptions"
+                :disabled="readOnly"
+                class="col-12 mb-1 text-start"
+                :name="'interlayerThickness'"
+                :replaceTitle="'Inter-layer ins. thickness'"
+                :unit="'m'"
+                :dataTestLabel="dataTestLabel + '-InterlayerThickness'"
+                :numberDecimals="6"
+                :min="1e-6"
+                :max="1e-3"
+                :allowNegative="false"
+                :allowZero="true"
+                :modelValue="data"
+                :forceUpdate="forceUpdate"
+                :styleClassInput="'offset-3 col-6'"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
+                @update="interlayerThicknessUpdated"
+            />
+            <Dimension 
+                v-if="showInsulationOptions"
+                :disabled="readOnly"
+                class="col-12 mb-1 text-start"
+                :name="'intersectionThickness'"
+                :replaceTitle="'Inter-section ins. thickness'"
+                :unit="'m'"
+                :dataTestLabel="dataTestLabel + '-IntersectionThickness'"
+                :numberDecimals="6"
+                :min="1e-6"
+                :max="1e-3"
+                :allowNegative="false"
+                :allowZero="true"
+                :modelValue="data"
+                :forceUpdate="forceUpdate"
+                :styleClassInput="'offset-3 col-6'"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
+                @update="intersectionThicknessUpdated"
+            />
             <SectionSelector
-                v-show="showMarginOptions" 
+                v-show="showInsulationOptions" 
                 :sectionIndex="selectedSectionIndex"
                 :masStore="masStore"
                 @sectionIndexChanged="sectionIndexChanged"
@@ -132,7 +206,7 @@ export default {
 
             <Dimension 
                 v-tooltip="topOrLeftMarginTooltip"
-                v-if="showMarginOptions"
+                v-if="showInsulationOptions"
                 :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :name="'topOrLeftMargin'"
@@ -144,7 +218,7 @@ export default {
                 :max="1"
                 :allowNegative="false"
                 :allowZero="true"
-                :modelValue="data[selectedSectionIndex]"
+                :modelValue="data.dataPerSection[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
@@ -158,7 +232,7 @@ export default {
 
             <Dimension
                 v-tooltip="bottomOrRightMarginTooltip"
-                v-if="showMarginOptions"
+                v-if="showInsulationOptions"
                 :disabled="readOnly"
                 class="col-12 mb-1 text-start"
                 :name="'bottomOrRightMargin'"
@@ -170,7 +244,7 @@ export default {
                 :max="1"
                 :allowNegative="false"
                 :allowZero="true"
-                :modelValue="data[selectedSectionIndex]"
+                :modelValue="data.dataPerSection[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
                 :styleClassInput="'offset-3 col-6'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
@@ -178,7 +252,7 @@ export default {
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                 :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="BottomOrOuterMarginUpdated(selectedSectionIndex)"
+                @update="bottomOrOuterMarginUpdated(selectedSectionIndex)"
             />
             <label :data-cy="dataTestLabel + '-BottomOrRightMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{bottomOrRightMarginErrorMessage}}</label>
         </div>

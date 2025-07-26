@@ -5,6 +5,7 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 
 <script>
 export default {
+    emits: ["windingIndexChanged"],
     props: {
         coil: {
             type: Object,
