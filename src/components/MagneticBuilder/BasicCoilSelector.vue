@@ -356,6 +356,10 @@ export default {
                             margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
                         })
                     }
+                    inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
+                    inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
+
+                    console.log(inputCoil["_turnsAlignment"])
 
                     const pattern = [];
                     this.localData.pattern.split('').forEach((char) => {

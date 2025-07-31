@@ -80,30 +80,12 @@ export default {
     methods: {
         interlayerThicknessUpdated(value) {
             if (!this.blockingRebounds) {
-                this.$mkf.ready.then(_ => {
-                    const result = this.$mkf.set_interlayer_insulation(JSON.stringify(this.masStore.mas.magnetic.coil), value);
-
-                    if (result.startsWith("Exception")) {
-                        console.error(result);
-                    }
-                    else{
-                        this.masStore.mas.magnetic.coil = JSON.parse(result);
-                    }
-                });
+                this.$emit('marginUpdated');
             }
         },
         intersectionThicknessUpdated(value) {
             if (!this.blockingRebounds) {
-                this.$mkf.ready.then(_ => {
-                    const result = this.$mkf.set_intersection_insulation(JSON.stringify(this.masStore.mas.magnetic.coil), value, 1);
-
-                    if (result.startsWith("Exception")) {
-                        console.error(result);
-                    }
-                    else{
-                        this.masStore.mas.magnetic.coil = JSON.parse(result);
-                    }
-                });
+                this.$emit('marginUpdated');
             }
         },
         topOrInnerMarginUpdated(sectionIndex) {
@@ -184,7 +166,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-IntersectionThickness'"
                 :numberDecimals="6"
                 :min="1e-6"
-                :max="1e-3"
+                :max="1"
                 :allowNegative="false"
                 :allowZero="true"
                 :modelValue="data"
