@@ -8,7 +8,7 @@ import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import Core2DVisualizer from '/WebSharedComponents/Common/Core2DVisualizer.vue'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
 import ContextMenu from '../ContextMenu.vue'
-import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
+import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
 
 </script>
 

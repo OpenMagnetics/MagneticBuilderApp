@@ -21,7 +21,7 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import DimensionWithTolerance from '/WebSharedComponents/DataInput/DimensionWithTolerance.vue'
 import { MaterialEnum, MaterialComposition } from '/WebSharedComponents/assets/ts/MAS.ts'
 import ContextMenu from '../ContextMenu.vue'
-import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
+import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
 </script>
 
 <script>
@@ -46,7 +46,6 @@ export default {
     watch: { 
     },
     created () {
-        console.warn(deepCopy(this.core.functionalDescription.material))
         if (typeof(this.core.functionalDescription.material) == "string") {
             this.loadMaterialData();
         }
@@ -130,7 +129,6 @@ export default {
             }
             this.$axios.post(url, data)
             .then(response => {
-                console.log(response.data);
                 if (response.data.bhCycle != null) {
                     this.core.functionalDescription.material.bhCycle = response.data.bhCycle;
                 }

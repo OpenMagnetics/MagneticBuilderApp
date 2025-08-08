@@ -9,7 +9,7 @@ import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import Core2DVisualizer from '/WebSharedComponents/Common/Core2DVisualizer.vue'
 import AdvancedCoreSelectorGap from './AdvancedCoreSelectorGap.vue'
 import ContextMenu from '../ContextMenu.vue'
-import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
+import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
 
 </script>
 
@@ -91,8 +91,6 @@ export default {
         },
         computeErrorMessages() {},
         assignLocalData(core) {
-            console.log(core.processedDescription.columns)
-            console.log(core.functionalDescription.gapping)
             this.localData = [];
             this.gapErrorsPerColumn = [];
             core.processedDescription.columns.forEach((elem, index) => {
@@ -158,8 +156,6 @@ export default {
             this.errorMessage = "There is an error in the dimensions, please review them";
         },
         gapTypeChanged(newType, columnIndex) {
-            console.log(newType)
-            console.log(columnIndex)
             if (newType == "Spacer") {
                 this.setSpacer(columnIndex);
             }
@@ -259,13 +255,9 @@ export default {
             const lastGapInColumnIndex = this.reorderedColumns[columnIndex].gaps[this.reorderedColumns[columnIndex].gaps.length - 1].index
             const lastGapInColumn = deepCopy(this.core.functionalDescription.gapping[lastGapInColumnIndex])
             this.core.functionalDescription.gapping.push(lastGapInColumn);
-            console.log(this.core.functionalDescription.gapping)
             this.assignLocalData(this.core);
         },
         removeGap(gapIndex) {
-            console.log(gapIndex)
-            console.log(gapIndex)
-            console.log(gapIndex)
             this.core.functionalDescription.gapping.splice(gapIndex, 1);
             this.assignLocalData(this.core);
             this.forceUpdate += 1;
@@ -336,8 +328,6 @@ export default {
                 })
                 gapLimits.forEach((comparedItem, comparedIndex) => {
                     if (comparedItem.topHeight > (columnHeight / 2)) {
-                        console.log(comparedItem.topHeight)
-                        console.log(columnHeight)
                         gapErrors.push(`Gap is too high, it is overlapping with top plate by ${removeTrailingZeroes(roundWithDecimals((comparedItem.topHeight - columnHeight / 2) * 1000, 0.01), 2)} mm`);
                     }
                     else if (comparedItem.bottomHeight < -(columnHeight / 2)) {
