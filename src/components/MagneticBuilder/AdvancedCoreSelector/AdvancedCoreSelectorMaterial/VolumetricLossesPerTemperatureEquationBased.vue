@@ -117,5 +117,17 @@ export default {
         :chartPaddings="{top: 30, left: 75, right: 2, bottom: 30}"
         :smoothLine="true"
         :formulaFontSize="20"
+        :addElementButtonColor="$styleStore.magneticBuilder.addElementButtonColor"
+        :removeElementButtonColor="$styleStore.magneticBuilder.removeElementButtonColor"
+        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+        :valueBgColor="$styleStore.magneticBuilder.inputTextColor"
+        :textColor="$styleStore.magneticBuilder.inputTextColor"
+        :activeButton="$styleStore.magneticBuilder.activeButton"
+        :inactiveButton="$styleStore.magneticBuilder.button"
+        :visualizerBgColor="$styleStore.magneticBuilder.main.background"
+        :visualizerLineColor="$styleStore.magneticBuilder.main.color"
+        :visualizerTextColor="$styleStore.magneticBuilder.main.color"
     />
 </template>

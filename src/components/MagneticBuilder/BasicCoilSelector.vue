@@ -183,8 +183,9 @@ export default {
             handler(newValue, oldValue) {
                 if (!this.blockingRebounds && this.masStore.mas.magnetic.coil.turnsDescription == null && this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
                     this.recentChange = true;
-                    this.blockingRebounds = true;
                     this.assignCoilData();
+                    this.assignLocalData(this.masStore.mas.magnetic);
+                    this.blockingRebounds = true;
                     setTimeout(() => {this.tryToWind();}, 10);
                     setTimeout(() => this.blockingRebounds = false, 10);
                 }

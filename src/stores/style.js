@@ -334,6 +334,55 @@ export const useStyleStore = defineStore("style", () => {
         },
     });
 
+    const contextMenu = ref({
+        main: {
+            "background": theme["dark"],
+            "color": theme["white"],
+            "border-color":  theme["primary"] + ' !important',
+        },
+        settingsButton: {
+            "background": theme["info"],
+            "color": theme["dark"],
+        },
+        editButton: {
+            "background": theme["success"],
+            "color": theme["dark"],
+        },
+        redrawButton: {
+            "background": theme["success"],
+            "color": theme["dark"],
+        },
+        confirmButton: {
+            "background": theme["success"],
+            "color": theme["dark"],
+        },
+        cancelButton: {
+            "background": theme["danger"],
+            "color": theme["dark"],
+        },
+        changeToolButton: {
+            "background": theme["secondary"],
+            "color": theme["white"],
+        },
+        customizeCoreSectionButton: {
+            "background": theme["secondary"],
+            "color": theme["white"],
+        },
+        orderButton: {
+            "background": theme["primary"],
+            "color": theme["dark"],
+        },
+        setting: {
+            "background": theme["dark"],
+            "color": theme["white"],
+        },
+        closeButton: {
+            "background": theme["primary"],
+            "color": theme["dark"],
+            "border-color":  theme["primary"] + ' !important',
+        },
+    });
+
 
     return {
         engineLoader,
@@ -342,6 +391,7 @@ export const useStyleStore = defineStore("style", () => {
         operatingPoints,
         magneticBuilder,
         controlPanel,
+        contextMenu,
     }
 },
 {

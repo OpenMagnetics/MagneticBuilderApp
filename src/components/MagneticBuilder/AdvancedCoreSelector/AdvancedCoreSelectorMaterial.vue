@@ -20,6 +20,8 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import DimensionWithTolerance from '/WebSharedComponents/DataInput/DimensionWithTolerance.vue'
 import { MaterialEnum, MaterialComposition } from '/WebSharedComponents/assets/ts/MAS.ts'
+import ContextMenu from '../ContextMenu.vue'
+import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
 </script>
 
 <script>
@@ -36,7 +38,9 @@ export default {
         },
     },
     data() {
+        const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         return {
+            magneticBuilderSettingsStore
         }
     },
     watch: { 
@@ -181,13 +185,23 @@ export default {
 <template>
     <div class="container">
         <div class="row">
+            <div class="col-12 container">
+                <div class ="row">
+                    <h2 
+                        class="col-4 mb-3 text-center"
+                        >
+                        {{'Core Material Cust.'}}
+                    </h2>
+                    <div class="col-8 border mt-2" style="height: fit-content" :style="$styleStore.contextMenu.main">
+                        <ContextMenu
+                            v-if="magneticBuilderSettingsStore.enableContextMenu"
+                            :dataTestLabel="dataTestLabel + '-ContextMenu'"
+                        />
+                    </div>
+                </div>
+            </div>
             <div class="col-sm-12 col-md-4">
                 <div>
-                    <h2 
-                        class="col-11 offset-1 mb-3 text-start"
-                        >
-                        {{'Core Material Customizer'}}
-                    </h2>
                     <Text
                         v-if="core.functionalDescription.material.name != null"
                         class="col-11 offset-1 mb-1 text-start"
@@ -198,11 +212,11 @@ export default {
                         :canBeEmpty="false"
                         :labelWidthProportionClass="'col-sm-12 col-md-6'"
                         :valueWidthProportionClass="'col-sm-12 col-md-6'"
-                        :valueFontSize="$styleStore.operatingPoints.inputFontSize"
-                        :titleFontSize="$styleStore.operatingPoints.inputTitleFontSize"
-                        :labelBgColor="$styleStore.operatingPoints.titleLabelBgColor"
-                        :valueBgColor="$styleStore.operatingPoints.inputValueBgColor"
-                        :textColor="$styleStore.operatingPoints.titleTextColor"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <Text
                         v-if="core.functionalDescription.material.family != null"
@@ -214,11 +228,11 @@ export default {
                         :canBeEmpty="false"
                         :labelWidthProportionClass="'col-sm-12 col-md-6'"
                         :valueWidthProportionClass="'col-sm-12 col-md-6'"
-                        :valueFontSize="$styleStore.operatingPoints.inputFontSize"
-                        :titleFontSize="$styleStore.operatingPoints.inputTitleFontSize"
-                        :labelBgColor="$styleStore.operatingPoints.titleLabelBgColor"
-                        :valueBgColor="$styleStore.operatingPoints.inputValueBgColor"
-                        :textColor="$styleStore.operatingPoints.titleTextColor"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <Text
                         v-if="core.functionalDescription.material.manufacturerInfo != null && core.functionalDescription.material.manufacturerInfo.name != null"
@@ -231,11 +245,11 @@ export default {
                         :canBeEmpty="false"
                         :labelWidthProportionClass="'col-sm-12 col-md-6'"
                         :valueWidthProportionClass="'col-sm-12 col-md-6'"
-                        :valueFontSize="$styleStore.operatingPoints.inputFontSize"
-                        :titleFontSize="$styleStore.operatingPoints.inputTitleFontSize"
-                        :labelBgColor="$styleStore.operatingPoints.titleLabelBgColor"
-                        :valueBgColor="$styleStore.operatingPoints.inputValueBgColor"
-                        :textColor="$styleStore.operatingPoints.titleTextColor"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <Dimension
                         v-if="core.functionalDescription.material.curieTemperature != null"
@@ -251,11 +265,11 @@ export default {
                         :modelValue="core.functionalDescription.material"
                         :labelWidthProportionClass="'col-sm-12 col-md-6'"
                         :valueWidthProportionClass="'col-sm-12 col-md-6'"
-                        :valueFontSize="$styleStore.operatingPoints.inputFontSize"
-                        :labelFontSize="$styleStore.operatingPoints.inputTitleFontSize"
-                        :labelBgColor="$styleStore.operatingPoints.titleLabelBgColor"
-                        :valueBgColor="$styleStore.operatingPoints.inputValueBgColor"
-                        :textColor="$styleStore.operatingPoints.titleTextColor"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <Dimension
                         v-if="core.functionalDescription.material.density != null"
@@ -271,11 +285,11 @@ export default {
                         :modelValue="core.functionalDescription.material"
                         :labelWidthProportionClass="'col-sm-12 col-md-6'"
                         :valueWidthProportionClass="'col-sm-12 col-md-6'"
-                        :valueFontSize="$styleStore.operatingPoints.inputFontSize"
-                        :labelFontSize="$styleStore.operatingPoints.inputTitleFontSize"
-                        :labelBgColor="$styleStore.operatingPoints.titleLabelBgColor"
-                        :valueBgColor="$styleStore.operatingPoints.inputValueBgColor"
-                        :textColor="$styleStore.operatingPoints.titleTextColor"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <ElementFromList
                         v-if="core.functionalDescription.material.material != null"

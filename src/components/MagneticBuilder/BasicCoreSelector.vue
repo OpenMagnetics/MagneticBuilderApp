@@ -585,6 +585,7 @@ export default {
                 v-if="enableSubmenu && !readOnly"
                 class="col-12 mb-1 text-start"
                 :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
+                :masStore="masStore"
                 :enableAdvise="!loading"
                 :enableCustomize="enableCustomize"
                 :allowAdvise="enableAdvise"

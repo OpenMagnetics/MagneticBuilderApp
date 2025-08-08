@@ -7,6 +7,8 @@ import { deepCopy, isMobile } from '/WebSharedComponents/assets/js/utils.js'
 import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import Core2DVisualizer from '/WebSharedComponents/Common/Core2DVisualizer.vue'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
+import ContextMenu from '../ContextMenu.vue'
+import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
 
 </script>
 
@@ -50,6 +52,7 @@ export default {
             "rm": ["R"],
             "u": ["R1", "R2"],
         }
+        const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
 
         this.assignLocalData(this.core.functionalDescription.shape);
         this.getDimensionKeys();
@@ -66,6 +69,7 @@ export default {
             availableFamilies,
             availableFamilySubtypes,
             dimensionsExceptionsPerFamily,
+            magneticBuilderSettingsStore,
         }
     },
     watch: { 
@@ -353,10 +357,16 @@ export default {
     <div class="container">
         <div class="row">
             <h2 
-                class="col-9 offset-1 mb-3 text-center"
+                class="col-4 mb-3 text-center"
                 >
-                {{'Core Gap Customizer'}}
+                {{'Core Shape Customizer'}}
             </h2>
+            <div class="col-8 border mt-2" style="height: fit-content" :style="$styleStore.contextMenu.main">
+                <ContextMenu
+                    v-if="magneticBuilderSettingsStore.enableContextMenu"
+                    :dataTestLabel="dataTestLabel + '-ContextMenu'"
+                />
+            </div>
         </div>
         <div
             v-if="'dimensions' in localData"
@@ -391,11 +401,11 @@ export default {
                     :canBeEmpty="false"
                     :labelWidthProportionClass="'col-sm-12 col-md-5'"
                     :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                    :valueFontSize="$styleStore.operatingPoints.inputFontSize"
-                    :titleFontSize="$styleStore.operatingPoints.inputTitleFontSize"
-                    :labelBgColor="$styleStore.operatingPoints.titleLabelBgColor"
-                    :valueBgColor="$styleStore.operatingPoints.inputValueBgColor"
-                    :textColor="$styleStore.operatingPoints.titleTextColor"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
                 <ElementFromList
                     v-if="availableFamilySubtypes.length > 0"

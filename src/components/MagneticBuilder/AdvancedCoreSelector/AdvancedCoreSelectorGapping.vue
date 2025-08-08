@@ -4,10 +4,12 @@ import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { useHistoryStore } from '../../../stores/history'
 import { combinedStyle, deepCopy, roundWithDecimals, removeTrailingZeroes } from '/WebSharedComponents/assets/js/utils.js'
-import { gapTypes } from '/WebSharedComponents/assets/js/defaults.js'
+import { gapTypes, defaultOperatingConditions} from '/WebSharedComponents/assets/js/defaults.js'
 import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import Core2DVisualizer from '/WebSharedComponents/Common/Core2DVisualizer.vue'
 import AdvancedCoreSelectorGap from './AdvancedCoreSelectorGap.vue'
+import ContextMenu from '../ContextMenu.vue'
+import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
 
 </script>
 
@@ -48,6 +50,7 @@ export default {
         const engineConstants = {};
         const forceUpdate = 0;
         const blockingRebounds = false;
+        const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
 
         return {
             localData,
@@ -61,6 +64,7 @@ export default {
             forceUpdate,
             loading,
             blockingRebounds,
+            magneticBuilderSettingsStore,
         }
     },
     watch: { 
@@ -361,7 +365,11 @@ export default {
             this.imageUpToDate = true;
         },
         calculateData() {
-            const result = this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.core), this.inputs.operatingPoints[0].conditions.ambientTemperature);
+            var conditions = defaultOperatingConditions;
+            if (this.inputs.operatingPoints[0] != null && this.inputs.operatingPoints[0].conditions != null) {
+                conditions = this.inputs.operatingPoints[0].conditions;
+            }
+            const result = this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.core), conditions.ambientTemperature);
             if (result.startsWith("Exception")) {
                 console.error(result);
             }
@@ -414,10 +422,16 @@ export default {
     <div class="container">
         <div class="row">
             <h2 
-                class="col-9 offset-1 mb-3 text-center"
+                class="col-4 mb-3 text-center"
                 >
                 {{'Core Gap Customizer'}}
             </h2>
+            <div class="col-8 border mt-2" style="height: fit-content" :style="$styleStore.contextMenu.main">
+                <ContextMenu
+                    v-if="magneticBuilderSettingsStore.enableContextMenu"
+                    :dataTestLabel="dataTestLabel + '-ContextMenu'"
+                />
+            </div>
         </div>
         <div class="row">
             <div

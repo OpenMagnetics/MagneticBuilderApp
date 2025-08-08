@@ -87,12 +87,12 @@ export default {
             
         },
         enableSubmenu() {
-            if (this.isIsolatedApp) {
-                return false;
-            }
-            else {
+            // if (this.isIsolatedApp) {
+            //     return false;
+            // }
+            // else {
                 return this.magneticBuilderSettingsStore.enableSubmenu;
-            }
+            // }
             
         },
     },

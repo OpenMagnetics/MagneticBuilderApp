@@ -6,12 +6,14 @@ export const useMagneticBuilderSettingsStore = defineStore("magneticBuilderSetti
     const enableSimulation = ref(true);
     const enableSubmenu = ref(true);
     const enableGraphs = ref(false);
+    const enableContextMenu = ref(false);
 
     function reset() {
         this.enableVisualizers = true;
         this.enableSimulation = true;
         this.enableSubmenu = true;
         this.enableGraphs = false;
+        this.enableContextMenu = false;
     }
 
     return {
@@ -19,6 +21,7 @@ export const useMagneticBuilderSettingsStore = defineStore("magneticBuilderSetti
         enableSimulation,
         enableSubmenu,
         enableGraphs,
+        enableContextMenu,
         reset,
     }
 },

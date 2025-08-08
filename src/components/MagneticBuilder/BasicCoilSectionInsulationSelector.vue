@@ -143,7 +143,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-InterlayerThickness'"
                 :numberDecimals="6"
                 :min="1e-6"
-                :max="1e-3"
+                :max="1"
                 :allowNegative="false"
                 :allowZero="true"
                 :modelValue="data"

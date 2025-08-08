@@ -132,5 +132,17 @@ export default {
         @onRemovePoint="onRemovePoint"
         @onAddPoint="onAddPoint"
         @onDimensionUpdate="onDimensionUpdate"
+        :addElementButtonColor="$styleStore.magneticBuilder.addElementButtonColor"
+        :removeElementButtonColor="$styleStore.magneticBuilder.removeElementButtonColor"
+        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+        :valueBgColor="$styleStore.magneticBuilder.inputTextColor"
+        :textColor="$styleStore.magneticBuilder.inputTextColor"
+        :activeButton="$styleStore.magneticBuilder.activeButton"
+        :inactiveButton="$styleStore.magneticBuilder.button"
+        :visualizerBgColor="$styleStore.magneticBuilder.main.background"
+        :visualizerLineColor="$styleStore.magneticBuilder.main.color"
+        :visualizerTextColor="$styleStore.magneticBuilder.main.color"
     />
 </template>

@@ -8,6 +8,9 @@ export default {
             type: String,
             default: '',
         },
+        masStore: {
+            type: Object,
+        },
         enableAdvise: {
             type: Boolean,
             default: true,
@@ -30,6 +33,22 @@ export default {
         }
     },
     computed: {
+        customizationDisabled() {
+            if (!this.enableCustomize) {
+                return true;
+            }
+            if (this.masStore.mas.magnetic.core == null) {
+                return true;
+            }
+            else if (this.masStore.mas.magnetic.core.functionalDescription.shape == '') {
+                return true;
+            }
+            else if (this.masStore.mas.magnetic.core.functionalDescription.material == '') {
+                return true;
+            }
+
+            return false;
+        }
     },
     watch: { 
     },
@@ -58,7 +77,7 @@ export default {
             </button>
             <button
                 :style="$styleStore.magneticBuilder.customizeButton"
-                :disabled="!enableCustomize"
+                :disabled="customizationDisabled"
                 :data-cy="dataTestLabel + '-Core-Customize-button'"
                 :class="allowAdvise? 'col-4' : 'col-6' "
                 class="btn mx-auto d-block mt-1 col-4"
