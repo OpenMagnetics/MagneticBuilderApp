@@ -1,5 +1,6 @@
 <script setup>
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
+import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
 import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import AdvancedCoilInfo from './AdvancedCoilInfo.vue'
@@ -74,7 +75,8 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
-                bobbinThickness: 0
+                bobbinThickness: 0,
+                fillingFactor: 0.69
             };
         }
         else {
@@ -92,7 +94,8 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
-                bobbinThickness: 0
+                bobbinThickness: 0,
+                fillingFactor: 0.69
             };
         }
         this.resetProportionPerWinding(localData);
@@ -360,8 +363,6 @@ export default {
                     inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
                     inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
 
-                    console.log(inputCoil["_turnsAlignment"])
-
                     const pattern = [];
                     this.localData.pattern.split('').forEach((char) => {
                         pattern.push(Number(char) - 1);
@@ -374,6 +375,9 @@ export default {
                         return;
                     }
                     this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
+
+                    this.localData.fillingFactor = this.$mkf.calculate_filling_factor(JSON.stringify(this.masStore.mas.magnetic.coil));
+
                     // this.assignLocalData(this.masStore.mas.magnetic);
                     const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
                     this.$emit("fits", fits);
@@ -474,6 +478,7 @@ export default {
                             }
                         })
                     }
+                
 
                     this.forceUpdate += 1;
                 }
@@ -593,6 +598,28 @@ export default {
                 :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="coilUpdated"
+            />
+        </div>
+        <div class="row">
+            <DimensionReadOnly 
+                class="col-12 pe-4 ps-4 mt-1"
+                :name="'L'"
+                :replaceTitle="'Filling Factor'"
+                :unit="'%'"
+                :power="1"
+                :visualScale="100"
+                :dataTestLabel="dataTestLabel + '-FillingFactor'"
+                :numberDecimals="2"
+                :value="localData.fillingFactor"
+                :useTitleCase="false"
+                :disableShortenLabels="true"
+                :labelWidthProportionClass="'col-7'"
+                :valueWidthProportionClass="'col-5'"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="localData.fillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
             />
         </div>
                
