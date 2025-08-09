@@ -58,7 +58,7 @@ export default {
         <div class="row px-3">
             <button
                 :style="$styleStore.contextMenu.customizeCoreSectionButton"
-                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.getCurrentToolState().subsection == 'magneticBuilder' && $stateStore.magneticBuilder.submode.core != $stateStore.MagneticBuilderCoreSubmodes.Shape"  
+                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.magneticBuilder.submode.core != $stateStore.MagneticBuilderCoreSubmodes.Shape"  
                 :data-cy="dataTestLabel + '-change-tool-button'"
                 class="btn mx-auto d-block mt-1 col-2"
                 @click="coreSubmodeShape"
@@ -67,7 +67,7 @@ export default {
             </button>
             <button
                 :style="$styleStore.contextMenu.customizeCoreSectionButton"
-                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.getCurrentToolState().subsection == 'magneticBuilder' && $stateStore.magneticBuilder.submode.core != $stateStore.MagneticBuilderCoreSubmodes.Gapping"  
+                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.magneticBuilder.submode.core != $stateStore.MagneticBuilderCoreSubmodes.Gapping"  
                 :data-cy="dataTestLabel + '-change-tool-button'"
                 class="btn mx-auto d-block mt-1 col-2"
                 @click="coreSubmodeGapping"
@@ -76,7 +76,7 @@ export default {
             </button>
             <button
                 :style="$styleStore.contextMenu.customizeCoreSectionButton"
-                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.getCurrentToolState().subsection == 'magneticBuilder' && $stateStore.magneticBuilder.submode.core != $stateStore.MagneticBuilderCoreSubmodes.Material"  
+                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.magneticBuilder.submode.core != $stateStore.MagneticBuilderCoreSubmodes.Material"  
                 :data-cy="dataTestLabel + '-change-tool-button'"
                 class="btn mx-auto d-block mt-1 col-2"
                 @click="coreSubmodeMaterial"
@@ -85,7 +85,7 @@ export default {
             </button>
             <button
                 :style="$styleStore.contextMenu.confirmButton"
-                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.getCurrentToolState().subsection == 'magneticBuilder'"  
+                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced"  
                 class="btn mx-auto d-block mt-1 col-2"
                 @click="coreAdvancedModeConfirmChanges"
             >
@@ -93,7 +93,7 @@ export default {
             </button>
             <button
                 :style="$styleStore.contextMenu.cancelButton"
-                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.getCurrentToolState().subsection == 'magneticBuilder'"  
+                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced"  
                 class="btn mx-auto d-block mt-1 col-2"
                 @click="coreAdvancedModeCancelChanges"
             >
