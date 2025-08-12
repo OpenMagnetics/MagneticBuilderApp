@@ -5,6 +5,7 @@ import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vu
 import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import AdvancedCoilInfo from './AdvancedCoilInfo.vue'
 import BasicCoilInfo from './BasicCoilInfo.vue'
+import BasicCoilFillingFactors from './BasicCoilFillingFactors.vue'
 import BasicCoilSectionInsulationSelector from './BasicCoilSectionInsulationSelector.vue'
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
@@ -76,7 +77,11 @@ export default {
                 repetitions: 1,
                 proportionPerWinding: [],
                 bobbinThickness: 0,
-                fillingFactor: 0.69
+                fillingFactors: {
+                    areaFillingFactor: 0,
+                    overlappingFillingFactor: 0,
+                    contiguousFillingFactor: 0
+                }
             };
         }
         else {
@@ -95,7 +100,11 @@ export default {
                 repetitions: 1,
                 proportionPerWinding: [],
                 bobbinThickness: 0,
-                fillingFactor: 0.69
+                fillingFactors: {
+                    areaFillingFactor: 0,
+                    overlappingFillingFactor: 0,
+                    contiguousFillingFactor: 0
+                }
             };
         }
         this.resetProportionPerWinding(localData);
@@ -376,7 +385,8 @@ export default {
                     }
                     this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
 
-                    this.localData.fillingFactor = this.$mkf.calculate_filling_factor(JSON.stringify(this.masStore.mas.magnetic.coil));
+                    const auxFillingFactor = JSON.parse(this.$mkf.calculate_filling_factor(JSON.stringify(this.masStore.mas.magnetic.coil)));
+                    this.localData.fillingFactors = auxFillingFactor;
 
                     // this.assignLocalData(this.masStore.mas.magnetic);
                     const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
@@ -600,26 +610,11 @@ export default {
                 @update="coilUpdated"
             />
         </div>
-        <div class="row">
-            <DimensionReadOnly 
-                class="col-12 pe-4 ps-4 mt-1"
-                :name="'L'"
-                :replaceTitle="'Filling Factor'"
-                :unit="'%'"
-                :power="1"
-                :visualScale="100"
-                :dataTestLabel="dataTestLabel + '-FillingFactor'"
-                :numberDecimals="2"
-                :value="localData.fillingFactor"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="localData.fillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+        <div class="row ms-1">
+            <BasicCoilFillingFactors 
+                :data="localData"
+                :masStore="masStore"
+                :dataTestLabel="dataTestLabel + '-BasicCoilFillingFactors'"
             />
         </div>
                

@@ -129,7 +129,10 @@ export default {
             }
             this.$axios.post(url, data)
             .then(response => {
-                if (response.data.bhCycle != null) {
+
+                console.warn("response")
+                console.warn(response)
+                if (response.data.bhCycle != null && response.data.bhCycle.length > 0) {
                     this.core.functionalDescription.material.bhCycle = response.data.bhCycle;
                 }
                 if (response.data.volumetricLosses != null) {
@@ -190,7 +193,9 @@ export default {
                         >
                         {{'Core Material Cust.'}}
                     </h2>
-                    <div class="col-8 border mt-2" style="height: fit-content" :style="$styleStore.contextMenu.main">
+                    <div
+                        v-if="magneticBuilderSettingsStore.enableContextMenu"
+                        class="col-8 border mt-2" style="height: fit-content" :style="$styleStore.contextMenu.main">
                         <ContextMenu
                             v-if="magneticBuilderSettingsStore.enableContextMenu"
                             :dataTestLabel="dataTestLabel + '-ContextMenu'"

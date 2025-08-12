@@ -416,7 +416,9 @@ export default {
                 >
                 {{'Core Gap Customizer'}}
             </h2>
-            <div class="col-8 border mt-2" style="height: fit-content" :style="$styleStore.contextMenu.main">
+            <div
+                v-if="magneticBuilderSettingsStore.enableContextMenu"
+                class="col-8 border mt-2" style="height: fit-content" :style="$styleStore.contextMenu.main">
                 <ContextMenu
                     v-if="magneticBuilderSettingsStore.enableContextMenu"
                     :dataTestLabel="dataTestLabel + '-ContextMenu'"
