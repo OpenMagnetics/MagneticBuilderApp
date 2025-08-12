@@ -122,7 +122,7 @@ export default {
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                 :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="data.fillingFactors.overlappingFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                :textColor="data.fillingFactors.contiguousFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
             />  
             <DimensionReadOnly 
                 v-if="data.sectionsOrientation == 'overlapping'" 
@@ -144,7 +144,7 @@ export default {
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                 :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="data.fillingFactors.contiguousFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                :textColor="data.fillingFactors.overlappingFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
             />        
         </div>
     </div>
