@@ -38,7 +38,7 @@ export default {
         },
         contiguousLabel() {
             try {
-                if (this.this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
+                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
                     return "height";
                 }
                 else {
@@ -52,7 +52,7 @@ export default {
         },
         overlappingLabel() {
             try {
-                if (this.this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
+                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
                     return "width";
                 }
                 else {
