@@ -173,7 +173,7 @@ export default {
                 :enableZoom="false"
                 :enableOptions="enableOptions"
                 :enableHideOnFitting="enableSimulation"
-                :coilFits="coilFits"
+                :coilFits="true"
                 :showFieldPlotInit="$stateStore.magnetic2DVisualizerState.plotMagneticField"
                 :includeFringingInit="$stateStore.magnetic2DVisualizerState.plotFringingField"
                 :backgroundColor="$styleStore.magneticBuilder.main.background"
