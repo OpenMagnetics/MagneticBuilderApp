@@ -34,10 +34,6 @@ export default {
             type: Boolean,
             default: true,
         },
-        enableAdvise: {
-            type: Boolean,
-            default: true,
-        },
         readOnly: {
             type: Boolean,
             default: false,
@@ -76,7 +72,8 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
-                bobbinThickness: 0,
+                bobbinWallThickness: 0,
+                bobbinColumnThickness: 0,
                 fillingFactors: {
                     areaFillingFactor: 0,
                     overlappingFillingFactor: 0,
@@ -99,7 +96,8 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
-                bobbinThickness: 0,
+                bobbinWallThickness: 0,
+                bobbinColumnThickness: 0,
                 fillingFactors: {
                     areaFillingFactor: 0,
                     overlappingFillingFactor: 0,
@@ -228,16 +226,6 @@ export default {
 
         this.getProportionsAndPattern(this.masStore.mas.magnetic.coil);
 
-        this.masStore.mas.magnetic.coil.functionalDescription.forEach((datum, sectionIndex) => {
-            if (sectionIndex >= this.localData.dataPerSection.length) {
-                this.localData.dataPerSection.push({
-                    layersOrientation: this.localData.dataPerSection[sectionIndex - 1].layersOrientation,
-                    turnsAlignment: this.localData.dataPerSection[sectionIndex - 1].turnsAlignment,
-                    topOrLeftMargin: this.localData.dataPerSection[sectionIndex - 1].topOrLeftMargin,
-                    bottomOrRightMargin: this.localData.dataPerSection[sectionIndex - 1].bottomOrRightMargin,
-                });
-            }
-        })
 
         this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
@@ -257,7 +245,6 @@ export default {
                 })
             }
         })
-
 
         this.masStore.$onAction((action) => {
             if (action.name == "importedMas") {
@@ -436,7 +423,8 @@ export default {
                                     this.localData.sectionsOrientation = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
                                 }
                                 if (magnetic.coil.bobbin.processedDescription.wallThickness != null && magnetic.coil.bobbin.processedDescription.columnThickness != null) {
-                                    this.localData.bobbinThickness = Math.min(magnetic.coil.bobbin.processedDescription.wallThickness, magnetic.coil.bobbin.processedDescription.columnThickness);
+                                    this.localData.bobbinWallThickness = magnetic.coil.bobbin.processedDescription.wallThickness;
+                                    this.localData.bobbinColumnThickness = magnetic.coil.bobbin.processedDescription.columnThickness;
                                 }
                             }
                         }
@@ -488,7 +476,20 @@ export default {
                             }
                         })
                     }
-                
+
+                    this.masStore.mas.magnetic.coil.functionalDescription.forEach((datum, sectionIndex) => {
+                        if (sectionIndex >= this.localData.dataPerSection.length) {
+                            this.localData.dataPerSection.push({
+                                layersOrientation: this.localData.dataPerSection[sectionIndex - 1].layersOrientation,
+                                turnsAlignment: this.localData.dataPerSection[sectionIndex - 1].turnsAlignment,
+                                topOrLeftMargin: this.localData.dataPerSection[sectionIndex - 1].topOrLeftMargin,
+                                bottomOrRightMargin: this.localData.dataPerSection[sectionIndex - 1].bottomOrRightMargin,
+                            });
+                        }
+                    })
+
+                    this.$stateStore.storeWoundConfiguration(this.localData);
+                    
 
                     this.forceUpdate += 1;
                 }
@@ -548,7 +549,7 @@ export default {
         bobbinUpdated(thickness) {
             this.$mkf.ready.then(_ => {
 
-                const bobbinJson = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), thickness);
+                const bobbinJson = this.$mkf.create_quick_bobbin_different_thicknesses(JSON.stringify(this.masStore.mas.magnetic.core), this.localData.bobbinWallThickness, this.localData.bobbinColumnThickness);
 
                 if (bobbinJson.startsWith("Exception")) {
                     this.tryingToSend = false;
@@ -570,9 +571,32 @@ export default {
             <Dimension 
                 :disabled="readOnly"
                 class="col-12 mb-1 ps-4 text-start"
-                :name="'bobbinThickness'"
+                :name="'bobbinWallThickness'"
+                :replaceTitle="'Bobbin Wall Th.'"
                 :unit="'m'"
-                :dataTestLabel="dataTestLabel + '-BobbinThickness'"
+                :dataTestLabel="dataTestLabel + '-BobbinWallThickness'"
+                :numberDecimals="6"
+                :min="1e-6"
+                :max="1"
+                :allowNegative="false"
+                :allowZero="true"
+                :modelValue="localData"
+                :forceUpdate="forceUpdate"
+                :styleClassInput="'offset-3 col-6'"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
+                @update="bobbinUpdated"
+            />
+            <Dimension 
+                :disabled="readOnly"
+                class="col-12 mb-1 ps-4 text-start"
+                :name="'bobbinColumnThickness'"
+                :unit="'m'"
+                :replaceTitle="'Bobbin Column Th.'"
+                :dataTestLabel="dataTestLabel + '-BobbinColumnThickness'"
                 :numberDecimals="6"
                 :min="1e-6"
                 :max="1"

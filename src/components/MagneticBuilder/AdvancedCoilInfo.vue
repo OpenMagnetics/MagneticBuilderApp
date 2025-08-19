@@ -76,12 +76,14 @@ export default {
             },
           deep: true
         },
-        'masStore.mas.magnetic.coil.functionalDescription': {
+        'masStore.mas.magnetic.coil.turnsDescription': {
             handler(newValue, oldValue) {
-                this.recentChange = true;
-                this.tryToSimulate();
+                if (newValue != null) {
+                    this.recentChange = true;
+                    this.tryToSimulate();
+                }
             },
-          deep: true
+          deep: false
         },
     },
     mounted () {
@@ -150,7 +152,7 @@ export default {
         simulate() {
             if (this.core['functionalDescription']['shape'] != "" && this.core['functionalDescription']['material'] != "") {
                 this.$mkf.ready.then(_ => {
-                    console.log("Coil simualtion")
+                    console.log("Coil simulation")
 
                     if (!('gapReluctance' in this.$userStore.selectedModels)) {
                         this.$userStore.selectedModels['gapReluctance'] = Defaults.reluctanceModelDefault

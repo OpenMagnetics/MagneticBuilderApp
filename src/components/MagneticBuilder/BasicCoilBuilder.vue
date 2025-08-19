@@ -1,6 +1,7 @@
 <script setup>
 import Magnetic2DVisualizer from '/WebSharedComponents/Common/Magnetic2DVisualizer.vue'
 import BasicCoilSelector from './BasicCoilSelector.vue'
+import PlanarCoilSelector from './PlanarCoilSelector.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 </script>
 
@@ -164,8 +165,7 @@ export default {
             v-if="useVisualizers && mas.magnetic != null && mas.magnetic.core != null && mas.magnetic.core.functionalDescription.shape != ''"
             class="row"
             :class="enableOptions? 'mb-3' : ''"
-            style="height: 50vh;"
-            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
+            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;' + ((masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')? 'height: 50vh;' : 'height: 40vh;')"
         >
             <Magnetic2DVisualizer 
                 :modelValue="mas"
@@ -188,12 +188,21 @@ export default {
 
         <div class="row mb-2">
             <BasicCoilSelector
+                v-if="(masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')"
                 :masStore="masStore"
                 :readOnly="readOnly"
                 :operatingPointIndex="operatingPointIndex"
                 :enableSimulation="enableSimulation"
                 :enableSubmenu="enableSubmenu"
-                :enableAdvise="enableAdvise"
+                @fits="fits"
+            />
+            <PlanarCoilSelector
+                v-else
+                :masStore="masStore"
+                :readOnly="readOnly"
+                :operatingPointIndex="operatingPointIndex"
+                :enableSimulation="enableSimulation"
+                :enableSubmenu="enableSubmenu"
                 @fits="fits"
             />
         </div>

@@ -4,6 +4,7 @@ import { isolationSideOrdered } from '/WebSharedComponents/assets/js/defaults.js
 import Wire2DVisualizer from '/WebSharedComponents/Common/Wire2DVisualizer.vue'
 import BasicTurnsSelector from './BasicTurnsSelector.vue'
 import WindingSelector from './WindingSelector.vue'
+import PlanarWireSelector from './PlanarWireSelector.vue'
 import BasicWireSelector from './BasicWireSelector.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 </script>
@@ -291,7 +292,18 @@ export default {
                     @turnsUpdated="turnsUpdated"
                 />
                 <BasicWireSelector
-                    v-if="selectedWindingIndex==key"
+                    v-if="selectedWindingIndex==key && (masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')"
+                    :masStore="masStore"
+                    :readOnly="readOnly"
+                    :operatingPointIndex="operatingPointIndex"
+                    :windingIndex="key"
+                    :enableSimulation="enableSimulation"
+                    :enableSubmenu="enableSubmenu"
+                    :enableAdvise="enableAdvise"
+                    @wireUpdated="wireUpdated"
+                />
+                <PlanarWireSelector
+                    v-if="selectedWindingIndex==key && (masStore.mas.inputs.designRequirements.wiringTechnology != null && masStore.mas.inputs.designRequirements.wiringTechnology == 'Printed')"
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :operatingPointIndex="operatingPointIndex"

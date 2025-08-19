@@ -65,7 +65,7 @@ export default {
     watch: {
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                if (!this.blockingRebounds && newValue[this.windingIndex].numberTurns != this.localData.numberTurns) {
+                if (!this.blockingRebounds && (newValue[this.windingIndex].numberTurns != this.localData.numberTurns || newValue[this.windingIndex].numberParallels != this.localData.numberParallels)) {
                     this.assignLocalData(newValue[this.windingIndex])
                     this.blockingRebounds = true;
                     setTimeout(() => this.blockingRebounds = false, 10);

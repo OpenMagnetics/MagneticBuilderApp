@@ -301,7 +301,13 @@ export default {
                                 this.masStore.mas.magnetic.coil.layersDescription = null;
                                 this.masStore.mas.magnetic.coil.sectionsDescription = null;
                                 this.masStore.mas.magnetic.manufacturerInfo = null;
-                                const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+                                var bobbinResult = "";
+                                if (this.masStore.mas.inputs.designRequirements.wiringTechnology == "Printed") {
+                                    bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
+                                }
+                                else {
+                                    bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+                                }
                                 if (bobbinResult.startsWith("Exception")) {
                                     console.error(bobbinResult);
                                 }
@@ -365,16 +371,19 @@ export default {
                         settings["coreIncludeStacks"] = true;
                         settings["useToroidalCores"] = true;
                         settings["useConcentricCores"] = false;
+                        settings["useOnlyCoresInStock"] = false;
                     }
                     else {
                         settings["coreIncludeDistributedGaps"] = this.$settingsStore.adviserAllowDistributedGaps == "1";
                         settings["coreIncludeMargin"] = true;
                         settings["coreIncludeStacks"] = this.$settingsStore.adviserAllowStacks == "1";
                         settings["useToroidalCores"] = this.$settingsStore.adviserToroidalCores == "1";
+                        settings["useOnlyCoresInStock"] = false;
                     }
                     this.$mkf.set_settings(JSON.stringify(settings));
+                    this.$settingsStore.adviserSettings.coreAdviseMode = "standard cores";
 
-                    const result = this.$mkf.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, false);
+                    const result = this.$mkf.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, this.$settingsStore.adviserSettings.coreAdviseMode);
                     if (result.startsWith("Exception")) {
                         console.error(result);
                         return;
@@ -393,13 +402,20 @@ export default {
                             this.masStore.mas.magnetic.coil.turnsDescription = null;
                             this.masStore.mas.magnetic.coil.layersDescription = null;
                             this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                            const bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+                            var bobbinResult = "";
+                            if (this.masStore.mas.inputs.designRequirements.wiringTechnology == "Printed") {
+                                bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
+                            }
+                            else {
+                                bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+                            }
                             if (bobbinResult.startsWith("Exception")) {
                                 console.error(bobbinResult);
                             }
                             else {
                                 this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinResult);
                             }
+
 
                             const numberTurns = [];
                             const numberTurnsHandle = this.$mkf.calculate_number_turns(data[0].mas.magnetic.coil.functionalDescription[0].numberTurns, JSON.stringify(this.masStore.mas.inputs.designRequirements));
