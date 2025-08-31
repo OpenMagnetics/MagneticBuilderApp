@@ -193,6 +193,10 @@ export default {
             handler(newValue, oldValue) {
                 if (!this.blockingRebounds && this.masStore.mas.magnetic.coil.turnsDescription == null && this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
                     this.recentChange = true;
+                    if (this.masStore.mas.magnetic.core.functionalDescription.shape.family == 't') {
+                        this.localData.bobbinWallThickness = 0;
+                        this.localData.bobbinColumnThickness = 0;
+                    }
                     this.assignCoilData();
                     this.assignLocalData(this.masStore.mas.magnetic);
                     this.blockingRebounds = true;
@@ -569,6 +573,7 @@ export default {
     <div class="container" v-tooltip="styleTooltip">
         <div class="row">
             <Dimension 
+                v-if="masStore.mas.magnetic.core.functionalDescription.shape.family != 't'"
                 :disabled="readOnly"
                 class="col-12 mb-1 ps-4 text-start"
                 :name="'bobbinWallThickness'"
@@ -591,6 +596,7 @@ export default {
                 @update="bobbinUpdated"
             />
             <Dimension 
+                v-if="masStore.mas.magnetic.core.functionalDescription.shape.family != 't'"
                 :disabled="readOnly"
                 class="col-12 mb-1 ps-4 text-start"
                 :name="'bobbinColumnThickness'"

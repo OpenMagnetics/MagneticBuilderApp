@@ -85,9 +85,6 @@ export default {
                 const newMas = JSON.parse(e.target.result);
                 if (newMas.magnetic != null) {
                     checkAndFixMas(newMas, this.$mkf).then(response => {
-                        console.warn(response)
-                        console.warn(response)
-                        console.warn(response)
                         this.masStore.mas = response;
                         this.masStore.importedMas();
                         this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";

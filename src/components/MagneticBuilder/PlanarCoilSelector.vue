@@ -98,6 +98,9 @@ export default {
                 if (!this.blockingRebounds && this.masStore.mas.magnetic.coil.turnsDescription == null && this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
                     this.recentChange = true;
                     this.assignLocalData(this.masStore.mas.magnetic);
+                    this.blockingRebounds = true;
+                    setTimeout(() => this.blockingRebounds = false, 100);
+                    setTimeout(() => {this.tryToWind();}, 10);
                 }
             },
             deep: true
