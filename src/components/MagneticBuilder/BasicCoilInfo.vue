@@ -200,7 +200,6 @@ export default {
                         }
                         else {
                             const mas = JSON.parse(result);
-                            console.log(mas.outputs[this.operatingPointIndex].leakageInductance)
                             mas.outputs[this.operatingPointIndex].leakageInductance.leakageInductanceMatrix = [];
                             for (var windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length; windingIndex++) {
                                 const leakageInductance =  JSON.parse(this.$mkf.calculate_leakage_inductance(magneticsString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[windingIndex].frequency, windingIndex))
