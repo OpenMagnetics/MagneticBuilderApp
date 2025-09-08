@@ -200,6 +200,13 @@ export default {
                         }
                         else {
                             const mas = JSON.parse(result);
+                            console.log(mas.outputs[this.operatingPointIndex].leakageInductance)
+                            mas.outputs[this.operatingPointIndex].leakageInductance.leakageInductanceMatrix = [];
+                            for (var windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length; windingIndex++) {
+                                const leakageInductance =  JSON.parse(this.$mkf.calculate_leakage_inductance(magneticsString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[windingIndex].frequency, windingIndex))
+                                mas.outputs[this.operatingPointIndex].leakageInductance.leakageInductanceMatrix.push(leakageInductance.leakageInductancePerWinding)
+                            }
+
                             this.updateFields(mas.outputs);
                             this.masStore.mas.outputs = deepCopy(mas.outputs);
                             this.loading = false;
@@ -278,6 +285,7 @@ export default {
                 class="col-12 mt-3 mb-2 p-0">
                 <WindingSelector
                     :dataTestLabel="`${dataTestLabel}-WindingSelector`"
+                    :masStore="masStore"
                     :coil="masStore.mas.magnetic.coil"
                     @windingIndexChanged="windingIndexChanged"
                 />

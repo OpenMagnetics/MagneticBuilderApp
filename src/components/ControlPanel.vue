@@ -1,7 +1,7 @@
 <script setup>
 import { useMasStore } from '/src/stores/mas'
 import { useHistoryStore } from '/src/stores/history'
-import { checkAndFixMas, download } from '/WebSharedComponents/assets/js/utils.js'
+import { checkAndFixMas, download, pruneNulls, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Settings from './MagneticBuilder/Settings.vue'
 </script>
 
@@ -67,7 +67,10 @@ export default {
             setTimeout(() => {this.loading = false;}, 2000);
         },
         exportMAS() {
-            download(JSON.stringify(this.masStore.mas, null, 4), "custom_magnetic.json", "text/plain");
+            var prunedMas = deepCopy(this.masStore.mas)
+            pruneNulls(prunedMas)
+            console.log(prunedMas)
+            download(JSON.stringify(prunedMas, null, 4), "custom_magnetic.json", "text/plain");
             this.masExported = true
             setTimeout(() => this.masExported = false, 2000);
         },
