@@ -181,7 +181,7 @@ export default {
                     const shapeFamily = coreShapeFamiliesHandle.get(i).toUpperCase()
                     if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
                         !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
-                        if (this.masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound' || shapeFamily != 'T') {
+                        if (this.masStore.mas.inputs.designRequirements.wiringTechnology == null || this.masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound' || shapeFamily != 'T') {
                             this.coreShapeFamilies.push(shapeFamily);
                         }
                     }

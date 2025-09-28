@@ -367,6 +367,7 @@ export default {
                     this.localData.pattern.split('').forEach((char) => {
                         pattern.push(Number(char) - 1);
                     });
+
                     const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
                     if (coilJson.startsWith("Exception")) {
@@ -377,6 +378,7 @@ export default {
                     this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
 
                     const auxFillingFactor = JSON.parse(this.$mkf.calculate_filling_factor(JSON.stringify(this.masStore.mas.magnetic.coil)));
+                    console.warn(auxFillingFactor)
                     this.localData.fillingFactors = auxFillingFactor;
 
                     // this.assignLocalData(this.masStore.mas.magnetic);
@@ -475,7 +477,13 @@ export default {
                                     this.localData.intersectionThickness = section.dimensions[0];
                                 }
                                 else {
-                                    this.localData.intersectionThickness = section.dimensions[1];
+                                    if (this.masStore.mas.magnetic.core.functionalDescription.shape.family == 't') {
+                                        thickness = section.dimensions[0] * sin(section.dimensions[1])
+                                        this.localData.intersectionThickness = thickness;
+                                    }
+                                    else {
+                                        this.localData.intersectionThickness = section.dimensions[1];
+                                    }
                                 }
                             }
                         })

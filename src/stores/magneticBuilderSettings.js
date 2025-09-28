@@ -12,7 +12,7 @@ export const useMagneticBuilderSettingsStore = defineStore("magneticBuilderSetti
         this.enableVisualizers = true;
         this.enableSimulation = true;
         this.enableSubmenu = true;
-        this.enableGraphs = false;
+        this.enableGraphs = true;
         this.enableContextMenu = false;
     }
 

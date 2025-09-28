@@ -200,11 +200,11 @@ export default {
                         }
                         else {
                             const mas = JSON.parse(result);
-                            mas.outputs[this.operatingPointIndex].leakageInductance.leakageInductanceMatrix = [];
-                            for (var windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length; windingIndex++) {
-                                const leakageInductance =  JSON.parse(this.$mkf.calculate_leakage_inductance(magneticsString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[windingIndex].frequency, windingIndex))
-                                mas.outputs[this.operatingPointIndex].leakageInductance.leakageInductanceMatrix.push(leakageInductance.leakageInductancePerWinding)
-                            }
+                            // mas.outputs[this.operatingPointIndex].leakageInductance.leakageInductanceMatrix = [];
+                            // for (var windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length; windingIndex++) {
+                            //     const leakageInductance =  JSON.parse(this.$mkf.calculate_leakage_inductance(magneticsString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[windingIndex].frequency, windingIndex))
+                            //     mas.outputs[this.operatingPointIndex].leakageInductance.leakageInductanceMatrix.push(leakageInductance.leakageInductancePerWinding)
+                            // }
 
                             this.updateFields(mas.outputs);
                             this.masStore.mas.outputs = deepCopy(mas.outputs);
