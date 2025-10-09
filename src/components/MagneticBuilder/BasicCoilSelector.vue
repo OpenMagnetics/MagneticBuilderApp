@@ -368,6 +368,17 @@ export default {
                         pattern.push(Number(char) - 1);
                     });
 
+                    if (inputCoil.bobbin == "Dummy") {
+                        const bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
+
+                        if (bobbinResult.startsWith("Exception")) {
+                            console.error(bobbinResult);
+                        }
+                        else {
+                            inputCoil.bobbin = JSON.parse(bobbinResult);
+                        }
+                    }
+
                     const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
                     if (coilJson.startsWith("Exception")) {
