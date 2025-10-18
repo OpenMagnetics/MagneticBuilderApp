@@ -1,6 +1,6 @@
 <script setup>
-import { useMasStore } from '/src/stores/mas'
-import { useHistoryStore } from '/src/stores/history'
+import { useMasStore } from '../stores/mas'
+import { useHistoryStore } from '../stores/history'
 import { checkAndFixMas, download, pruneNulls, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Settings from './MagneticBuilder/Settings.vue'
 </script>

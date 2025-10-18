@@ -477,8 +477,14 @@ export default {
                                 })
 
                                 if (section.margin != null) {
-                                    this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin = section.margin[0];
-                                    this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin = section.margin[1];
+                                    if (section.margin.bottomOrRightWidth != null) {
+                                        this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin = section.margin.topOrLeftWidth;
+                                        this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin = section.margin.bottomOrRightWidth;
+                                    }
+                                    else {
+                                        this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin = section.margin[0];
+                                        this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin = section.margin[1];
+                                    }
                                 }
 
                                 conductionSectionIndex += 1;
