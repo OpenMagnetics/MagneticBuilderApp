@@ -389,7 +389,6 @@ export default {
                     this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
 
                     const auxFillingFactor = JSON.parse(this.$mkf.calculate_filling_factor(JSON.stringify(this.masStore.mas.magnetic.coil)));
-                    console.warn(auxFillingFactor)
                     this.localData.fillingFactors = auxFillingFactor;
 
                     // this.assignLocalData(this.masStore.mas.magnetic);
@@ -656,6 +655,7 @@ export default {
                 @updateModelValue="localData.pattern = $event"
                 :name="'pattern'"
                 :replaceTitle="'Section Interl. Order'"
+                :allowConsecutive="true"
                 :allowedCharacters="windingIndexesCharacters"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
