@@ -284,6 +284,11 @@ export default {
                 })
             });
         },
+        async coreShapeUpdated(name, family) {
+            this.localData.shapeFamily = family;
+            this.localData.shape = name;
+            this.shapeUpdated(name);
+        },
         async shapeUpdated(value) {
             this.masStore.mas.magnetic.core.name = "Custom";
             this.masStore.mas.magnetic.core.manufacturerInfo = null;
@@ -483,7 +488,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
                 :readOnly="readOnly"
                 :masStore="masStore"
-                @update="shapeUpdated"
+                @update="coreShapeUpdated"
             />
 
             <ElementFromList

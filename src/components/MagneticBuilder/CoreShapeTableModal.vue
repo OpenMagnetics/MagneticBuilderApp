@@ -7,9 +7,13 @@ import DataTablesCore from 'datatables.net';
 <script>
 
 export default {
-    emits: [],
+    emits: ['coreShapeSelected'],
     props: {
         dataTestLabel: {
+            type: String,
+            default: '',
+        },
+        shapeFamily: {
             type: String,
             default: '',
         },
@@ -27,15 +31,28 @@ export default {
         const coreShapeColumns = [
           { data: 'name' },
           { data: 'family' },
-          { data: 'select' },
+          { data: 'effectiveLength' },
+          { data: 'effectiveArea' },
+          { data: 'minimumArea' },
+          { data: 'effectiveVolume' },
+          { data: 'www' },
         ];
         return {
             coreShapeColumns,
         }
     },
+    watch: {
+        'shapeFamily': {
+            handler(newValue, oldValue) {
+                this.$refs.coreShapeTable.dt.search(newValue).draw().columns.adjust();
+            },
+          deep: true
+        },
+    },
     methods: {
         selectCoreShape(data) {
-            console.log(data);
+            this.$refs.closeSettingsModalRef.click();
+            this.$emit('coreShapeSelected', data)
         },
     },
     computed: {
@@ -50,7 +67,7 @@ export default {
 
 <template>
     <div class="modal fade" :id="'coreShapeTableModal'" tabindex="-1" :aria-labelledby="'coreShapeTableModal-settingsModalLabel'" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable table">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable table">
             <div class="modal-content" :style="$styleStore.controlPanel.main">
                 <div class="modal-header">
                     <p :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title fs-5" :id="'coreShapeTableModal-settingsModalLabel'">Magnetic Builder Settings</p>
@@ -69,9 +86,19 @@ export default {
                             <tr>
                                 <th>Name</th>
                                 <th>Family</th>
+                                <th>Effective Length</th>
+                                <th>Effective Area</th>
+                                <th>Minimum Area</th>
+                                <th>Effective Volume</th>
                                 <th>Select</th>
                             </tr>
                         </thead>
+                        <template #column-6="props">
+                            <button
+                                class="btn btn-primary"
+                                @click="selectCoreShape(props.rowData)"
+                            ><i class="fa-solid fa-square-check"></i></button>
+                        </template>
                     </DataTable>
                 </div>
             </div>

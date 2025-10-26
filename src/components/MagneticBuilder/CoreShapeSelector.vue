@@ -1,7 +1,7 @@
 <script setup>
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { useHistoryStore } from '../../stores/history'
-import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { deepCopy, formatDimension, formatArea, formatVolume, removeTrailingZeroes } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import CoreShapeTableModal from './CoreShapeTableModal.vue'
 </script>
@@ -116,6 +116,27 @@ export default {
             }
             this.forceUpdate += 1;
         },
+        addToTableData(shapeName, shapeFamily) {
+            const shapeResult = this.$mkf.get_shape_data(shapeName);
+            const coreData = JSON.parse(this.$mkf.calculate_shape_data(shapeResult));
+            const auxEffectiveLength = coreData.processedDescription.effectiveParameters.effectiveLength * 1000;
+            const effectiveLength = `${removeTrailingZeroes(auxEffectiveLength, 2)} mm`;
+            const auxEffectiveArea = coreData.processedDescription.effectiveParameters.effectiveArea * 1000000;
+            const effectiveArea = `${removeTrailingZeroes(auxEffectiveArea, 2)} mm²`;
+            const auxMinimumArea = coreData.processedDescription.effectiveParameters.minimumArea * 1000000;
+            const minimumArea = `${removeTrailingZeroes(auxMinimumArea, 2)} mm²`;
+            const auxEffectiveVolume = coreData.processedDescription.effectiveParameters.effectiveVolume  * 1000000000;
+            const effectiveVolume = `${removeTrailingZeroes(auxEffectiveVolume, 2)} mm³`;
+            this.coreShapeData.push({
+                name: shapeName,
+                family: shapeFamily,
+                effectiveLength: effectiveLength,
+                effectiveArea: effectiveArea,
+                minimumArea: minimumArea,
+                effectiveVolume: effectiveVolume,
+                www: "www",
+            })
+        },
         getShapeNames() {
             this.$mkf.ready.then(_ => {
                 const coreShapeFamiliesHandle = this.$mkf.get_available_core_shape_families();
@@ -146,13 +167,7 @@ export default {
                                 if (aux.startsWith(shapeFamily + " ")) {
                                     numberShapes += 1;
                                     this.coreShapeNames[shapeFamily].push(aux);
-
-
-                                    this.coreShapeData.push({
-                                        name: aux,
-                                        family: shapeFamily,
-                                        edit: "ea",
-                                    })
+                                    this.addToTableData(aux, shapeFamily);
                                 }
                             }
                             if (numberShapes == 0) {
@@ -174,12 +189,7 @@ export default {
                                 const aux = coreShapeNamesHandle.get(i);
                                 numberShapes += 1;
                                 this.coreShapeNames[shapeFamily].push(aux);
-
-                                this.coreShapeData.push({
-                                    name: aux,
-                                    family: shapeFamily,
-                                    select: "ea",
-                                })
+                                this.addToTableData(aux, shapeFamily);
                             }
                             if (numberShapes == 0) {
                                 this.coreShapeNames[shapeFamily].pop();
@@ -196,8 +206,29 @@ export default {
         },
         loadCore() {
         },
-        selectCoreShape(data) {
-            console.log(data);
+        async coreShapeSelected(value) {
+            this.masStore.mas.magnetic.core.name = "Custom";
+            this.masStore.mas.magnetic.core.manufacturerInfo = null;
+            this.masStore.mas.magnetic.core.processedDescription = null;
+            this.masStore.mas.magnetic.core.geometricalDescription = null;
+
+            this.$mkf.ready.then(_ => {
+                var mas = deepCopy(this.masStore.mas);
+                mas.magnetic.core.geometricalDescription = null;
+                mas.magnetic.core.processedDescription = null;
+
+                var name = value;
+                if (value.name != null) {
+                    name = value.name;
+                }
+                console.warn(value.family)
+                if (value.family != null) {
+                    this.localData.shapeFamily = value.family;
+                }
+
+                this.localData.shape = name;
+                this.$emit('update', name, this.localData.shapeFamily)
+            });
         },
     }
 }
@@ -207,7 +238,8 @@ export default {
         :dataTestLabel="dataTestLabel"
         :masStore="masStore"
         :coreShapeData="coreShapeData"
-
+        :shapeFamily="localData.shapeFamily"
+        @coreShapeSelected="coreShapeSelected"
     />
 
     <div class="container">
@@ -254,7 +286,11 @@ export default {
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
-            <div class="ms-3 col-1 p-0 pt-1 " v-tooltip="styleTooltip">
+            <div
+                v-if="!loading && localData.shapeFamily != null && coreShapeNames[localData.shapeFamily] != null && coreShapeNames[localData.shapeFamily].length > 0"
+                class="ms-3 col-1 p-0 pt-1 "
+                v-tooltip="styleTooltip"
+            >
                 <button 
                     style="height: 35px;"
                     :style="$styleStore.magneticBuilder.tableButton"

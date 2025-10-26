@@ -109,7 +109,7 @@ export default {
             }
         },
         calculateCoreEffectiveParameters() {
-            if (this.core['functionalDescription']['shape'] != "") {
+            if (this.core['functionalDescription']['shape'] != "" && this.core['functionalDescription']['material'] != "") {
                 if (this.core['processedDescription'] == null) {
                     this.$mkf.ready.then(_ => {
 
