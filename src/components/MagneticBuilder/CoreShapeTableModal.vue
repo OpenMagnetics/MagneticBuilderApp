@@ -1,0 +1,91 @@
+<script setup >
+import { Modal } from "bootstrap";
+import DataTable from 'datatables.net-vue3';
+import DataTablesCore from 'datatables.net';
+</script>
+
+<script>
+
+export default {
+    emits: [],
+    props: {
+        dataTestLabel: {
+            type: String,
+            default: '',
+        },
+        masStore: {
+            type: Object,
+            required: true,
+        },
+        coreShapeData: {
+            type: Array,
+            required: true,
+        },
+    },
+    data() {
+        DataTable.use(DataTablesCore);
+        const coreShapeColumns = [
+          { data: 'name' },
+          { data: 'family' },
+          { data: 'select' },
+        ];
+        return {
+            coreShapeColumns,
+        }
+    },
+    methods: {
+        selectCoreShape(data) {
+            console.log(data);
+        },
+    },
+    computed: {
+    },
+    mounted() {
+    },
+    created() {
+    }
+}
+</script>
+
+
+<template>
+    <div class="modal fade" :id="'coreShapeTableModal'" tabindex="-1" :aria-labelledby="'coreShapeTableModal-settingsModalLabel'" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable table">
+            <div class="modal-content" :style="$styleStore.controlPanel.main">
+                <div class="modal-header">
+                    <p :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title fs-5" :id="'coreShapeTableModal-settingsModalLabel'">Magnetic Builder Settings</p>
+                    <button ref="closeSettingsModalRef" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="settingsModalClose"></button>
+                </div>
+                <div class="modal-body container text-start " id="dataTables_wrapper">
+                    <DataTable
+                        :class="''"
+                        :columns="coreShapeColumns"
+                        :data="coreShapeData"
+                        :options="{ select: true, filter: true, lengthChange: true, info: true, paginate: true }"
+                        width="100%"
+                        ref="coreShapeTable"
+                    >
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Family</th>
+                                <th>Select</th>
+                            </tr>
+                        </thead>
+                    </DataTable>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style>
+
+    .table {
+        z-index: 9999;
+    }
+
+#dataTables_wrapper .dataTables_filter input {
+  background-color: red;
+}
+</style>

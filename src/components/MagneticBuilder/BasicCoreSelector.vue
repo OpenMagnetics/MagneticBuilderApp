@@ -6,6 +6,7 @@ import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights } from '/WebSharedComponents/assets/js/defaults.js'
 import AdvancedCoreInfo from './AdvancedCoreInfo.vue'
 import BasicCoreInfo from './BasicCoreInfo.vue'
+import CoreShapeSelector from './CoreShapeSelector.vue'
 import { useHistoryStore } from '../../stores/history'
 
 import { deepCopy, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
@@ -458,45 +459,11 @@ export default {
     <div class="container">
         <div class="row" v-tooltip="styleTooltip">
             <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.coreShapeFamily"
-                v-if="!loading"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-ShapeFamilies'"
-                :name="'shapeFamily'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :options="coreShapeFamilies"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.coreShape"
-                v-if="!loading && localData.shapeFamily != null && coreShapeNames[localData.shapeFamily] != null && coreShapeNames[localData.shapeFamily].length > 0"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-ShapeNames'"
-                :name="'shape'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :optionsToDisable="coreShapeFamilies"
-                :options="coreShapeNames[localData.shapeFamily]"
+            <CoreShapeSelector
+                :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
+                :readOnly="readOnly"
+                :masStore="masStore"
                 @update="shapeUpdated"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
 
             <ElementFromList
