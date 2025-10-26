@@ -55,6 +55,8 @@ export default {
         if (this.masStore.mas.inputs.designRequirements.turnsRatios != null) {
             numberWindings = this.masStore.mas.inputs.designRequirements.turnsRatios.length + 1;
         }
+        numberWindings = Math.max(numberWindings, this.masStore.mas.magnetic.coil.functionalDescription.length);
+
         const numberWindingsAux = {
             numberWindings: numberWindings
         }

@@ -44,6 +44,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableInsertIntermediateMas: {
+            type: Boolean,
+            default: true,
+        },
         enableGraphs: {
             type: Boolean,
             default: true,
@@ -112,7 +116,7 @@ export default {
             if (action.name == "addToHistory") {
                 this.magneticBuilt = this.isMagneticBuilt();
                 this.$emit("canContinue", this.magneticBuilt);
-                if (this.magneticBuilt && !this.isIsolatedApp) {
+                if (this.magneticBuilt && !this.isIsolatedApp && this.enableInsertIntermediateMas) {
                     this.insertIntermediateMas();
                 }
             }

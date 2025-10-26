@@ -67,6 +67,26 @@ export default {
 
             this.masStore.mas.magnetic.core = deepCopy(this.localCore);
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
+
+            this.masStore.mas.magnetic.coil.bobbin = "Dummy";
+            this.masStore.mas.magnetic.coil.turnsDescription = null;
+            this.masStore.mas.magnetic.coil.layersDescription = null;
+            this.masStore.mas.magnetic.coil.sectionsDescription = null;
+            this.masStore.mas.magnetic.manufacturerInfo = null;
+            var bobbinResult = "";
+            if (this.masStore.mas.inputs.designRequirements.wiringTechnology == "Printed") {
+                console.log(this.masStore.mas.magnetic.core)
+                bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
+            }
+            else {
+                bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
+            }
+            if (bobbinResult.startsWith("Exception")) {
+                console.error(bobbinResult);
+            }
+            else {
+                this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinResult);
+            }
         },
         cancelChanges() {
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;

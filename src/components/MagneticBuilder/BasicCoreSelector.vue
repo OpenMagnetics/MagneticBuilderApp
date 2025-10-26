@@ -101,7 +101,8 @@ export default {
     mounted () {
         this.getShapeNames();
         this.getMaterialNames();
-        this.assignLocalData(this.masStore.mas.magnetic.core);
+        
+        setTimeout(() => {this.assignLocalData(this.masStore.mas.magnetic.core);}, 1000);
         this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
@@ -171,9 +172,29 @@ export default {
                 this.localData["material"] = deepCopy(core.functionalDescription.material.name);
                 this.localData["materialManufacturer"] = core.functionalDescription.material.manufacturerInfo.name;
             }
-            this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
-            this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
-            this.forceUpdate += 1;
+
+            if (core.processedDescription != null) {
+                this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                this.forceUpdate += 1;
+            }
+            else {
+                this.$mkf.ready.then(_ => {
+                    const coreResult = this.$mkf.calculate_core_data(JSON.stringify(core), false);
+                    if (coreResult.startsWith("Exception")) {
+                        console.error(coreResult);
+                    }
+                    else {
+                        const auxCore = JSON.parse(coreResult);
+                        core.functionalDescription = auxCore.functionalDescription;
+                        core.processedDescription = auxCore.processedDescription;
+                        core.geometricalDescription = auxCore.geometricalDescription;
+                        this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                        this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                        this.forceUpdate += 1;
+                    }
+                })
+            }
         },
         getShapeNames() {
             this.$mkf.ready.then(_ => {
@@ -269,7 +290,6 @@ export default {
             this.masStore.mas.magnetic.core.processedDescription = null;
             this.masStore.mas.magnetic.core.geometricalDescription = null;
 
-            console.log(this.localData.material != null)
             this.$mkf.ready.then(_ => {
                 var mas = deepCopy(this.masStore.mas);
                 mas.magnetic.core.geometricalDescription = null;
@@ -532,7 +552,7 @@ export default {
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <CoreGappingSelector class="col-12 mb-1 text-start"
-                v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set'"
+                v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set'&& masStore.mas.magnetic.core.processedDescription != null"
                 :disabled="readOnly"
                 :title="'Gap Info: '"
                 :dataTestLabel="dataTestLabel + '-Gap'"

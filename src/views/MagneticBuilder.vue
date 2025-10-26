@@ -4,7 +4,7 @@ import Footer from '/src/components/Footer.vue'
 import { toTitleCase } from '/WebSharedComponents/assets/js/utils.js'
 
 import MagneticBuilder from '/src/components/MagneticBuilder.vue'
-import ControlPanel from '/src/components/ControlPanel.vue'
+import ControlPanel from '/src/components/SimpleControlPanel.vue'
 
 import { useMasStore } from '/src/stores/mas'
 </script>
