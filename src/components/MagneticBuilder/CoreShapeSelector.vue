@@ -58,7 +58,13 @@ export default {
             }
         }
     },
-    watch: { 
+    watch: {
+        'masStore.mas.magnetic.core': {
+            handler(newValue, oldValue) {
+                this.assignLocalData(this.masStore.mas.magnetic.core);
+            },
+          deep: true
+        },
     },
     created () {
     },
