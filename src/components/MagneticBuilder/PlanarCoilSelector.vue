@@ -196,6 +196,17 @@ export default {
                     }
                     clearancePerWinding += "]";
 
+                    if (inputCoil.bobbin == "Dummy") {
+                        const bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
+
+                        if (bobbinResult.startsWith("Exception")) {
+                            console.error(bobbinResult);
+                        }
+                        else {
+                            inputCoil.bobbin = JSON.parse(bobbinResult);
+                        }
+                    }
+
                     const coilJson = this.$mkf.wind_planar(JSON.stringify(inputCoil), JSON.stringify(stackUp), this.localData.borderToWireDistance, clearancePerWinding, insulationThicknessPerLayer, this.localData.coreToLayerDistance);
 
                     if (coilJson.startsWith("Exception")) {
@@ -209,6 +220,7 @@ export default {
                     this.masStore.mas.magnetic.coil.layersDescription = auxCoil.layersDescription;
                     this.masStore.mas.magnetic.coil.turnsDescription = auxCoil.turnsDescription;
                     this.masStore.mas.magnetic.coil.groupsDescription = auxCoil.groupsDescription;
+                    this.masStore.mas.magnetic.coil.bobbin = auxCoil.bobbin;
 
                     const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
                     this.$emit("fits", fits);
