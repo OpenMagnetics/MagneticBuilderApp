@@ -516,10 +516,8 @@ export default {
                         }
                     })
 
-                    this.$stateStore.storeWoundConfiguration(this.localData);
-                    
-
                     this.forceUpdate += 1;
+                    this.$stateStore.storeWoundConfiguration(this.localData);
                 }
                 catch (e) {
                     // setTimeout(() => this.assignLocalData(magnetic), 50);
