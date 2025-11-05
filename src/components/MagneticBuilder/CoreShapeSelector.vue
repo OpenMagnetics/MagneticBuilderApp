@@ -282,7 +282,7 @@ export default {
                 v-model="localData"
                 :optionsToDisable="coreShapeFamilies"
                 :options="coreShapeNames[localData.shapeFamily]"
-                @update="$emit('update', localData.shape)"
+                @update="$emit('update', localData.shape, localData.shapeFamily)"
                 :labelWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueWidthProportionClass="'col-sm-12 col-md-7'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
