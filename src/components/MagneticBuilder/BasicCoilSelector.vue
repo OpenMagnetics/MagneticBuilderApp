@@ -8,7 +8,7 @@ import BasicCoilInfo from './BasicCoilInfo.vue'
 import BasicCoilFillingFactors from './BasicCoilFillingFactors.vue'
 import BasicCoilSectionInsulationSelector from './BasicCoilSectionInsulationSelector.vue'
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
-import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
+import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals, cleanCoil, generateHash } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
 
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
@@ -54,6 +54,7 @@ export default {
         const tryingToSend = false;
         const forceUpdate = 0; 
         var pattern = "";
+        const oldMagneticCoilHash = 1;
 
         var localData = {};
 
@@ -117,6 +118,7 @@ export default {
             loading,
             recentChange,
             tryingToSend,
+            oldMagneticCoilHash,
         }
     },
     computed: {
@@ -333,82 +335,89 @@ export default {
             }
         },
         wind() {
-            this.$emit("fits", true);
-            this.$mkf.ready.then(_ => {
-                try {
-                    const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
+            const newMagneticCoilHash = generateHash(JSON.stringify(this.masStore.mas.magnetic.coil));
+            if (this.oldMagneticCoilHash != newMagneticCoilHash) {
+                this.oldMagneticCoilHash = newMagneticCoilHash;
 
-                    const margins = [];
-                    if (this.conductiveSections.length > 0) {
-                        inputCoil["_turnsAlignment"] = {};
-                        inputCoil["_layersOrientation"] = {};
-                        this.localData.dataPerSection.forEach((datum, sectionIndex) => {
-                            if (sectionIndex in this.conductiveSections) {
-                                const sectionName = this.conductiveSections[sectionIndex].name
-                                inputCoil["_turnsAlignment"][sectionName] = datum.turnsAlignment;
-                                inputCoil["_layersOrientation"][sectionName] = datum.layersOrientation;
-                            }
-                            margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
-                        })
-                    }
-                    else {
-                        inputCoil["_turnsAlignment"] = [];
-                        inputCoil["_layersOrientation"] = [];
-                        this.localData.dataPerSection.forEach((datum, sectionIndex) => {
-                            inputCoil["_turnsAlignment"].push(datum.turnsAlignment);
-                            inputCoil["_layersOrientation"].push(datum.layersOrientation);
-                            margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
-                        })
-                    }
-                    inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
-                    inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
+                this.$emit("fits", true);
+                this.$mkf.ready.then(_ => {
+                    try {
+                        const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 
-                    const pattern = [];
-                    this.localData.pattern.split('').forEach((char) => {
-                        pattern.push(Number(char) - 1);
-                    });
-
-                    if (inputCoil.bobbin == "Dummy") {
-                        const bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
-
-                        if (bobbinResult.startsWith("Exception")) {
-                            console.error(bobbinResult);
+                        const margins = [];
+                        if (this.conductiveSections.length > 0) {
+                            inputCoil["_turnsAlignment"] = {};
+                            inputCoil["_layersOrientation"] = {};
+                            this.localData.dataPerSection.forEach((datum, sectionIndex) => {
+                                if (sectionIndex in this.conductiveSections) {
+                                    const sectionName = this.conductiveSections[sectionIndex].name
+                                    inputCoil["_turnsAlignment"][sectionName] = datum.turnsAlignment;
+                                    inputCoil["_layersOrientation"][sectionName] = datum.layersOrientation;
+                                }
+                                margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
+                            })
                         }
                         else {
-                            inputCoil.bobbin = JSON.parse(bobbinResult);
+                            inputCoil["_turnsAlignment"] = [];
+                            inputCoil["_layersOrientation"] = [];
+                            this.localData.dataPerSection.forEach((datum, sectionIndex) => {
+                                inputCoil["_turnsAlignment"].push(datum.turnsAlignment);
+                                inputCoil["_layersOrientation"].push(datum.layersOrientation);
+                                margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
+                            })
                         }
-                    }
+                        inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
+                        inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
 
-                    const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+                        const pattern = [];
+                        this.localData.pattern.split('').forEach((char) => {
+                            pattern.push(Number(char) - 1);
+                        });
 
-                    if (coilJson.startsWith("Exception")) {
+                        if (inputCoil.bobbin == "Dummy") {
+                            const bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
+
+                            if (bobbinResult.startsWith("Exception")) {
+                                console.error(bobbinResult);
+                            }
+                            else {
+                                inputCoil.bobbin = JSON.parse(bobbinResult);
+                            }
+                        }
+
+                        const coilJson = this.$mkf.wind(JSON.stringify(inputCoil), this.localData.repetitions, JSON.stringify(this.localData.proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+
+                        if (coilJson.startsWith("Exception")) {
+                            this.tryingToSend = false;
+                            console.error(coilJson);
+                            return;
+                        }
+                        var auxCoil = JSON.parse(coilJson);
+                        cleanCoil(auxCoil);
+                        this.masStore.mas.magnetic.coil = auxCoil
+
+                        const auxFillingFactor = JSON.parse(this.$mkf.calculate_filling_factor(JSON.stringify(this.masStore.mas.magnetic.coil)));
+                        this.localData.fillingFactors = auxFillingFactor;
+
+                        // this.assignLocalData(this.masStore.mas.magnetic);
+                        const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
+                        this.$emit("fits", fits);
+
+                        this.historyStore.addToHistory(this.masStore.mas);
                         this.tryingToSend = false;
-                        console.error(coilJson);
-                        return;
+                        this.historyStore.unblockAdditions();
                     }
-                    this.masStore.mas.magnetic.coil = JSON.parse(coilJson);
+                    catch (e) {
+                        this.tryingToSend = false;
+                        this.recentChange = true;
+                        this.blockingRebounds = true;
+                        this.assignLocalData(this.masStore.mas.magnetic);
+                        this.tryToWind();
+                        setTimeout(() => this.blockingRebounds = false, 100);
+                    }
 
-                    const auxFillingFactor = JSON.parse(this.$mkf.calculate_filling_factor(JSON.stringify(this.masStore.mas.magnetic.coil)));
-                    this.localData.fillingFactors = auxFillingFactor;
-
-                    // this.assignLocalData(this.masStore.mas.magnetic);
-                    const fits = this.$mkf.are_sections_and_layers_fitting(JSON.stringify(inputCoil));
-                    this.$emit("fits", fits);
-
-                    this.historyStore.addToHistory(this.masStore.mas);
-                    this.tryingToSend = false;
-                    this.historyStore.unblockAdditions();
-                }
-                catch (e) {
-                    this.tryingToSend = false;
-                    this.recentChange = true;
-                    this.blockingRebounds = true;
-                    this.assignLocalData(this.masStore.mas.magnetic);
-                    this.tryToWind();
-                    setTimeout(() => this.blockingRebounds = false, 100);
-                }
-
-            });
+                });
+            }
         },
         tryToWind() {
             if (!this.tryingToSend) {

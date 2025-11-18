@@ -4,7 +4,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import BasicWireSubmenu from './BasicWireSubmenu.vue'
 import AdvancedWireInfo from './AdvancedWireInfo.vue'
 import BasicWireInfo from './BasicWireInfo.vue'
-import { toTitleCase, checkAndFixMas, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { toTitleCase, checkAndFixMas, deepCopy, clean } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
@@ -295,6 +295,7 @@ export default {
                 wire.material = "copper";
 
                 this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+                wire = clean(wire);
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
                 this.cleanCoil();
                 this.$emit("wireUpdated", this.windingIndex);

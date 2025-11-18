@@ -117,6 +117,7 @@ export default {
     methods: {
         isStackable(shape) {
             var shapeName = shape;
+            console.log(this.masStore.mas.magnetic.core)
             if (shape == null) {
                 shapeName = this.masStore.mas.magnetic.core.functionalDescription.shape;
             }

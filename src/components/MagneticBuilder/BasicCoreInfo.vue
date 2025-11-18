@@ -169,17 +169,21 @@ export default {
                     const modelsData = {coreLosses: this.$userStore.selectedModels['coreLosses'].toUpperCase(),
                                   coreTemperature: this.$userStore.selectedModels['coreTemperature'].toUpperCase(),
                                   gapReluctance: this.$userStore.selectedModels['gapReluctance'].toUpperCase().replace(" ", "_")};
+
+                    console.log("Mierda 1")
                     this.coreLossesData = JSON.parse(this.$mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
                                                                                 JSON.stringify(this.masStore.mas.magnetic.coil),
                                                                                 JSON.stringify(this.masStore.mas.inputs),
                                                                                 JSON.stringify(modelsData), 
                                                                                 this.operatingPointIndex));
+                    console.log("Mierda 2")
                     this.coreTemperatureDependantParametersData = JSON.parse(this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), 25));
                     // this.coreTemperatureDependantParametersData = JSON.parse(this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature));
 
                     this.coreTemperatureDependantParametersData["saturationProportion"] = this.coreLossesData.magneticFluxDensityPeak / this.coreTemperatureDependantParametersData.magneticFluxDensitySaturation * 100;
 
 
+                    console.log("Mierda 3")
                     this.magnetizingInductance = JSON.parse(this.$mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(this.masStore.mas.magnetic.core),
                                                                                                              JSON.stringify(this.masStore.mas.magnetic.coil),
                                                                                                              JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]),
