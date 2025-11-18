@@ -6,6 +6,7 @@ import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights } from '/WebSharedComponents/assets/js/defaults.js'
 import AdvancedCoreInfo from './AdvancedCoreInfo.vue'
 import BasicCoreInfo from './BasicCoreInfo.vue'
+import CoreShapeSelector from './CoreShapeSelector.vue'
 import { useHistoryStore } from '../../stores/history'
 
 import { deepCopy, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
@@ -100,7 +101,8 @@ export default {
     mounted () {
         this.getShapeNames();
         this.getMaterialNames();
-        this.assignLocalData(this.masStore.mas.magnetic.core);
+        
+        setTimeout(() => {this.assignLocalData(this.masStore.mas.magnetic.core);}, 1000);
         this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
@@ -170,9 +172,29 @@ export default {
                 this.localData["material"] = deepCopy(core.functionalDescription.material.name);
                 this.localData["materialManufacturer"] = core.functionalDescription.material.manufacturerInfo.name;
             }
-            this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
-            this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
-            this.forceUpdate += 1;
+
+            if (core.processedDescription != null) {
+                this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                this.forceUpdate += 1;
+            }
+            else {
+                this.$mkf.ready.then(_ => {
+                    const coreResult = this.$mkf.calculate_core_data(JSON.stringify(core), false);
+                    if (coreResult.startsWith("Exception")) {
+                        console.error(coreResult);
+                    }
+                    else {
+                        const auxCore = JSON.parse(coreResult);
+                        core.functionalDescription = auxCore.functionalDescription;
+                        core.processedDescription = auxCore.processedDescription;
+                        core.geometricalDescription = auxCore.geometricalDescription;
+                        this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                        this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                        this.forceUpdate += 1;
+                    }
+                })
+            }
         },
         getShapeNames() {
             this.$mkf.ready.then(_ => {
@@ -262,13 +284,17 @@ export default {
                 })
             });
         },
+        async coreShapeUpdated(name, family) {
+            this.localData.shapeFamily = family;
+            this.localData.shape = name;
+            this.shapeUpdated(name);
+        },
         async shapeUpdated(value) {
             this.masStore.mas.magnetic.core.name = "Custom";
             this.masStore.mas.magnetic.core.manufacturerInfo = null;
             this.masStore.mas.magnetic.core.processedDescription = null;
             this.masStore.mas.magnetic.core.geometricalDescription = null;
 
-            console.log(this.localData.material != null)
             this.$mkf.ready.then(_ => {
                 var mas = deepCopy(this.masStore.mas);
                 mas.magnetic.core.geometricalDescription = null;
@@ -458,45 +484,11 @@ export default {
     <div class="container">
         <div class="row" v-tooltip="styleTooltip">
             <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.coreShapeFamily"
-                v-if="!loading"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-ShapeFamilies'"
-                :name="'shapeFamily'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :options="coreShapeFamilies"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.coreShape"
-                v-if="!loading && localData.shapeFamily != null && coreShapeNames[localData.shapeFamily] != null && coreShapeNames[localData.shapeFamily].length > 0"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-ShapeNames'"
-                :name="'shape'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :optionsToDisable="coreShapeFamilies"
-                :options="coreShapeNames[localData.shapeFamily]"
-                @update="shapeUpdated"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
+            <CoreShapeSelector
+                :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
+                :readOnly="readOnly"
+                :masStore="masStore"
+                @update="coreShapeUpdated"
             />
 
             <ElementFromList
@@ -565,7 +557,7 @@ export default {
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <CoreGappingSelector class="col-12 mb-1 text-start"
-                v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set'"
+                v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set'&& masStore.mas.magnetic.core.processedDescription != null"
                 :disabled="readOnly"
                 :title="'Gap Info: '"
                 :dataTestLabel="dataTestLabel + '-Gap'"
