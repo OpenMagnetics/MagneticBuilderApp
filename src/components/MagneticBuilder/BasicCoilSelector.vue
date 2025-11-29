@@ -210,24 +210,37 @@ export default {
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
-                if (!this.blockingRebounds && this.masStore.mas.magnetic.coil.turnsDescription == null && this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
-                    this.recentChange = true;
+                if (!this.blockingRebounds) {
                     this.blockingRebounds = true;
-                    setTimeout(() => {this.tryToWind();}, 10);
                     setTimeout(() => this.blockingRebounds = false, 10);
+
+                    this.getProportionsAndPattern(this.masStore.mas.magnetic.coil);
+                    this.assignLocalData(this.masStore.mas.magnetic);
+                    if (this.masStore.mas.magnetic.coil.turnsDescription == null && this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
+                        this.recentChange = true;
+                        setTimeout(() => {this.tryToWind();}, 10);
+                    }
                 }
+
             },
             deep: true
         },
         'masStore.mas.inputs.designRequirements.turnsRatios': {
             handler(newValue, oldValue) {
-                this.resetProportionPerWinding(this.localData);
+                if (!this.$stateStore.loadingDesign) {
+                    this.resetProportionPerWinding(this.localData);
+                }
             },
             deep: true
         },
     },
     mounted () {
-        this.tryToWind();
+        if (this.$stateStore.loadingDesign) {
+            setTimeout(() => {this.$stateStore.loadingDesign = false}, 2000);            
+        }
+        else {
+            this.tryToWind();
+        }
         this.assignLocalData(this.masStore.mas.magnetic);
 
         this.getProportionsAndPattern(this.masStore.mas.magnetic.coil);
@@ -256,7 +269,9 @@ export default {
             if (action.name == "importedMas") {
                 this.assignLocalData(this.masStore.mas.magnetic);
                 this.getProportionsAndPattern(this.masStore.mas.magnetic.coil);
-                this.tryToWind();
+                if (this.$stateStore.loadingDesign) {
+                    this.tryToWind();
+                }
 
                 this.masStore.mas.magnetic.coil.functionalDescription.forEach((datum, sectionIndex) => {
                     if (sectionIndex >= this.localData.dataPerSection.length) {
@@ -420,6 +435,9 @@ export default {
             }
         },
         tryToWind() {
+            if (this.$stateStore.loadingDesign) {
+                return;
+            }
             if (!this.tryingToSend) {
                 this.recentChange = false
                 this.tryingToSend = true

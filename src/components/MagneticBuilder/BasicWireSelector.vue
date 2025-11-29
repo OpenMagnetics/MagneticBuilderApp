@@ -297,9 +297,12 @@ export default {
                 this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                 wire = clean(wire);
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
-                this.cleanCoil();
-                this.$emit("wireUpdated", this.windingIndex);
-                // this.historyStore.addToHistory(this.masStore.mas);
+                if (!this.$stateStore.loadingDesign) {
+
+                    this.cleanCoil();
+                    this.$emit("wireUpdated", this.windingIndex);
+                    // this.historyStore.addToHistory(this.masStore.mas);
+                }
             });
         },
         getWireTypes() {

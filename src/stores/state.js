@@ -244,6 +244,7 @@ export const useStateStore = defineStore("state", () => {
     })
 
     // MAS Loader
+    const loadingDesign = ref(false);
     const anyDesignLoaded = ref(false);
 
     function isAnyDesignLoaded() {
@@ -309,6 +310,7 @@ export const useStateStore = defineStore("state", () => {
     function resetMagneticTool() {
         console.log("Resetting state");
         this.anyDesignLoaded = false;
+        this.loadingDesign = false;
         this.selectedTool = "agnosticTool";
         this.selectedWorkflow = "design";
         this.selectedApplication = SupportedApplications.Power;
@@ -378,6 +380,7 @@ export const useStateStore = defineStore("state", () => {
         isAnyDesignLoaded,
         designLoaded,
         anyDesignLoaded,
+        loadingDesign,
 
         toolboxStates,
         selectedWorkflow,

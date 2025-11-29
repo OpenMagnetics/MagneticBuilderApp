@@ -184,7 +184,7 @@ export default {
                     const magneticsString = JSON.stringify(this.masStore.mas.magnetic);
                     const modelsString = JSON.stringify(modelsData);
 
-                    if (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels) {
+                    if (this.masStore.mas.magnetic.coil.turnsDescription != null && (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels)) {
                         const result = this.$mkf.simulate(inputsString,
                                                       magneticsString,
                                                       modelsString);
