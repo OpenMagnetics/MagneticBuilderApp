@@ -55,6 +55,7 @@ export default {
         const forceUpdate = 0; 
         var pattern = "";
         const oldMagneticCoilHash = 1;
+        const oldInputsCoilHash = 1;
 
         var localData = {};
 
@@ -119,6 +120,7 @@ export default {
             recentChange,
             tryingToSend,
             oldMagneticCoilHash,
+            oldInputsCoilHash,
         }
     },
     computed: {
@@ -350,40 +352,44 @@ export default {
             }
         },
         wind() {
+
+            const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
+
+            const margins = [];
+            if (this.conductiveSections.length > 0) {
+                inputCoil["_turnsAlignment"] = {};
+                inputCoil["_layersOrientation"] = {};
+                this.localData.dataPerSection.forEach((datum, sectionIndex) => {
+                    if (sectionIndex in this.conductiveSections) {
+                        const sectionName = this.conductiveSections[sectionIndex].name
+                        inputCoil["_turnsAlignment"][sectionName] = datum.turnsAlignment;
+                        inputCoil["_layersOrientation"][sectionName] = datum.layersOrientation;
+                    }
+                    margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
+                })
+            }
+            else {
+                inputCoil["_turnsAlignment"] = [];
+                inputCoil["_layersOrientation"] = [];
+                this.localData.dataPerSection.forEach((datum, sectionIndex) => {
+                    inputCoil["_turnsAlignment"].push(datum.turnsAlignment);
+                    inputCoil["_layersOrientation"].push(datum.layersOrientation);
+                    margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
+                })
+            }
+            inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
+            inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
             const newMagneticCoilHash = generateHash(JSON.stringify(this.masStore.mas.magnetic.coil));
-            if (this.oldMagneticCoilHash != newMagneticCoilHash) {
+            const newInputsCoilHash = generateHash(JSON.stringify(inputCoil));
+
+
+            if (this.oldMagneticCoilHash != newMagneticCoilHash || this.oldInputsCoilHash != newInputsCoilHash) {
                 this.oldMagneticCoilHash = newMagneticCoilHash;
+                this.oldInputsCoilHash = newInputsCoilHash;
 
                 this.$emit("fits", true);
                 this.$mkf.ready.then(_ => {
                     try {
-                        const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
-
-                        const margins = [];
-                        if (this.conductiveSections.length > 0) {
-                            inputCoil["_turnsAlignment"] = {};
-                            inputCoil["_layersOrientation"] = {};
-                            this.localData.dataPerSection.forEach((datum, sectionIndex) => {
-                                if (sectionIndex in this.conductiveSections) {
-                                    const sectionName = this.conductiveSections[sectionIndex].name
-                                    inputCoil["_turnsAlignment"][sectionName] = datum.turnsAlignment;
-                                    inputCoil["_layersOrientation"][sectionName] = datum.layersOrientation;
-                                }
-                                margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
-                            })
-                        }
-                        else {
-                            inputCoil["_turnsAlignment"] = [];
-                            inputCoil["_layersOrientation"] = [];
-                            this.localData.dataPerSection.forEach((datum, sectionIndex) => {
-                                inputCoil["_turnsAlignment"].push(datum.turnsAlignment);
-                                inputCoil["_layersOrientation"].push(datum.layersOrientation);
-                                margins.push([datum.topOrLeftMargin, datum.bottomOrRightMargin])
-                            })
-                        }
-                        inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
-                        inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
-
                         const pattern = [];
                         this.localData.pattern.split('').forEach((char) => {
                             pattern.push(Number(char) - 1);
@@ -433,8 +439,13 @@ export default {
 
                 });
             }
+            else {
+                this.tryingToSend = false;
+            }
+
         },
         tryToWind() {
+
             if (this.$stateStore.loadingDesign) {
                 return;
             }
