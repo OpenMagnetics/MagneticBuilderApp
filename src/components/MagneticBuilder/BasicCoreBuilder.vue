@@ -93,7 +93,7 @@ export default {
                 :core="core"
                 :fullCoreModel="true"
                 :loadingGif="$settingsStore.loadingGif"
-                :backgroundColor="$styleStore.magneticBuilder.main.background"
+                :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
             />
         </div>
         <h4 v-else class="mb-5" > {{"Core Description"}} </h4>

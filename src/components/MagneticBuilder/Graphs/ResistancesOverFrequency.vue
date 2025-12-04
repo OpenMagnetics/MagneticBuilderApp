@@ -152,7 +152,7 @@ export default {
                     :xAxisOptions="frequencyData"
                     :title="'Total Resistance over Frequency'"
                     :forceUpdate="forceUpdate"
-                    :bgColor="$styleStore.magneticBuilder.graphBgColor.background"
+                    :bgColor="$styleStore.magneticBuilder.graphBgColor['background-color']"
                     :lineColor="$styleStore.magneticBuilder.graphLineColor.color"
                     :pointsColor="$styleStore.magneticBuilder.graphPointsColor.color"
                     :textColor="$styleStore.magneticBuilder.inputTextColor.color"

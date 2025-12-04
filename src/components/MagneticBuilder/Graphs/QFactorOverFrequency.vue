@@ -158,7 +158,7 @@ export default {
                     :xAxisOptions="frequencyData"
                     :title="'Q Factor over Frequency'"
                     :forceUpdate="forceUpdate"
-                    :bgColor="$styleStore.magneticBuilder.graphBgColor.background"
+                    :bgColor="$styleStore.magneticBuilder.graphBgColor['background-color']"
                     :lineColor="$styleStore.magneticBuilder.graphLineColor.color"
                     :pointsColor="$styleStore.magneticBuilder.graphPointsColor.color"
                     :textColor="$styleStore.magneticBuilder.inputTextColor.color"

@@ -176,7 +176,7 @@ export default {
                 :coilFits="true"
                 :showFieldPlotInit="$stateStore.magnetic2DVisualizerState.plotMagneticField"
                 :includeFringingInit="$stateStore.magnetic2DVisualizerState.plotFringingField"
-                :backgroundColor="$styleStore.magneticBuilder.main.background"
+                :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                 :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
                 @swapFieldPlot="swapFieldPlot"
                 @swapIncludeFringing="swapIncludeFringing"

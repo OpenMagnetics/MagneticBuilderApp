@@ -137,7 +137,7 @@ export default {
         :textColor="$styleStore.magneticBuilder.inputTextColor"
         :activeButton="$styleStore.magneticBuilder.activeButton"
         :inactiveButton="$styleStore.magneticBuilder.button"
-        :visualizerBgColor="$styleStore.magneticBuilder.main.background"
+        :visualizerBgColor="$styleStore.magneticBuilder.main['background-color']"
         :visualizerLineColor="$styleStore.magneticBuilder.main.color"
         :visualizerTextColor="$styleStore.magneticBuilder.main.color"
     />

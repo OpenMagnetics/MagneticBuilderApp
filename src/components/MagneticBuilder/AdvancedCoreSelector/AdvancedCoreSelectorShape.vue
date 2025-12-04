@@ -557,7 +557,7 @@ export default {
                         :core="localCoreToDraw"
                         :fullCoreModel="true"
                         :loadingGif="$settingsStore.loadingGif"
-                        :backgroundColor="$styleStore.magneticBuilder.main.background"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                         @errorInDimensions="$emit('errorInDimensions')"
                     />
                 </div>
@@ -573,7 +573,7 @@ export default {
                         :dataTestLabel="`${dataTestLabel}-Core2DVisualizer`"
                         :core="localCoreToDraw"
                         :loadingGif="$settingsStore.loadingGif"
-                        :backgroundColor="$styleStore.magneticBuilder.main.background"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                         @errorInDimensions="$emit('errorInDimensions')"
                     />
                 </div>

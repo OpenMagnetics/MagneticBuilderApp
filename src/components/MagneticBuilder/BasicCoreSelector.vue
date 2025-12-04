@@ -320,12 +320,14 @@ export default {
                         checkAndFixMas(mas).then(response => {
                             mas = response;
 
+                            console.warn(deepCopy(mas.magnetic.core.functionalDescription.gapping))
                             const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
                             if (coreResult.startsWith("Exception")) {
                                 console.error(coreResult);
                             }
                             else {
                                 this.masStore.mas.magnetic.core = JSON.parse(coreResult);
+                                console.warn(deepCopy(this.masStore.mas.magnetic.core.functionalDescription.gapping))
 
                                 this.masStore.mas.magnetic.coil.bobbin = "Dummy";
                                 this.masStore.mas.magnetic.coil.turnsDescription = null;
