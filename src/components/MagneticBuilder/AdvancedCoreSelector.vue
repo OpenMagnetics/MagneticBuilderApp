@@ -4,6 +4,7 @@ import AdvancedCoreSelectorGapping from './AdvancedCoreSelector/AdvancedCoreSele
 import AdvancedCoreSelectorMaterial from './AdvancedCoreSelector/AdvancedCoreSelectorMaterial.vue'
 import { useHistoryStore } from '../../stores/history'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { useTaskQueueStore } from '../../stores/taskQueue'
 
 </script>
 
@@ -25,6 +26,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const historyStore = useHistoryStore();
         const localData = {};
         const errorMessage = "";
@@ -34,6 +36,7 @@ export default {
         const subscriptions = [];
 
         return {
+            taskQueueStore,
             historyStore,
             localData,
             errorMessage,
@@ -59,7 +62,7 @@ export default {
                     this.cancelChanges();
                 }
             });
-        })
+        }))
 
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {

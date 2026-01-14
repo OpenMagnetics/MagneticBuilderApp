@@ -9,6 +9,7 @@ import Core2DVisualizer from '/WebSharedComponents/Common/Core2DVisualizer.vue'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
 import ContextMenu from '../ContextMenu.vue'
 import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
+import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 </script>
 
@@ -34,6 +35,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const localData = {};
         const localCoreToDraw = deepCopy(this.core);
         const errorMessages = {};
@@ -54,12 +56,12 @@ export default {
         }
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
 
-        this.assignLocalData(this.core.functionalDescription.shape);
-        this.getDimensionKeys();
-
         this.core.functionalDescription.shape.name = this.core.functionalDescription.shape.name.startsWith("Custom")? this.core.functionalDescription.shape.name : "Custom " + this.core.functionalDescription.shape.name;
 
+        const subscriptions = []
+        const forceUpdate = 0;
         return {
+            taskQueueStore,
             localData,
             localCoreToDraw,
             imageUpToDate,
@@ -70,6 +72,8 @@ export default {
             availableFamilySubtypes,
             dimensionsExceptionsPerFamily,
             magneticBuilderSettingsStore,
+            subscriptions,
+            forceUpdate,
         }
     },
     watch: { 
@@ -77,13 +81,91 @@ export default {
     created () {
     },
     mounted () {
+        this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "redraw") {
+                    this.redraw();
+                }
+            });
+        }))
+
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "coreShapeFamiliesGotten") {
+                    if (args[0]) {
+                        const coreShapeFamilies = args[1];
+                        coreShapeFamilies.forEach((shapeFamily) => {
+                            this.availableFamilies[shapeFamily] = shapeFamily.toUpperCase();
+                        })
+                        this.getFamilySubtypes();
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreShapeFamilySubtypesGotten") {
+                    if (args[0]) {
+                        this.availableFamilySubtypes = args[1];
+                        if (this.availableFamilySubtypes.length == 0) {
+                            this.localData.familySubtype = null;
+                        }
+                        else if (!(this.localData.familySubtype in this.availableFamilySubtypes)) {
+                            this.localData.familySubtype = this.availableFamilySubtypes[0];
+                        }
+
+                        this.getDimensionKeys();
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreShapeFamilyDimensionsGotten") {
+                    if (args[0]) {
+                        const dimensions = deepCopy(args[1]);
+                        // if (key in this.localData.dimensions) {
+                        //     dimensions[key] = this.localData.dimensions[key];
+                        // }
+                        // else {
+                        //     dimensions[key] = 0;
+                        // }
+                        this.localData.dimensions = deepCopy(dimensions);
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreProcessed") {
+                    if (args[0]) {
+                        const core = args[1];
+
+                        this.core.processedDescription = core.processedDescription;
+                        this.dataUptoDate = true;
+
+                    }
+                    else {
+                        console.error(args[1]);
+                    }
+                }
+                if (name == "dimensionWithToleranceResolved") {
+                    if (args[0]) {
+                        const core = args[1];
+
+                        this.core.processedDescription = core.processedDescription;
+                        this.dataUptoDate = true;
+
+                    }
+                    else {
+                        console.error(args[1]);
+                    }
+                }
+            });
+        }))
         this.getFamilies();
-        this.getFamilySubtypes();
-        this.$stateStore.$onAction((action) => {
-            if (action.name == "redraw") {
-                this.redraw();
-            }
-        })
+        this.assignLocalData(this.core.functionalDescription.shape);
+        this.getDimensionKeys();
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
         computeErrorMessages() {
@@ -212,81 +294,32 @@ export default {
             })
         },
         assignLocalData(shape) {
-            this.$mkf.ready.then(_ => {
-                const localData = {
-                    family: shape.family,
-                    familySubtype: shape.familySubtype,
-                    dimensions: {},
-                };
-                Object.keys(shape.dimensions).forEach((key) => {
-                    localData.dimensions[key] = this.$mkf.resolve_dimension_with_tolerance(JSON.stringify(shape.dimensions[key]));
-                })
+            const localData = {
+                family: shape.family,
+                familySubtype: shape.familySubtype,
+                dimensions: {},
+            };
 
-                this.localData = localData;
+            Object.keys(shape.dimensions).forEach((key) => {
+                this.taskQueueStore.resolveDimensionWithTolerance(shape.dimensions[key]).then((response) => {
+                    localData.dimensions[key] = response
+                });
             })
+
+            this.localData = localData;
         },
         getFamilies() {
-            this.$mkf.ready.then(_ => {
-                const coreShapeFamiliesHandle = this.$mkf.get_available_core_shape_families();
-                this.availableFamilies = {};
-                for (var i = 0; i < coreShapeFamiliesHandle.size(); i++) {
-                    const shapeFamily = coreShapeFamiliesHandle.get(i);
-                    if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                        !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
-                        this.availableFamilies[shapeFamily] = shapeFamily.toUpperCase();
-                    }
-                }
-            })
+            this.taskQueueStore.getCoreShapeFamilies();
         },
         getFamilySubtypes() {
-            this.$mkf.ready.then(_ => {
-                const coreShapeFamiliesHandle = this.$mkf.get_shape_family_subtypes(this.localData.family);
-                this.availableFamilySubtypes = [];
-                for (var i = 0; i < coreShapeFamiliesHandle.size(); i++) {
-                    const shapeFamily = coreShapeFamiliesHandle.get(i);
-                    if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                        !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
-                        this.availableFamilySubtypes.push(shapeFamily);
-                    }
-                }
-
-                if (this.availableFamilySubtypes.length == 0) {
-                    this.localData.familySubtype = null;
-                }
-                else if (!(this.localData.familySubtype in this.availableFamilySubtypes)) {
-                    this.localData.familySubtype = this.availableFamilySubtypes[0];
-                }
-
-                this.getDimensionKeys();
-
-            })
+            if (this.localData != null && this.localData.family != null) {
+                this.taskQueueStore.getCoreShapeFamilySubtype(this.localData.family);
+            }
         },
         getDimensionKeys() {
-
-            this.$mkf.ready.then(_ => {
-                var familySubtype = "";
-                if ("familySubtype" in this.localData && this.localData.familySubtype != null) {
-                    familySubtype = this.localData.familySubtype;
-                }
-
-                const dimensionsHandle = this.$mkf.get_shape_family_dimensions(this.localData.family, familySubtype);
-                const newDimensions = {};
-                for (var i = 0; i < dimensionsHandle.size(); i++) {
-                    const key = dimensionsHandle.get(i);
-                    if (this.localData.family in this.dimensionsExceptionsPerFamily) {
-                        if (this.dimensionsExceptionsPerFamily[this.localData.family].includes(key)) {
-                            continue;
-                        }
-                    }
-                    if (key in this.localData.dimensions) {
-                        newDimensions[key] = this.localData.dimensions[key];
-                    }
-                    else {
-                        newDimensions[key] = 0;
-                    }
-                }
-                this.localData.dimensions = deepCopy(newDimensions);
-            })
+            if (this.localData != null && this.localData.family != null && this.localData.familySubtype != null) {
+                this.taskQueueStore.getCoreShapeFamilyDimensions(this.localData.family, this.localData.familySubtype, this.dimensionsExceptionsPerFamily);
+            }
         },
         familyUpdated() {
             this.imageUpToDate = false;
@@ -329,24 +362,12 @@ export default {
             this.localCoreToDraw.functionalDescription.shape.dimensions = deepCopy(this.localData.dimensions);
             this.localCoreToDraw.functionalDescription.shape.family = deepCopy(this.localData.family);
             this.localCoreToDraw.functionalDescription.shape.familySubtype = deepCopy(this.localData.familySubtype);
+            this.forceUpdate += 1;
             this.imageUpToDate = true;
         },
         calculateCoreEffectiveParameters() {
             if (this.core['functionalDescription']['shape'] != "") {
-                this.$mkf.ready.then(_ => {
-                    const coreJson = this.$mkf.calculate_core_data(JSON.stringify(this.core), false);
-                    if (coreJson.startsWith("Exception")) {
-                        console.error(coreJson);
-                        return;
-                    }
-                    else {
-                        this.core.processedDescription = JSON.parse(coreJson).processedDescription;
-                    }
-                    this.dataUptoDate = true;
-
-                }).catch(error => {
-                    console.error(error);
-                });
+                this.taskQueueStore.processCore(this.core);
             }
         },
     }
@@ -555,6 +576,7 @@ export default {
                     <Core3DVisualizer 
                         :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
                         :core="localCoreToDraw"
+                        :forceUpdate="forceUpdate"
                         :fullCoreModel="true"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
@@ -572,6 +594,7 @@ export default {
                     <Core2DVisualizer 
                         :dataTestLabel="`${dataTestLabel}-Core2DVisualizer`"
                         :core="localCoreToDraw"
+                        :forceUpdate="forceUpdate"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                         @errorInDimensions="$emit('errorInDimensions')"

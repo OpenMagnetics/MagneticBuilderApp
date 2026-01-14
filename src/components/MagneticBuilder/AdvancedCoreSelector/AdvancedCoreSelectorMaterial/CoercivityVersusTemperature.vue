@@ -79,18 +79,18 @@ export default {
     },
     methods: {
         assignLocalData() {
-            this.$mkf.ready.then(_ => {
-                if (typeof(this.data) == "object") {
-                    this.localData = [];
+            if (typeof(this.data) == "object") {
+                this.localData = [];
+                this.taskQueueStore.getDefaults(this.localCore, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((defaults) => {
                     this.data.forEach((elem) => {
                         if (elem.temperature == null) {
-                            const aux = this.$mkf.get_defaults();
-                            elem.temperature = aux.get('ambientTemperature');
+                            elem.temperature = defaults.get('ambientTemperature');
                         }
                         this.localData.push(elem);
                     })
-                }
-            })
+                })
+
+            }
         },
         onRemovePoint(seriesIndex, index) {
             this.data.splice(this.indexes[index], 1);

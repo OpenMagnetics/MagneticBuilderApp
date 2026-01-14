@@ -76,6 +76,71 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
         },
 
+        coreShapeFamiliesGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getCoreShapeFamilies(wiringTechnology=null) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            var coreShapeFamilies = [];
+
+            const coreShapeFamiliesHandle = mkf.get_available_core_shape_families();
+            for (var i = coreShapeFamiliesHandle.size() - 1; i >= 0; i--) {
+                const shapeFamily = coreShapeFamiliesHandle.get(i);
+                if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
+                    !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                    if (wiringTechnology == null || wiringTechnology == 'Wound' || shapeFamily != 'T') {
+                        coreShapeFamilies.push(shapeFamily);
+                    }
+                }
+            }
+
+            coreShapeFamilies = coreShapeFamilies.sort();
+
+            setTimeout(() => {this.coreShapeFamiliesGotten(true, coreShapeFamilies);}, 100);
+        },
+
+        coreShapeFamilySubtypesGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getCoreShapeFamilySubtype(family) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+            const availableFamilySubtypes = [];
+
+            const coreShapeFamilSubtypesHandle = mkf.get_shape_family_subtypes(family);
+            for (var i = 0; i < coreShapeFamilSubtypesHandle.size(); i++) {
+                const shapeFamilySubtype = coreShapeFamilSubtypesHandle.get(i);
+                if (!shapeFamilySubtype.includes("pqi") && !shapeFamilySubtype.includes("ut") &&
+                    !shapeFamilySubtype.includes("ui") && !shapeFamilySubtype.includes("h") && !shapeFamilySubtype.includes("drum")) {
+                    availableFamilySubtypes.push(shapeFamilySubtype);
+                }
+            }
+
+            setTimeout(() => {this.coreShapeFamilySubtypesGotten(true, availableFamilySubtypes);}, 100);
+        },
+
+        coreShapeFamilyDimensionsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getCoreShapeFamilyDimensions(family, familySubtype, dimensionsExceptionsPerFamily) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const dimensionsHandle = mkf.get_shape_family_dimensions(family, familySubtype);
+            const dimensions = {};
+            for (var i = 0; i < dimensionsHandle.size(); i++) {
+                const key = dimensionsHandle.get(i);
+                if (family in dimensionsExceptionsPerFamily) {
+                    if (dimensionsExceptionsPerFamily[family].includes(key)) {
+                        continue;
+                    }
+                }
+            }
+            setTimeout(() => {this.coreShapeFamilyDimensionsGotten(true, dimensions);}, 100);
+        },
+
         coreShapesGotten(success = true, dataOrMessage = '') {
         },
 
@@ -319,6 +384,19 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
         },
 
+        dimensionWithToleranceResolved(success = true, dataOrMessage = '') {
+        },
+
+        async resolveDimensionWithTolerance(dimensionWithTolerance) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const dimension = mkf.resolve_dimension_with_tolerance(JSON.stringify(dimensionWithTolerance));
+
+            this.dimensionWithToleranceResolved(true, dimension);
+            return dimension;
+        },
+
         numberTurnsCalculated(success = true, dataOrMessage = '') {
         },
 
@@ -334,6 +412,35 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
 
             setTimeout(() => {this.numberTurnsCalculated(true, numberTurns);}, 100);
+        },
+
+        complexPermeabilityGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getComplexPermeability(material) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const complexPermeabilityResult = mkf.calculate_complex_permeability(JSON.stringify(material));
+
+            if (complexPermeabilityResult.startsWith("Exception")) {
+                setTimeout(() => {this.complexPermeabilityGotten(false, complexPermeabilityResult);}, 100);
+            }
+            else {
+                setTimeout(() => {this.complexPermeabilityGotten(true, JSON.parse(complexPermeabilityResult));}, 100);
+            }
+        },
+
+        defaultGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getDefaults() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.get_defaults();
+            setTimeout(() => {this.defaultGotten(true, result);}, 100);
+            return result;
         },
     }
 })

@@ -22,6 +22,7 @@ import DimensionWithTolerance from '/WebSharedComponents/DataInput/DimensionWith
 import { MaterialEnum, MaterialComposition } from '/WebSharedComponents/assets/ts/MAS.ts'
 import ContextMenu from '../ContextMenu.vue'
 import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
+import { useTaskQueueStore } from '../../../stores/taskQueue'
 </script>
 
 <script>
@@ -38,14 +39,44 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
+        const subscriptions = []
         return {
-            magneticBuilderSettingsStore
+            taskQueueStore,
+            magneticBuilderSettingsStore,
+            subscriptions,
         }
     },
     watch: { 
     },
     created () {
+    },
+    mounted () {
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "coreMaterialProcessed") {
+                    if (args[0]) {
+                        const coreMaterial = args[1];
+                        this.core.functionalDescription.material = coreMaterial;
+                        this.loadAdvancedMaterialData();
+
+                    }
+                    else {
+                        console.error(args[1]);
+                    }
+                }
+                if (name == "complexPermeabilityGotten") {
+                    if (args[0]) {
+                        const complexPermeability = args[1];
+                        this.core.functionalDescription.material.permeability.complex = complexPermeability;
+                    }
+                    else {
+                        console.error(args[1]);
+                    }
+                }
+            });
+        }))
         if (typeof(this.core.functionalDescription.material) == "string") {
             this.loadMaterialData();
         }
@@ -53,7 +84,8 @@ export default {
             this.loadAdvancedMaterialData();
         }
     },
-    mounted () {
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
     },
     computed: {
         materialEnumInversed() {
@@ -130,8 +162,6 @@ export default {
             this.$axios.post(url, data)
             .then(response => {
 
-                console.warn("response")
-                console.warn(response)
                 if (response.data.bhCycle != null && response.data.bhCycle.length > 0) {
                     this.core.functionalDescription.material.bhCycle = response.data.bhCycle;
                 }
@@ -155,19 +185,10 @@ export default {
             });
         },
         loadMaterialData() {
-            this.$mkf.ready.then(_ => {
-                const materialJson = this.$mkf.get_material_data(this.core.functionalDescription.material);
-                if (materialJson.startsWith("Exception")) {
-                    console.error(materialJson);
-                    return;
-                }
-                else {
-                    this.core.functionalDescription.material = JSON.parse(materialJson);
-                    this.loadAdvancedMaterialData();
-                }
-            })
+            this.taskQueueStore.processCoreMaterial(this.core.functionalDescription.material);
         },
         loadMaterialComplexPermeabilityData() {
+            this.taskQueueStore.getComplexPermeability(this.core.functionalDescription.material);
             this.$mkf.ready.then(_ => {
                 const materialJson = this.$mkf.calculate_complex_permeability(JSON.stringify(this.core.functionalDescription.material));
                 if (materialJson.startsWith("Exception")) {
@@ -392,7 +413,7 @@ export default {
                             :dataTestLabel="dataTestLabel + '-RemanenceVersusTemperature'"
                             :data="core.functionalDescription.material.remanence"
                         />
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div class="col-sm-12 col-md-4">

@@ -278,7 +278,7 @@ export default {
             }
             else {
                 this.localData["shape"] = deepCopy(core.functionalDescription.shape.name);
-                this.localData["shapeFamily"] = deepCopy(core.functionalDescription.shape.family).toUpperCase();
+                this.localData["shapeFamily"] = deepCopy(core.functionalDescription.shape.family);
             }
 
             if (typeof(core.functionalDescription.material) == 'string') {

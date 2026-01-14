@@ -64,37 +64,32 @@ export default {
     },
     methods: {
         assignLocalData() {
-            this.$mkf.ready.then(_ => {
-                this.localData = [];
+            this.localData = [];
 
-                const distictTemperatures = [];
-                this.data.forEach((elem) => {
-                    if (!distictTemperatures.includes(elem.temperature)) {
-                        distictTemperatures.push(elem.temperature);
+            const distictTemperatures = [];
+            this.data.forEach((elem) => {
+                if (!distictTemperatures.includes(elem.temperature)) {
+                    distictTemperatures.push(elem.temperature);
+                }
+            })
+
+            distictTemperatures.forEach((temperature, temperatureIndex) => {
+                this.localData.push([]);
+                this.indexes.push([]);
+                this.configuration.yAxisReplaceLabel.push(`B@${temperature}`)
+            })
+            this.data.forEach((datum, index) => {
+                distictTemperatures.forEach((temperature, temperatureIndex) => {
+                    if (datum.temperature == temperature) {
+                        this.indexes[temperatureIndex].push(index);
+                        this.localData[temperatureIndex].push({
+                            magneticField: datum.magneticField,
+                            magneticFluxDensity: datum.magneticFluxDensity,
+                        })
                     }
                 })
-                console.log("distictTemperatures");
-                console.log(distictTemperatures);
-
-
-                distictTemperatures.forEach((temperature, temperatureIndex) => {
-                    this.localData.push([]);
-                    this.indexes.push([]);
-                    this.configuration.yAxisReplaceLabel.push(`B@${temperature}`)
-                })
-                this.data.forEach((datum, index) => {
-                    distictTemperatures.forEach((temperature, temperatureIndex) => {
-                        if (datum.temperature == temperature) {
-                            this.indexes[temperatureIndex].push(index);
-                            this.localData[temperatureIndex].push({
-                                magneticField: datum.magneticField,
-                                magneticFluxDensity: datum.magneticFluxDensity,
-                            })
-                        }
-                    })
-                })
-                console.log(this.localData)
             })
+            console.log(this.localData)
         },
         onRemovePoint(seriesIndex, index) {
             this.data.splice(this.indexes[seriesIndex][index], 1);
