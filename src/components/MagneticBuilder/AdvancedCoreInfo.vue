@@ -2,6 +2,7 @@
 import { removeTrailingZeroes, deepCopy, isMobile} from '/WebSharedComponents/assets/js/utils.js'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
+import { useTaskQueueStore } from '../../stores/taskQueue'
 </script>
 
 <script>
@@ -11,10 +12,6 @@ export default {
         dataTestLabel: {
             type: String,
             default: '',
-        },
-        core: {
-            type: Object,
-            required: true,
         },
         masStore: {
             type: Object,
@@ -26,22 +23,28 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const coreTemperatureDependantParametersData = {};
+        const coreEffectiveParameters = {};
         const coreLossesData = {};
         const magnetizingInductance = 0;
         const magnetizingInductanceCheck = false;
         const recentChange = false;
         const tryingToSend = false;
         const dataUptoDate = false;
+        const subscriptions = [];
 
         return {
+            taskQueueStore,
             coreTemperatureDependantParametersData,
+            coreEffectiveParameters,
             coreLossesData,
             magnetizingInductance,
             magnetizingInductanceCheck,
             recentChange,
             tryingToSend,
             dataUptoDate,
+            subscriptions,
         }
     },
     computed: {
@@ -61,155 +64,93 @@ export default {
         },
     },
     watch: {
-        'core': {
-            handler(newValue, oldValue) {
-                this.recentChange = true;
-                this.tryToSimulate();
-            },
-          deep: true
-        },
-        'operatingPointIndex': {
-            handler(newValue, oldValue) {
-                this.calculateCoreEffectiveParameters();
-                this.calculateCoreLosses();
-            },
-          deep: true
-        },
-        'masStore.mas.magnetic.coil.functionalDescription': {
-            handler(newValue, oldValue) {
-                this.recentChange = true;
-                this.tryToSimulate();
-            },
-          deep: true
-        },
+        // 'operatingPointIndex': {
+        //     handler(newValue, oldValue) {
+        //         this.calculateCoreEffectiveParameters();
+        //         this.calculateCoreLosses();
+        //     },
+        //   deep: true
+        // },
+        // 'masStore.mas.magnetic.coil.functionalDescription': {
+        //     handler(newValue, oldValue) {
+        //         this.recentChange = true;
+        //         this.tryToSimulate();
+        //     },
+        //   deep: true
+        // },
     },
     mounted () {
-        this.calculateCoreEffectiveParameters();
-        this.calculateCoreLosses();
-        this.dataUptoDate = true;
-    },
-    methods: {
-        tryToSimulate() {
-            if (!this.tryingToSend) {
-                this.recentChange = false;
-                this.dataUptoDate = false;
-                this.tryingToSend = true;
-                setTimeout(() => {
-                    if (this.recentChange) {
-                        this.tryingToSend = false;
-                        this.tryToSimulate();
+        // this.calculateCoreEffectiveParameters();
+        // this.calculateCoreLosses();
+        // this.dataUptoDate = true;
+
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "processCore") {
+                    this.dataUptoDate = false;
+                }
+                if (name == "calculateCoreLosses") {
+                    this.dataUptoDate = false;
+                }
+                if (name == "coreProcessed") {
+                    if (args[0]) {
+                        const core = args[1];
+                        this.coreEffectiveParameters = core.processedDescription.effectiveParameters;
+                        this.dataUptoDate = false;
+                        this.calculateCoreLosses();
                     }
                     else {
-                        this.calculateCoreEffectiveParameters();
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreMaterialChanged") {
+                    if (args[0]) {
+                        this.dataUptoDate = false;
                         this.calculateCoreLosses();
-                        this.tryingToSend = false;
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreLossesCalculated") {
+                    if (args[0]) {
+                        const data = args[1];
+                        this.coreTemperatureDependantParametersData = data.coreTemperatureDependantParametersData;
+                        this.magnetizingInductance = data.magnetizingInductance;
+                        this.coreLossesData = data.coreLossesData;
+                        this.magnetizingInductanceCheck = data.magnetizingInductanceCheck;
                         this.dataUptoDate = true;
                     }
+                    else {
+                        console.error(args[1])
+                    }
                 }
-                , this.$settingsStore.waitingTimeAfterChange);
-            }
-        },
+            });
+        }))
+
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
+    },
+    methods: {
         calculateCoreEffectiveParameters() {
-            if (this.core['functionalDescription']['shape'] != "") {
-                if (this.core['processedDescription'] == null) {
-                    this.$mkf.ready.then(_ => {
+            // if (this.core['functionalDescription']['shape'] != "") {
+            //     if (this.core['processedDescription'] == null) {
 
-                        const aux = deepCopy(this.core);
-                        aux['geometricalDescription'] = null;
-                        aux['processedDescription'] = null;
-                        if (typeof(aux['functionalDescription']['shape']) == "string") {
-                            const result = this.$mkf.get_shape_data(aux['functionalDescription']['shape']);
-
-                            if (result.startsWith("Exception")) {
-                                console.error(result);
-                                return;
-                            }
-                            else {
-                                aux['functionalDescription']['shape'] = JSON.parse(result);
-                            }
-
-                        }
-                        if (aux['functionalDescription']['shape']['family'] == "t") {
-                            aux['functionalDescription']['type'] = "toroidal";
-                            aux['functionalDescription']['gapping'] = [];
-                        }
-                        else {
-                            aux['functionalDescription']['type'] = "two-piece set";
-                        }
-
-                        if (aux['functionalDescription']['shape']['familySubtype'] != "null" && aux['functionalDescription']['shape']['familySubtype'] != null) {
-                            aux['functionalDescription']['shape']['familySubtype'] = String(aux['functionalDescription']['shape']['familySubtype']);
-                        }
-                        const coreJson = this.$mkf.calculate_core_data(JSON.stringify(aux), false);
-                        if (coreJson.startsWith("Exception")) {
-                            console.error(coreJson);
-                            return;
-                        }
-                        else {
-                            this.masStore.mas.magnetic.core = JSON.parse(coreJson);
-                        }
-
-                    }).catch(error => {
-                        console.error(error);
-                    });
-                }
-            }
+            //         if (core.functionalDescription.shape != "" && core.functionalDescription.material != "") {
+            //             this.taskQueueStore.processCore(core);
+            //         }
+            //     }
+            // }
         },
         calculateCoreLosses() {
-            if (this.core['functionalDescription']['shape'] != "" && this.core['functionalDescription']['material'] != "") {
-                this.$mkf.ready.then(_ => {
-                    if (!('gapReluctance' in this.$userStore.selectedModels)) {
-                        this.$userStore.selectedModels['gapReluctance'] = Defaults.reluctanceModelDefault
-                    }
-                    if (!('coreLosses' in this.$userStore.selectedModels)) {
-                        this.$userStore.selectedModels['coreLosses'] = Defaults.coreLossesModelDefault
-                    }
-                    if (!('coreTemperature' in this.$userStore.selectedModels)) {
-                        this.$userStore.selectedModels['coreTemperature'] = Defaults.coreTemperatureModelDefault
-                    }
-                    const modelsData = {coreLosses: this.$userStore.selectedModels['coreLosses'].toUpperCase(),
-                                  coreTemperature: this.$userStore.selectedModels['coreTemperature'].toUpperCase(),
-                                  gapReluctance: this.$userStore.selectedModels['gapReluctance'].toUpperCase().replace(" ", "_")};
+                const modelsData = {
+                    coreLosses: this.$userStore.selectedModels['coreLosses'] || Defaults.coreLossesModelDefault,
+                    coreTemperature: this.$userStore.selectedModels['coreTemperature'] || Defaults.coreTemperatureModelDefault,
+                    gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault
+                };
+                this.taskQueueStore.calculateCoreLosses(this.masStore.mas.magnetic, this.masStore.mas.inputs, this.operatingPointIndex, modelsData);
 
-                    {
-                        const result = this.$mkf.get_core_temperature_dependant_parameters(JSON.stringify(this.masStore.mas.magnetic.core), this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
-                        if (result.startsWith("Exception")) {
-                            console.error(result);
-                        }
-                        else {
-                            this.coreTemperatureDependantParametersData = JSON.parse(result);
-                        }
-                    }
-
-                    {
-                        const result = this.$mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(this.masStore.mas.magnetic.core), JSON.stringify(this.masStore.mas.magnetic.coil), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), JSON.stringify(modelsData));
-                        if (result == -1) {
-                            console.error(result);
-                        }
-                        else {
-                            this.magnetizingInductance = JSON.parse(result);
-                        }
-                    }
-
-                    this.magnetizingInductanceCheck = this.$mkf.check_requirement(JSON.stringify(this.masStore.mas.inputs.designRequirements.magnetizingInductance), this.magnetizingInductance);
-                    {
-                        const result = this.$mkf.calculate_core_losses(JSON.stringify(this.masStore.mas.magnetic.core),
-                                                                                    JSON.stringify(this.masStore.mas.magnetic.coil),
-                                                                                    JSON.stringify(this.masStore.mas.inputs),
-                                                                                    JSON.stringify(modelsData), 
-                                                                                    this.operatingPointIndex);
-                        if (result.startsWith("Exception")) {
-                            console.error(result);
-                        }
-                        else {
-                            this.coreLossesData = JSON.parse(result);
-                        }
-                    }
-                }).catch(error => {
-                    console.error("Error calculating core losses");
-                    console.error(error);
-                });
-            }
         },
     }
 }
@@ -218,7 +159,7 @@ export default {
 <template>
     <div class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
         <div
-            v-if="core.processedDescription != null"
+            v-if="coreEffectiveParameters.effectiveLength != null"
             class="row ps-2"
             v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
@@ -232,7 +173,7 @@ export default {
                 :power="1"
                 :dataTestLabel="dataTestLabel + '-EffectiveLength'"
                 :numberDecimals="2"
-                :value="core.processedDescription.effectiveParameters.effectiveLength"
+                :value="coreEffectiveParameters.effectiveLength"
                 :disableShortenLabels="true"
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
@@ -252,7 +193,7 @@ export default {
                 :power="2"
                 :dataTestLabel="dataTestLabel + '-EffectiveArea'"
                 :numberDecimals="1"
-                :value="core.processedDescription.effectiveParameters.effectiveArea"
+                :value="coreEffectiveParameters.effectiveArea"
                 :disableShortenLabels="true"
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
@@ -271,7 +212,7 @@ export default {
                 :power="3"
                 :dataTestLabel="dataTestLabel + '-EffectiveVolume'"
                 :numberDecimals="1"
-                :value="core.processedDescription.effectiveParameters.effectiveVolume"
+                :value="coreEffectiveParameters.effectiveVolume"
                 :disableShortenLabels="true"
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"
@@ -291,7 +232,7 @@ export default {
                 :power="2"
                 :dataTestLabel="dataTestLabel + '-MinimumArea'"
                 :numberDecimals="1"
-                :value="core.processedDescription.effectiveParameters.minimumArea"
+                :value="coreEffectiveParameters.minimumArea"
                 :disableShortenLabels="true"
                 :labelWidthProportionClass="'col-3'"
                 :valueWidthProportionClass="'col-9'"

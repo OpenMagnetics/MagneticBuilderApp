@@ -2,6 +2,7 @@
 import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import BasicCoreSelector from './BasicCoreSelector.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { useTaskQueueStore } from '../../stores/taskQueue'
 </script>
 
 <script>
@@ -41,39 +42,58 @@ export default {
         },
     },
     data() {
-        const core = {};
-        const imageUpToDate = false; 
+        const taskQueueStore = useTaskQueueStore();
+        const imageUpToDate = false;
+        const forceUpdateCore3DVisualizer = 0; 
+        const subscriptions = []; 
         return {
-            core,
+            taskQueueStore,
             imageUpToDate,
+            forceUpdateCore3DVisualizer,
+            subscriptions,
         }
     },
     computed: {
     },
     watch: {
-        'masStore.mas.magnetic.core': {
-            handler(newValue, oldValue) {
-
-                if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
-                    this.core = newValue;
-                    this.imageUpToDate = true;
-                }
-                else {
-                    this.imageUpToDate = false;
-                }
-            },
-          deep: true
-        }
     },
     mounted () {
+        this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "redraw") {
+                    this.forceUpdateCore3DVisualizer += 1;
+                    this.imageUpToDate = true;
+                }
+            });
+        }))
+
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "coreProcessed") {
+                    if (args[0]) {
+                        const core = args[1];
+                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                            this.forceUpdateCore3DVisualizer += 1;
+                            this.imageUpToDate = true;
+                        }
+                        else {
+                            this.imageUpToDate = false;
+                        }
+                    }
+                    else {
+                        console.error(args[1])
+                        this.imageUpToDate = false;
+                    }
+                }
+            });
+        }))
+
         this.core = deepCopy(this.masStore.mas.magnetic.core);
         this.imageUpToDate = true;
-        this.$stateStore.$onAction((action) => {
-            if (action.name == "redraw") {
-                this.core = deepCopy(this.masStore.mas.magnetic.core);
-                this.imageUpToDate = true;
-            }
-        })
+
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
     }
@@ -83,14 +103,15 @@ export default {
 <template>
     <div class="container">
         <div
-            v-if="useVisualizers && core.functionalDescription != null"
+            v-if="useVisualizers && masStore.mas.magnetic.core.functionalDescription != null"
             class="row"
             style="height: 30vh"
             :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <Core3DVisualizer 
                 :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
-                :core="core"
+                :core="masStore.mas.magnetic.core"
+                :forceUpdate="forceUpdateCore3DVisualizer"
                 :fullCoreModel="true"
                 :loadingGif="$settingsStore.loadingGif"
                 :backgroundColor="$styleStore.magneticBuilder.main['background-color']"

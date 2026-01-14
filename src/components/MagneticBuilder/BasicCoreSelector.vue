@@ -8,6 +8,7 @@ import AdvancedCoreInfo from './AdvancedCoreInfo.vue'
 import BasicCoreInfo from './BasicCoreInfo.vue'
 import CoreShapeSelector from './CoreShapeSelector.vue'
 import { useHistoryStore } from '../../stores/history'
+import { useTaskQueueStore } from '../../stores/taskQueue'
 
 import { deepCopy, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
@@ -51,10 +52,8 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const historyStore = useHistoryStore();
-        const coreShapeNames = {}; 
-        const coreShapeFamilies = []; 
-        const coreMaterialNames = {}; 
         const coreMaterialManufacturers = [];
         const localData = {};
         const onlyManufacturer = null;
@@ -66,18 +65,21 @@ export default {
         const errorMessage = "";
         const loading = false;
         const forceUpdate = 0;
+        const subscriptions = [];
+
+        const changeMadeByUser = false;
 
         return {
+            taskQueueStore,
             historyStore,
             localData,
             onlyManufacturer,
-            coreShapeNames,
-            coreShapeFamilies,
-            coreMaterialNames,
             coreMaterialManufacturers,
             errorMessage,
             loading,
             forceUpdate,
+            subscriptions,
+            changeMadeByUser,
         }
     },
     computed: {
@@ -99,7 +101,6 @@ export default {
     created () {
     },
     mounted () {
-        this.getShapeNames();
         this.getMaterialNames();
         
         setTimeout(() => {this.assignLocalData(this.masStore.mas.magnetic.core);}, 1000);
@@ -113,11 +114,147 @@ export default {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
             }
         })
+
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "coreShapeProcessed") {
+                    if (args[0]) {
+                        if (this.changeMadeByUser) {
+                            this.changeMadeByUser = false;
+                            const shape = args[1];
+
+                            if (this.localData.material == null) {
+                                this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
+                            }
+                            else {
+                                this.changeMadeByUser = true;
+                                var mas = deepCopy(this.masStore.mas);
+                                mas.magnetic.core.functionalDescription.shape = shape;
+                                const coreHash = JSON.stringify(mas.magnetic.core);
+
+                                if (!this.isStackable(shape)) {
+                                    mas.magnetic.core.functionalDescription.numberStacks = 1;
+                                }
+
+                                checkAndFixMas(mas).then(response => {
+                                    mas = response;
+                                    if (coreHash != JSON.stringify(mas.magnetic.core)) {
+                                        this.taskQueueStore.processCore(mas.magnetic.core);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error(error)
+                                });
+                            }
+
+                        }
+                        else {
+                            this.localData["shapeFamily"] = args[1].family.toUpperCase();
+                        }
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreMaterialProcessed") {
+                    if (args[0]) {
+                        this.localData["materialManufacturer"] = args[1].manufacturerInfo.name;
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreMaterialChanged") {
+                    if (args[0]) {
+                        const core = args[1];
+                        this.masStore.mas.magnetic.core = core;
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreProcessed") {
+                    if (args[0]) {
+                        const core = args[1];
+                        if (this.changeMadeByUser) {
+                            this.masStore.mas.magnetic.core = core;
+                            this.changeMadeByUser = false;
+                            this.masStore.mas.magnetic.manufacturerInfo = null;
+                            this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
+                        }
+                        else {
+                            this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                            this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                            this.forceUpdate += 1;
+                        }
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "bobbinFromCoreShapeGenerated") {
+                    if (args[0]) {
+                        const bobbin = args[1];
+                        this.masStore.mas.magnetic.coil.turnsDescription = null;
+                        this.masStore.mas.magnetic.coil.layersDescription = null;
+                        this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                        this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                        this.historyStore.addToHistory(this.masStore.mas);
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreMaterialsGotten") {
+                    if (args[0]) {
+                        const coreMaterials = args[1];
+                        this.coreMaterialNames = coreMaterials;
+                        this.coreMaterialManufacturers = Object.keys(coreMaterials);
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreAdvised") {
+                    if (args[0]) {
+                        const magnetic = args[1];
+                        this.masStore.mas.magnetic.core = magnetic.core;
+                        this.taskQueueStore.generateBobbinFromCoreShape(magnetic.core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
+                        this.taskQueueStore.calculateNumberTurns(magnetic.coil.functionalDescription[0].numberTurns, this.masStore.mas.inputs.designRequirements);
+                        this.errorMessage = "";
+                        this.assignLocalData(magnetic.core);
+                        this.loading = false;
+                    }
+                    else {
+                        console.error(args[1])
+                        this.errorMessage = "No core can be advised. You are on your own."
+                        setTimeout(() => {this.errorMessage = ""}, 10000);
+                    }
+                }
+                if (name == "numberTurnsCalculated") {
+                    if (args[0]) {
+                        const numberTurns = args[1];
+
+                        const windings = this.masStore.mas.magnetic.coil.functionalDescription;
+                        for (var i = 0; i < numberTurns.length; i++) {
+                            windings[i].numberTurns = numberTurns[i];
+                        }
+                        this.masStore.mas.magnetic.coil.functionalDescription = windings;
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+            });
+        }))
+
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
         isStackable(shape) {
             var shapeName = shape;
-            console.log(this.masStore.mas.magnetic.core)
             if (shape == null) {
                 shapeName = this.masStore.mas.magnetic.core.functionalDescription.shape;
             }
@@ -136,17 +273,7 @@ export default {
             if (typeof(core.functionalDescription.shape) == 'string') {
                 if (core.functionalDescription.shape != "") {
                     this.localData["shape"] = deepCopy(core.functionalDescription.shape);
-                    this.$mkf.ready.then(_ => {
-                        const shapeResult = this.$mkf.get_shape_data(core.functionalDescription.shape);
-                        if (shapeResult.startsWith("Exception")) {
-                            console.error(core.functionalDescription.shape);
-                            console.error(shapeResult);
-                        }
-                        else {
-                            const shape = JSON.parse(shapeResult);
-                            this.localData["shapeFamily"] = shape.family.toUpperCase();
-                        }
-                    })
+                    this.taskQueueStore.processCoreShape(core.functionalDescription.shape);
                 }
             }
             else {
@@ -157,16 +284,7 @@ export default {
             if (typeof(core.functionalDescription.material) == 'string') {
                 if (core.functionalDescription.material != "") {
                     this.localData["material"] = deepCopy(core.functionalDescription.material);
-                    this.$mkf.ready.then(_ => {
-                        const materialResult = this.$mkf.get_material_data(core.functionalDescription.material);
-                        if (materialResult.startsWith("Exception")) {
-                            console.error(materialResult);
-                        }
-                        else {
-                            const material = JSON.parse(materialResult);
-                            this.localData["materialManufacturer"] = material.manufacturerInfo.name;
-                        }
-                    })
+                    this.taskQueueStore.processCoreMaterial(core.functionalDescription.material);
                 }
             }
             else {
@@ -174,116 +292,12 @@ export default {
                 this.localData["materialManufacturer"] = core.functionalDescription.material.manufacturerInfo.name;
             }
 
-            if (core.processedDescription != null) {
-                this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
-                this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
-                this.forceUpdate += 1;
+            if (core.functionalDescription.shape != "" && core.functionalDescription.material != "") {
+                this.taskQueueStore.processCore(core);
             }
-            else {
-                this.$mkf.ready.then(_ => {
-                    const coreResult = this.$mkf.calculate_core_data(JSON.stringify(core), false);
-                    if (coreResult.startsWith("Exception")) {
-                        console.error(coreResult);
-                    }
-                    else {
-                        const auxCore = JSON.parse(coreResult);
-                        core.functionalDescription = auxCore.functionalDescription;
-                        core.processedDescription = auxCore.processedDescription;
-                        core.geometricalDescription = auxCore.geometricalDescription;
-                        this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
-                        this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
-                        this.forceUpdate += 1;
-                    }
-                })
-            }
-        },
-        getShapeNames() {
-            this.$mkf.ready.then(_ => {
-                const coreShapeFamiliesHandle = this.$mkf.get_available_core_shape_families();
-                for (var i = coreShapeFamiliesHandle.size() - 1; i >= 0; i--) {
-                    const shapeFamily = coreShapeFamiliesHandle.get(i).toUpperCase()
-                    if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
-                        !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
-                        if (this.masStore.mas.inputs.designRequirements.wiringTechnology == null || this.masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound' || shapeFamily != 'T') {
-                            this.coreShapeFamilies.push(shapeFamily);
-                        }
-                    }
-                }
-
-                this.coreShapeFamilies = this.coreShapeFamilies.sort();
-
-                if (this.onlyManufacturer != '' && this.onlyManufacturer != null) {
-                    var coreShapeNamesHandle = this.$mkf.get_available_core_shapes_by_manufacturer(this.onlyManufacturer);
-
-                    this.coreShapeFamilies.forEach((shapeFamily) => {
-                        if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
-                            !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
-
-
-                            this.coreShapeNames[shapeFamily] = [];
-                            
-                            var numberShapes = 0;
-                            for (var i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
-                                const aux = coreShapeNamesHandle.get(i);
-                                if (aux.startsWith(shapeFamily + " ")) {
-                                    numberShapes += 1;
-                                    this.coreShapeNames[shapeFamily].push(aux);
-                                }
-                            }
-                            if (numberShapes == 0) {
-                                this.coreShapeNames[shapeFamily].pop();
-                            }
-
-                        }
-                    })
-                }
-                else {
-                    this.coreShapeFamilies.forEach((shapeFamily) => {
-                        if (!shapeFamily.includes("PQI") && !shapeFamily.includes("UT") &&
-                            !shapeFamily.includes("UI") && !shapeFamily.includes("H") && !shapeFamily.includes("DRUM")) {
-                            this.coreShapeNames[shapeFamily] = [];
-                            var coreShapeNamesHandle = this.$mkf.get_available_core_shapes_by_family(shapeFamily.toLowerCase())
-
-                            var numberShapes = 0;
-                            for (var i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
-                                const aux = coreShapeNamesHandle.get(i);
-                                numberShapes += 1;
-                                this.coreShapeNames[shapeFamily].push(aux);
-                            }
-                            if (numberShapes == 0) {
-                                this.coreShapeNames[shapeFamily].pop();
-                            }
-
-                        }
-                    })
-                }
-
-                if (this.masStore.mas.magnetic.core.functionalDescription.shape.type == "custom") {
-                    this.coreShapeNames[this.masStore.mas.magnetic.core.functionalDescription.shape.family.toUpperCase()].unshift(this.masStore.mas.magnetic.core.functionalDescription.shape.name);
-                }
-            });
         },
         getMaterialNames() {
-            this.$mkf.ready.then(_ => {
-                const coreMaterialManufacturersHandle = this.$mkf.get_available_core_manufacturers();
-                for (var i = coreMaterialManufacturersHandle.size() - 1; i >= 0; i--) {
-                    const manufacturer = coreMaterialManufacturersHandle.get(i);
-                    this.coreMaterialManufacturers.push(manufacturer);
-                }
-
-                this.coreMaterialManufacturers = this.coreMaterialManufacturers.sort();
-
-                this.coreMaterialManufacturers.forEach((manufacturer) => {
-                    this.coreMaterialNames[manufacturer] = []
-                    if (!(this.onlyManufacturer != '' && this.onlyManufacturer != null && manufacturer != this.onlyManufacturer)) {
-                        const coreMaterialNamesHandle = this.$mkf.get_available_core_materials(manufacturer);
-                        for (var i = coreMaterialNamesHandle.size() - 1; i >= 0; i--) {
-                            this.coreMaterialNames[manufacturer].push(coreMaterialNamesHandle.get(i));
-                        }
-                    }
-                    // this.coreMaterialNames[manufacturer] = this.coreMaterialNames[manufacturer].sort();
-                })
-            });
+            this.taskQueueStore.getCoreMaterials(this.onlyManufacturer);
         },
         async coreShapeUpdated(name, family) {
             this.localData.shapeFamily = family;
@@ -292,92 +306,12 @@ export default {
         },
         async shapeUpdated(value) {
             this.masStore.mas.magnetic.core.name = "Custom";
-            this.masStore.mas.magnetic.core.manufacturerInfo = null;
-            this.masStore.mas.magnetic.core.processedDescription = null;
-            this.masStore.mas.magnetic.core.geometricalDescription = null;
-
-            this.$mkf.ready.then(_ => {
-                var mas = deepCopy(this.masStore.mas);
-                mas.magnetic.core.geometricalDescription = null;
-                mas.magnetic.core.processedDescription = null;
-
-                const shapeResult = this.$mkf.get_shape_data(value);
-                if (shapeResult.startsWith("Exception")) {
-                    console.error(shapeResult);
-                }
-                else {
-                    const shape = JSON.parse(shapeResult);
-                    if (this.localData.material == null) {
-                        this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
-                    }
-                    else {
-                        mas.magnetic.core.functionalDescription.shape = shape;
-
-                        if (!this.isStackable(shape)) {
-                            mas.magnetic.core.functionalDescription.numberStacks = 1;
-                        }
-
-                        checkAndFixMas(mas).then(response => {
-                            mas = response;
-
-                            console.warn(deepCopy(mas.magnetic.core.functionalDescription.gapping))
-                            const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
-                            if (coreResult.startsWith("Exception")) {
-                                console.error(coreResult);
-                            }
-                            else {
-                                this.masStore.mas.magnetic.core = JSON.parse(coreResult);
-                                console.warn(deepCopy(this.masStore.mas.magnetic.core.functionalDescription.gapping))
-
-                                this.masStore.mas.magnetic.coil.bobbin = "Dummy";
-                                this.masStore.mas.magnetic.coil.turnsDescription = null;
-                                this.masStore.mas.magnetic.coil.layersDescription = null;
-                                this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                                this.masStore.mas.magnetic.manufacturerInfo = null;
-                                var bobbinResult = "";
-                                if (this.masStore.mas.inputs.designRequirements.wiringTechnology == "Printed") {
-                                    bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
-                                }
-                                else {
-                                    bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
-                                }
-                                if (bobbinResult.startsWith("Exception")) {
-                                    console.error(bobbinResult);
-                                }
-                                else {
-                                    this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinResult);
-                                    this.historyStore.addToHistory(this.masStore.mas);
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            console.error(error.data)
-                        });
-                    }
-                }
-            });
+            this.changeMadeByUser = true;
+            this.taskQueueStore.processCoreShape(value);
         },
         materialUpdated(value) {
-            const aux = this.masStore.mas.magnetic.core;
-            aux.functionalDescription.material = value
-            this.masStore.mas.magnetic.core = aux;
-            this.masStore.mas.magnetic.core.name = "Custom";
-            this.masStore.mas.magnetic.core.manufacturerInfo = null;
-
-            this.$mkf.ready.then(_ => {
-                var mas = deepCopy(this.masStore.mas);
-                mas.magnetic.core.geometricalDescription = null;
-                mas.magnetic.core.processedDescription = null;
-
-                const coreResult = this.$mkf.calculate_core_data(JSON.stringify(mas.magnetic.core), false);
-                if (coreResult.startsWith("Exception")) {
-                    console.error(coreResult);
-                }
-                else {
-                    this.masStore.mas.magnetic.core = JSON.parse(coreResult);
-                    this.historyStore.addToHistory(this.masStore.mas);
-                }
-            });
+            this.changeMadeByUser = true;
+            this.taskQueueStore.changeCoreMaterial(value, deepCopy(this.masStore.mas.magnetic.core));
         },
         numberStacksUpdated(value) {
             this.masStore.mas.magnetic.core.functionalDescription.numberStacks = value;
@@ -394,88 +328,15 @@ export default {
             setTimeout(() => this.adviseCore(), 100);
         },
         adviseCore() {
-            this.$mkf.ready.then(_ => {
-                if (this.masStore.mas.inputs.operatingPoints.length > 0) {
-                    const settings = JSON.parse(this.$mkf.get_settings());
+            if (this.masStore.mas.inputs.operatingPoints.length > 0) {
+                this.$settingsStore.adviserSettings.coreAdviseMode = "standard cores";
 
-                    if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
-                        settings["coreIncludeDistributedGaps"] = false;
-                        settings["coreIncludeMargin"] = true;
-                        settings["coreIncludeStacks"] = true;
-                        settings["useToroidalCores"] = true;
-                        settings["useConcentricCores"] = false;
-                        settings["useOnlyCoresInStock"] = false;
-                    }
-                    else {
-                        settings["coreIncludeDistributedGaps"] = this.$settingsStore.adviserAllowDistributedGaps == "1";
-                        settings["coreIncludeMargin"] = true;
-                        settings["coreIncludeStacks"] = this.$settingsStore.adviserAllowStacks == "1";
-                        settings["useToroidalCores"] = this.$settingsStore.adviserToroidalCores == "1";
-                        settings["useOnlyCoresInStock"] = false;
-                    }
-                    this.$mkf.set_settings(JSON.stringify(settings));
-                    this.$settingsStore.adviserSettings.coreAdviseMode = "standard cores";
-
-                    const result = this.$mkf.calculate_advised_cores(JSON.stringify(this.masStore.mas.inputs), JSON.stringify(this.masStore.coreAdviserWeights), 1, this.$settingsStore.adviserSettings.coreAdviseMode);
-                    if (result.startsWith("Exception")) {
-                        console.error(result);
-                        return;
-                    }
-
-                    const aux = JSON.parse(result);
-
-                    var log = aux["log"];
-                    var data = aux["data"];
-                    if (data.length > 0) {
-                        this.masStore.mas.magnetic.core = data[0].mas.magnetic.core;
-
-                        this.$mkf.ready.then(_ => {
-
-                            this.masStore.mas.magnetic.coil.bobbin = "Dummy";
-                            this.masStore.mas.magnetic.coil.turnsDescription = null;
-                            this.masStore.mas.magnetic.coil.layersDescription = null;
-                            this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                            var bobbinResult = "";
-                            if (this.masStore.mas.inputs.designRequirements.wiringTechnology == "Printed") {
-                                bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
-                            }
-                            else {
-                                bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
-                            }
-                            if (bobbinResult.startsWith("Exception")) {
-                                console.error(bobbinResult);
-                            }
-                            else {
-                                this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinResult);
-                            }
-
-
-                            const numberTurns = [];
-                            const numberTurnsHandle = this.$mkf.calculate_number_turns(data[0].mas.magnetic.coil.functionalDescription[0].numberTurns, JSON.stringify(this.masStore.mas.inputs.designRequirements));
-
-                            const windings = this.masStore.mas.magnetic.coil.functionalDescription;
-                            for (var i = 0; i < numberTurnsHandle.size(); i++) {
-                                windings[i].numberTurns = numberTurnsHandle.get(i);
-                            }
-                            this.masStore.mas.magnetic.coil.functionalDescription = windings;
-                            this.historyStore.addToHistory(this.masStore.mas);
-                        });
-
-                        this.errorMessage = "";
-                    }
-                    else{
-                        this.errorMessage = "No core can be advised. You are on your own."
-                        setTimeout(() => {this.errorMessage = ""}, 10000);
-
-                    }
-                    this.assignLocalData(this.masStore.mas.magnetic.core);
-                    this.loading = false;
-                }
-                else {
-                    console.error("No operating points found")
-                    this.loading = false;
-                }
-            });
+                this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.$stateStore.hasCurrentApplicationMirroredWindings(), this.masStore.coreAdviserWeights, this.$settingsStore.adviserSettings);
+            }
+            else {
+                console.error("No operating points found")
+                this.loading = false;
+            }
         },
         loadCore() {
         },
@@ -590,7 +451,6 @@ export default {
                 <AdvancedCoreInfo 
                     v-if="!loading && $settingsStore.magneticBuilderSettings.advancedMode"
                     :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
-                    :core="masStore.mas.magnetic.core"
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
                 />

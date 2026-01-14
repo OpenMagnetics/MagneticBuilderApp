@@ -31,6 +31,7 @@ export default {
         const loading = false;
         const forceUpdate = 0;
         const localCore = deepCopy(this.masStore.mas.magnetic.core);
+        const subscriptions = [];
 
         return {
             historyStore,
@@ -39,6 +40,7 @@ export default {
             loading,
             forceUpdate,
             localCore,
+            subscriptions,
         }
     },
     computed: {
@@ -48,14 +50,38 @@ export default {
     created () {
     },
     mounted () {
-        this.$stateStore.$onAction((action) => {
-            if (action.name == "applyChanges") {
-                this.applyChanges();
-            }
-            if (action.name == "cancelChanges") {
-                this.cancelChanges();
-            }
+        this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "applyChanges") {
+                    this.applyChanges();
+                }
+                if (name == "cancelChanges") {
+                    this.cancelChanges();
+                }
+            });
         })
+
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "bobbinFromCoreShapeGenerated") {
+                    if (args[0]) {
+                        const bobbin = args[1];
+                        this.masStore.mas.magnetic.coil.turnsDescription = null;
+                        this.masStore.mas.magnetic.coil.layersDescription = null;
+                        this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                        this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                        this.historyStore.addToHistory(this.masStore.mas);
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+
+            });
+        }))
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
         customizedCore(customCore) {
@@ -64,29 +90,11 @@ export default {
         applyChanges() {
             this.localCore.functionalDescription.shape.type = "custom";
             this.localCore.name = "Custom";
+            this.masStore.mas.magnetic.manufacturerInfo = null;
 
             this.masStore.mas.magnetic.core = deepCopy(this.localCore);
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
-
-            this.masStore.mas.magnetic.coil.bobbin = "Dummy";
-            this.masStore.mas.magnetic.coil.turnsDescription = null;
-            this.masStore.mas.magnetic.coil.layersDescription = null;
-            this.masStore.mas.magnetic.coil.sectionsDescription = null;
-            this.masStore.mas.magnetic.manufacturerInfo = null;
-            var bobbinResult = "";
-            if (this.masStore.mas.inputs.designRequirements.wiringTechnology == "Printed") {
-                console.log(this.masStore.mas.magnetic.core)
-                bobbinResult = this.$mkf.create_quick_bobbin(JSON.stringify(this.masStore.mas.magnetic.core), 0);
-            }
-            else {
-                bobbinResult = this.$mkf.calculate_bobbin_data(JSON.stringify(this.masStore.mas.magnetic));
-            }
-            if (bobbinResult.startsWith("Exception")) {
-                console.error(bobbinResult);
-            }
-            else {
-                this.masStore.mas.magnetic.coil.bobbin = JSON.parse(bobbinResult);
-            }
+            this.taskQueueStore.generateBobbinFromCoreShape(this.localCore, this.masStore.mas.inputs.designRequirements.wiringTechnology);
         },
         cancelChanges() {
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;

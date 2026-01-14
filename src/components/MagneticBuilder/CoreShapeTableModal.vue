@@ -17,10 +17,6 @@ export default {
             type: String,
             default: '',
         },
-        masStore: {
-            type: Object,
-            required: true,
-        },
         coreShapeData: {
             type: Array,
             required: true,
