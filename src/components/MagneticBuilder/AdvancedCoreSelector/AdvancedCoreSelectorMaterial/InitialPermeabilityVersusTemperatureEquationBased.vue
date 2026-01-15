@@ -5,6 +5,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
+import { useTaskQueueStore } from '../../../../stores/taskQueue'
 
 </script>
 
@@ -25,6 +26,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const indexes = [];
         const configuration = {
                 xAxisLabel: 'temperature',
@@ -52,6 +54,7 @@ export default {
         const equation = "";
 
         return {
+            taskQueueStore,
             indexes,
             configuration,
             equation,
@@ -69,9 +72,7 @@ export default {
             console.log(this.data)
             if (this.data.modifiers != null && this.data.modifiers.default.temperatureFactor != null) {
                 this.coefficients = this.data.modifiers.default.temperatureFactor;
-                this.$mkf.ready.then(_ => {
-                    const handle = this.$mkf.get_initial_permeability_equations(JSON.stringify(this.data));
-
+                this.taskQueueStore.getInitialPermeabilityEquations(this.data).then((handle) => {
                     this.equation = handle.get("temperatureFactor");
                 })
             }

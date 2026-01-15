@@ -442,5 +442,104 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             setTimeout(() => {this.defaultGotten(true, result);}, 100);
             return result;
         },
+
+        onlyFrequencyDependentIndexesGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getOnlyFrequencyDependentIndexes(data) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const stringVector = [];
+            data.forEach((elem) => {
+                stringVector.push(JSON.stringify(elem));
+            })
+            var handle = mkf.get_only_frequency_dependent_indexes(JSON.stringify(stringVector));
+
+            const indexes = [];
+            for (var i = 0; i < handle.size(); i++) {
+                const aux = handle.get(i);
+                if (data[aux].frequency != null) {
+                    indexes.push(aux);
+                }
+            }
+
+            this.onlyFrequencyDependentIndexesGotten(true, indexes);
+            return indexes;
+        },
+
+        onlyMagneticFieldDcBiasDependentIndexesGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getOnlyMagneticFieldDcBiasDependentIndexes(data) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const stringVector = [];
+            data.forEach((elem) => {
+                stringVector.push(JSON.stringify(elem));
+            })
+            var handle = mkf.get_only_magnetic_field_dc_bias_dependent_indexes(JSON.stringify(stringVector));
+
+            const indexes = [];
+            for (var i = 0; i < handle.size(); i++) {
+                const aux = handle.get(i);
+                if (data[aux].magneticFieldDcBias != null) {
+                    indexes.push(aux);
+                }
+            }
+
+            this.onlyMagneticFieldDcBiasDependentIndexesGotten(true, indexes);
+            return indexes;
+        },
+
+        onlyTemperatureDependentIndexesGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getOnlyTemperatureDependentIndexes(data) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const stringVector = [];
+            data.forEach((elem) => {
+                stringVector.push(JSON.stringify(elem));
+            })
+            var handle = mkf.get_only_temperature_dependent_indexes(JSON.stringify(stringVector));
+
+            const indexes = [];
+            for (var i = 0; i < handle.size(); i++) {
+                const aux = handle.get(i);
+                indexes.push(aux);
+            }
+
+            this.onlyMagneticFieldDcBiasDependentIndexesGotten(true, indexes);
+            return indexes;
+        },
+
+        initialPermeabilityEquationsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getInitialPermeabilityEquations(data) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const handle = mkf.get_initial_permeability_equations(JSON.stringify(data));
+
+            this.initialPermeabilityEquationsGotten(true, handle);
+            return handle;
+        },
+
+        coreVolumetricLossesEquationsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getCoreVolumetricLossesEquations(data) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const handle = mkf.get_core_volumetric_losses_equations(JSON.stringify(data));
+
+            this.coreVolumetricLossesEquationsGotten(true, handle);
+            return handle;
+        },
     }
 })

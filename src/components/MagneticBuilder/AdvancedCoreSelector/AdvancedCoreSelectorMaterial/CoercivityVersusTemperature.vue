@@ -81,7 +81,7 @@ export default {
         assignLocalData() {
             if (typeof(this.data) == "object") {
                 this.localData = [];
-                this.taskQueueStore.getDefaults(this.localCore, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((defaults) => {
+                this.taskQueueStore.getDefaults().then((defaults) => {
                     this.data.forEach((elem) => {
                         if (elem.temperature == null) {
                             elem.temperature = defaults.get('ambientTemperature');

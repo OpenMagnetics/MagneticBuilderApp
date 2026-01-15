@@ -5,6 +5,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
+import { useTaskQueueStore } from '../../../../stores/taskQueue'
 
 </script>
 
@@ -30,6 +31,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const indexes = [];
         const configuration = {
                 xAxisLabel: 'temperature',
@@ -55,6 +57,7 @@ export default {
         const localData = [];
 
         return {
+            taskQueueStore,
             indexes,
             configuration,
             localData,
@@ -71,6 +74,18 @@ export default {
         assignLocalData() {
             this.$mkf.ready.then(_ => {
                 if (typeof(this.data) == "object") {
+                    if (this.data != null) {
+                        this.taskQueueStore.getOnlyTemperatureDependentIndexes(this.data).then((indexes) => {
+                            this.indexes = indexes;
+                            console.log(indexes)
+                            this.localData = [];
+                            this.indexes.forEach((elem) => {
+                                this.localData.push(this.data[elem]);
+                            })
+                        })
+                    }
+                    
+
                     const stringVector = [];
                     this.data.forEach((elem) => {
                         stringVector.push(JSON.stringify(elem));

@@ -5,6 +5,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
+import { useTaskQueueStore } from '../../../../stores/taskQueue'
 
 </script>
 
@@ -29,6 +30,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const indexes = [];
         const configuration = {
                 xAxisLabel: 'frequency',
@@ -61,6 +63,7 @@ export default {
         const baseValues = [];
 
         return {
+            taskQueueStore,
             indexes,
             configuration,
             bFieldValues,
@@ -82,8 +85,7 @@ export default {
                 if (!Array.isArray(method)) {
                     if (method.method == "magnetics" || method.method == "micrometals") {
 
-                        this.$mkf.ready.then(_ => {
-                            const handle = this.$mkf.get_core_volumetric_losses_equations(JSON.stringify(method));
+                        this.taskQueueStore.getCoreVolumetricLossesEquations(this.data).then((handle) => {
                             const equation = handle.get("volumetricCoreLosses");
 
                             this.bFieldValues.forEach((bValue) => {
@@ -94,7 +96,6 @@ export default {
                                 this.configuration.yAxisReplaceLabel.push(String(bValue));
                             })
                         })
-
                     }
                 }
             }) 

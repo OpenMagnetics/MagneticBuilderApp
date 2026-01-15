@@ -4,6 +4,7 @@ import PropertyTool from '/WebSharedComponents/Common/PropertyTool.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { useTaskQueueStore } from '../../../../stores/taskQueue'
 
 </script>
 
@@ -25,6 +26,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const indexes = [];
         const configuration = {
             xAxisLabel: 'frequency',
@@ -51,6 +53,7 @@ export default {
         const enableEditing = true;
 
         return {
+            taskQueueStore,
             indexes,
             configuration,
             localData,
@@ -71,42 +74,24 @@ export default {
                 if (typeof(this.data) == "object") {
                     // Real part
                     if (this.data != null && this.data.real != null) {
-                        const stringVector = [];
-                        this.data.real.forEach((elem) => {
-                            stringVector.push(JSON.stringify(elem));
-                        })
-                        var handle = this.$mkf.get_only_frequency_dependent_indexes(JSON.stringify(stringVector));
 
-                        this.indexes = [];
-                        for (var i = 0; i < handle.size(); i++) {
-                            const aux = handle.get(i);
-                            if (this.data.real[aux].frequency != null) {
-                                this.indexes.push(aux);
-                            }
-                        }
-
-                        this.indexes.forEach((elem) => {
-                            this.localData[0].push(this.data.real[elem]);
+                        this.taskQueueStore.getOnlyFrequencyDependentIndexes(this.data.real).then((indexes) => {
+                            this.indexes = indexes;
+                            this.indexes.forEach((elem) => {
+                                this.localData[0].push(this.data.real[elem]);
+                            })
                         })
+                        
                     }
                     // Imaginary part
                     if (this.data != null && this.data.imaginary != null) {
-                        const stringVector = [];
-                        this.data.imaginary.forEach((elem) => {
-                            stringVector.push(JSON.stringify(elem));
-                        })
-                        var handle = this.$mkf.get_only_frequency_dependent_indexes(JSON.stringify(stringVector));
 
-                        this.indexes = [];
-                        for (var i = 0; i < handle.size(); i++) {
-                            const aux = handle.get(i);
-                            if (this.data.imaginary[aux].frequency != null) {
-                                this.indexes.push(aux);
-                            }
-                        }
 
-                        this.indexes.forEach((elem) => {
-                            this.localData[1].push(this.data.imaginary[elem]);
+                        this.taskQueueStore.getOnlyFrequencyDependentIndexes(this.data.imaginary).then((indexes) => {
+                            this.indexes = indexes;
+                            this.indexes.forEach((elem) => {
+                                this.localData[1].push(this.data.imaginary[elem]);
+                            })
                         })
                     }
                 }

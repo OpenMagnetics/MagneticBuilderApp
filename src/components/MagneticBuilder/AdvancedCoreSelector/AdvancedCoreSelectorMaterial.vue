@@ -413,7 +413,7 @@ export default {
                             :dataTestLabel="dataTestLabel + '-RemanenceVersusTemperature'"
                             :data="core.functionalDescription.material.remanence"
                         />
-                    </div> -->
+                    </div>
                 </div>
             </div>
             <div class="col-sm-12 col-md-4">

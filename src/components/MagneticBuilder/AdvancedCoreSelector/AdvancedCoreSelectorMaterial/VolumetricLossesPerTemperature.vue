@@ -3,6 +3,7 @@ import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.
 import PropertyTool from '/WebSharedComponents/Common/PropertyTool.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { useTaskQueueStore } from '../../../../stores/taskQueue'
 
 </script>
 
@@ -28,6 +29,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const indexes = [];
         const blockingRebounds = false;
         const configurationPerTemperature = {
@@ -58,6 +60,7 @@ export default {
         const temperatures = [];
 
         return {
+            taskQueueStore,
             blockingRebounds,
             indexes,
             configurationPerTemperature,
@@ -86,110 +89,107 @@ export default {
     },
     methods: {
         assignLocalData() {
-            this.$mkf.ready.then(_ => {
-                this.localData = [];
-                this.indexes = [];
+            this.localData = [];
+            this.indexes = [];
 
-                var distictTemperatures = [];
-                var distictMagneticFluxDensities = [];
-                var distictFrequencies = [];
-                this.data.default.forEach((method) => {
-                    if (Array.isArray(method)) {
-                        this.volumetricLossesPoints = method;
-                    }
-                })
-                this.volumetricLossesPoints.forEach((elem) => {
-                    if (!distictTemperatures.includes(elem.temperature)) {
-                        distictTemperatures.push(elem.temperature);
-                    }
-                    if (!distictMagneticFluxDensities.includes(elem.magneticFluxDensity.magneticFluxDensity.processed.peak)) {
-                        distictMagneticFluxDensities.push(elem.magneticFluxDensity.magneticFluxDensity.processed.peak);
-                    }
-                    if (!distictFrequencies.includes(elem.magneticFluxDensity.frequency)) {
-                        distictFrequencies.push(elem.magneticFluxDensity.frequency);
-                    }
-                })
-
-                distictTemperatures = distictTemperatures.sort(function(a, b) {return a - b; });
-                distictMagneticFluxDensities = distictMagneticFluxDensities.sort(function(a, b) {return a - b; });
-                distictFrequencies = distictFrequencies.sort(function(a, b) {return a - b; });
-                this.volumetricLossesPoints = this.volumetricLossesPoints.sort(function(a, b) {return a.value - b.value; });
-
-                distictTemperatures.forEach((temperature, temperatureIndex) => {
-                    this.localData.push([]);
-                    this.indexes.push([]);
-                    if (distictMagneticFluxDensities.length <= distictFrequencies.length) {
-                        this.configurationPerTemperature.xAxisLabel = 'frequency';
-                        this.configurationPerTemperature.xAxisReplaceLabel = 'freq.';
-                        this.configurationPerTemperature.xAxisUnit = 'Hz';
-                        this.configurationPerTemperature.xAxisMin = 1;
-                        this.configurationPerTemperature.xAxisMax = 15000000;
-                        this.configuration.push(deepCopy(this.configurationPerTemperature));
-                        distictMagneticFluxDensities.forEach((magneticFluxDensity, magneticFluxDensityIndex) => {
-                            this.localData[this.localData.length - 1].push([]);
-                            this.indexes[this.indexes.length - 1].push([]);
-                            this.configuration[this.configuration.length - 1].yAxisReplaceLabel.push(String(magneticFluxDensity * 1000) + " mT")
-                        })
-                    }
-                    else {
-                        this.configurationPerTemperature.xAxisLabel = 'magneticFluxDensity';
-                        this.configurationPerTemperature.xAxisReplaceLabel = 'B peak';
-                        this.configurationPerTemperature.xAxisUnit = 'T';
-                        this.configurationPerTemperature.xAxisMin = 0.001;
-                        this.configurationPerTemperature.xAxisMax = 2;
-                        this.configuration.push(deepCopy(this.configurationPerTemperature));
-                        distictFrequencies.forEach((frequency, frequencyIndex) => {
-                            this.localData[this.localData.length - 1].push([]);
-                            this.indexes[this.indexes.length - 1].push([]);
-                            this.configuration[this.configuration.length - 1].yAxisReplaceLabel.push(String(frequency / 1000) + " kHz")
-                        })
-                    }
-                })
-                this.volumetricLossesPoints.forEach((datum, index) => {
-                    distictTemperatures.forEach((temperature, temperatureIndex) => {
-                        if (datum.temperature == temperature) {
-                            if (distictMagneticFluxDensities.length <= distictFrequencies.length) {
-                                distictMagneticFluxDensities.forEach((magneticFluxDensity, magneticFluxDensityIndex) => {
-                                    if (datum.magneticFluxDensity.magneticFluxDensity.processed.peak == magneticFluxDensity) {
-                                        this.indexes[temperatureIndex][magneticFluxDensityIndex].push(index);
-                                        this.localData[temperatureIndex][magneticFluxDensityIndex].push({
-                                            frequency: datum.magneticFluxDensity.frequency,
-                                            value: datum.value
-                                        })
-                                    }
-                                })
-                            }
-                            else {
-                                distictFrequencies.forEach((frequency, frequencyIndex) => {
-                                    if (datum.magneticFluxDensity.frequency == frequency) {
-                                        this.indexes[temperatureIndex][frequencyIndex].push(index);
-                                        this.localData[temperatureIndex][frequencyIndex].push({
-                                            magneticFluxDensity: datum.magneticFluxDensity.magneticFluxDensity.processed.peak,
-                                            value: datum.value
-                                        })
-                                    }
-                                })
-                            }
-                        }
-                    })
-                })
-                this.localData.forEach((elem, index) => {
-                    for (let i = elem.length - 1; i >=0 ; i--) {
-                        if (elem[i].length < 1) {
-                            elem.splice(i, 1);
-                        }
-                    }
-                })
-                this.indexes.forEach((elem, index) => {
-                    for (let i = elem.length - 1; i >=0 ; i--) {
-                        if (elem[i].length < 1) {
-                            elem.splice(i, 1);
-                        }
-                    }
-                })
-                console.log(this.localData)
-                this.temperatures = distictTemperatures;
+            var distictTemperatures = [];
+            var distictMagneticFluxDensities = [];
+            var distictFrequencies = [];
+            this.data.default.forEach((method) => {
+                if (Array.isArray(method)) {
+                    this.volumetricLossesPoints = method;
+                }
             })
+            this.volumetricLossesPoints.forEach((elem) => {
+                if (!distictTemperatures.includes(elem.temperature)) {
+                    distictTemperatures.push(elem.temperature);
+                }
+                if (!distictMagneticFluxDensities.includes(elem.magneticFluxDensity.magneticFluxDensity.processed.peak)) {
+                    distictMagneticFluxDensities.push(elem.magneticFluxDensity.magneticFluxDensity.processed.peak);
+                }
+                if (!distictFrequencies.includes(elem.magneticFluxDensity.frequency)) {
+                    distictFrequencies.push(elem.magneticFluxDensity.frequency);
+                }
+            })
+
+            distictTemperatures = distictTemperatures.sort(function(a, b) {return a - b; });
+            distictMagneticFluxDensities = distictMagneticFluxDensities.sort(function(a, b) {return a - b; });
+            distictFrequencies = distictFrequencies.sort(function(a, b) {return a - b; });
+            this.volumetricLossesPoints = this.volumetricLossesPoints.sort(function(a, b) {return a.value - b.value; });
+
+            distictTemperatures.forEach((temperature, temperatureIndex) => {
+                this.localData.push([]);
+                this.indexes.push([]);
+                if (distictMagneticFluxDensities.length <= distictFrequencies.length) {
+                    this.configurationPerTemperature.xAxisLabel = 'frequency';
+                    this.configurationPerTemperature.xAxisReplaceLabel = 'freq.';
+                    this.configurationPerTemperature.xAxisUnit = 'Hz';
+                    this.configurationPerTemperature.xAxisMin = 1;
+                    this.configurationPerTemperature.xAxisMax = 15000000;
+                    this.configuration.push(deepCopy(this.configurationPerTemperature));
+                    distictMagneticFluxDensities.forEach((magneticFluxDensity, magneticFluxDensityIndex) => {
+                        this.localData[this.localData.length - 1].push([]);
+                        this.indexes[this.indexes.length - 1].push([]);
+                        this.configuration[this.configuration.length - 1].yAxisReplaceLabel.push(String(magneticFluxDensity * 1000) + " mT")
+                    })
+                }
+                else {
+                    this.configurationPerTemperature.xAxisLabel = 'magneticFluxDensity';
+                    this.configurationPerTemperature.xAxisReplaceLabel = 'B peak';
+                    this.configurationPerTemperature.xAxisUnit = 'T';
+                    this.configurationPerTemperature.xAxisMin = 0.001;
+                    this.configurationPerTemperature.xAxisMax = 2;
+                    this.configuration.push(deepCopy(this.configurationPerTemperature));
+                    distictFrequencies.forEach((frequency, frequencyIndex) => {
+                        this.localData[this.localData.length - 1].push([]);
+                        this.indexes[this.indexes.length - 1].push([]);
+                        this.configuration[this.configuration.length - 1].yAxisReplaceLabel.push(String(frequency / 1000) + " kHz")
+                    })
+                }
+            })
+            this.volumetricLossesPoints.forEach((datum, index) => {
+                distictTemperatures.forEach((temperature, temperatureIndex) => {
+                    if (datum.temperature == temperature) {
+                        if (distictMagneticFluxDensities.length <= distictFrequencies.length) {
+                            distictMagneticFluxDensities.forEach((magneticFluxDensity, magneticFluxDensityIndex) => {
+                                if (datum.magneticFluxDensity.magneticFluxDensity.processed.peak == magneticFluxDensity) {
+                                    this.indexes[temperatureIndex][magneticFluxDensityIndex].push(index);
+                                    this.localData[temperatureIndex][magneticFluxDensityIndex].push({
+                                        frequency: datum.magneticFluxDensity.frequency,
+                                        value: datum.value
+                                    })
+                                }
+                            })
+                        }
+                        else {
+                            distictFrequencies.forEach((frequency, frequencyIndex) => {
+                                if (datum.magneticFluxDensity.frequency == frequency) {
+                                    this.indexes[temperatureIndex][frequencyIndex].push(index);
+                                    this.localData[temperatureIndex][frequencyIndex].push({
+                                        magneticFluxDensity: datum.magneticFluxDensity.magneticFluxDensity.processed.peak,
+                                        value: datum.value
+                                    })
+                                }
+                            })
+                        }
+                    }
+                })
+            })
+            this.localData.forEach((elem, index) => {
+                for (let i = elem.length - 1; i >=0 ; i--) {
+                    if (elem[i].length < 1) {
+                        elem.splice(i, 1);
+                    }
+                }
+            })
+            this.indexes.forEach((elem, index) => {
+                for (let i = elem.length - 1; i >=0 ; i--) {
+                    if (elem[i].length < 1) {
+                        elem.splice(i, 1);
+                    }
+                }
+            })
+            this.temperatures = distictTemperatures;
         },
         onRemovePoint(temperatureIndex, seriesIndex, index) {
             this.volumetricLossesPoints.splice(this.indexes[temperatureIndex][seriesIndex][index], 1);
