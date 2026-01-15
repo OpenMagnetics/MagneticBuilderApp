@@ -3,6 +3,7 @@ import { removeTrailingZeroes, deepCopy, checkAndFixMas, isMobile } from '/WebSh
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
+import { useTaskQueueStore } from '../../stores/taskQueue'
 </script>
 
 <script>
@@ -31,6 +32,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const dcResistancePerMeter = 0;
         const skinAcResistancePerMeter = 0;
         const skinAcFactor = 0;
@@ -44,8 +46,10 @@ export default {
         const recentChange = false;
         const tryingToSend = false;
         const dataUptoDate = false;
+        const subscriptions = [];
 
         return {
+            taskQueueStore,
             dcResistancePerMeter,
             skinAcResistancePerMeter,
             skinAcFactor,
@@ -59,6 +63,7 @@ export default {
             recentChange,
             tryingToSend,
             dataUptoDate,
+            subscriptions,
         }
     },
     computed: {
@@ -138,13 +143,45 @@ export default {
         },
     },
     mounted () {
+
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "masCheckedAndFixed") {
+                    if (args[0]) {
+                        this.masStore.mas = args[1];
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "wireDataCalculated") {
+                    if (args[0]) {
+                        const data = args[1];
+
+                        this.turnsRatio = data.turnsRatio;
+                        this.dcResistancePerMeter = data.dcResistancePerMeter;
+                        this.skinAcResistancePerMeter = data.skinAcResistancePerMeter;
+                        this.skinAcFactor = data.skinAcFactor;
+                        this.dcLossesPerMeter = data.dcLossesPerMeter;
+                        this.skinAcLossesPerMeter = data.skinAcLossesPerMeter;
+                        this.outerDimensions = data.outerDimensions;
+                        this.effectiveCurrentDensity = data.effectiveCurrentDensity;
+                        this.effectiveSkinDepth = data.effectiveSkinDepth;
+
+                        this.computeIfCompliesWithTurnsRatio();
+                        this.dataUptoDate = true;
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+            });
+        }))
         this.calculateWireData();
-        checkAndFixMas(this.masStore.mas, this.$mkf).then(response => {
-            this.masStore.mas = response;
-        })
-        .catch(error => {
-            console.error(error.data)
-        });
+        this.taskQueueStore.checkAndFixMas(this.masStore.mas);
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
         tryToSimulate() {
@@ -166,57 +203,21 @@ export default {
             }
         },
         computeIfCompliesWithTurnsRatio() {
-            this.$mkf.ready.then(_ => {
-                if (this.windingIndex > 0) {
-                    this.turnsRatioCheck = this.$mkf.check_requirement(JSON.stringify(this.masStore.mas.inputs.designRequirements.turnsRatios[this.windingIndex - 1]), this.turnsRatio);
-                    if (this.turnsRatioCheck) {
-                        this.compliesWithTurnsRatio = true;
-                    }
-                    else {
-                        this.compliesWithTurnsRatio = false;
-                    }
-                }
-                else {
-                    this.compliesWithTurnsRatio = true;
-                }
-            })
+            if (this.windingIndex > 0) {
+                this.taskQueueStore.checkRequirement(this.masStore.mas.inputs.designRequirements.turnsRatios[this.windingIndex - 1], this.turnsRatio).response((check) => {
+                    this.compliesWithTurnsRatio = check;
+                })
+            }
+            else {
+                this.compliesWithTurnsRatio = true;
+            }
         },
         calculateWireData() {
             if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" &&
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "Dummy" &&
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != null) {
-                this.$mkf.ready.then(_ => {
-                    const wireString = JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
-                    const currentString = JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[this.windingIndex].current);
-                    var wireMaterial = wireMaterialDefault;
-                    if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.material != null) {
-                        wireMaterial = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.material;
-                    }
 
-                    this.turnsRatio = this.masStore.mas.magnetic.coil.functionalDescription[0].numberTurns / this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberTurns;
-
-                    this.dcResistancePerMeter = this.$mkf.calculate_dc_resistance_per_meter(wireString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
-
-                    this.skinAcResistancePerMeter = this.$mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
-
-                    this.skinAcFactor = this.$mkf.calculate_skin_ac_factor(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
-
-                    this.dcLossesPerMeter = this.$mkf.calculate_dc_losses_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
-
-                    this.skinAcLossesPerMeter = this.$mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
-
-                    const outerDimensionsHandle = this.$mkf.get_outer_dimensions(wireString);
-                    this.outerDimensions = [outerDimensionsHandle.get(0), outerDimensionsHandle.get(1)];
-
-                    this.effectiveCurrentDensity = this.$mkf.calculate_effective_current_density(wireString, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature) / 1000000 / this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberParallels;
-
-                    this.effectiveSkinDepth = this.$mkf.calculate_effective_skin_depth(wireMaterial, currentString, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].conditions.ambientTemperature);
-
-                    this.computeIfCompliesWithTurnsRatio();
-                    this.dataUptoDate = true;
-                }).catch(error => {
-                    console.error(error);
-                });
+                this.taskQueueStore.calculateWireData(this.masStore.mas.magnetic.coil, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex], this.windingIndex)
             }
         },
     }

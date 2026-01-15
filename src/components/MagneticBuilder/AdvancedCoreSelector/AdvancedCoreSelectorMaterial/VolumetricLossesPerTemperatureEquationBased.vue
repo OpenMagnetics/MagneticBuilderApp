@@ -85,7 +85,7 @@ export default {
                 if (!Array.isArray(method)) {
                     if (method.method == "magnetics" || method.method == "micrometals") {
 
-                        this.taskQueueStore.getCoreVolumetricLossesEquations(this.data).then((handle) => {
+                        this.taskQueueStore.getCoreVolumetricLossesEquations(this.data.default[0]).then((handle) => {
                             const equation = handle.get("volumetricCoreLosses");
 
                             this.bFieldValues.forEach((bValue) => {

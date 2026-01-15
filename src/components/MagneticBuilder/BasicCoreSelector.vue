@@ -10,7 +10,7 @@ import CoreShapeSelector from './CoreShapeSelector.vue'
 import { useHistoryStore } from '../../stores/history'
 import { useTaskQueueStore } from '../../stores/taskQueue'
 
-import { deepCopy, checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
+import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -130,21 +130,12 @@ export default {
                                 this.changeMadeByUser = true;
                                 var mas = deepCopy(this.masStore.mas);
                                 mas.magnetic.core.functionalDescription.shape = shape;
-                                const coreHash = JSON.stringify(mas.magnetic.core);
 
                                 if (!this.isStackable(shape)) {
                                     mas.magnetic.core.functionalDescription.numberStacks = 1;
                                 }
 
-                                checkAndFixMas(mas).then(response => {
-                                    mas = response;
-                                    if (coreHash != JSON.stringify(mas.magnetic.core)) {
-                                        this.taskQueueStore.processCore(mas.magnetic.core);
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error(error)
-                                });
+                                this.taskQueueStore.checkAndFixMas(mas);
                             }
 
                         }
@@ -240,6 +231,19 @@ export default {
                             windings[i].numberTurns = numberTurns[i];
                         }
                         this.masStore.mas.magnetic.coil.functionalDescription = windings;
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "masCheckedAndFixed") {
+                    if (args[0]) {
+                        const mas = args[1];
+                        const coreHash = JSON.stringify(this.masStore.mas.magnetic.core);
+
+                        if (coreHash != JSON.stringify(mas.magnetic.core)) {
+                            this.taskQueueStore.processCore(mas.magnetic.core);
+                        }
                     }
                     else {
                         console.error(args[1])

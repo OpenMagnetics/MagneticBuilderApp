@@ -69,7 +69,6 @@ export default {
     },
     methods: {
         assignLocalData() {
-            console.log(this.data)
             if (this.data.modifiers != null && this.data.modifiers.default.temperatureFactor != null) {
                 this.coefficients = this.data.modifiers.default.temperatureFactor;
                 this.taskQueueStore.getInitialPermeabilityEquations(this.data).then((handle) => {
