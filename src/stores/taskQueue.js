@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { waitForMkf } from '/WebSharedComponents/assets/js/mkfRuntime'
-import { checkAndFixMas } from '/WebSharedComponents/assets/js/utils.js'
+import { checkAndFixMas, clean, toTitleCase} from '/WebSharedComponents/assets/js/utils.js'
 
 export const useTaskQueueStore = defineStore('taskQueue', {
     state: () => ({
@@ -602,6 +602,296 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             data.effectiveSkinDepth = mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);        
 
             this.wireDataCalculated(true, data);
+        },
+
+        wireProcessed(success = true, dataOrMessage = '') {
+        },
+
+        async processWire(winding) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const wireResult = mkf.get_wire_data(JSON.stringify(winding))
+
+            if (wireResult.startsWith('Exception')) {
+                setTimeout(() => {this.wireProcessed(false, wireResult);}, this.task_standard_response_delay);
+            }
+            else {
+                const wire = JSON.parse(wireResult);
+
+                setTimeout(() => {this.wireProcessed(true, wire);}, this.task_standard_response_delay);
+            }
+        },
+
+        wireCoatingLabelGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getWireCoatingLabel(wire) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const coatingLabel = mkf.get_coating_label(JSON.stringify(wire));
+            setTimeout(() => {this.wireCoatingLabelGotten(true, coatingLabel);}, this.task_standard_response_delay);
+            return coatingLabel;
+        },
+
+        wireByNameGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getWireByName(wireName) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const wire = mkf.get_wire_data_by_name(JSON.stringify(wireName));
+            setTimeout(() => {this.wireDataByNameGotten(true, wire);}, this.task_standard_response_delay);
+            return wire;
+        },
+
+        newWireCreated(success = true, dataOrMessage = '') {
+        },
+
+        async createNewWire(newWireDataDict, oldWire) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            // So the outer diameter gets updated for Litz
+            if (newWireDataDict["type"] == "litz") {
+                if (typeof(oldWire) != "string") {
+                    oldWire.strand = newWireDataDict["litzStrandConductingDiameter"];
+                    oldWire.outerDiameter = null;
+                }
+            }
+
+            var wire = {};
+
+            if (oldWire != "" && oldWire != "Dummy") {
+                wire = oldWire;
+            }
+            var coating = null;
+            if (newWireDataDict["coating"] != null) {
+                coating = JSON.parse(mkf.get_wire_coating_by_label(newWireDataDict["coating"]));
+            }
+
+            wire.standard = "IEC 60317";
+
+            if (newWireDataDict["type"] == "round") {
+
+                if (newWireDataDict["standard"] != null) {
+                    wire.standard = newWireDataDict["standard"];
+                }
+                wire = JSON.parse(mkf.get_wire_data_by_standard_name(newWireDataDict["roundConductingDiameter"]));
+            }
+            else if (newWireDataDict["type"] == "litz") {
+                if (newWireDataDict["standard"] != null) {
+                    wire.standard = newWireDataDict["standard"];
+                }
+                wire.type = "litz";
+
+                if (typeof(wire.strand) == "string" || wire.strand == null || (wire.strand != null && wire.strand.coating == null)) {
+                    wire.strand = JSON.parse(mkf.get_wire_data_by_standard_name(newWireDataDict["litzStrandConductingDiameter"]));
+                }
+                wire.numberConductors = newWireDataDict["numberConductors"];
+                if (coating != null) {
+                    if (wire.outerDiameter == null) {
+                        wire.outerDiameter = {};
+                    }
+
+                    if (wire.outerDiameter.nominal == null && (wire.outerDiameter.minimum != null || wire.outerDiameter.maximum != null)) {
+                        wire.outerDiameter.nominal = mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.outerDiameter));  
+                    }
+                    if (wire.outerDiameter.nominal == null && wire.outerDiameter.minimum == null && wire.outerDiameter.maximum == null) {
+                        var strandConductingDiameter = mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.strand.conductingDiameter));  
+                        if (coating.type == "bare") {
+                            wire.outerDiameter.nominal = mkf.get_wire_outer_diameter_bare_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, wire.standard);
+                        }
+                        if (coating.type == "served") {
+                            wire.outerDiameter.nominal = mkf.get_wire_outer_diameter_served_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, coating.numberLayers, wire.standard);
+                        }
+                        if (coating.type == "insulated") {
+                            wire.outerDiameter.nominal = mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
+                        }
+                    }
+
+                }
+            }
+            else if (newWireDataDict["type"] == "rectangular") {
+                wire.type = "rectangular";
+                if (wire.conductingHeight == null) {
+                    wire.conductingHeight = {};
+                }
+                if (wire.conductingWidth == null) {
+                    wire.conductingWidth = {};
+                }
+                wire.conductingHeight.nominal = newWireDataDict["rectangularConductingHeight"];
+                wire.conductingWidth.nominal = newWireDataDict["rectangularConductingWidth"];
+                wire.numberConductors = 1;
+                if (coating != null) {
+                    if (wire.outerHeight == null) {
+                        wire.outerHeight = {};
+                    }
+                    if (wire.outerWidth == null) {
+                        wire.outerWidth = {};
+                    }
+                    wire.outerHeight.nominal = mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], coating.grade, wire.standard);
+                    wire.outerWidth.nominal = mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], coating.grade, wire.standard);
+                }
+            }
+            else if (newWireDataDict["type"] == "foil") {
+                wire.type = "foil";
+                if (wire.conductingHeight == null) {
+                    wire.conductingHeight = {};
+                }
+                if (wire.conductingWidth == null) {
+                    wire.conductingWidth = {};
+                }
+                wire.conductingHeight.nominal = newWireDataDict["foilConductingHeight"];
+                wire.conductingWidth.nominal = newWireDataDict["foilConductingWidth"];
+                wire.numberConductors = 1;
+                if (coating != null) {
+                    if (wire.outerHeight == null) {
+                        wire.outerHeight = {};
+                    }
+                    if (wire.outerWidth == null) {
+                        wire.outerWidth = {};
+                    }
+                    wire.outerHeight.nominal = wire.conductingHeight.nominal;
+                    wire.outerWidth.nominal = wire.conductingWidth.nominal;
+                }
+            }
+
+            wire.coating = coating;
+            wire.material = "copper";
+            wire = clean(wire);
+            setTimeout(() => {this.newWireCreated(true, wire);}, this.task_standard_response_delay);
+        },
+
+        availableWiresGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getAvailableWires() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const wireTypes = {};
+            const wireTypesHandle = mkf.get_available_wire_types();
+            for (var i = wireTypesHandle.size() - 1; i >= 0; i--) {
+                const type = wireTypesHandle.get(i);
+                wireTypes[type] = toTitleCase(type);
+            }
+
+            setTimeout(() => {this.availableWiresGotten(true, wireTypes);}, this.task_standard_response_delay);
+            return wireTypes;
+        },
+
+        availableStandardsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getAvailableWireStandards() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const wireStandardsHandle = mkf.get_available_wire_standards();
+            const wireStandards = [];
+            for (var i = wireStandardsHandle.size() - 1; i >= 0; i--) {
+                const standard = wireStandardsHandle.get(i);
+                wireStandards.push(standard);
+            }
+
+            setTimeout(() => {this.availableStandardsGotten(true, wireStandards);}, this.task_standard_response_delay);
+            return wireStandards;
+        },
+
+        uniqueWireDiametersGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getUniqueWireDiameters(standard) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const aux = {};
+            const wireConductingDiametersHandle = mkf.get_unique_wire_diameters(JSON.stringify(standard));
+            for (var i = wireConductingDiametersHandle.size() - 1; i >= 0; i--) {
+                const wireDiameter = wireConductingDiametersHandle.get(i);
+                const key = Number(wireDiameter.split(" ")[0]);
+                aux[key] = wireDiameter;
+            }
+            let orderedKeys = Object.keys(aux).sort(function(a, b) {
+                return a - b;
+            })
+            const wireConductingDiameters = [];
+            orderedKeys.forEach((key) => {
+                wireConductingDiameters.push(aux[key]);
+            });
+
+            setTimeout(() => {this.uniqueWireDiametersGotten(true, wireConductingDiameters);}, this.task_standard_response_delay);
+            return wireConductingDiameters;
+        },
+
+        coatingLabelsByTypeGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getCoatingLabelsByType(wireType) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const wireCoatingsHandle = mkf.get_coating_labels_by_type(JSON.stringify(wireType));
+
+            const wireCoatings = [];
+            for (var i = wireCoatingsHandle.size() - 1; i >= 0; i--) {
+                const wireCoating = wireCoatingsHandle.get(i);
+                wireCoatings.push(wireCoating);
+            }
+
+            setTimeout(() => {this.coatingLabelsByTypeGotten(true, wireCoatings);}, this.task_standard_response_delay);
+            return wireCoatings;
+        },
+
+        equivalentWireCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateEquivalentWire(oldWire, newType, effectiveFrequency) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const wireString = this.$mkf.get_equivalent_wire(JSON.stringify(oldWire), JSON.stringify(newType), effectiveFrequency);
+
+            if (wireString.startsWith("Exception")) {
+                setTimeout(() => {this.equivalentWireCalculated(false, wireString);}, this.task_standard_response_delay);
+                return wireString;
+            }
+            else {
+                const wire = JSON.parse(wireString);
+                setTimeout(() => {this.equivalentWireCalculated(true, wire);}, this.task_standard_response_delay);
+                return wire;
+            }
+        },
+
+        equivalentWireCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateEquivalentWire(mas) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const resultMasWithCoil = mkf.calculate_advised_coil(JSON.stringify(mas));
+            if (resultMasWithCoil.startsWith("Exception")) {
+                this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
+                setTimeout(() => {this.errorMessage = ""}, 10000);
+                this.loading = false;
+                console.error(resultMasWithCoil);
+                return;
+            }
+            const masWithCoil = JSON.parse(resultMasWithCoil);
+
+            if (wireString.startsWith("Exception")) {
+                setTimeout(() => {this.equivalentWireCalculated(false, wireString);}, this.task_standard_response_delay);
+                return wireString;
+            }
+            else {
+                const wire = JSON.parse(wireString);
+                setTimeout(() => {this.equivalentWireCalculated(true, wire);}, this.task_standard_response_delay);
+                return wire;
+            }
         },
     }
 })
