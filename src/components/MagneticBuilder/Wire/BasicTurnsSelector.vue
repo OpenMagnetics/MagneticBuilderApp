@@ -104,13 +104,22 @@ export default {
         this.blockingRebounds = true;
         setTimeout(() => this.blockingRebounds = false, 10);
 
-        this.historyStore.$onAction((action) => {
-            if (action.name == "historyPointerUpdated") {
-                this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])
-                this.blockingRebounds = true;
-                setTimeout(() => this.blockingRebounds = false, 10);
-            }
-        })
+        this.subscriptions.push(this.historyStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "historyPointerUpdated") {
+                    this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])
+                    this.blockingRebounds = true;
+                    setTimeout(() => this.blockingRebounds = false, 10);
+                }
+            });
+        }))
+
+        try {
+            this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex])
+        }
+        catch (error) {
+            console.error(error);
+        }
     },
     beforeUnmount () {
         this.subscriptions.forEach((subscription) => {subscription();})

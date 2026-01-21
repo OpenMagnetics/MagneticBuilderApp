@@ -145,7 +145,7 @@ export default {
                 // this.historyStore.addToHistory(this.masStore.mas);
             })
             .catch(error => {
-                console.error(resultWire);
+                console.error(error);
                 return;
             })
         },

@@ -881,7 +881,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = JSON.parse(mkf.get_wire_data_by_standard_name(conductingDiamension));
+            const result = mkf.get_wire_data_by_standard_name(conductingDiamension);
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.wireDataByStandardNameGotten(false, result);}, this.task_standard_response_delay);
                 throw new Error(result);

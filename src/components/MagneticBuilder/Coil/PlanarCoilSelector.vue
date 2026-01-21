@@ -52,6 +52,7 @@ export default {
         const recentChange = false;
         const tryingToSend = false;
         const forceUpdate = 0; 
+        const subscriptions = []; 
 
         var localData = {
             stackUp: "",
@@ -71,6 +72,7 @@ export default {
             loading,
             recentChange,
             tryingToSend,
+            subscriptions,
         }
     },
     computed: {
@@ -103,22 +105,43 @@ export default {
         this.getStackUp(this.masStore.mas.magnetic.coil);
 
 
-        this.historyStore.$onAction((action) => {
-            if (action.name == "historyPointerUpdated") {
-                this.tryToWind();
-                this.assignLocalData(this.masStore.mas.magnetic);
-                this.getStackUp(this.masStore.mas.magnetic.coil);
-            }
-        })
+        this.subscriptions.push(this.historyStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "historyPointerUpdated") {
+                    this.tryToWind();
+                    this.assignLocalData(this.masStore.mas.magnetic);
+                    this.getStackUp(this.masStore.mas.magnetic.coil);
+                }
+            });
+        }))
 
-        this.masStore.$onAction((action) => {
-            if (action.name == "importedMas") {
-                this.assignLocalData(this.masStore.mas.magnetic);
-                this.getStackUp(this.masStore.mas.magnetic.coil);
-                this.tryToWind();
-            }
-        })
+        this.subscriptions.push(this.masStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "importedMas") {
+                    this.assignLocalData(this.masStore.mas.magnetic);
+                    this.getStackUp(this.masStore.mas.magnetic.coil);
+                    this.tryToWind();
+                }
+            });
+        }))
 
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "numberTurnsUpdated" || name == "wireDataCalculated" || (name == "newWireCreated" && !this.enableSimulation)) {
+                    if (args[0]) {
+                        this.recentChange = true;
+                        this.tryToWind();
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+            });
+        }))
+
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
         getWindingIndex(coil, windinName) {
@@ -145,7 +168,6 @@ export default {
             this.$emit("fits", true);
 
             this.taskQueueStore.getSettings().then((settings) => {
-                console.log(settings)
                 settings["coilMaximumLayersPlanar"] = 24;
                 this.taskQueueStore.setSettings(settings).then(() => {
                     const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
@@ -300,7 +322,6 @@ export default {
             this.coilUpdated();
         },
         coilUpdated() {
-            console.log("coilUpdated")
             this.recentChange = true;
             this.tryToWind();
         },
