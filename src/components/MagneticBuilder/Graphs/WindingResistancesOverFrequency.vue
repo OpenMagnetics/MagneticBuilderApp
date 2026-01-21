@@ -3,6 +3,8 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
+import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { defaultOperatingConditions } from '/WebSharedComponents/assets/js/defaults.js'
 </script>
 
 <script>
@@ -19,6 +21,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
 
         const resistancesOverFrequencyData = [{
             label: 'Resistance',
@@ -46,6 +49,7 @@ export default {
         }
 
         return {
+            taskQueueStore,
             resistancesOverFrequencyData,
             frequencyData,
             forceUpdate,
@@ -115,24 +119,22 @@ export default {
             setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
         },
         sweepResistancesOverFrequency() {
+            var ambientTemperature = defaultOperatingConditions.ambientTemperature;
+            this.masStore.mas.inputs.operatingPoints.forEach((operatingPoint) => {
+                ambientTemperature = Math.abs(ambientTemperature, operatingPoint.conditions.ambientTemperature);
+            })
+
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.resistancesOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
-            this.$mkf.ready.then(_ => {
-                var windingIndex = 0;
-                this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem, index) => {
-                    if (elem.name == this.localData.selectedWinding) {
-                        windingIndex = index;
-                    }
-                })
 
-                const curve2DJson = this.$mkf.sweep_winding_resistance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, windingIndex, 25, this.$stateStore.graphParameters.xAxisMode, "Resistance over frequency")
-                if (curve2DJson.startsWith("Exception")) {
-                    this.loading = false;
-                    console.error(curve2DJson);
-                    return;
+            var windingIndex = 0;
+            this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem, index) => {
+                if (elem.name == this.localData.selectedWinding) {
+                    windingIndex = index;
                 }
-                else {
-                    const curve2D = JSON.parse(curve2DJson);
+            })
+
+            this.taskQueueStore.sweepWindingResistanceOverFrequency(this.masStore.mas.magnetic, this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, windingIndex, ambientTemperature, this.$stateStore.graphParameters.xAxisMode, "Resistance over frequency").then((curve2D) => {
                     this.resistancesOverFrequencyData[0].data = {
                         x: curve2D.xPoints,
                         y: curve2D.yPoints,
@@ -143,9 +145,8 @@ export default {
                     this.resistancesOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
                     this.forceUpdate += 1;
                     this.loading = false;
-                }
-
-            }).catch(error => {
+            })
+            .catch(error => {
                 console.error(error);
                 this.loading = false;
                 this.resistancesOverFrequencyData[0].data = {

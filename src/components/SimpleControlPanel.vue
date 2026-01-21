@@ -3,6 +3,7 @@ import { useMasStore } from '../stores/mas'
 import { useHistoryStore } from '../stores/history'
 import { checkAndFixMas, download, pruneNulls, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Settings from './MagneticBuilder/Settings.vue'
+import { useTaskQueueStore } from '../stores/taskQueue'
 </script>
 
 
@@ -25,11 +26,13 @@ export default {
         }
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const masStore = useMasStore();
         const historyStore = useHistoryStore();
         const masExported = false;
         const loading = false;
         return {
+            taskQueueStore,
             masStore,
             historyStore,
             masExported,
@@ -87,7 +90,7 @@ export default {
             fr.onload = e => {
                 const newMas = JSON.parse(e.target.result);
                 if (newMas.magnetic != null) {
-                    checkAndFixMas(newMas, this.$mkf).then(response => {
+                    this.taskQueueStore.checkAndFixMas(this.masStore.mas).then(response => {
                         this.masStore.mas = response;
                         this.masStore.importedMas();
                         this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";

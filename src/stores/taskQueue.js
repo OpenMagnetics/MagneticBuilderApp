@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { waitForMkf } from '/WebSharedComponents/assets/js/mkfRuntime'
-import { checkAndFixMas, clean, toTitleCase} from '/WebSharedComponents/assets/js/utils.js'
+import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 
 export const useTaskQueueStore = defineStore('taskQueue', {
     state: () => ({
@@ -16,9 +17,11 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             checkAndFixMas(mas, mkf).then(response => {
                 setTimeout(() => {this.masCheckedAndFixed(true, response)}, this.task_standard_response_delay);
+                return response;
             })
             .catch(error => {
                 setTimeout(() => {this.masCheckedAndFixed(false, error)}, this.task_standard_response_delay);
+                throw new Error(response);
             });
         },
 
@@ -32,9 +35,12 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const shapeResult = mkf.get_shape_data(coreShapeName)
             if (shapeResult.startsWith('Exception')) {
                 setTimeout(() => {this.coreShapeProcessed(false, shapeResult)}, this.task_standard_response_delay);
+                throw new Error(shapeResult);
             }
             else {
-                setTimeout(() => {this.coreShapeProcessed(true, JSON.parse(shapeResult))}, this.task_standard_response_delay);
+                const coreShape = JSON.parse(shapeResult);
+                setTimeout(() => {this.coreShapeProcessed(true, coreShape)}, this.task_standard_response_delay);
+                return coreShape;
             }
         },
 
@@ -48,9 +54,12 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const materialResult = mkf.get_material_data(coreMaterialName)
             if (materialResult.startsWith('Exception')) {
                 setTimeout(() => {this.coreMaterialProcessed(false, materialResult)}, this.task_standard_response_delay);
+                throw new Error(materialResult);
             }
             else {
-                setTimeout(() => {this.coreMaterialProcessed(true, JSON.parse(materialResult))}, this.task_standard_response_delay);
+                const coreMaterial = JSON.parse(materialResult);
+                setTimeout(() => {this.coreMaterialProcessed(true, coreMaterial)}, this.task_standard_response_delay);
+                return coreMaterial;
             }
         },
 
@@ -66,6 +75,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const coreResult = mkf.calculate_core_data(JSON.stringify(core), false)
             if (coreResult.startsWith('Exception')) {
                 setTimeout(() => {this.coreProcessed(false, coreResult);}, this.task_standard_response_delay);
+                throw new Error(coreResult);
             }
             else {
                 const auxCore = JSON.parse(coreResult);
@@ -74,6 +84,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 core.geometricalDescription = auxCore.geometricalDescription;
                 
                 setTimeout(() => {this.coreProcessed(true, core);}, this.task_standard_response_delay);
+                return core;
             }
         },
 
@@ -88,10 +99,12 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const coreResult = mkf.calculate_core_data_from_shape(shapeResult);
             if (coreResult.startsWith('Exception')) {
                 this.coreFromShapeProcessed(false, coreResult);
+                throw new Error(coreResult);
             }
             else {
                 const core = JSON.parse(coreResult);                
                 this.coreFromShapeProcessed(true, core);
+                return core;
             }
         },
 
@@ -118,6 +131,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             coreShapeFamilies = coreShapeFamilies.sort();
 
             setTimeout(() => {this.coreShapeFamiliesGotten(true, coreShapeFamilies);}, this.task_standard_response_delay);
+            return coreShapeFamilies;
         },
 
         coreShapeFamilySubtypesGotten(success = true, dataOrMessage = '') {
@@ -138,12 +152,13 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
 
             setTimeout(() => {this.coreShapeFamilySubtypesGotten(true, availableFamilySubtypes);}, this.task_standard_response_delay);
+            return availableFamilySubtypes;
         },
 
         coreShapeFamilyDimensionsGotten(success = true, dataOrMessage = '') {
         },
 
-        async getCoreShapeFamilyDimensions(family, familySubtype, dimensionsExceptionsPerFamily) {
+        async getCoreShapeFamilyDimensions(family, familySubtype, dimensionsExceptionsPerFamily, oldDimensions) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
@@ -155,9 +170,16 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                     if (dimensionsExceptionsPerFamily[family].includes(key)) {
                         continue;
                     }
+                    if (key in oldDimensions) {
+                        dimensions[key] = oldDimensions[key];
+                    }
+                    else {
+                        dimensions[key] = 0;
+                    }
                 }
             }
             setTimeout(() => {this.coreShapeFamilyDimensionsGotten(true, dimensions);}, this.task_standard_response_delay);
+            return dimensions;
         },
 
         coreShapesGotten(success = true, dataOrMessage = '') {
@@ -230,9 +252,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
 
             if (mas.magnetic.core.functionalDescription.shape.type == "custom") {
-                coreShapeNames[mas.magnetic.core.functionalDescription.shape.family.toUpperCase()].unshift(mas.magnetic.core.functionalDescription.shape.name);
+                coreShapeNames[mas.magnetic.core.functionalDescription.shape.family].unshift(mas.magnetic.core.functionalDescription.shape.name);
             }
             setTimeout(() => {this.coreShapesGotten(true, coreShapeNames);}, this.task_standard_response_delay);
+            return coreShapeNames;
         },
 
         coreMaterialsGotten(success = true, dataOrMessage = '') {
@@ -264,6 +287,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 // coreMaterialNames[manufacturer] = coreMaterialNames[manufacturer].sort();
             })
             setTimeout(() => {this.coreMaterialsGotten(true, coreMaterialNames);}, 10);
+            return coreMaterialNames;
         },
 
         coreLossesCalculated(success = true, dataOrMessage = '') {
@@ -283,16 +307,19 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                     const result = mkf.get_core_temperature_dependant_parameters(JSON.stringify(magnetic.core), inputs.operatingPoints[operatingPointIndex].conditions.ambientTemperature);
                     if (result.startsWith("Exception")) {
                         setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
+                        throw new Error(result);
                     }
                     else {
                         coreTemperatureDependantParametersData = JSON.parse(result);
                     }
+
                 }
 
                 {
                     const result = mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs.operatingPoints[operatingPointIndex]), JSON.stringify(modelsData));
                     if (result == -1) {
                         setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
+                        throw new Error(result);
                     }
                     else {
                         magnetizingInductance = JSON.parse(result);
@@ -303,6 +330,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                     const result = mkf.calculate_core_losses(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs), JSON.stringify(modelsData), operatingPointIndex);
                     if (result.startsWith("Exception")) {
                         setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
+                        throw new Error(result);
                     }
                     else {
                         coreLossesData = JSON.parse(result);
@@ -313,6 +341,9 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                     magnetizingInductanceCheck = mkf.check_requirement(JSON.stringify(inputs.designRequirements.magnetizingInductance), magnetizingInductance);
 
                 }
+
+                coreTemperatureDependantParametersData["saturationProportion"] = coreLossesData.magneticFluxDensityPeak / coreTemperatureDependantParametersData.magneticFluxDensitySaturation * 100;
+
                 const data = {
                     coreTemperatureDependantParametersData: coreTemperatureDependantParametersData,
                     magnetizingInductance: magnetizingInductance,
@@ -321,6 +352,28 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 };
 
                 setTimeout(() => {this.coreLossesCalculated(true, data);}, this.task_standard_response_delay);
+                return data;
+            }
+        },
+
+        coreTemperatureDependantParametersGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getCoreTemperatureDependantParameters(core, ambientTemperature) {
+            if (core['functionalDescription']['shape'] != "" && core['functionalDescription']['material'] != "") {
+                const mkf = await waitForMkf();
+                await mkf.ready;
+
+                const result = mkf.get_core_temperature_dependant_parameters(JSON.stringify(core), ambientTemperature);
+                if (result.startsWith("Exception")) {
+                    setTimeout(() => {this.coreTemperatureDependantParametersGotten(false, result);}, this.task_standard_response_delay);
+                    throw new Error(result);
+                }
+                else {
+                    const coreTemperatureDependantParametersData = JSON.parse(result);
+                    setTimeout(() => {this.coreTemperatureDependantParametersGotten(true, coreTemperatureDependantParametersData);}, this.task_standard_response_delay);
+                    return coreTemperatureDependantParametersData;
+                }
             }
         },
 
@@ -331,12 +384,15 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             core.functionalDescription.material = materialName;
             core.name = "Custom";
             core.manufacturerInfo = null;
-            core.geometricalDescription.forEach((elem) => {
-                if (elem.type == "half set") {
-                    elem.material = materialName;
-                }
-            })
+            if (core.geometricalDescription != null) {
+                core.geometricalDescription.forEach((elem) => {
+                    if (elem.type == "half set") {
+                        elem.material = materialName;
+                    }
+                })
+            }
             setTimeout(() => {this.coreMaterialChanged(true, core);}, this.task_standard_response_delay);
+            return core;
         },
 
         bobbinFromCoreShapeGenerated(success = true, dataOrMessage = '') {
@@ -355,9 +411,32 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
             if (bobbinResult.startsWith("Exception")) {
                 setTimeout(() => {this.bobbinFromCoreShapeGenerated(false, bobbinResult);}, this.task_standard_response_delay);
+                throw new Error(bobbinResult);
             }
             else {
-                setTimeout(() => {this.bobbinFromCoreShapeGenerated(true, JSON.parse(bobbinResult));}, this.task_standard_response_delay);
+                const bobbin = JSON.parse(bobbinResult);
+                setTimeout(() => {this.bobbinFromCoreShapeGenerated(true, bobbin);}, this.task_standard_response_delay);
+                return bobbin;
+            }
+        },
+
+        bobbinDifferentThicknessesGenerated(success = true, dataOrMessage = '') {
+        },
+
+        async generateBobbinDifferentThicknesses(core, bobbinWallThickness, bobbinColumnThickness) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const bobbinResult = mkf.create_simple_bobbin_from_core_with_custom_thicknesses(JSON.stringify(core), bobbinWallThickness, bobbinColumnThickness);
+
+            if (bobbinResult.startsWith("Exception")) {
+                setTimeout(() => {this.bobbinDifferentThicknessesGenerated(false, bobbinResult);}, this.task_standard_response_delay);
+                throw new Error(bobbinResult);
+            }
+            else {
+                const bobbin = JSON.parse(bobbinResult);
+                setTimeout(() => {this.bobbinDifferentThicknessesGenerated(true, bobbin);}, this.task_standard_response_delay);
+                return bobbin;
             }
         },
 
@@ -390,6 +469,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const result = mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, adviserSettings.coreAdviseMode);
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.coreAdvised(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
             }
 
             const aux = JSON.parse(result);
@@ -397,7 +477,9 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             var log = aux["log"];
             var data = aux["data"];
             if (data.length > 0) {
-                setTimeout(() => {this.coreAdvised(true, data[0].mas.magnetic);}, this.task_standard_response_delay);
+                const magnetic = data[0].mas.magnetic;
+                setTimeout(() => {this.coreAdvised(true, magnetic);}, this.task_standard_response_delay);
+                return magnetic;
             }
         },
 
@@ -412,6 +494,9 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             this.dimensionWithToleranceResolved(true, dimension);
             return dimension;
+        },
+
+        numberTurnsUpdated(success = true, dataOrMessage = '') {
         },
 
         numberTurnsCalculated(success = true, dataOrMessage = '') {
@@ -429,6 +514,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
 
             setTimeout(() => {this.numberTurnsCalculated(true, numberTurns);}, this.task_standard_response_delay);
+            return numberTurns;
         },
 
         complexPermeabilityGotten(success = true, dataOrMessage = '') {
@@ -442,13 +528,16 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             if (complexPermeabilityResult.startsWith("Exception")) {
                 setTimeout(() => {this.complexPermeabilityGotten(false, complexPermeabilityResult);}, this.task_standard_response_delay);
+                throw new Error(complexPermeabilityResult);
             }
             else {
-                setTimeout(() => {this.complexPermeabilityGotten(true, JSON.parse(complexPermeabilityResult));}, this.task_standard_response_delay);
+                const complexPermeability = JSON.parse(complexPermeabilityResult);
+                setTimeout(() => {this.complexPermeabilityGotten(true, complexPermeability);}, this.task_standard_response_delay);
+                return complexPermeability;
             }
         },
 
-        defaultGotten(success = true, dataOrMessage = '') {
+        defaultsGotten(success = true, dataOrMessage = '') {
         },
 
         async getDefaults() {
@@ -456,7 +545,19 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             await mkf.ready;
 
             const result = mkf.get_defaults();
-            setTimeout(() => {this.defaultGotten(true, result);}, this.task_standard_response_delay);
+            setTimeout(() => {this.defaultsGotten(true, result);}, this.task_standard_response_delay);
+            return result;
+        },
+
+        constantsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getConstants() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.get_constants();
+            setTimeout(() => {this.constantsGotten(true, result);}, this.task_standard_response_delay);
             return result;
         },
 
@@ -568,7 +669,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             const requirementCheckResult = mkf.check_requirement(JSON.stringify(requirement), value);
 
-            this.coreVolumetricLossesEquationsGotten(true, requirementCheckResult);
+            this.requirementChecked(true, requirementCheckResult);
             return requirementCheckResult;
         },
 
@@ -579,7 +680,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wire = this.masStore.mas.magnetic.coil.functionalDescription[windingIndex].wire;
+            const wire = coil.functionalDescription[windingIndex].wire;
 
             const wireString = JSON.stringify(wire);
             const currentString = JSON.stringify(operatingPoints.excitationsPerWinding[windingIndex].current);
@@ -588,7 +689,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 wireMaterial = wire.material;
             }
 
-            data = {};
+            const data = {};
 
             data.turnsRatio = coil.functionalDescription[0].numberTurns / coil.functionalDescription[windingIndex].numberTurns;
             data.dcResistancePerMeter = mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints.conditions.ambientTemperature);
@@ -602,6 +703,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             data.effectiveSkinDepth = mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);        
 
             this.wireDataCalculated(true, data);
+            return data;
         },
 
         wireProcessed(success = true, dataOrMessage = '') {
@@ -615,11 +717,12 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             if (wireResult.startsWith('Exception')) {
                 setTimeout(() => {this.wireProcessed(false, wireResult);}, this.task_standard_response_delay);
+                throw new Error(wireResult);
             }
             else {
                 const wire = JSON.parse(wireResult);
-
                 setTimeout(() => {this.wireProcessed(true, wire);}, this.task_standard_response_delay);
+                return wire;
             }
         },
 
@@ -732,8 +835,13 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                     if (wire.outerWidth == null) {
                         wire.outerWidth = {};
                     }
-                    wire.outerHeight.nominal = mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], coating.grade, wire.standard);
-                    wire.outerWidth.nominal = mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], coating.grade, wire.standard);
+                    const grade = coating.grade || 1;
+                    if (coating.type != "bare" || coating.type != "enamelled") {
+                        coating.type = "enamelled"
+                        coating.grade = 1
+                    }
+                    wire.outerHeight.nominal = mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], grade, wire.standard);
+                    wire.outerWidth.nominal = mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], grade, wire.standard);
                 }
             }
             else if (newWireDataDict["type"] == "foil") {
@@ -763,6 +871,26 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             wire.material = "copper";
             wire = clean(wire);
             setTimeout(() => {this.newWireCreated(true, wire);}, this.task_standard_response_delay);
+            return wire;
+        },
+
+        wireDataByStandardNameGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getWireDataByStandardName(conductingDiamension) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = JSON.parse(mkf.get_wire_data_by_standard_name(conductingDiamension));
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.wireDataByStandardNameGotten(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const wire = JSON.parse(result);
+                setTimeout(() => {this.wireDataByStandardNameGotten(true, wire);}, this.task_standard_response_delay);
+                return wire;
+            }
         },
 
         availableWiresGotten(success = true, dataOrMessage = '') {
@@ -853,11 +981,11 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wireString = this.$mkf.get_equivalent_wire(JSON.stringify(oldWire), JSON.stringify(newType), effectiveFrequency);
+            const wireString = mkf.get_equivalent_wire(JSON.stringify(oldWire), JSON.stringify(newType), effectiveFrequency);
 
             if (wireString.startsWith("Exception")) {
                 setTimeout(() => {this.equivalentWireCalculated(false, wireString);}, this.task_standard_response_delay);
-                return wireString;
+                throw new Error(wireString);
             }
             else {
                 const wire = JSON.parse(wireString);
@@ -866,31 +994,456 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
         },
 
-        equivalentWireCalculated(success = true, dataOrMessage = '') {
+        allWiresAdvised(success = true, dataOrMessage = '') {
         },
 
-        async calculateEquivalentWire(mas) {
+        async adviseAllWires(mas) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
             const resultMasWithCoil = mkf.calculate_advised_coil(JSON.stringify(mas));
-            if (resultMasWithCoil.startsWith("Exception")) {
-                this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
-                setTimeout(() => {this.errorMessage = ""}, 10000);
-                this.loading = false;
-                console.error(resultMasWithCoil);
-                return;
-            }
-            const masWithCoil = JSON.parse(resultMasWithCoil);
 
-            if (wireString.startsWith("Exception")) {
-                setTimeout(() => {this.equivalentWireCalculated(false, wireString);}, this.task_standard_response_delay);
-                return wireString;
+            if (resultMasWithCoil.startsWith("Exception")) {
+                setTimeout(() => {this.allWiresAdvised(false, resultMasWithCoil);}, this.task_standard_response_delay);
+                throw new Error(resultMasWithCoil);
             }
             else {
-                const wire = JSON.parse(wireString);
-                setTimeout(() => {this.equivalentWireCalculated(true, wire);}, this.task_standard_response_delay);
-                return wire;
+                const masWithCoil = JSON.parse(resultMasWithCoil);
+                setTimeout(() => {this.allWiresAdvised(true, masWithCoil.magnetic.coil);}, this.task_standard_response_delay);
+                return masWithCoil.magnetic.coil;
+            }
+        },
+
+        wiresAdvised(success = true, dataOrMessage = '') {
+        },
+
+        async adviseWire(mas, windingIndex) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const resultMasWithCoil = mkf.calculate_advised_coil(JSON.stringify(mas));
+
+            if (resultMasWithCoil.startsWith("Exception")) {
+                setTimeout(() => {this.allWiresAdvised(false, resultMasWithCoil);}, this.task_standard_response_delay);
+                throw new Error(resultMasWithCoil);
+            }
+            else {
+                const masWithCoil = JSON.parse(resultMasWithCoil);
+                setTimeout(() => {this.allWiresAdvised(true, masWithCoil.magnetic.coil.functionalDescription[windingIndex]);}, this.task_standard_response_delay);
+                return masWithCoil.magnetic.coil.functionalDescription[windingIndex];
+            }
+        },
+
+        simulated(success = true, dataOrMessage = '') {
+        },
+
+        async simulate(mas, modelsData) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const inputsString = JSON.stringify(mas.inputs);
+            const magneticsString = JSON.stringify(mas.magnetic);
+            const modelsString = JSON.stringify(modelsData);
+
+            const result = mkf.simulate(inputsString, magneticsString, modelsString);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.simulated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const simulation = JSON.parse(result);
+                setTimeout(() => {this.simulated(true, simulation);}, this.task_standard_response_delay);
+                return simulation;
+            }
+        },
+
+        availableWindingOrientationsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getAvailableWindingOrientations(mas, modelsData) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const sectionsOrientations = {};
+            const handle = mkf.get_available_winding_orientations();
+            for (var i = handle.size() - 1; i >= 0; i--) {
+                const type = handle.get(i);
+                sectionsOrientations[type] = toTitleCase(type);
+            }
+
+            setTimeout(() => {this.availableWindingOrientationsGotten(true, sectionsOrientations);}, this.task_standard_response_delay);
+            return sectionsOrientations;
+        },
+
+        availableCoilAlignmentsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getAvailableCoilAlignments(mas, modelsData) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const coilAlignments = {};
+            const handle = mkf.get_available_coil_alignments();
+            for (var i = handle.size() - 1; i >= 0; i--) {
+                const type = handle.get(i);
+                coilAlignments[type] = toTitleCase(type);
+            }
+
+            setTimeout(() => {this.availableCoilAlignmentsGotten(true, coilAlignments);}, this.task_standard_response_delay);
+            return coilAlignments;
+        },
+
+        fitChecked(success = true, dataOrMessage = '') {
+        },
+
+        async checkIfFits(bobbin, bottomOrRightMargin, isMarginHorizontal) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const fits = mkf.check_if_fits(JSON.stringify(bobbin), bottomOrRightMargin, isMarginHorizontal);
+
+            setTimeout(() => {this.fitChecked(true, fits);}, this.task_standard_response_delay);
+            return fits;
+        },
+
+        wound(success = true, dataOrMessage = '') {
+        },
+
+        async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.wound(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const coil = JSON.parse(result);
+                setTimeout(() => {this.wound(true, coil);}, this.task_standard_response_delay);
+                return coil;
+            }
+        },
+
+        planarWound(success = true, dataOrMessage = '') {
+        },
+
+        async windPlanar(inputCoil, stackUp, borderToWireDistance, clearancePerWinding, insulationThicknessPerLayer, coreToLayerDistance) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            var insulationThicknessPerLayerString = "[";
+            for (const [key, value] of Object.entries(insulationThicknessPerLayer)) {
+                insulationThicknessPerLayerString += `[[${key.split('-')[0] - 1}, ${key.split('-')[1] - 1}], ${value}], `
+            }
+            if (insulationThicknessPerLayerString.length > 1) {
+                insulationThicknessPerLayerString = insulationThicknessPerLayerString.slice(0, -2);
+            }
+            insulationThicknessPerLayerString += "]";
+
+            var clearancePerWindingString = "[";
+            for (const [key, value] of Object.entries(clearancePerWinding)) {
+                clearancePerWindingString += `[${key}, ${value}], `
+            }
+            if (clearancePerWindingString.length > 1) {
+                clearancePerWindingString = clearancePerWindingString.slice(0, -2);
+            }
+            clearancePerWindingString += "]";
+
+            const result = mkf.wind_planar(JSON.stringify(inputCoil), JSON.stringify(stackUp), borderToWireDistance, clearancePerWindingString, insulationThicknessPerLayerString, coreToLayerDistance);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.planarWound(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const coil = JSON.parse(result);
+                setTimeout(() => {this.planarWound(true, coil);}, this.task_standard_response_delay);
+                return coil;
+            }
+        },
+
+        planarThicknessesGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getPlanarThicknesses() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const planarThicknesses = mkf.get_planar_thicknesses();
+
+            setTimeout(() => {this.planarThicknessesGotten(true, planarThicknesses);}, this.task_standard_response_delay);
+            return planarThicknesses;
+        },
+
+        fillingFactorsCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateFillingFactors(coil) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.calculate_filling_factor(JSON.stringify(coil));
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.fillingFactorsCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const fillingFactors = JSON.parse(result);
+                setTimeout(() => {this.fillingFactorsCalculated(true, fillingFactors);}, this.task_standard_response_delay);
+                return fillingFactors;
+            }
+        },
+
+        sectionsAndLayersFittingChecked(success = true, dataOrMessage = '') {
+        },
+
+        async checkIfSectionsAndLayersFit(coil) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const fits = mkf.are_sections_and_layers_fitting(JSON.stringify(coil));
+
+            setTimeout(() => {this.sectionsAndLayersFittingChecked(true, fits);}, this.task_standard_response_delay);
+            return fits;
+        },
+
+        windingIndexChanged(success = true, dataOrMessage = '') {
+        },
+
+        settingsSet(success = true, dataOrMessage = '') {
+        },
+
+        async setSettings(settings) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            mkf.set_settings(JSON.stringify(settings));
+
+            setTimeout(() => {this.settingsSet(true, true);}, this.task_standard_response_delay);
+            return true;
+        },
+
+        settingsGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getSettings() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.get_settings();
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.settingsGotten(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const settings = JSON.parse(result);
+                setTimeout(() => {this.settingsGotten(true, settings);}, this.task_standard_response_delay);
+                return settings;
+            }
+        },
+
+        gapReluctanceCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateGapReluctance(gap, gapReluctanceModel) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            var result = mkf.calculate_gap_reluctance(JSON.stringify(gap), gapReluctanceModel);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.gapReluctanceCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const reluctanceData = JSON.parse(result);
+                setTimeout(() => {this.gapReluctanceCalculated(true, reluctanceData);}, this.task_standard_response_delay);
+                return reluctanceData;
+            }
+        },
+
+        coreLossesOverFrequencySwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepCoreLossesOverFrequency(magnetic, operatingPoint, minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_core_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.coreLossesOverFrequencySwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.coreLossesOverFrequencySwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        windingLossesOverFrequencySwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepWindingLossesOverFrequency(magnetic, operatingPoint, minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_winding_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.windingLossesOverFrequencySwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.windingLossesOverFrequencySwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        impedanceOverFrequencySwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepImpedanceOverFrequency(magnetic, minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_impedance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.impedanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.impedanceOverFrequencySwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        magnetizingInductanceOverFrequencySwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepMagnetizingInductanceOverFrequency(magnetic, minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_magnetizing_inductance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.magnetizingInductanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.magnetizingInductanceOverFrequencySwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        qFactorOverFrequencySwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepQFactorOverFrequency(magnetic, minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_q_factor_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.qFactorOverFrequencySwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.qFactorOverFrequencySwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        resistanceOverFrequencySwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepResistanceOverFrequency(magnetic, minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_resistance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.resistanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.resistanceOverFrequencySwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        windingResistanceOverFrequencySwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepWindingResistanceOverFrequency(magnetic, minimumFrequency, maximumFrequency, numberPoints, windingIndex, temperature, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_winding_resistance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, windingIndex, temperature, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.windingResistanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.windingResistanceOverFrequencySwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        magnetizingInductanceOverDcBiasSwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepMagnetizingInductanceOverDcBias(magnetic, minimumDcBias, maximumDcBias, numberPoints, temperature, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_magnetizing_inductance_over_dc_bias(JSON.stringify(magnetic), minimumDcBias, maximumDcBias, numberPoints, temperature, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.magnetizingInductanceOverDcBiasSwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.magnetizingInductanceOverDcBiasSwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
+            }
+        },
+
+        magnetizingInductanceOverTemperatureSwept(success = true, dataOrMessage = '') {
+        },
+
+        async sweepMagnetizingInductanceOverTemperature(magnetic, minimumTemperature, maximumTemperature, numberPoints, frequency, xAxisMode, title) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = mkf.sweep_magnetizing_inductance_over_temperature(JSON.stringify(magnetic), minimumTemperature, maximumTemperature, numberPoints, frequency, xAxisMode, title);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.magnetizingInductanceOverTemperatureSwept(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const sweepData = JSON.parse(result);
+                setTimeout(() => {this.magnetizingInductanceOverTemperatureSwept(true, sweepData);}, this.task_standard_response_delay);
+                return sweepData;
             }
         },
     }

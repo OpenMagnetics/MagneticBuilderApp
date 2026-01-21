@@ -1,9 +1,9 @@
 <script setup>
 import { useHistoryStore } from '../stores/history'
-import BasicCoreBuilder from './MagneticBuilder/BasicCoreBuilder.vue'
-import BasicWireBuilder from './MagneticBuilder/BasicWireBuilder.vue'
-import BasicCoilBuilder from './MagneticBuilder/BasicCoilBuilder.vue'
-import AdvancedCoreSelector from './MagneticBuilder/AdvancedCoreSelector.vue'
+import CoreBuilder from './MagneticBuilder/Core/CoreBuilder.vue'
+import BasicWireBuilder from './MagneticBuilder/Wire/BasicWireBuilder.vue'
+import BasicCoilBuilder from './MagneticBuilder/Coil/BasicCoilBuilder.vue'
+import AdvancedCoreSelector from './MagneticBuilder/Core/AdvancedCoreSelector.vue'
 import GraphInfo from './MagneticBuilder/GraphInfo.vue'
 import { isMobile } from '/WebSharedComponents/assets/js/utils.js'
 import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
@@ -65,6 +65,7 @@ export default {
         const historyStore = useHistoryStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const magneticBuilt = false;
+        this.$settingsStore.magneticBuilderSettings.autoRedraw = true;
 
         return {
             magneticBuilderSettingsStore,
@@ -198,7 +199,7 @@ export default {
             class="row"
         >
             <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
-                <BasicCoreBuilder 
+                <CoreBuilder 
                     :masStore="masStore"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && enableVisualizers"

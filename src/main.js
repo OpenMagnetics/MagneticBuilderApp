@@ -12,8 +12,11 @@ import axios from "axios";
 import { useUserStore } from '/src/stores/user'
 import { useSettingsStore } from '/src/stores/settings'
 import { useStateStore } from '/src/stores/state'
+import { VueWindowSizePlugin } from 'vue-window-size/plugin';
 import Module from '/src/assets/js/libMKF.wasm.js';
 import { useStyleStore } from '/src/stores/style'
+import { setMkf } from '/WebSharedComponents/assets/js/mkfRuntime'
+import VueLatex from 'vatex'
 
 
 
@@ -32,6 +35,8 @@ app.config.globalProperties.$settingsStore = useSettingsStore()
 app.config.globalProperties.$stateStore = useStateStore()
 app.config.globalProperties.$styleStore = useStyleStore()
 app.mount("#app");
+app.use(VueWindowSizePlugin);
+app.use(VueLatex);
 
 router.beforeEach((to, from, next) => {
 
@@ -80,6 +85,7 @@ router.beforeEach((to, from, next) => {
                                     app.config.globalProperties.$mkf = Object.assign(this, {
                                         ready: Promise.resolve()
                                     });
+                                    setMkf(app.config.globalProperties.$mkf);
 
                                     app.config.globalProperties.$mkf.ready.then(_ => {
                                         console.warn("Loading core materials in simulator")
@@ -110,7 +116,6 @@ router.beforeEach((to, from, next) => {
                                     }).error((error) => {
                                         console.error(error)
                                     })
-
                                     resolve(); 
                                 }
                             });

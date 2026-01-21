@@ -3,6 +3,8 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
+import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { defaultOperatingConditions } from '/WebSharedComponents/assets/js/defaults.js'
 </script>
 
 <script>
@@ -19,6 +21,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
 
         const magnetizingInductanceOverFrequencyData = [{
             label: 'MagnetizingInductance',
@@ -40,59 +43,66 @@ export default {
         }
         const forceUpdate = 0;
         const recentChange = false;
-        const tryingToSend = false;
+        const tryingToSweep = false;
         const loading = false;
+        const subscriptions = [];
 
         return {
+            taskQueueStore,
             magnetizingInductanceOverFrequencyData,
             frequencyData,
             forceUpdate,
             loading,
             recentChange,
-            tryingToSend,
+            tryingToSweep,
+            subscriptions,
         }
     },
     computed: {
     },
     watch: {
-        'masStore.mas.magnetic.core': {
-            handler(newValue, oldValue) {
-                this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
-            },
-          deep: true
-        },
-        'masStore.mas.magnetic.coil.functionalDescription': {
-            handler(newValue, oldValue) {
-                this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
-            },
-          deep: true
-        },
         '$stateStore.graphParameters': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
+                setTimeout(() => {this.tryToSweep(); }, 10);
             },
           deep: true
         },
     },
     mounted () {
-        this.loading = true;
-        setTimeout(() => {this.sweepMagnetizingInductanceOverFrequency(); }, 10);
-    },
-    methods: {
-        tryToSend() {
-            if (!this.tryingToSend) {
-                this.recentChange = false;
-                this.tryingToSend = true;
-                setTimeout(() => {
-                    if (this.recentChange) {
-                        this.tryingToSend = false;
-                        this.tryToSend();
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed") {
+                    if (args[0]) {
+                        this.loading = true;
+                        this.recentChange = true;
+                        setTimeout(() => {this.tryToSweep(); }, 10);
                     }
                     else {
-                        this.tryingToSend = false;
+                        console.error(args[1])
+                    }
+                }
+            });
+        }))
+        this.loading = true;
+        this.recentChange = true;
+        setTimeout(() => {this.tryToSweep(); }, 10);
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
+    },
+    methods: {
+        tryToSweep() {
+            if (!this.tryingToSweep) {
+                this.recentChange = false;
+                this.tryingToSweep = true;
+                setTimeout(() => {
+                    if (this.recentChange) {
+                        this.tryingToSweep = false;
+                        this.tryToSweep();
+                    }
+                    else {
+                        this.tryingToSweep = false;
                         this.sweepMagnetizingInductanceOverFrequency();
                     }
                 }
@@ -100,18 +110,13 @@ export default {
             }
         },
         sweepMagnetizingInductanceOverFrequency() {
+            var ambientTemperature = defaultOperatingConditions.ambientTemperature;
+            this.masStore.mas.inputs.operatingPoints.forEach((operatingPoint) => {
+                ambientTemperature = Math.abs(ambientTemperature, operatingPoint.conditions.ambientTemperature);
+            })
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.magnetizingInductanceOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
-            this.$mkf.ready.then(_ => {
-                const curve2DJson = this.$mkf.sweep_magnetizing_inductance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Magnetizing inductance over frequency")
-                if (curve2DJson.startsWith("Exception")) {
-                    this.loading = false;
-                    console.error(curve2DJson);
-                    return;
-                }
-                else {
-                    const curve2D = JSON.parse(curve2DJson);
-                    console.log(curve2D)
+            this.taskQueueStore.sweepMagnetizingInductanceOverFrequency(this.masStore.mas.magnetic, this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, ambientTemperature, this.$stateStore.graphParameters.xAxisMode, "Magnetizing inductance over frequency").then((curve2D) => {
                     this.magnetizingInductanceOverFrequencyData[0].data = {
                         x: curve2D.xPoints,
                         y: curve2D.yPoints,
@@ -122,9 +127,8 @@ export default {
                     this.magnetizingInductanceOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
                     this.forceUpdate += 1;
                     this.loading = false;
-                }
-
-            }).catch(error => {
+            })
+            .catch(error => {
                 console.error(error);
                 this.loading = false;
                 this.magnetizingInductanceOverFrequencyData[0].data = {

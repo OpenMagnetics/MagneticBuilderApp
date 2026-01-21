@@ -207,49 +207,63 @@ export const useStyleStore = defineStore("style", () => {
 
     const magneticBuilder = ref({
         main: {
-            "background": theme["dark"],
+            "background-color": theme["dark"],
             "color": theme["white"],
             "border-color":  theme["primary"] + ' !important',
         },
+        exporter: {
+            "background-color": theme["dark"],
+            "color": theme["white"],
+            "border-color":  theme["primary"] + ' !important',
+        },
+        exporter: {
+            "background": theme["dark"],
+            "color": theme["white"],
+        },
         customizeButton: {
-            "background": theme["success"],
+            "background-color": theme["success"],
             "color": theme["dark"],
         },
         loadFromLibraryButton: {
-            "background": theme["secondary"],
+            "background-color": theme["secondary"],
             "color": theme["white"],
         },
+        tableButton: {
+            "background-color": theme["light"],
+            "color": theme["white"],
+            "border-color": theme["white"],
+        },
         adviseButton: {
-            "background": theme["primary"],
+            "background-color": theme["primary"],
             "color": theme["dark"],
         },
         showAlignmentOptionsButton: {
-            "background": theme["primary"],
+            "background-color": theme["primary"],
             "color": theme["dark"],
         },
         showInsulationOptionsButton: {
-            "background": theme["primary"],
+            "background-color": theme["primary"],
             "color": theme["dark"],
         },
         hideAlignmentOptionsButton: {
-            "background": theme["secondary"],
+            "background-color": theme["secondary"],
             "color": theme["white"],
         },
         hideInsulationOptionsButton: {
-            "background": theme["secondary"],
+            "background-color": theme["secondary"],
             "color": theme["white"],
         },
         coilVisualizerButton: {
-            "background": theme["primary"],
+            "background-color": theme["primary"],
             "color": theme["dark"],
         },
         wireVisualizerButton: {
-            "background": "transparent",
+            "background-color": "transparent",
             "color": theme["white"],
             "display": ['-webkit-slider-thumb']
         },
         graphBgColor:{
-            "background": theme["light"],
+            "background-color": theme["light"],
         },
         graphLineColor:{
             "color": theme["white"],
@@ -260,6 +274,11 @@ export const useStyleStore = defineStore("style", () => {
 
         propertyBgColor:{
             "color": theme["dark"],
+        },
+        requirementButton: {
+            "background-color": theme["light"],
+            "color": theme["white"],
+            "border-color": theme["white"],
         },
 
 
@@ -272,14 +291,14 @@ export const useStyleStore = defineStore("style", () => {
             "font-size": '1.25rem',
         },
         inputLabelBgColor:{
-            "background": theme["dark"] + ' !important',
+            "background-color": theme["dark"] + ' !important',
             "background-image": "none !important",
         },
         inputLabelDangerBgColor:{
             "color": theme["danger"],
         },
         inputValueBgColor:{
-            "background": theme["light"],
+            "background-color": theme["light"],
         },
         inputTextColor:{
             "color": theme["white"],
@@ -291,15 +310,15 @@ export const useStyleStore = defineStore("style", () => {
             "color": theme["danger"],
         },
         addButton: {
-            "background": theme["primary"],
+            "background-color": theme["primary"],
             "color": theme["dark"],
         },
         utilityButton: {
-            "background": theme["secondary"],
+            "background-color": theme["secondary"],
             "color": theme["white"],
         },
         removeButton: {
-            "background": theme["danger"],
+            "background-color": theme["danger"],
             "color": theme["dark"],
         },
         addElementButtonColor: {

@@ -3,6 +3,8 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
+import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { defaultOperatingConditions } from '/WebSharedComponents/assets/js/defaults.js'
 </script>
 
 <script>
@@ -23,6 +25,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
 
         const lossesOverFrequencyData = [{
             label: 'Core Losses',
@@ -54,59 +57,66 @@ export default {
         }
         const forceUpdate = 0;
         const recentChange = false;
-        const tryingToSend = false;
+        const tryingToSweep = false;
         const loading = false;
+        const subscriptions = [];
 
         return {
+            taskQueueStore,
             lossesOverFrequencyData,
             frequencyData,
             forceUpdate,
             loading,
             recentChange,
-            tryingToSend,
+            tryingToSweep,
+            subscriptions,
         }
     },
     computed: {
     },
     watch: {
-        'masStore.mas.magnetic.core': {
-            handler(newValue, oldValue) {
-                this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
-            },
-          deep: true
-        },
-        'masStore.mas.magnetic.coil.functionalDescription': {
-            handler(newValue, oldValue) {
-                this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
-            },
-          deep: true
-        },
         '$stateStore.graphParameters': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
+                setTimeout(() => {this.tryToSweep(); }, 10);
             },
           deep: true
         },
     },
     mounted () {
-        this.loading = true;
-        setTimeout(() => {this.sweepLossesOverFrequency(); }, 10);
-    },
-    methods: {
-        tryToSend() {
-            if (!this.tryingToSend) {
-                this.recentChange = false;
-                this.tryingToSend = true;
-                setTimeout(() => {
-                    if (this.recentChange) {
-                        this.tryingToSend = false;
-                        this.tryToSend();
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed") {
+                    if (args[0]) {
+                        this.loading = true;
+                        this.recentChange = true;
+                        setTimeout(() => {this.tryToSweep(); }, 10);
                     }
                     else {
-                        this.tryingToSend = false;
+                        console.error(args[1])
+                    }
+                }
+            });
+        }))
+        this.loading = true;
+        this.recentChange = true;
+        setTimeout(() => {this.tryToSweep(); }, 10);
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
+    },
+    methods: {
+        tryToSweep() {
+            if (!this.tryingToSweep) {
+                this.recentChange = false;
+                this.tryingToSweep = true;
+                setTimeout(() => {
+                    if (this.recentChange) {
+                        this.tryingToSweep = false;
+                        this.tryToSweep();
+                    }
+                    else {
+                        this.tryingToSweep = false;
                         this.sweepLossesOverFrequency();
                     }
                 }
@@ -114,54 +124,27 @@ export default {
             }
         },
         sweepLossesOverFrequency() {
+            var ambientTemperature = defaultOperatingConditions.ambientTemperature;
+            this.masStore.mas.inputs.operatingPoints.forEach((operatingPoint) => {
+                ambientTemperature = Math.abs(ambientTemperature, operatingPoint.conditions.ambientTemperature);
+            })
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.lossesOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
             this.lossesOverFrequencyData[1].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
-            this.$mkf.ready.then(_ => {
-                {
-                    const curve2DJson = this.$mkf.sweep_core_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Core Losses over frequency")
-                    if (curve2DJson.startsWith("Exception")) {
-                        this.loading = false;
-                        console.error(curve2DJson);
-                        return;
-                    }
-                    else {
-                        const curve2D = JSON.parse(curve2DJson);
-                        this.lossesOverFrequencyData[0].data = {
-                            x: curve2D.xPoints,
-                            y: curve2D.yPoints,
-                        };
-                        this.lossesOverFrequencyData[0].xMaximum = Math.max(...curve2D.xPoints);
-                        this.lossesOverFrequencyData[0].xMinimum = Math.min(...curve2D.xPoints);
-                        this.lossesOverFrequencyData[0].yMaximum = Math.max(...curve2D.yPoints);
-                        this.lossesOverFrequencyData[0].yMinimum = Math.min(...curve2D.yPoints);
-                        this.forceUpdate += 1;
-                        this.loading = false;
-                    }
-                }
-                {
-                    const curve2DJson = this.$mkf.sweep_winding_losses_over_frequency(JSON.stringify(this.masStore.mas.magnetic), JSON.stringify(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex]), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Winding Losses over frequency")
-                    if (curve2DJson.startsWith("Exception")) {
-                        this.loading = false;
-                        console.error(curve2DJson);
-                        return;
-                    }
-                    else {
-                        const curve2D = JSON.parse(curve2DJson);
-                        this.lossesOverFrequencyData[1].data = {
-                            x: curve2D.xPoints,
-                            y: curve2D.yPoints,
-                        };
-                        this.lossesOverFrequencyData[1].xMaximum = Math.max(...curve2D.xPoints);
-                        this.lossesOverFrequencyData[1].xMinimum = Math.min(...curve2D.xPoints);
-                        this.lossesOverFrequencyData[1].yMaximum = Math.max(...curve2D.yPoints);
-                        this.lossesOverFrequencyData[1].yMinimum = Math.min(...curve2D.yPoints);
-                        this.forceUpdate += 1;
-                        this.loading = false;
-                    }
-                }
 
-            }).catch(error => {
+            this.taskQueueStore.sweepCoreLossesOverFrequency(this.masStore.mas.magnetic, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex], this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, ambientTemperature, this.$stateStore.graphParameters.xAxisMode, "Core Losses over frequency").then((curve2D) => {
+                    this.lossesOverFrequencyData[0].data = {
+                        x: curve2D.xPoints,
+                        y: curve2D.yPoints,
+                    };
+                    this.lossesOverFrequencyData[0].xMaximum =Math.max(...curve2D.xPoints);
+                    this.lossesOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
+                    this.lossesOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
+                    this.lossesOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
+                    this.forceUpdate += 1;
+                    this.loading = false;
+            })
+            .catch(error => {
                 console.error(error);
                 this.loading = false;
                 this.lossesOverFrequencyData[0].data = {
@@ -170,6 +153,29 @@ export default {
                 };
                 this.forceUpdate += 1;
             });
+
+            this.taskQueueStore.sweepWindingLossesOverFrequency(this.masStore.mas.magnetic, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex], this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, 25, this.$stateStore.graphParameters.xAxisMode, "Winding Losses over frequency").then((curve2D) => {
+                    this.lossesOverFrequencyData[1].data = {
+                        x: curve2D.xPoints,
+                        y: curve2D.yPoints,
+                    };
+                    this.lossesOverFrequencyData[1].xMaximum =Math.max(...curve2D.xPoints);
+                    this.lossesOverFrequencyData[1].xMinimum =Math.min(...curve2D.xPoints);
+                    this.lossesOverFrequencyData[1].yMaximum =Math.max(...curve2D.yPoints);
+                    this.lossesOverFrequencyData[1].yMinimum =Math.min(...curve2D.yPoints);
+                    this.forceUpdate += 1;
+                    this.loading = false;
+            })
+            .catch(error => {
+                console.error(error);
+                this.loading = false;
+                this.lossesOverFrequencyData[1].data = {
+                    x: [],
+                    y: [],
+                };
+                this.forceUpdate += 1;
+            });
+
         },
     }
 }

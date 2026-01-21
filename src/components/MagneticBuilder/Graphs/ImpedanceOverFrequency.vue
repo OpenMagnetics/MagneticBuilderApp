@@ -4,6 +4,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
+import { useTaskQueueStore } from '../../../stores/taskQueue'
 </script>
 
 <script>
@@ -20,6 +21,7 @@ export default {
         },
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
 
         const impedanceOverFrequencyData = [{
             label: 'Impedance',
@@ -41,17 +43,20 @@ export default {
         const forceUpdate = 0;
         const loading = false;
         const recentChange = false;
-        const tryingToSend = false;
+        const tryingToSweep = false;
         const errorMessage = "";
+        const subscriptions = [];
 
         return {
+            taskQueueStore,
             impedanceOverFrequencyData,
             frequencyData,
             forceUpdate,
             loading,
             recentChange,
-            tryingToSend,
+            tryingToSweep,
             errorMessage,
+            subscriptions,
         }
     },
     computed: {
@@ -74,47 +79,49 @@ export default {
         }
     },
     watch: {
-        'masStore.mas.magnetic.core': {
-            handler(newValue, oldValue) {
-                this.loading = true;
-                this.recentChange = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
-            },
-          deep: true
-        },
-        'masStore.mas.magnetic.coil.functionalDescription': {
-            handler(newValue, oldValue) {
-                this.loading = true;
-                this.recentChange = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
-            },
-          deep: true
-        },
         '$stateStore.graphParameters': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
+                setTimeout(() => {this.tryToSweep(); }, 10);
             },
           deep: true
         },
     },
     mounted () {
-        this.loading = true;
-        this.recentChange = true;
-        setTimeout(() => {this.tryToSend(); }, 10);
-    },
-    methods: {
-        tryToSend() {
-            if (!this.tryingToSend) {
-                this.recentChange = false;
-                this.tryingToSend = true;
-                setTimeout(() => {
-                    if (this.recentChange) {
-                        this.tryingToSend = false;
-                        this.tryToSend();
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed") {
+                    if (args[0]) {
+                        this.loading = true;
+                        this.recentChange = true;
+                        setTimeout(() => {this.tryToSweep(); }, 10);
                     }
                     else {
-                        this.tryingToSend = false;
+                        console.error(args[1])
+                    }
+                }
+            });
+        }))
+
+        this.loading = true;
+        this.recentChange = true;
+        setTimeout(() => {this.tryToSweep(); }, 10);
+    },
+    beforeUnmount () {
+        this.subscriptions.forEach((subscription) => {subscription();})
+    },
+    methods: {
+        tryToSweep() {
+            if (!this.tryingToSweep) {
+                this.recentChange = false;
+                this.tryingToSweep = true;
+                setTimeout(() => {
+                    if (this.recentChange) {
+                        this.tryingToSweep = false;
+                        this.tryToSweep();
+                    }
+                    else {
+                        this.tryingToSweep = false;
                         this.sweepImpedanceOverFrequency();
                     }
                 }
@@ -124,32 +131,28 @@ export default {
         sweepImpedanceOverFrequency() {
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.impedanceOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
-            this.$mkf.ready.then(_ => {
-                const curve2DJson = this.$mkf.sweep_impedance_over_frequency(JSON.stringify(this.masStore.mas.magnetic), this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, this.$stateStore.graphParameters.xAxisMode, "Impedance over frequency");
-                if (curve2DJson.startsWith("Exception")) {
-                    console.error(curve2DJson);
-                    this.loading = false;
-                    return;
-                }
-                else {
-                    const curve2D = JSON.parse(curve2DJson);
-                    this.impedanceOverFrequencyData[0].data = {
-                        x: curve2D.xPoints,
-                        y: curve2D.yPoints,
-                    };
-                    this.impedanceOverFrequencyData[0].xMaximum =Math.max(...curve2D.xPoints);
-                    this.impedanceOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
-                    this.impedanceOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
-                    this.impedanceOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
-                    this.forceUpdate += 1;
-                    this.errorMessage = "";
-                    this.loading = false;
-                }
-
-            }).catch(error => {
-                console.error(error);
-                this.errorMessage = "Material is missing complex permeability, please choose another";
+            this.taskQueueStore.sweepImpedanceOverFrequency(this.masStore.mas.magnetic, this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, this.$stateStore.graphParameters.xAxisMode, "Impedance over frequency").then((curve2D) => {
+                this.impedanceOverFrequencyData[0].data = {
+                    x: curve2D.xPoints,
+                    y: curve2D.yPoints,
+                };
+                this.impedanceOverFrequencyData[0].xMaximum =Math.max(...curve2D.xPoints);
+                this.impedanceOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
+                this.impedanceOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
+                this.impedanceOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
+                this.forceUpdate += 1;
+                this.errorMessage = "";
                 this.loading = false;
+            })
+            .catch(error => {
+                console.error(error);
+                this.loading = false;
+                this.errorMessage = "Error calculating impedance";
+                this.impedanceOverFrequencyData[0].data = {
+                    x: [],
+                    y: [],
+                };
+                this.forceUpdate += 1;
             });
         },
     }
