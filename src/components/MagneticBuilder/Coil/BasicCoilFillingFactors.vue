@@ -63,8 +63,7 @@ export default {
                 return "width"
             }
         }
-    },
-    methods: {}
+    }
 }
 </script>
 

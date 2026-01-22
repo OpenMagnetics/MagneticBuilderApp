@@ -1,6 +1,5 @@
 <script setup>
-import { combinedStyle } from '/WebSharedComponents/assets/js/utils.js'
-import { toTitleCase, checkAndFixMas, deepCopy, range } from '/WebSharedComponents/assets/js/utils.js'
+import { combinedStyle, toTitleCase, checkAndFixMas, deepCopy, range } from '/WebSharedComponents/assets/js/utils.js'
 </script>
 
 <script>

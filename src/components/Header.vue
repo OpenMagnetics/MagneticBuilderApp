@@ -17,21 +17,21 @@ export default {
         }
     },
     methods: {
-    },
-    computed: {
-        newPowerMagneticToolDesign() {
+        async newPowerMagneticToolDesign() {
             this.$stateStore.resetMagneticTool();
             this.masStore.resetMas("design");
+            await this.$nextTick();
             if (this.$route.name != 'MagneticBuilder')
-                setTimeout(() => {this.$router.push('/magnetic_tool');}, 100);
+                await this.$router.push('/magnetic_tool');
             else
-                setTimeout(() => {this.$router.go();}, 100);
+                await this.$router.go();
         },
-        continueMagneticToolDesign() {
+        async continueMagneticToolDesign() {
+            await this.$nextTick();
             if (this.$route.name != 'MagneticBuilder')
-                setTimeout(() => {this.$router.push('/magnetic_tool');}, 100);
+                await this.$router.push('/magnetic_tool');
             else
-                setTimeout(() => {this.$router.go();}, 100);
+                await this.$router.go();
         },
     },
     mounted() {
@@ -55,7 +55,7 @@ export default {
             <div class="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a data-cy="Header-alfs-musings-link" class="nav-link text-primary me-3" href="https://www.linkedin.com/newsletters/7026708624966135808/"  target="_blank">Alf's Musings</a>
+                        <a data-cy="Header-alfs-musings-link" class="nav-link text-primary me-3" href="https://www.linkedin.com/newsletters/7026708624966135808/" target="_blank" rel="noopener noreferrer">Alf's Musings</a>
                     </li>
                     <li class="nav-item">
                         <span class="nav-item">

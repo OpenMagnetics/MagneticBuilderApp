@@ -40,9 +40,10 @@ export default {
         }
     },
     methods: {
-        reset() {
+        async reset() {
             this.masStore.resetMas('power')
-            setTimeout(() => {this.$router.push('/engine_loader');}, 100);
+            await this.$nextTick();
+            await this.$router.push('/engine_loader');
         },
         undo() {
             const newMas = this.historyStore.back();

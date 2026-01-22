@@ -50,8 +50,7 @@ export default {
                 this.forceUpdate += 1;
             }
         }
-    },
-    methods: {}
+    }
 }
 </script>
 
