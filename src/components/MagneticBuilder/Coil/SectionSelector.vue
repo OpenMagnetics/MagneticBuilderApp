@@ -73,13 +73,7 @@ export default {
             })
 
             return shortenedNames
-        },
-    },
-    watch: {
-    },
-    mounted () {
-    },
-    methods: {
+        }
     }
 }
 </script>

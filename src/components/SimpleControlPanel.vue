@@ -39,12 +39,6 @@ export default {
             loading,
         }
     },
-    computed: {
-    },
-    watch: { 
-    },
-    mounted () {
-    },
     methods: {
         reset() {
             this.masStore.resetMas('power')

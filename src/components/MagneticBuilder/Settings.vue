@@ -41,13 +41,7 @@ export default {
         onSettingsUpdated(event) {
             this.$refs.closeSettingsModalRef.click();
             this.$emit('onSettingsUpdated');
-        },
-    },
-    computed: {
-    },
-    mounted() {
-    },
-    created() {
+        }
     }
 }
 </script>

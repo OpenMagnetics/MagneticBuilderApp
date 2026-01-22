@@ -38,14 +38,6 @@ export default {
         return {
             errorMessage,
         }
-    },
-    computed: {
-    },
-    watch: {
-    },
-    mounted () {
-    },
-    methods: {
     }
 }
 </script>

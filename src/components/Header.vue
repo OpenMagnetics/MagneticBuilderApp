@@ -34,8 +34,6 @@ export default {
                 setTimeout(() => {this.$router.go();}, 100);
         },
     },
-    created() {
-    },
     mounted() {
         let fontawesome = document.createElement('script')
         fontawesome.setAttribute('src', 'https://kit.fontawesome.com/d5a40d6941.js')

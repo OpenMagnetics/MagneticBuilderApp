@@ -233,7 +233,8 @@ export default {
 <template>
     <PropertyTool
         v-if="localData.length > 0 && localData[0] != null"
-        v-for="temperature, temperatureIndex in temperatures"
+        v-for="(temperature, temperatureIndex) in temperatures"
+        :key="'temp-' + temperatureIndex"
         :dataTestLabel="dataTestLabel + '-PropertyTool'"
         :title="`Volumetric Losses at ${temperature} °C`"
         :properties="localData[temperatureIndex]"

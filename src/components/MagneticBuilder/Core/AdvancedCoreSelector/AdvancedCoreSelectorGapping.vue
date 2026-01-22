@@ -443,7 +443,8 @@ export default {
         </div>
         <div class="row">
             <div
-                v-for="gapsPerColumn, columnIndex in reorderedColumns"
+                v-for="(gapsPerColumn, columnIndex) in reorderedColumns"
+                :key="'column-' + columnIndex"
                 class="column-container col-sm-4 col-md-3 row mb-1 text-center mx-0"
                 :style="{'background-image': `url(${columnImages[columnIndex]}`}"
             >
@@ -495,7 +496,8 @@ export default {
                         </button>
                     </div>
                     <div
-                        v-for="gap, gapIndex in gapsPerColumn.gaps"
+                        v-for="(gap, gapIndex) in gapsPerColumn.gaps"
+                        :key="'gap-' + gapIndex"
                         class="col-12 mb-1 px-2 text-start"
                     >
                         <AdvancedCoreSelectorGap 

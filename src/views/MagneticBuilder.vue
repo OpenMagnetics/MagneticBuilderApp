@@ -36,15 +36,7 @@ export default {
             masStore,
             updateStoryline: 0,
         }
-    },
-    methods: {
-    },
-    computed: {
-    },
-    mounted() {
-    },
-    created() {
-    },
+    }
 }
 </script>
 

@@ -49,13 +49,7 @@ export default {
         selectCoreShape(data) {
             this.$refs.closeSettingsModalRef.click();
             this.$emit('coreShapeSelected', data)
-        },
-    },
-    computed: {
-    },
-    mounted() {
-    },
-    created() {
+        }
     }
 }
 </script>

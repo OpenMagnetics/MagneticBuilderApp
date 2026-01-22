@@ -49,9 +49,7 @@ export default {
             handler(newValue, oldValue) {
                 this.forceUpdate += 1;
             }
-        },
-    },
-    mounted () {
+        }
     },
     methods: {}
 }

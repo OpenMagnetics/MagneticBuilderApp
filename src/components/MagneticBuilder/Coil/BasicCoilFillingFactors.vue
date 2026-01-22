@@ -64,10 +64,6 @@ export default {
             }
         }
     },
-    watch: {
-    },
-    mounted () {
-    },
     methods: {}
 }
 </script>

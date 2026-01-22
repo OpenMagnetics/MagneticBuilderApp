@@ -48,14 +48,6 @@ export default {
             availableGraphs,
             availableModes,
         }
-    },
-    computed: {
-    },
-    watch: {
-    },
-    mounted () {
-    },
-    methods: {
     }
 }
 </script>
