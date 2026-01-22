@@ -209,6 +209,12 @@ export default {
 
         this.getProportionsAndPattern(this.masStore.mas.magnetic.coil);
 
+        this.subscriptions.push(this.masStore.$onAction((action) => {
+            if (action.name == "importedMas") {
+                this.tryToWind();
+                this.assignLocalData(this.masStore.mas.magnetic.core);
+            }
+        }));
 
         this.subscriptions.push(this.historyStore.$onAction(({name, args, after}) => {
             after(() => {
