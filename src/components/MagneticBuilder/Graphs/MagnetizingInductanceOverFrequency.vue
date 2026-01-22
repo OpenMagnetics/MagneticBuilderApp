@@ -110,9 +110,9 @@ export default {
             }
         },
         sweepMagnetizingInductanceOverFrequency() {
-            var ambientTemperature = defaultOperatingConditions.ambientTemperature;
+            let ambientTemperature = defaultOperatingConditions.ambientTemperature;
             this.masStore.mas.inputs.operatingPoints.forEach((operatingPoint) => {
-                ambientTemperature = Math.abs(ambientTemperature, operatingPoint.conditions.ambientTemperature);
+                ambientTemperature = Math.max(ambientTemperature, operatingPoint.conditions.ambientTemperature);
             })
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.magnetizingInductanceOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;

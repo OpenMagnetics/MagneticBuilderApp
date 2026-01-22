@@ -72,7 +72,6 @@ export default {
                 if (this.data != null) {
                     this.taskQueueStore.getOnlyFrequencyDependentIndexes(this.data).then((indexes) => {
                         this.indexes = indexes;
-                        console.log(indexes)
                         this.localData = [];
                         this.indexes.forEach((elem) => {
                             this.localData.push(this.data[elem]);

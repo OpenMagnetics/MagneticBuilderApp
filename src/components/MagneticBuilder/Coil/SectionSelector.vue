@@ -49,16 +49,16 @@ export default {
         shortenedNames() {
             const shortenedNames = {}
 
-            var width = 0;
+            let width = 0;
             if (this.$refs.coilSelectorContainer != null) {
                 width = this.$refs.coilSelectorContainer.clientWidth / this.numberSections;
             }
 
             this.conductiveSections.forEach((section, key) => {
-                var label = toTitleCase(section.name.toLowerCase());
-                var label = label.replace("section", "stn");
+                let label = toTitleCase(section.name.toLowerCase());
+                label = label.replace("section", "stn");
                 if (width > 0) {
-                    var slice = section.name.length
+                    let slice = section.name.length
                     if (width < 200)
                         slice = 4;
                     if (width < 150)
@@ -89,7 +89,7 @@ export default {
         <div v-if="numberSections > 1" class="row mb-2">
             <img :data-cy="dataTestLabel + '-BasicCoilBuilder-loading'" v-if="masStore.mas.magnetic.coil.sectionsDescription == null" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <div v-else class="accordion row m-0 p-0" id="coilBuilderAccordion bg-dark">
-                <div :class="'col-lg-' + Number(12 / numberSections)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="key in range(0, numberSections)">
+                <div :class="'col-lg-' + Number(12 / numberSections)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="key in range(0, numberSections)" :key="key">
                     <h2 class="accordion-header" :id="'coreCalculatorheading-' + key">
                         <button
                         :style="combinedStyle([sectionIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : $styleStore.magneticBuilder.inputTextColor, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"

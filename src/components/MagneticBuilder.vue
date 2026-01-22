@@ -65,12 +65,14 @@ export default {
         const historyStore = useHistoryStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const magneticBuilt = false;
+        const subscriptions = [];
         this.$settingsStore.magneticBuilderSettings.autoRedraw = true;
 
         return {
             magneticBuilderSettingsStore,
             magneticBuilt,
             historyStore,
+            subscriptions,
         }
     },
     computed: {
@@ -113,7 +115,7 @@ export default {
         this.magneticBuilt = this.isMagneticBuilt();
         this.historyStore.addToHistory(this.masStore.mas);
         this.historyStore.blockAdditions();
-        this.historyStore.$onAction((action) => {
+        this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "addToHistory") {
                 this.magneticBuilt = this.isMagneticBuilt();
                 this.$emit("canContinue", this.magneticBuilt);
@@ -121,8 +123,11 @@ export default {
                     this.insertIntermediateMas();
                 }
             }
-        })
+        }));
 
+    },
+    beforeUnmount() {
+        this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {
         insertIntermediateMas() {
@@ -175,7 +180,6 @@ export default {
             return true;
         },
         customizeCore() {
-            console.log('customizeCore');
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Advanced;
         }
     }

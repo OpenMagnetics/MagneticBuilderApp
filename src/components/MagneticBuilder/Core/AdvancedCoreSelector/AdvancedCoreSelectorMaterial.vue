@@ -128,7 +128,7 @@ export default {
             if (this.core.functionalDescription.material.volumetricLosses == null) {
                 return false;
             }
-            var isCoreLossesEquationBased = false; 
+            let isCoreLossesEquationBased = false; 
             this.core.functionalDescription.material.volumetricLosses.default.forEach((method) => {
                 if (!Array.isArray(method)) {
                     if (method.method == "magnetics" || method.method == "micrometals") {
@@ -142,7 +142,7 @@ export default {
             if (this.core.functionalDescription.material.volumetricLosses == null) {
                 return false;
             }
-            var isCoreLossesLossFactorBased = false; 
+            let isCoreLossesLossFactorBased = false; 
             this.core.functionalDescription.material.volumetricLosses.default.forEach((method) => {
                 if (!Array.isArray(method)) {
                     if (method.method == "lossFactor") {

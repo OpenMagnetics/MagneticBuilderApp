@@ -69,7 +69,7 @@ export default {
     },
     computed: {
         missingWires() {
-            var isMissingWires = false;
+            let isMissingWires = false;
             this.masStore.mas.magnetic.coil.functionalDescription.forEach((winding, index) => {
                 if (winding.wire == "Dummy" || winding.wire == "" || winding.wire == null) {
                     isMissingWires = true;
@@ -124,7 +124,7 @@ export default {
     methods: {
         tryPlot(force) {
             const newCoilHash = JSON.stringify(this.masStore.mas.magnetic.coil);
-            var newInputsHash = "";
+            let newInputsHash = "";
             if (this.masStore.mas.inputs.operatingPoints.length > 0) {
                 newInputsHash = JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].voltage) + JSON.stringify(this.masStore.mas.inputs.operatingPoints[0].excitationsPerWinding[0].current);
             }

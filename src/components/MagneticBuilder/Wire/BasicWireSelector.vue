@@ -3,7 +3,7 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import BasicWireSubmenu from './BasicWireSubmenu.vue'
 import WireInfo from './WireInfo.vue'
-import { toTitleCase, checkAndFixMas, deepCopy, clean } from '/WebSharedComponents/assets/js/utils.js'
+import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../../stores/history'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
@@ -58,7 +58,7 @@ export default {
         const wireStandards = []; 
         const wireCoatings = []; 
         const errorMessage = ""; 
-        var localData = {
+        const localData = {
             type: null,
             standard: "IEC 60317",
             roundConductingDiameter: null,
@@ -98,8 +98,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -153,11 +152,11 @@ export default {
         if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != null) {
             this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
         }
-        this.historyStore.$onAction((action) => {
+        this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
                 this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
             }
-        })
+        }));
     },
     beforeUnmount () {
         this.subscriptions.forEach((subscription) => {subscription();})
@@ -335,7 +334,7 @@ export default {
                 .then((coil) => {
                     this.errorMessage = "";
                     this.masStore.mas.magnetic.coil.functionalDescription = coil.functionalDescription;
-                    this.assignLocalData(functionalDescription[this.windingIndex].wire);
+                    this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
                     this.cleanCoil();
 
                     this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};

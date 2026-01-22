@@ -1,7 +1,5 @@
 <script setup>
-import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
-import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 import { defaultOperatingConditions } from '/WebSharedComponents/assets/js/defaults.js'
@@ -110,9 +108,9 @@ export default {
             }
         },
         sweepMagnetizingInductanceOverDcBias() {
-            var ambientTemperature = defaultOperatingConditions.ambientTemperature;
+            let ambientTemperature = defaultOperatingConditions.ambientTemperature;
             this.masStore.mas.inputs.operatingPoints.forEach((operatingPoint) => {
-                ambientTemperature = Math.abs(ambientTemperature, operatingPoint.conditions.ambientTemperature);
+                ambientTemperature = Math.max(ambientTemperature, operatingPoint.conditions.ambientTemperature);
             })
             if (this.$stateStore.graphParameters.minimumDcBias <= 0) {
                 this.$stateStore.graphParameters.xAxisMode = "linear";

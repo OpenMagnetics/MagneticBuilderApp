@@ -54,6 +54,7 @@ export default {
         const forceUpdate3DCore = 0;
         const blockingRebounds = false;
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
+        const subscriptions = [];
 
         return {
             localData,
@@ -70,6 +71,7 @@ export default {
             blockingRebounds,
             magneticBuilderSettingsStore,
             taskQueueStore,
+            subscriptions,
         }
     },
     watch: { 
@@ -79,11 +81,14 @@ export default {
     mounted () {
         this.getEngineConstants();
 
-        this.$stateStore.$onAction((action) => {
+        this.subscriptions.push(this.$stateStore.$onAction((action) => {
             if (action.name == "redraw") {
                 this.redraw();
             }
-        })
+        }));
+    },
+    beforeUnmount() {
+        this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {
         getEngineConstants() {
@@ -121,8 +126,8 @@ export default {
                 });
             })
             core.functionalDescription.gapping.forEach((gap, gapIndex) => {
-                var closestColumnIndex;
-                var closestDistance = Number.MAX_VALUE;
+                let closestColumnIndex;
+                let closestDistance = Number.MAX_VALUE;
                 core.processedDescription.columns.forEach((column, columnIndex) => {
                     const distance = Math.pow(gap.coordinates[0] - column.coordinates[0], 2) + Math.pow(gap.coordinates[2] - column.coordinates[2], 2);
                     if (distance < closestDistance) {
@@ -156,7 +161,7 @@ export default {
             })
 
             if (groundGaps.length == core.processedDescription.columns.length) {
-                var allEqual = true;
+                let allEqual = true;
                 groundGaps.forEach((elem) => {
                     if ((groundGaps[0] - elem) / groundGaps[0] > 1e-6) {
                         allEqual = false;
@@ -198,7 +203,7 @@ export default {
 
             this.reorderedColumns.forEach((elem) => {
                 elem.type = "Spacer";
-                for (var i = elem.gaps.length - 1; i >= 1; i--) {
+                for (let i = elem.gaps.length - 1; i >= 1; i--) {
                     this.removeGap(elem.gaps[i].index);
                 }
             })
@@ -221,7 +226,7 @@ export default {
         },
         setUngapped(columnIndex) {
             this.unsetSpacer();
-            for (var i = this.reorderedColumns[columnIndex].gaps.length - 1; i >= 1; i--) {
+            for (let i = this.reorderedColumns[columnIndex].gaps.length - 1; i >= 1; i--) {
                 this.removeGap(this.reorderedColumns[columnIndex].gaps[i].index);
             }
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = "subtractive";
@@ -235,14 +240,14 @@ export default {
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = "subtractive";
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].length = this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].length / numberDistributedGaps;
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].coordinates[1] = 0;
-            for (var i = numberDistributedGaps - 2; i >= 0; i--) {
+            for (let i = numberDistributedGaps - 2; i >= 0; i--) {
                 this.addGap(columnIndex);
             }
             this.forceUpdate += 1;
         },
         setGround(columnIndex) {
             this.unsetSpacer();
-            for (var i = this.reorderedColumns[columnIndex].gaps.length - 1; i >= 1; i--) {
+            for (let i = this.reorderedColumns[columnIndex].gaps.length - 1; i >= 1; i--) {
                 this.removeGap(this.reorderedColumns[columnIndex].gaps[i].index);
             }
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = "subtractive";
@@ -302,14 +307,14 @@ export default {
         },
         autoDistributeGaps(columnIndex){
             const realColumnIndex = this.reorderedColumns[columnIndex].index;
-            var totalAvailableHeight = this.core.processedDescription.columns[realColumnIndex].height;
+            let totalAvailableHeight = this.core.processedDescription.columns[realColumnIndex].height;
 
             this.reorderedColumns[columnIndex].gaps.forEach((elem) => {
                 totalAvailableHeight -= this.core.functionalDescription.gapping[elem.index].length;
             })
 
             const coreChunkSize = totalAvailableHeight / (this.reorderedColumns[columnIndex].gaps.length + 1);
-            var heightPosition = this.core.processedDescription.columns[realColumnIndex].height / 2;
+            let heightPosition = this.core.processedDescription.columns[realColumnIndex].height / 2;
 
             heightPosition -= coreChunkSize;
             const aux = [];
@@ -326,7 +331,7 @@ export default {
             this.gapErrorsPerColumn = [];
             this.reorderedColumns.forEach((column) => {
                 const realColumnIndex = column.index;
-                var columnHeight = this.core.processedDescription.columns[realColumnIndex].height;
+                const columnHeight = this.core.processedDescription.columns[realColumnIndex].height;
 
                 const gapErrors = [];
                 const gapLimits = [];
@@ -367,7 +372,7 @@ export default {
             this.imageUpToDate = true;
         },
         calculateData() {
-            var conditions = defaultOperatingConditions;
+            let conditions = defaultOperatingConditions;
             if (this.inputs.operatingPoints[0] != null && this.inputs.operatingPoints[0].conditions != null) {
                 conditions = this.inputs.operatingPoints[0].conditions;
             }

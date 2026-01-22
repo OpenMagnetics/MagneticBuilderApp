@@ -53,8 +53,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,

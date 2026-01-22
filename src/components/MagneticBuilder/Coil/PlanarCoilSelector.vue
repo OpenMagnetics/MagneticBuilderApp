@@ -54,7 +54,7 @@ export default {
         const forceUpdate = 0; 
         const subscriptions = []; 
 
-        var localData = {
+        const localData = {
             stackUp: "",
             insulationThicknessPerLayer: {},
             clearancePerWinding: {},
@@ -77,8 +77,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -89,7 +88,7 @@ export default {
             }
         },
         windingIndexesCharacters() {
-            var pattern = "";
+            let pattern = "";
             this.masStore.mas.magnetic.coil.functionalDescription.forEach((item, index) => {
                 pattern += String(index + 1);
             })
@@ -145,7 +144,7 @@ export default {
     },
     methods: {
         getWindingIndex(coil, windinName) {
-            var foundWindingIndex = null;
+            let foundWindingIndex = null;
             coil.functionalDescription.forEach((winding, windingIndex) => {
                 if (winding.name == windinName) {
                     foundWindingIndex = windingIndex;
@@ -228,7 +227,7 @@ export default {
             }
         },
         getLayerWindingIndex(layer) {
-            var windingIndex = 0;
+            let windingIndex = 0;
             this.masStore.mas.magnetic.coil.functionalDescription.forEach((winding, auxWindingIndex) => {
                 if (winding.name == layer.partialWindings[0].winding) {
                     windingIndex = auxWindingIndex;
@@ -242,7 +241,7 @@ export default {
                 try {
 
                     if (this.masStore.mas.magnetic.coil.layersDescription != null) {
-                        var stackUp = "";
+                        let stackUp = "";
                         this.localData.coreToLayerDistance = (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].width - this.masStore.mas.magnetic.coil.layersDescription[0].dimensions[0]) / 2;
                         const layerBorderCoordinate = this.masStore.mas.magnetic.coil.layersDescription[0].coordinates[0] - this.masStore.mas.magnetic.coil.layersDescription[0].dimensions[0] / 2;
                         const firstTurnBorderCoordinate = this.masStore.mas.magnetic.coil.turnsDescription[0].coordinates[0] - this.masStore.mas.magnetic.coil.turnsDescription[0].dimensions[0] / 2;
@@ -250,7 +249,7 @@ export default {
 
                         this.masStore.mas.magnetic.coil.layersDescription.forEach((layer, index) => {
                             if (layer.type == "conduction") {
-                                var windingIndex = this.getLayerWindingIndex(layer);
+                                const windingIndex = this.getLayerWindingIndex(layer);
                                 stackUp += String(windingIndex + 1);
                             }
                             else {

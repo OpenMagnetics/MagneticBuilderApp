@@ -35,7 +35,7 @@ export default {
         const forceUpdate = 0;
         const recentChange = false;
         const tryingToAssign = false;
-        var localData = {
+        const localData = {
             numberTurns: 1,
             numberParallels: 1,
         };
@@ -55,8 +55,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,

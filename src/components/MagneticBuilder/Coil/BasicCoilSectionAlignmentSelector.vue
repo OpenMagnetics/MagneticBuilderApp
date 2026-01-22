@@ -51,8 +51,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -83,16 +82,16 @@ export default {
         shortenedNames() {
             const shortenedNames = {}
 
-            var width = 0;
+            let width = 0;
             if (this.$refs.coilSelectorContainer != null) {
                 width = this.$refs.coilSelectorContainer.clientWidth / this.numberSections;
             }
 
             this.conductiveSections.forEach((section, key) => {
-                var label = toTitleCase(section.name.toLowerCase());
-                var label = label.replace("section", "stn");
+                let label = toTitleCase(section.name.toLowerCase());
+                label = label.replace("section", "stn");
                 if (width > 0) {
-                    var slice = section.name.length
+                    let slice = section.name.length
                     if (width < 200)
                         slice = 4;
                     if (width < 150)

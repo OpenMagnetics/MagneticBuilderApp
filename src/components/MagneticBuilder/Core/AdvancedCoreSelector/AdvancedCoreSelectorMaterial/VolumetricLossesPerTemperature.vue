@@ -92,9 +92,9 @@ export default {
             this.localData = [];
             this.indexes = [];
 
-            var distictTemperatures = [];
-            var distictMagneticFluxDensities = [];
-            var distictFrequencies = [];
+            let distictTemperatures = [];
+            let distictMagneticFluxDensities = [];
+            let distictFrequencies = [];
             this.data.default.forEach((method) => {
                 if (Array.isArray(method)) {
                     this.volumetricLossesPoints = method;

@@ -52,8 +52,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -153,7 +152,7 @@ export default {
     },
     methods: {
         isStackable(shape) {
-            var shapeName = shape;
+            let shapeName = shape;
             if (shape == null) {
                 shapeName = this.masStore.mas.magnetic.core.functionalDescription.shape;
             }
@@ -191,11 +190,11 @@ export default {
             this.masStore.mas.magnetic.core.processedDescription = null;
             this.masStore.mas.magnetic.core.geometricalDescription = null;
 
-            var mas = deepCopy(this.masStore.mas);
+            let mas = deepCopy(this.masStore.mas);
             mas.magnetic.core.geometricalDescription = null;
             mas.magnetic.core.processedDescription = null;
 
-            var name = value;
+            let name = value;
             if (value.name != null) {
                 name = value.name;
             }

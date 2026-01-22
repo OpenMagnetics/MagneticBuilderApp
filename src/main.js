@@ -46,7 +46,7 @@ router.beforeEach((to, from, next) => {
     }
 
 
-    var loadData = true;
+    const loadData = true;
 
 
     if (loadData) {
@@ -113,7 +113,7 @@ router.beforeEach((to, from, next) => {
                                             }
                                         })
                                         router.push(app.config.globalProperties.$stateStore.loadingPath)
-                                    }).error((error) => {
+                                    }).catch((error) => {
                                         console.error(error)
                                     })
                                     resolve(); 

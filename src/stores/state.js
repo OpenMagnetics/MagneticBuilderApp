@@ -183,7 +183,7 @@ export const useStateStore = defineStore("state", () => {
         this.operatingPointsCircuitSimulator.confirmedColumns.push([]);
         this.operatingPointsCircuitSimulator.columnNames.push([]);
 
-        for (var windingIndex = 0; windingIndex < masStore.mas.inputs.designRequirements.turnsRatios.length + 1; windingIndex++) {
+        for (let windingIndex = 0; windingIndex < masStore.mas.inputs.designRequirements.turnsRatios.length + 1; windingIndex++) {
             if (masStore.mas.inputs.operatingPoints[0].excitationsPerWinding.length <= windingIndex) {
                 masStore.mas.inputs.operatingPoints[0].excitationsPerWinding.push(deepCopy(Defaults.defaultOperatingPointExcitation));
                 this.operatingPointsCircuitSimulator.confirmedColumns[0].push(false);
@@ -193,12 +193,12 @@ export const useStateStore = defineStore("state", () => {
 
     function addNewOperatingPoint(currentOperatingPointIndex, mode) {
         const masStore = useMasStore();
-        var newOperatingPoint = deepCopy(masStore.mas.inputs.operatingPoints[currentOperatingPointIndex]);
+        const newOperatingPoint = deepCopy(masStore.mas.inputs.operatingPoints[currentOperatingPointIndex]);
         newOperatingPoint.name = 'Op. Point No. ' + (masStore.mas.inputs.operatingPoints.length + 1);
 
         if (mode == this.OperatingPointsMode.HarmonicsList) {
             newOperatingPoint.excitationsPerWinding = [];
-            for (var windingIndex = 0; windingIndex < masStore.mas.inputs.designRequirements.turnsRatios.length + 1; windingIndex++) {
+            for (let windingIndex = 0; windingIndex < masStore.mas.inputs.designRequirements.turnsRatios.length + 1; windingIndex++) {
                 newOperatingPoint.excitationsPerWinding.push(deepCopy(Defaults.defaultOperatingPointExcitationWithHarmonics));
             }
         }

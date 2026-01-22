@@ -1,7 +1,7 @@
 <script setup>
 import { useMasStore } from '../stores/mas'
 import { useHistoryStore } from '../stores/history'
-import { checkAndFixMas, download, pruneNulls, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { download, pruneNulls, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Settings from './MagneticBuilder/Settings.vue'
 import { useTaskQueueStore } from '../stores/taskQueue'
 </script>
@@ -70,9 +70,8 @@ export default {
             setTimeout(() => {this.loading = false;}, 2000);
         },
         exportMAS() {
-            var prunedMas = deepCopy(this.masStore.mas)
+            const prunedMas = deepCopy(this.masStore.mas)
             pruneNulls(prunedMas)
-            console.log(prunedMas)
             download(JSON.stringify(prunedMas, null, 4), "custom_magnetic.json", "text/plain");
             this.masExported = true
             setTimeout(() => this.masExported = false, 2000);
@@ -95,7 +94,7 @@ export default {
                         this.masStore.importedMas();
                         this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";
                         this.$stateStore.operatingPoints.modePerPoint = []
-                        for (var i = 0; i < this.masStore.mas.inputs.operatingPoints.length; i++) {
+                        for (let i = 0; i < this.masStore.mas.inputs.operatingPoints.length; i++) {
                             if (this.masStore.mas.inputs.operatingPoints[i].excitationsPerWinding[0].current.processed != null) {
                                 this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.Manual);
                             }
@@ -130,6 +129,8 @@ export default {
                 :disabled="!historyStore.isBackPossible()"
                 class="btn offset-sm-0 offset-lg-1 col-2 col-lg-1"
                 @click="undo"
+                aria-label="Undo"
+                title="Undo" 
             >
                 <i class="fa-solid fa-arrow-rotate-left"></i>
             </button>
@@ -138,6 +139,8 @@ export default {
                 :disabled="!historyStore.isForwardPossible()"
                 class="btn col-2 col-lg-1"
                 @click="redo"
+                aria-label="Redo"
+                title="Redo"
             >
                 <i class="fa-solid fa-arrow-rotate-right"></i>
             </button>
@@ -171,7 +174,9 @@ export default {
                 class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
                 data-bs-toggle="modal"
                 data-bs-target="#MagneticBuilderConfigurationModal"
-                @click="openSettings" 
+                @click="openSettings"
+                aria-label="Settings"
+                title="Settings"
                 >
                 <i class="fa-solid fa-gear"></i>
             </button>
@@ -179,7 +184,9 @@ export default {
                 v-if="showResetButton"
                 :style="$styleStore.controlPanel.button"
                 class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
-                @click="reset" 
+                @click="reset"
+                aria-label="Reset"
+                title="Reset"
                 >
                 <i class="fa-solid fa-power-off"></i>
             </button>

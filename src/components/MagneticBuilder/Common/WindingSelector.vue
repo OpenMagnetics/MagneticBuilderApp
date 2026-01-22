@@ -24,15 +24,16 @@ export default {
     data() {
         const taskQueueStore = useTaskQueueStore();
         const selectedWindingIndex = 0;
+        const subscriptions = [];
         return {
             taskQueueStore,
             selectedWindingIndex,
+            subscriptions,
         }
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -46,18 +47,21 @@ export default {
     watch: { 
     },
     mounted () {
-        this.masStore.$onAction((action) => {
+        this.subscriptions.push(this.masStore.$onAction((action) => {
             if (action.name == "updatedTurnsRatios") {
                 this.selectedWindingIndex = Math.min(this.selectedWindingIndex, this.masStore.mas.inputs.designRequirements.turnsRatios.length);
                 this.$emit("windingIndexChanged", this.selectedWindingIndex);
                 this.taskQueueStore.windingIndexChanged(true);
             }
-        })
+        }));
+    },
+    beforeUnmount() {
+        this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {
         getWindingLabel(key) {
             const refKey = 'select-winding-' + key;
-            var clientWidth;
+            let clientWidth;
 
             try {
                 Object.entries(this.$refs).forEach((value) => {
@@ -85,7 +89,7 @@ export default {
             this.$emit("windingIndexChanged", windingIndex);
         },
         isWireMissing(windingIndex) {
-            var isMissingWires = false;
+            let isMissingWires = false;
             if (this.coil.functionalDescription[windingIndex].wire == "Dummy" || this.coil.functionalDescription[windingIndex].wire == "" || this.coil.functionalDescription[windingIndex].wire == null) {
                 isMissingWires = true;
             }
@@ -103,7 +107,7 @@ export default {
 <template>
     <div v-if="coil.functionalDescription.length > 1" v-tooltip="styleTooltip">
         <div class="accordion row m-0 p-0" id="wireBuilderAccordion bg-dark" v-tooltip="tooltipsMagneticBuilder.windingSelector">
-            <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription">
+            <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription" :key="key">
                 <h2 class="accordion-header" :id="'wireBuilderAccordionHeading-' + key">
                     <button
                         :style="combinedStyle([selectedWindingIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : isWireMissing(key)? $styleStore.magneticBuilder.inputErrorTextColor : $styleStore.magneticBuilder.inputTextColor, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"

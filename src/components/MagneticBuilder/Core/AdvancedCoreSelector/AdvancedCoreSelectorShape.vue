@@ -243,7 +243,7 @@ export default {
                     }
 
                     if (!(this.localData.family == "rm" && this.localData.familySubtype == "2") && !(this.localData.family == "p" && this.localData.familySubtype != "2") && !(this.localData.family == "efd") && !(this.localData.family == "planar er") && !(this.localData.family == "ut") && this.localData.dimensions['C'] > 0) {
-                        var c_f_condition = false;
+                        let c_f_condition = false;
                         if (this.localData.family != "e") {
                             if (this.localData.family != "er" && this.localData.family != "etd" && this.localData.family != "ec") {
                                 c_f_condition = this.localData.dimensions['F'] >= this.localData.dimensions['C'];

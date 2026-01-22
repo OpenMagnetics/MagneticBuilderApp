@@ -1,5 +1,4 @@
 <script setup>
-import { removeTrailingZeroes, deepCopy, checkAndFixMas, isMobile } from '/WebSharedComponents/assets/js/utils.js'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
@@ -68,8 +67,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,

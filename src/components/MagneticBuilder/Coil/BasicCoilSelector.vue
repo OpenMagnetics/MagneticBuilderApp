@@ -54,11 +54,11 @@ export default {
         const recentChange = false;
         const tryingToSend = false;
         const forceUpdate = 0; 
-        var pattern = "";
+        let pattern = "";
         const oldMagneticCoilHash = 1;
         const oldInputsCoilHash = 1;
 
-        var localData = {};
+        let localData = {};
 
         if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
             localData = {
@@ -130,8 +130,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -162,7 +161,7 @@ export default {
             }
         },
         windingIndexesCharacters() {
-            var pattern = "";
+            let pattern = "";
             this.masStore.mas.magnetic.coil.functionalDescription.forEach((item, index) => {
                 pattern += String(index + 1);
             })
@@ -171,16 +170,16 @@ export default {
         shortenedNames() {
             const shortenedNames = {}
 
-            var width = 0;
+            let width = 0;
             if (this.$refs.coilSelectorContainer != null) {
                 width = this.$refs.coilSelectorContainer.clientWidth / this.localData.pattern.length;
             }
 
             this.conductiveSections.forEach((section, key) => {
-                var label = toTitleCase(section.name.toLowerCase());
-                var label = label.replace("section", "stn");
+                let label = toTitleCase(section.name.toLowerCase());
+                label = label.replace("section", "stn");
                 if (width > 0) {
-                    var slice = section.name.length
+                    let slice = section.name.length
                     if (width < 200)
                         slice = 4;
                     if (width < 150)
@@ -259,7 +258,7 @@ export default {
             })
         },
         getWindingIndex(coil, windinName) {
-            var foundWindingIndex = null;
+            let foundWindingIndex = null;
             coil.functionalDescription.forEach((winding, windingIndex) => {
                 if (winding.name == windinName) {
                     foundWindingIndex = windingIndex;
@@ -272,12 +271,12 @@ export default {
                 const bobbinShape = coil.bobbin.processedDescription.windingWindows[0].shape;
                 const sectionsOrientation = coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
 
-                var windingDimensions = [];
+                let windingDimensions = [];
                 coil.functionalDescription.forEach((winding, windingIndex) => {
                     windingDimensions.push(0);
                 })
 
-                var windingDimensionsTotal = 0;
+                let windingDimensionsTotal = 0;
                 this.localData.pattern = "";
                 coil.sectionsDescription.forEach((section) => {
                     if (section.type == "conduction") {
@@ -426,7 +425,7 @@ export default {
                         }
                     }
                     if (magnetic.coil.sectionsDescription != null && magnetic.coil.layersDescription != null) {
-                        var conductionSectionIndex = 0;
+                        let conductionSectionIndex = 0;
                         magnetic.coil.sectionsDescription.forEach((section) => {
                             if (section.type == "conduction") {
                                 if (this.localData.dataPerSection.length <= conductionSectionIndex) {
@@ -474,7 +473,7 @@ export default {
                                 }
                                 else {
                                     if (this.masStore.mas.magnetic.core.functionalDescription.shape.family == 't') {
-                                        thickness = section.dimensions[0] * sin(section.dimensions[1])
+                                        const thickness = section.dimensions[0] * Math.sin(section.dimensions[1]);
                                         this.localData.intersectionThickness = thickness;
                                     }
                                     else {
@@ -530,7 +529,7 @@ export default {
 
             this.localData.pattern.split('').forEach((windingIndexPlusOne, newSectionIndex) => {
                 if (newSectionIndex >= this.localData.dataPerSection.length) {
-                    var newSection = null;
+                    let newSection = null;
                     this.localData.dataPerSection.forEach((section, sectionIndex) => {
                         if (this.localData.pattern.split('')[sectionIndex] == windingIndexPlusOne) {
                             newSection = deepCopy(section);

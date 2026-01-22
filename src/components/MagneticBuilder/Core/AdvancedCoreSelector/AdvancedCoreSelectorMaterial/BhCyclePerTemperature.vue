@@ -89,7 +89,6 @@ export default {
                     }
                 })
             })
-            console.log(this.localData)
         },
         onRemovePoint(seriesIndex, index) {
             this.data.splice(this.indexes[seriesIndex][index], 1);

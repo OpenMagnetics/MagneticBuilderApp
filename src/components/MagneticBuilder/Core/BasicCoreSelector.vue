@@ -80,8 +80,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -106,16 +105,16 @@ export default {
         this.getMaterialNames();
         
         setTimeout(() => {this.assignLocalData(this.masStore.mas.magnetic.core);}, 1000);
-        this.historyStore.$onAction((action) => {
+        this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
             }
-        })
-        this.masStore.$onAction((action) => {
+        }));
+        this.subscriptions.push(this.masStore.$onAction((action) => {
             if (action.name == "importedMas") {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
             }
-        })
+        }));
 
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
@@ -162,7 +161,7 @@ export default {
     },
     methods: {
         isStackable(shape) {
-            var shapeName = shape;
+            let shapeName = shape;
             if (shape == null) {
                 shapeName = this.masStore.mas.magnetic.core.functionalDescription.shape;
             }
@@ -243,7 +242,7 @@ export default {
                     this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
                 }
                 else {
-                    var mas = deepCopy(this.masStore.mas);
+                    const mas = deepCopy(this.masStore.mas);
                     mas.magnetic.core.functionalDescription.shape = shape;
 
                     if (!this.isStackable(shape)) {
@@ -296,7 +295,7 @@ export default {
 
                     this.taskQueueStore.calculateNumberTurns(magnetic.coil.functionalDescription[0].numberTurns, this.masStore.mas.inputs.designRequirements).then((numberTurns) => {
                         const windings = this.masStore.mas.magnetic.coil.functionalDescription;
-                        for (var i = 0; i < numberTurns.length; i++) {
+                        for (let i = 0; i < numberTurns.length; i++) {
                             windings[i].numberTurns = numberTurns[i];
                         }
                         this.masStore.mas.magnetic.coil.functionalDescription = windings;

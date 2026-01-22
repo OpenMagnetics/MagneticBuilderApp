@@ -53,7 +53,7 @@ export default {
         const forceUpdate = 0; 
         const wireThicknesses = [];
         const errorMessage = ""; 
-        var localData = {
+        const localData = {
             wireThickness: 0.001,
             wireWidth: 0.002,
         };
@@ -66,6 +66,7 @@ export default {
 
         const blockingRebounds = false;
         const wireHash = "";
+        const subscriptions = [];
 
         return {
             taskQueueStore,
@@ -77,12 +78,12 @@ export default {
             forceUpdate,
             loading,
             errorMessage,
+            subscriptions,
         }
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -99,11 +100,14 @@ export default {
         if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != null) {
             this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
         }
-        this.historyStore.$onAction((action) => {
+        this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
                 this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
             }
-        })
+        }));
+    },
+    beforeUnmount() {
+        this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {
         cleanCoil() {
@@ -123,7 +127,7 @@ export default {
         },
         assignWire() {
             this.errorMessage = "";
-            var wire = {};
+            let wire = {};
             if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "Dummy") {
                 wire = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire;
             }
@@ -152,7 +156,7 @@ export default {
         getWireThicknesses() {
             this.wireThicknesses = [];
             this.taskQueueStore.getPlanarThicknesses().then((planarThicknessesHandle) => {
-                for (var i = planarThicknessesHandle.size() - 1; i >= 0; i--) {
+                for (let i = planarThicknessesHandle.size() - 1; i >= 0; i--) {
                     const wireThickness = planarThicknessesHandle.get(i);
                     this.wireThicknesses.push(toTitleCase(wireThickness));
                 }

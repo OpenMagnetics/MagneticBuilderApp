@@ -33,8 +33,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'top'
+            const relative_placement = 'top';
             return {
                 theme: {
                     placement: relative_placement,
@@ -103,7 +102,7 @@ export default {
             @update="$emit('update')"
         />
         <h5 class="text-center" > {{'Insulation layer thickness'}} </h5>
-        <div v-for="value, key in data.insulationThicknessPerLayer" class="row text-start">
+        <div v-for="(value, key) in data.insulationThicknessPerLayer" :key="key" class="row text-start">
             <Dimension
                 :name="key"
                 :replaceTitle="`Ins. ${key}`"
@@ -125,7 +124,7 @@ export default {
             />    
         </div>
         <h5 class="text-center" > {{'Turn clearance per winding'}} </h5>
-        <div v-for="value, key in data.clearancePerWinding" class="row text-start">
+        <div v-for="(value, key) in data.clearancePerWinding" :key="key" class="row text-start">
             <Dimension
                 :name="key"
                 :replaceTitle="`Winding ${Number(key) + 1}`"

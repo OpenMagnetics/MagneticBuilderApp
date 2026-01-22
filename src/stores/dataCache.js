@@ -4,7 +4,7 @@ import { ref, watch, computed  } from 'vue'
 export const useDataCacheStore = defineStore("dataCache", () => {
     const wireDataTimestamp = ref(null);
     const ttlInMilliseconds = ref(3 * 60 * 60 * 1000);  // 3 hours
-    var wireData = ref({
+    const wireData = ref({
         wireConductingDiametersPerStandard: {},
         wireCoatingsPerWireType: {},
     });

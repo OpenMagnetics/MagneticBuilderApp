@@ -3,10 +3,10 @@ import { ref, watch, computed  } from 'vue'
 import { deepCopy  } from '/WebSharedComponents/assets/js/utils.js'
 
 export const useHistoryStore = defineStore("history", () => {
-    var masHistory = ref([]);
-    var historyPointer = ref(-1);
-    var blockingRebounds = false;
-    var blockingAdditions = false;
+    const masHistory = ref([]);
+    const historyPointer = ref(-1);
+    let blockingRebounds = false;
+    let blockingAdditions = false;
 
     function blockAdditions() {
         blockingAdditions = true;
@@ -23,7 +23,7 @@ export const useHistoryStore = defineStore("history", () => {
         if (blockingAdditions) {
             return
         }
-        for (var i = this.masHistory.length - 1; i >= 0; i--) {
+        for (let i = this.masHistory.length - 1; i >= 0; i--) {
             if (i > this.historyPointer) {
                 this.masHistory.pop();
             }

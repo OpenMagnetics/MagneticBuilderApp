@@ -18,8 +18,7 @@ export default {
     },
     computed: {
         styleTooltip() {
-            var relative_placement;
-            relative_placement = 'right'
+            const relative_placement = 'right';
             return {
                 theme: {
                     placement: relative_placement,

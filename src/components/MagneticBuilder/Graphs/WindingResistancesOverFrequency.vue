@@ -119,15 +119,15 @@ export default {
             setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
         },
         sweepResistancesOverFrequency() {
-            var ambientTemperature = defaultOperatingConditions.ambientTemperature;
+            let ambientTemperature = defaultOperatingConditions.ambientTemperature;
             this.masStore.mas.inputs.operatingPoints.forEach((operatingPoint) => {
-                ambientTemperature = Math.abs(ambientTemperature, operatingPoint.conditions.ambientTemperature);
+                ambientTemperature = Math.max(ambientTemperature, operatingPoint.conditions.ambientTemperature);
             })
 
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.resistancesOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
 
-            var windingIndex = 0;
+            let windingIndex = 0;
             this.masStore.mas.magnetic.coil.functionalDescription.forEach((elem, index) => {
                 if (elem.name == this.localData.selectedWinding) {
                     windingIndex = index;

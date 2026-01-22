@@ -53,7 +53,7 @@ export default {
     data() {
         const taskQueueStore = useTaskQueueStore();
         const wire2DVisualizerPlotCurrentDensity = this.$stateStore.wire2DVisualizerState.plotCurrentDensity? '1' : '0';
-        var numberWindings = 1;
+        let numberWindings = 1;
         if (this.masStore.mas.inputs.designRequirements.turnsRatios != null) {
             numberWindings = this.masStore.mas.inputs.designRequirements.turnsRatios.length + 1;
         }
@@ -161,7 +161,7 @@ export default {
             if (name == 'numberWindings') {
                 const newElementsCoil = [];
                 const newElementsTurnsRatios = [];
-                for (var i = 0; i < newLength - 1; i++) {
+                for (let i = 0; i < newLength - 1; i++) {
                     if (i < this.masStore.mas.inputs.designRequirements.turnsRatios.length) {
                         newElementsTurnsRatios.push(this.masStore.mas.inputs.designRequirements.turnsRatios[i]);
                     }
@@ -169,7 +169,7 @@ export default {
                         newElementsTurnsRatios.push({'nominal': 1});
                     }
                 }
-                for (var i = 0; i < newLength; i++) {
+                for (let i = 0; i < newLength; i++) {
                     if (i < this.masStore.mas.magnetic.coil.functionalDescription.length) {
                         newElementsCoil.push(this.masStore.mas.magnetic.coil.functionalDescription[i]);
                     }
@@ -177,10 +177,10 @@ export default {
                         newElementsCoil.push({'name': toTitleCase(isolationSideOrdered[i])});
                     }
                 }
-                for (var operationPointIndex = 0; operationPointIndex < this.masStore.mas.inputs.operatingPoints.length; operationPointIndex++) {
+                for (let operationPointIndex = 0; operationPointIndex < this.masStore.mas.inputs.operatingPoints.length; operationPointIndex++) {
                     const newExcitationsPerWinding = [];
 
-                    for (var i = 0; i < newLength; i++) {
+                    for (let i = 0; i < newLength; i++) {
                         if (i < this.masStore.mas.inputs.operatingPoints[operationPointIndex].excitationsPerWinding.length) {
                             newExcitationsPerWinding.push(this.masStore.mas.inputs.operatingPoints[operationPointIndex].excitationsPerWinding[i]);
                         }
@@ -261,7 +261,7 @@ export default {
         </div>
 
         <div class="row">
-            <div v-for="value, key in masStore.mas.magnetic.coil.functionalDescription">
+            <div v-for="value, key in masStore.mas.magnetic.coil.functionalDescription" :key="key">
                 <BasicTurnsSelector
                     class="mt-1"
                     v-if="selectedWindingIndex==key"
