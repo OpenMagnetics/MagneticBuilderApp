@@ -17,8 +17,11 @@ import Module from '/src/assets/js/libMKF.wasm.js';
 import { useStyleStore } from '/src/stores/style'
 import { setMkf } from '/WebSharedComponents/assets/js/mkfRuntime'
 import VueLatex from 'vatex'
+import { checkAndClearOutdatedStores } from '/src/stores/storeVersioning'
 
-
+// Check and clear outdated stores BEFORE Pinia is initialized
+// This ensures old store data with incompatible field names is cleared
+checkAndClearOutdatedStores();
 
 const axiosInstance = axios.create()
 
