@@ -54,6 +54,7 @@ export default {
         const taskQueueStore = useTaskQueueStore();
         const historyStore = useHistoryStore();
         const coreMaterialManufacturers = [];
+        const coreMaterialNames = {};
         const localData = {};
         const onlyManufacturer = null;
 
@@ -72,6 +73,7 @@ export default {
             localData,
             onlyManufacturer,
             coreMaterialManufacturers,
+            coreMaterialNames,
             errorMessage,
             loading,
             forceUpdate,

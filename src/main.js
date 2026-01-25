@@ -13,9 +13,8 @@ import { useUserStore } from '/src/stores/user'
 import { useSettingsStore } from '/src/stores/settings'
 import { useStateStore } from '/src/stores/state'
 import { VueWindowSizePlugin } from 'vue-window-size/plugin';
-import Module from '/src/assets/js/libMKF.wasm.js';
 import { useStyleStore } from '/src/stores/style'
-import { setMkf } from '/WebSharedComponents/assets/js/mkfRuntime'
+import { initWorker } from '/WebSharedComponents/assets/js/mkfRuntime'
 import VueLatex from 'vatex'
 import { checkAndClearOutdatedStores } from '/src/stores/storeVersioning'
 
@@ -31,6 +30,8 @@ const app = createApp(App);
 app.use(router);
 app.use(pinia)
 app.use(VueCookies, { expires: '7d'})
+app.use(VueWindowSizePlugin);
+app.use(VueLatex);
 app.directive("tooltip", tooltip);
 app.config.globalProperties.$axios = axiosInstance
 app.config.globalProperties.$userStore = useUserStore()
@@ -38,8 +39,6 @@ app.config.globalProperties.$settingsStore = useSettingsStore()
 app.config.globalProperties.$stateStore = useStateStore()
 app.config.globalProperties.$styleStore = useStyleStore()
 app.mount("#app");
-app.use(VueWindowSizePlugin);
-app.use(VueLatex);
 
 router.beforeEach((to, from, next) => {
 
@@ -59,9 +58,12 @@ router.beforeEach((to, from, next) => {
         }
         else if (app.config.globalProperties.$mkf == null && (to.name == "EngineLoader")) {
             const loadAllParts = true;
-            setTimeout(() => 
-                {
-
+            
+            // Mark as loading to prevent re-entry
+            app.config.globalProperties.$mkf = { ready: Promise.resolve(), _loading: true };
+            
+            (async () => {
+                try {
                     console.warn("Loading core materials in backend")
                     fetch("/core_materials.ndjson")
                     .then((data) => data.text())
@@ -81,52 +83,34 @@ router.beforeEach((to, from, next) => {
                             }
                         })
 
-                    app.config.globalProperties.$mkf = {
-                        ready: new Promise(resolve => {
-                            Module({
-                                onRuntimeInitialized () {
-                                    app.config.globalProperties.$mkf = Object.assign(this, {
-                                        ready: Promise.resolve()
-                                    });
-                                    setMkf(app.config.globalProperties.$mkf);
+                    // Initialize MKF in Web Worker
+                    console.warn("Initializing MKF in Web Worker...")
+                    const wasmJsUrl = new URL('/src/assets/js/libMKF.wasm.js', window.location.origin).href;
+                    const mkf = await initWorker(wasmJsUrl);
+                    app.config.globalProperties.$mkf = mkf;
 
-                                    app.config.globalProperties.$mkf.ready.then(_ => {
-                                        console.warn("Loading core materials in simulator")
-                                        fetch("/core_materials.ndjson")
-                                        .then((data) => data.text())
-                                        .then((data) => {
-                                                if (loadAllParts) {
-                                                    app.config.globalProperties.$mkf.load_core_materials("");
-                                                }
-                                            })
-                                        console.warn("Loading core shapes in simulator")
-                                        fetch("/core_shapes.ndjson")
-                                        .then((data) => data.text())
-                                        .then((data) => {
-                                                if (loadAllParts) {
-                                                    app.config.globalProperties.$mkf.load_core_shapes("");
-                                                }
-                                        })
-                                        console.warn("Loading wires in simulator")
-                                        fetch("/wires.ndjson")
-                                        .then((data) => data.text())
-                                        .then((data) => {
-                                            if (loadAllParts) {
-                                                app.config.globalProperties.$mkf.load_wires("");
-                                            }
-                                        })
-                                        router.push(app.config.globalProperties.$stateStore.loadingPath)
-                                    }).catch((error) => {
-                                        console.error(error)
-                                    })
-                                    resolve(); 
-                                }
-                            });
-                        })
-                    };
-
+                    console.warn("Loading core materials in simulator")
+                    if (loadAllParts) {
+                        await mkf.load_core_materials("");
+                    }
+                    
+                    console.warn("Loading core shapes in simulator")
+                    if (loadAllParts) {
+                        await mkf.load_core_shapes("");
+                    }
+                    
+                    console.warn("Loading wires in simulator")
+                    if (loadAllParts) {
+                        await mkf.load_wires("");
+                    }
+                    
+                    const stateStore = useStateStore();
+                    const loadingPath = stateStore.loadingPath || '/';
+                    router.push(loadingPath);
+                } catch (error) {
+                    console.error("Error initializing MKF:", error);
                 }
-                , 100);
+            })();
 
         }
     }

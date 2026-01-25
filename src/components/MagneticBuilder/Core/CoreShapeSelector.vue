@@ -105,9 +105,35 @@ export default {
                         this.coreShapeNames = args[1];
                         for (const [shapeFamily, group] of Object.entries(this.coreShapeNames)) {
                             this.coreShapeFamilies[shapeFamily] = shapeFamily.toUpperCase();
-                            group.forEach((shapeName) => {
-                                this.addToTableData(shapeName, shapeFamily);
-                            }) 
+                        }
+                        // Use bulk function to get all core data at once
+                        this.taskQueueStore.processAllCoresFromShapes();
+                    }
+                    else {
+                        console.error(args[1]);
+                    }
+                }
+                if (name == "allCoresFromShapesProcessed") {
+                    if (args[0]) {
+                        const cores = args[1];
+                        for (const core of cores) {
+                            const auxEffectiveLength = core.processedDescription.effectiveParameters.effectiveLength * 1000;
+                            const effectiveLength = `${removeTrailingZeroes(auxEffectiveLength, 2)} mm`;
+                            const auxEffectiveArea = core.processedDescription.effectiveParameters.effectiveArea * 1000000;
+                            const effectiveArea = `${removeTrailingZeroes(auxEffectiveArea, 2)} mm²`;
+                            const auxMinimumArea = core.processedDescription.effectiveParameters.minimumArea * 1000000;
+                            const minimumArea = `${removeTrailingZeroes(auxMinimumArea, 2)} mm²`;
+                            const auxEffectiveVolume = core.processedDescription.effectiveParameters.effectiveVolume * 1000000000;
+                            const effectiveVolume = `${removeTrailingZeroes(auxEffectiveVolume, 2)} mm³`;
+                            this.coreShapeData.push({
+                                name: core.functionalDescription.shape.name,
+                                family: core.functionalDescription.shape.family,
+                                effectiveLength: effectiveLength,
+                                effectiveArea: effectiveArea,
+                                minimumArea: minimumArea,
+                                effectiveVolume: effectiveVolume,
+                                www: "www",
+                            });
                         }
                     }
                     else {

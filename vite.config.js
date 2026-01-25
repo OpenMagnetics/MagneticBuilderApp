@@ -48,6 +48,7 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": fileURLToPath(new URL("./src", import.meta.url)),
+            "/WebSharedComponents": fileURLToPath(new URL("../WebSharedComponents", import.meta.url)),
         },
     },
     server: {

@@ -1,7 +1,33 @@
 import { defineStore } from 'pinia'
-import { waitForMkf } from '/WebSharedComponents/assets/js/mkfRuntime'
+import { waitForMkf, isWorkerMode } from '/WebSharedComponents/assets/js/mkfRuntime'
 import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
+
+/**
+ * Convert Embind vector or array to JS array.
+ * In worker mode, vectors are already converted to arrays.
+ * In main-thread mode, we need to iterate using .size() and .get()
+ */
+function toArray(vectorOrArray) {
+    if (vectorOrArray == null) return [];
+    
+    // Already a JS array (worker mode)
+    if (Array.isArray(vectorOrArray)) {
+        return vectorOrArray;
+    }
+    
+    // Embind vector (main-thread mode)
+    if (typeof vectorOrArray.size === 'function') {
+        const arr = [];
+        for (let i = 0; i < vectorOrArray.size(); i++) {
+            arr.push(vectorOrArray.get(i));
+        }
+        return arr;
+    }
+    
+    // Unknown type, return as-is
+    return vectorOrArray;
+}
 
 export const useTaskQueueStore = defineStore('taskQueue', {
     state: () => ({
@@ -32,7 +58,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const shapeResult = mkf.get_shape_data(coreShapeName)
+            const shapeResult = await mkf.get_shape_data(coreShapeName)
             if (shapeResult.startsWith('Exception')) {
                 setTimeout(() => {this.coreShapeProcessed(false, shapeResult)}, this.task_standard_response_delay);
                 throw new Error(shapeResult);
@@ -51,7 +77,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const materialResult = mkf.get_material_data(coreMaterialName)
+            const materialResult = await mkf.get_material_data(coreMaterialName)
             if (materialResult.startsWith('Exception')) {
                 setTimeout(() => {this.coreMaterialProcessed(false, materialResult)}, this.task_standard_response_delay);
                 throw new Error(materialResult);
@@ -72,7 +98,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             core.geometricalDescription = null;
             core.processedDescription = null;
-            const coreResult = mkf.calculate_core_data(JSON.stringify(core), false)
+            const coreResult = await mkf.calculate_core_data(JSON.stringify(core), false)
             if (coreResult.startsWith('Exception')) {
                 setTimeout(() => {this.coreProcessed(false, coreResult);}, this.task_standard_response_delay);
                 throw new Error(coreResult);
@@ -95,8 +121,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const shapeResult = mkf.get_shape_data(shapeName);
-            const coreResult = mkf.calculate_core_data_from_shape(shapeResult);
+            const shapeResult = await mkf.get_shape_data(shapeName);
+            const coreResult = await mkf.calculate_core_data_from_shape(shapeResult);
             if (coreResult.startsWith('Exception')) {
                 this.coreFromShapeProcessed(false, coreResult);
                 throw new Error(coreResult);
@@ -105,6 +131,25 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 const core = JSON.parse(coreResult);                
                 this.coreFromShapeProcessed(true, core);
                 return core;
+            }
+        },
+
+        allCoresFromShapesProcessed(success = true, dataOrMessage = '') {
+        },
+
+        async processAllCoresFromShapes() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const allCoresResult = await mkf.calculate_all_core_data_from_shapes();
+            if (allCoresResult.startsWith('Exception')) {
+                this.allCoresFromShapesProcessed(false, allCoresResult);
+                throw new Error(allCoresResult);
+            }
+            else {
+                const cores = JSON.parse(allCoresResult);
+                this.allCoresFromShapesProcessed(true, cores);
+                return cores;
             }
         },
 
@@ -117,9 +162,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             let coreShapeFamilies = [];
 
-            const coreShapeFamiliesHandle = mkf.get_available_core_shape_families();
-            for (let i = coreShapeFamiliesHandle.size() - 1; i >= 0; i--) {
-                const shapeFamily = coreShapeFamiliesHandle.get(i);
+            const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
+            for (const shapeFamily of coreShapeFamiliesArr) {
                 if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
                     !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
                     if (wiringTechnology == null || wiringTechnology == 'Wound' || shapeFamily != 'T') {
@@ -142,9 +186,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             await mkf.ready;
             const availableFamilySubtypes = [];
 
-            const coreShapeFamilSubtypesHandle = mkf.get_shape_family_subtypes(family);
-            for (let i = 0; i < coreShapeFamilSubtypesHandle.size(); i++) {
-                const shapeFamilySubtype = coreShapeFamilSubtypesHandle.get(i);
+            const coreShapeFamilSubtypesArr = toArray(await mkf.get_shape_family_subtypes(family));
+            for (const shapeFamilySubtype of coreShapeFamilSubtypesArr) {
                 if (!shapeFamilySubtype.includes("pqi") && !shapeFamilySubtype.includes("ut") &&
                     !shapeFamilySubtype.includes("ui") && !shapeFamilySubtype.includes("h") && !shapeFamilySubtype.includes("drum")) {
                     availableFamilySubtypes.push(shapeFamilySubtype);
@@ -162,10 +205,9 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const dimensionsHandle = mkf.get_shape_family_dimensions(family, familySubtype);
+            const dimensionsArr = toArray(await mkf.get_shape_family_dimensions(family, familySubtype));
             const dimensions = {};
-            for (let i = 0; i < dimensionsHandle.size(); i++) {
-                const key = dimensionsHandle.get(i);
+            for (const key of dimensionsArr) {
                 if (family in dimensionsExceptionsPerFamily) {
                     if (dimensionsExceptionsPerFamily[family].includes(key)) {
                         continue;
@@ -192,9 +234,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             let coreShapeFamilies = [];
             const coreShapeNames = {};
 
-            const coreShapeFamiliesHandle = mkf.get_available_core_shape_families();
-            for (let i = coreShapeFamiliesHandle.size() - 1; i >= 0; i--) {
-                const shapeFamily = coreShapeFamiliesHandle.get(i);
+            const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
+            for (const shapeFamily of coreShapeFamiliesArr) {
                 if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
                     !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
                     if (mas.inputs.designRequirements.wiringTechnology == null || mas.inputs.designRequirements.wiringTechnology == 'Wound' || shapeFamily != 'T') {
@@ -206,7 +247,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             coreShapeFamilies = coreShapeFamilies.sort();
 
             if (onlyManufacturer != '' && onlyManufacturer != null) {
-                const coreShapeNamesHandle = mkf.get_available_core_shapes_by_manufacturer(onlyManufacturer);
+                const coreShapeNamesArr = toArray(await mkf.get_available_core_shapes_by_manufacturer(onlyManufacturer));
 
                 coreShapeFamilies.forEach((shapeFamily) => {
                     if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
@@ -216,8 +257,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                         coreShapeNames[shapeFamily] = [];
                         
                         let numberShapes = 0;
-                        for (let i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
-                            const aux = coreShapeNamesHandle.get(i);
+                        for (const aux of coreShapeNamesArr) {
                             if (aux.startsWith(shapeFamily + " ")) {
                                 numberShapes += 1;
                                 coreShapeNames[shapeFamily].push(aux);
@@ -231,15 +271,14 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 })
             }
             else {
-                coreShapeFamilies.forEach((shapeFamily) => {
+                for (const shapeFamily of coreShapeFamilies) {
                     if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
                         !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
                         coreShapeNames[shapeFamily] = [];
-                        const coreShapeNamesHandle = mkf.get_available_core_shapes_by_family(shapeFamily.toLowerCase())
+                        const coreShapeNamesArr = toArray(await mkf.get_available_core_shapes_by_family(shapeFamily.toLowerCase()));
 
                         let numberShapes = 0;
-                        for (let i = coreShapeNamesHandle.size() - 1; i >= 0; i--) {
-                            const aux = coreShapeNamesHandle.get(i);
+                        for (const aux of coreShapeNamesArr) {
                             numberShapes += 1;
                             coreShapeNames[shapeFamily].push(aux);
                         }
@@ -248,7 +287,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                         }
 
                     }
-                })
+                }
             }
 
             if (mas.magnetic.core.functionalDescription.shape.type == "custom") {
@@ -268,24 +307,23 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             let coreMaterialManufacturers = [];
             const coreMaterialNames = {};
 
-            const coreMaterialManufacturersHandle = mkf.get_available_core_manufacturers();
-            for (let i = coreMaterialManufacturersHandle.size() - 1; i >= 0; i--) {
-                const manufacturer = coreMaterialManufacturersHandle.get(i);
+            const coreMaterialManufacturersArr = toArray(await mkf.get_available_core_manufacturers());
+            for (const manufacturer of coreMaterialManufacturersArr) {
                 coreMaterialManufacturers.push(manufacturer);
             }
 
             coreMaterialManufacturers = coreMaterialManufacturers.sort();
 
-            coreMaterialManufacturers.forEach((manufacturer) => {
+            for (const manufacturer of coreMaterialManufacturers) {
                 coreMaterialNames[manufacturer] = []
                 if (!(onlyManufacturer != '' && onlyManufacturer != null && manufacturer != onlyManufacturer)) {
-                    const coreMaterialNamesHandle = mkf.get_available_core_materials(manufacturer);
-                    for (let i = coreMaterialNamesHandle.size() - 1; i >= 0; i--) {
-                        coreMaterialNames[manufacturer].push(coreMaterialNamesHandle.get(i));
+                    const coreMaterialNamesArr = toArray(await mkf.get_available_core_materials(manufacturer));
+                    for (const materialName of coreMaterialNamesArr) {
+                        coreMaterialNames[manufacturer].push(materialName);
                     }
                 }
                 // coreMaterialNames[manufacturer] = coreMaterialNames[manufacturer].sort();
-            })
+            }
             setTimeout(() => {this.coreMaterialsGotten(true, coreMaterialNames);}, 10);
             return coreMaterialNames;
         },
@@ -304,7 +342,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 let magnetizingInductanceCheck;
 
                 {
-                    const result = mkf.get_core_temperature_dependant_parameters(JSON.stringify(magnetic.core), inputs.operatingPoints[operatingPointIndex].conditions.ambientTemperature);
+                    const result = await mkf.get_core_temperature_dependant_parameters(JSON.stringify(magnetic.core), inputs.operatingPoints[operatingPointIndex].conditions.ambientTemperature);
                     if (result.startsWith("Exception")) {
                         setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
                         throw new Error(result);
@@ -316,7 +354,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 }
 
                 {
-                    const result = mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs.operatingPoints[operatingPointIndex]), JSON.stringify(modelsData));
+                    const result = await mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs.operatingPoints[operatingPointIndex]), JSON.stringify(modelsData));
                     if (result == -1) {
                         setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
                         throw new Error(result);
@@ -327,7 +365,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 }
 
                 {
-                    const result = mkf.calculate_core_losses(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs), JSON.stringify(modelsData), operatingPointIndex);
+                    const result = await mkf.calculate_core_losses(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs), JSON.stringify(modelsData), operatingPointIndex);
                     if (result.startsWith("Exception")) {
                         setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
                         throw new Error(result);
@@ -338,7 +376,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 }
 
                 {
-                    magnetizingInductanceCheck = mkf.check_requirement(JSON.stringify(inputs.designRequirements.magnetizingInductance), magnetizingInductance);
+                    magnetizingInductanceCheck = await mkf.check_requirement(JSON.stringify(inputs.designRequirements.magnetizingInductance), magnetizingInductance);
 
                 }
 
@@ -364,7 +402,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 const mkf = await waitForMkf();
                 await mkf.ready;
 
-                const result = mkf.get_core_temperature_dependant_parameters(JSON.stringify(core), ambientTemperature);
+                const result = await mkf.get_core_temperature_dependant_parameters(JSON.stringify(core), ambientTemperature);
                 if (result.startsWith("Exception")) {
                     setTimeout(() => {this.coreTemperatureDependantParametersGotten(false, result);}, this.task_standard_response_delay);
                     throw new Error(result);
@@ -404,10 +442,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
 
             let bobbinResult = "";
             if (wiringTechnology == "Printed") {
-                bobbinResult = mkf.create_simple_bobbin_from_core_with_custom_thickness(JSON.stringify(core), 0);
+                bobbinResult = await mkf.create_simple_bobbin_from_core_with_custom_thickness(JSON.stringify(core), 0);
             }
             else {
-                bobbinResult = mkf.create_simple_bobbin_from_core(JSON.stringify(core));
+                bobbinResult = await mkf.create_simple_bobbin_from_core(JSON.stringify(core));
             }
             if (bobbinResult.startsWith("Exception")) {
                 setTimeout(() => {this.bobbinFromCoreShapeGenerated(false, bobbinResult);}, this.task_standard_response_delay);
@@ -427,7 +465,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const bobbinResult = mkf.create_simple_bobbin_from_core_with_custom_thicknesses(JSON.stringify(core), bobbinWallThickness, bobbinColumnThickness);
+            const bobbinResult = await mkf.create_simple_bobbin_from_core_with_custom_thicknesses(JSON.stringify(core), bobbinWallThickness, bobbinColumnThickness);
 
             if (bobbinResult.startsWith("Exception")) {
                 setTimeout(() => {this.bobbinDifferentThicknessesGenerated(false, bobbinResult);}, this.task_standard_response_delay);
@@ -447,7 +485,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const settings = JSON.parse(mkf.get_settings());
+            const settings = JSON.parse(await mkf.get_settings());
 
             if (hasCurrentApplicationMirroredWindings) {
                 settings["coreIncludeDistributedGaps"] = false;
@@ -464,9 +502,9 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 settings["useToroidalCores"] = adviserSettings.allowToroidalCores;
                 settings["useOnlyCoresInStock"] = false;
             }
-            mkf.set_settings(JSON.stringify(settings));
+            await mkf.set_settings(JSON.stringify(settings));
 
-            const result = mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, adviserSettings.coreAdviseMode);
+            const result = await mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, adviserSettings.coreAdviseMode);
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.coreAdvised(false, result);}, this.task_standard_response_delay);
                 throw new Error(result);
@@ -490,7 +528,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const dimension = mkf.resolve_dimension_with_tolerance(JSON.stringify(dimensionWithTolerance));
+            const dimension = await mkf.resolve_dimension_with_tolerance(JSON.stringify(dimensionWithTolerance));
 
             this.dimensionWithToleranceResolved(true, dimension);
             return dimension;
@@ -506,15 +544,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const numberTurns = [];
-            const numberTurnsHandle = mkf.calculate_number_turns(numberTurnsPrimary, JSON.stringify(designRequirements));
+            const numberTurnsArr = toArray(await mkf.calculate_number_turns(numberTurnsPrimary, JSON.stringify(designRequirements)));
 
-            for (let i = 0; i < numberTurnsHandle.size(); i++) {
-                numberTurns.push(numberTurnsHandle.get(i));
-            }
-
-            setTimeout(() => {this.numberTurnsCalculated(true, numberTurns);}, this.task_standard_response_delay);
-            return numberTurns;
+            setTimeout(() => {this.numberTurnsCalculated(true, numberTurnsArr);}, this.task_standard_response_delay);
+            return numberTurnsArr;
         },
 
         complexPermeabilityGotten(success = true, dataOrMessage = '') {
@@ -524,7 +557,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const complexPermeabilityResult = mkf.calculate_complex_permeability(JSON.stringify(material));
+            const complexPermeabilityResult = await mkf.calculate_complex_permeability(JSON.stringify(material));
 
             if (complexPermeabilityResult.startsWith("Exception")) {
                 setTimeout(() => {this.complexPermeabilityGotten(false, complexPermeabilityResult);}, this.task_standard_response_delay);
@@ -544,7 +577,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.get_defaults();
+            const result = await mkf.get_defaults();
             setTimeout(() => {this.defaultsGotten(true, result);}, this.task_standard_response_delay);
             return result;
         },
@@ -556,7 +589,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.get_constants();
+            const result = await mkf.get_constants();
             setTimeout(() => {this.constantsGotten(true, result);}, this.task_standard_response_delay);
             return result;
         },
@@ -572,11 +605,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             data.forEach((elem) => {
                 stringVector.push(JSON.stringify(elem));
             })
-            const handle = mkf.get_only_frequency_dependent_indexes(JSON.stringify(stringVector));
+            const handleArr = toArray(await mkf.get_only_frequency_dependent_indexes(JSON.stringify(stringVector)));
 
             const indexes = [];
-            for (let i = 0; i < handle.size(); i++) {
-                const aux = handle.get(i);
+            for (const aux of handleArr) {
                 if (data[aux].frequency != null) {
                     indexes.push(aux);
                 }
@@ -597,11 +629,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             data.forEach((elem) => {
                 stringVector.push(JSON.stringify(elem));
             })
-            const handle = mkf.get_only_magnetic_field_dc_bias_dependent_indexes(JSON.stringify(stringVector));
+            const handleArr = toArray(await mkf.get_only_magnetic_field_dc_bias_dependent_indexes(JSON.stringify(stringVector)));
 
             const indexes = [];
-            for (let i = 0; i < handle.size(); i++) {
-                const aux = handle.get(i);
+            for (const aux of handleArr) {
                 if (data[aux].magneticFieldDcBias != null) {
                     indexes.push(aux);
                 }
@@ -622,11 +653,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             data.forEach((elem) => {
                 stringVector.push(JSON.stringify(elem));
             })
-            const handle = mkf.get_only_temperature_dependent_indexes(JSON.stringify(stringVector));
+            const handleArr = toArray(await mkf.get_only_temperature_dependent_indexes(JSON.stringify(stringVector)));
 
             const indexes = [];
-            for (let i = 0; i < handle.size(); i++) {
-                const aux = handle.get(i);
+            for (const aux of handleArr) {
                 indexes.push(aux);
             }
 
@@ -641,7 +671,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const handle = mkf.get_initial_permeability_equations(JSON.stringify(data));
+            const handle = await mkf.get_initial_permeability_equations(JSON.stringify(data));
 
             this.initialPermeabilityEquationsGotten(true, handle);
             return handle;
@@ -654,7 +684,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const handle = mkf.get_core_volumetric_losses_equations(JSON.stringify(data));
+            const handle = await mkf.get_core_volumetric_losses_equations(JSON.stringify(data));
 
             this.coreVolumetricLossesEquationsGotten(true, handle);
             return handle;
@@ -667,7 +697,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const requirementCheckResult = mkf.check_requirement(JSON.stringify(requirement), value);
+            const requirementCheckResult = await mkf.check_requirement(JSON.stringify(requirement), value);
 
             this.requirementChecked(true, requirementCheckResult);
             return requirementCheckResult;
@@ -692,15 +722,15 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const data = {};
 
             data.turnsRatio = coil.functionalDescription[0].numberTurns / coil.functionalDescription[windingIndex].numberTurns;
-            data.dcResistancePerMeter = mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints.conditions.ambientTemperature);
-            data.skinAcResistancePerMeter = mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-            data.skinAcFactor = mkf.calculate_skin_ac_factor(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-            data.dcLossesPerMeter = mkf.calculate_dc_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-            data.skinAcLossesPerMeter = mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-            const outerDimensionsHandle = mkf.get_outer_dimensions(wireString);
-            data.outerDimensions = [outerDimensionsHandle.get(0), outerDimensionsHandle.get(1)];
-            data.effectiveCurrentDensity = mkf.calculate_effective_current_density(wireString, currentString, operatingPoints.conditions.ambientTemperature) / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
-            data.effectiveSkinDepth = mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);        
+            data.dcResistancePerMeter = await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints.conditions.ambientTemperature);
+            data.skinAcResistancePerMeter = await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+            data.skinAcFactor = await mkf.calculate_skin_ac_factor(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+            data.dcLossesPerMeter = await mkf.calculate_dc_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+            data.skinAcLossesPerMeter = await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+            const outerDimensionsArr = toArray(await mkf.get_outer_dimensions(wireString));
+            data.outerDimensions = [outerDimensionsArr[0], outerDimensionsArr[1]];
+            data.effectiveCurrentDensity = (await mkf.calculate_effective_current_density(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
+            data.effectiveSkinDepth = await mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);        
 
             this.wireDataCalculated(true, data);
             return data;
@@ -713,7 +743,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wireResult = mkf.get_wire_data(JSON.stringify(winding))
+            const wireResult = await mkf.get_wire_data(JSON.stringify(winding))
 
             if (wireResult.startsWith('Exception')) {
                 setTimeout(() => {this.wireProcessed(false, wireResult);}, this.task_standard_response_delay);
@@ -733,7 +763,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const coatingLabel = mkf.get_coating_label(JSON.stringify(wire));
+            const coatingLabel = await mkf.get_coating_label(JSON.stringify(wire));
             setTimeout(() => {this.wireCoatingLabelGotten(true, coatingLabel);}, this.task_standard_response_delay);
             return coatingLabel;
         },
@@ -745,7 +775,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wire = mkf.get_wire_data_by_name(JSON.stringify(wireName));
+            const wire = await mkf.get_wire_data_by_name(JSON.stringify(wireName));
             setTimeout(() => {this.wireDataByNameGotten(true, wire);}, this.task_standard_response_delay);
             return wire;
         },
@@ -791,7 +821,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 wire.type = "litz";
 
                 if (typeof(wire.strand) == "string" || wire.strand == null || (wire.strand != null && wire.strand.coating == null)) {
-                    wire.strand = JSON.parse(mkf.get_wire_data_by_standard_name(newWireDataDict["litzStrandConductingDiameter"]));
+                    wire.strand = JSON.parse(await mkf.get_wire_data_by_standard_name(newWireDataDict["litzStrandConductingDiameter"]));
                 }
                 wire.numberConductors = newWireDataDict["numberConductors"];
                 if (coating != null) {
@@ -800,18 +830,18 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                     }
 
                     if (wire.outerDiameter.nominal == null && (wire.outerDiameter.minimum != null || wire.outerDiameter.maximum != null)) {
-                        wire.outerDiameter.nominal = mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.outerDiameter));  
+                        wire.outerDiameter.nominal = await mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.outerDiameter));  
                     }
                     if (wire.outerDiameter.nominal == null && wire.outerDiameter.minimum == null && wire.outerDiameter.maximum == null) {
-                        const strandConductingDiameter = mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.strand.conductingDiameter));  
+                        const strandConductingDiameter = await mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.strand.conductingDiameter));  
                         if (coating.type == "bare") {
-                            wire.outerDiameter.nominal = mkf.get_wire_outer_diameter_bare_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, wire.standard);
+                            wire.outerDiameter.nominal = await mkf.get_wire_outer_diameter_bare_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, wire.standard);
                         }
                         if (coating.type == "served") {
-                            wire.outerDiameter.nominal = mkf.get_wire_outer_diameter_served_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, coating.numberLayers, wire.standard);
+                            wire.outerDiameter.nominal = await mkf.get_wire_outer_diameter_served_litz(strandConductingDiameter, wire.numberConductors, wire.strand.coating.grade, coating.numberLayers, wire.standard);
                         }
                         if (coating.type == "insulated") {
-                            wire.outerDiameter.nominal = mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
+                            wire.outerDiameter.nominal = await mkf.get_wire_outer_diameter_insulated_litz(strandConductingDiameter, wire.numberConductors, coating.numberLayers, coating.thicknessLayers, wire.strand.coating.grade, wire.standard);
                         }
                     }
 
@@ -840,8 +870,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                         coating.type = "enamelled"
                         coating.grade = 1
                     }
-                    wire.outerHeight.nominal = mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], grade, wire.standard);
-                    wire.outerWidth.nominal = mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], grade, wire.standard);
+                    wire.outerHeight.nominal = await mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], grade, wire.standard);
+                    wire.outerWidth.nominal = await mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], grade, wire.standard);
                 }
             }
             else if (newWireDataDict["type"] == "foil") {
@@ -881,7 +911,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.get_wire_data_by_standard_name(conductingDiamension);
+            const result = await mkf.get_wire_data_by_standard_name(conductingDiamension);
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.wireDataByStandardNameGotten(false, result);}, this.task_standard_response_delay);
                 throw new Error(result);
@@ -901,9 +931,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             await mkf.ready;
 
             const wireTypes = {};
-            const wireTypesHandle = mkf.get_available_wire_types();
-            for (let i = wireTypesHandle.size() - 1; i >= 0; i--) {
-                const type = wireTypesHandle.get(i);
+            const wireTypesArr = toArray(await mkf.get_available_wire_types());
+            for (const type of wireTypesArr) {
                 wireTypes[type] = toTitleCase(type);
             }
 
@@ -918,15 +947,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wireStandardsHandle = mkf.get_available_wire_standards();
-            const wireStandards = [];
-            for (let i = wireStandardsHandle.size() - 1; i >= 0; i--) {
-                const standard = wireStandardsHandle.get(i);
-                wireStandards.push(standard);
-            }
+            const wireStandardsArr = toArray(await mkf.get_available_wire_standards());
 
-            setTimeout(() => {this.availableStandardsGotten(true, wireStandards);}, this.task_standard_response_delay);
-            return wireStandards;
+            setTimeout(() => {this.availableStandardsGotten(true, wireStandardsArr);}, this.task_standard_response_delay);
+            return wireStandardsArr;
         },
 
         uniqueWireDiametersGotten(success = true, dataOrMessage = '') {
@@ -937,9 +961,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             await mkf.ready;
 
             const aux = {};
-            const wireConductingDiametersHandle = mkf.get_unique_wire_diameters(JSON.stringify(standard));
-            for (let i = wireConductingDiametersHandle.size() - 1; i >= 0; i--) {
-                const wireDiameter = wireConductingDiametersHandle.get(i);
+            const wireConductingDiametersArr = toArray(await mkf.get_unique_wire_diameters(JSON.stringify(standard)));
+            for (const wireDiameter of wireConductingDiametersArr) {
                 const key = Number(wireDiameter.split(" ")[0]);
                 aux[key] = wireDiameter;
             }
@@ -962,16 +985,10 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wireCoatingsHandle = mkf.get_coating_labels_by_type(JSON.stringify(wireType));
+            const wireCoatingsArr = toArray(await mkf.get_coating_labels_by_type(JSON.stringify(wireType)));
 
-            const wireCoatings = [];
-            for (let i = wireCoatingsHandle.size() - 1; i >= 0; i--) {
-                const wireCoating = wireCoatingsHandle.get(i);
-                wireCoatings.push(wireCoating);
-            }
-
-            setTimeout(() => {this.coatingLabelsByTypeGotten(true, wireCoatings);}, this.task_standard_response_delay);
-            return wireCoatings;
+            setTimeout(() => {this.coatingLabelsByTypeGotten(true, wireCoatingsArr);}, this.task_standard_response_delay);
+            return wireCoatingsArr;
         },
 
         equivalentWireCalculated(success = true, dataOrMessage = '') {
@@ -981,7 +998,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wireString = mkf.get_equivalent_wire(JSON.stringify(oldWire), JSON.stringify(newType), effectiveFrequency);
+            const wireString = await mkf.get_equivalent_wire(JSON.stringify(oldWire), JSON.stringify(newType), effectiveFrequency);
 
             if (wireString.startsWith("Exception")) {
                 setTimeout(() => {this.equivalentWireCalculated(false, wireString);}, this.task_standard_response_delay);
@@ -1001,7 +1018,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const resultMasWithCoil = mkf.calculate_advised_coil(JSON.stringify(mas));
+            const resultMasWithCoil = await mkf.calculate_advised_coil(JSON.stringify(mas));
 
             if (resultMasWithCoil.startsWith("Exception")) {
                 setTimeout(() => {this.allWiresAdvised(false, resultMasWithCoil);}, this.task_standard_response_delay);
@@ -1021,7 +1038,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const resultMasWithCoil = mkf.calculate_advised_coil(JSON.stringify(mas));
+            const resultMasWithCoil = await mkf.calculate_advised_coil(JSON.stringify(mas));
 
             if (resultMasWithCoil.startsWith("Exception")) {
                 setTimeout(() => {this.allWiresAdvised(false, resultMasWithCoil);}, this.task_standard_response_delay);
@@ -1045,7 +1062,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const magneticsString = JSON.stringify(mas.magnetic);
             const modelsString = JSON.stringify(modelsData);
 
-            const result = mkf.simulate(inputsString, magneticsString, modelsString);
+            const result = await mkf.simulate(inputsString, magneticsString, modelsString);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.simulated(false, result);}, this.task_standard_response_delay);
@@ -1066,9 +1083,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             await mkf.ready;
 
             const sectionsOrientations = {};
-            const handle = mkf.get_available_winding_orientations();
-            for (let i = handle.size() - 1; i >= 0; i--) {
-                const type = handle.get(i);
+            const handleArr = toArray(await mkf.get_available_winding_orientations());
+            for (const type of handleArr) {
                 sectionsOrientations[type] = toTitleCase(type);
             }
 
@@ -1084,9 +1100,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             await mkf.ready;
 
             const coilAlignments = {};
-            const handle = mkf.get_available_coil_alignments();
-            for (let i = handle.size() - 1; i >= 0; i--) {
-                const type = handle.get(i);
+            const handleArr = toArray(await mkf.get_available_coil_alignments());
+            for (const type of handleArr) {
                 coilAlignments[type] = toTitleCase(type);
             }
 
@@ -1101,7 +1116,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const fits = mkf.check_if_fits(JSON.stringify(bobbin), bottomOrRightMargin, isMarginHorizontal);
+            const fits = await mkf.check_if_fits(JSON.stringify(bobbin), bottomOrRightMargin, isMarginHorizontal);
 
             setTimeout(() => {this.fitChecked(true, fits);}, this.task_standard_response_delay);
             return fits;
@@ -1114,7 +1129,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+            const result = await mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.wound(false, result);}, this.task_standard_response_delay);
@@ -1152,7 +1167,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             }
             clearancePerWindingString += "]";
 
-            const result = mkf.wind_planar(JSON.stringify(inputCoil), JSON.stringify(stackUp), borderToWireDistance, clearancePerWindingString, insulationThicknessPerLayerString, coreToLayerDistance);
+            const result = await mkf.wind_planar(JSON.stringify(inputCoil), JSON.stringify(stackUp), borderToWireDistance, clearancePerWindingString, insulationThicknessPerLayerString, coreToLayerDistance);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.planarWound(false, result);}, this.task_standard_response_delay);
@@ -1172,7 +1187,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const planarThicknesses = mkf.get_planar_thicknesses();
+            const planarThicknesses = await mkf.get_planar_thicknesses();
 
             setTimeout(() => {this.planarThicknessesGotten(true, planarThicknesses);}, this.task_standard_response_delay);
             return planarThicknesses;
@@ -1185,7 +1200,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.calculate_filling_factor(JSON.stringify(coil));
+            const result = await mkf.calculate_filling_factor(JSON.stringify(coil));
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.fillingFactorsCalculated(false, result);}, this.task_standard_response_delay);
@@ -1205,7 +1220,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const fits = mkf.are_sections_and_layers_fitting(JSON.stringify(coil));
+            const fits = await mkf.are_sections_and_layers_fitting(JSON.stringify(coil));
 
             setTimeout(() => {this.sectionsAndLayersFittingChecked(true, fits);}, this.task_standard_response_delay);
             return fits;
@@ -1221,7 +1236,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            mkf.set_settings(JSON.stringify(settings));
+            await mkf.set_settings(JSON.stringify(settings));
 
             setTimeout(() => {this.settingsSet(true, true);}, this.task_standard_response_delay);
             return true;
@@ -1234,7 +1249,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.get_settings();
+            const result = await mkf.get_settings();
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.settingsGotten(false, result);}, this.task_standard_response_delay);
@@ -1254,7 +1269,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.calculate_gap_reluctance(JSON.stringify(gap), gapReluctanceModel);
+            const result = await mkf.calculate_gap_reluctance(JSON.stringify(gap), gapReluctanceModel);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.gapReluctanceCalculated(false, result);}, this.task_standard_response_delay);
@@ -1274,7 +1289,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_core_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+            const result = await mkf.sweep_core_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.coreLossesOverFrequencySwept(false, result);}, this.task_standard_response_delay);
@@ -1294,7 +1309,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_winding_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+            const result = await mkf.sweep_winding_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.windingLossesOverFrequencySwept(false, result);}, this.task_standard_response_delay);
@@ -1314,7 +1329,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_impedance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title);
+            const result = await mkf.sweep_impedance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.impedanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
@@ -1334,7 +1349,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_magnetizing_inductance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+            const result = await mkf.sweep_magnetizing_inductance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.magnetizingInductanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
@@ -1354,7 +1369,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_q_factor_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title);
+            const result = await mkf.sweep_q_factor_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.qFactorOverFrequencySwept(false, result);}, this.task_standard_response_delay);
@@ -1374,7 +1389,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_resistance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+            const result = await mkf.sweep_resistance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.resistanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
@@ -1394,7 +1409,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_winding_resistance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, windingIndex, temperature, xAxisMode, title);
+            const result = await mkf.sweep_winding_resistance_over_frequency(JSON.stringify(magnetic), minimumFrequency, maximumFrequency, numberPoints, windingIndex, temperature, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.windingResistanceOverFrequencySwept(false, result);}, this.task_standard_response_delay);
@@ -1414,7 +1429,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_magnetizing_inductance_over_dc_bias(JSON.stringify(magnetic), minimumDcBias, maximumDcBias, numberPoints, temperature, xAxisMode, title);
+            const result = await mkf.sweep_magnetizing_inductance_over_dc_bias(JSON.stringify(magnetic), minimumDcBias, maximumDcBias, numberPoints, temperature, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.magnetizingInductanceOverDcBiasSwept(false, result);}, this.task_standard_response_delay);
@@ -1434,7 +1449,7 @@ export const useTaskQueueStore = defineStore('taskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = mkf.sweep_magnetizing_inductance_over_temperature(JSON.stringify(magnetic), minimumTemperature, maximumTemperature, numberPoints, frequency, xAxisMode, title);
+            const result = await mkf.sweep_magnetizing_inductance_over_temperature(JSON.stringify(magnetic), minimumTemperature, maximumTemperature, numberPoints, frequency, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.magnetizingInductanceOverTemperatureSwept(false, result);}, this.task_standard_response_delay);

@@ -135,11 +135,11 @@ export default {
                 this.imageUpToDate = true;
             }
         },
-        swapFieldPlot(newValue) {
-            this.$stateStore.magnetic2DVisualizerState.plotMagneticField = newValue == '1';
+        plotModeChange(newMode) {
+            this.$stateStore.magnetic2DVisualizerState.plotMode = newMode;
         },
         swapIncludeFringing(newValue) {
-            this.$stateStore.magnetic2DVisualizerState.plotFringingField = newValue == '1';
+            this.$stateStore.magnetic2DVisualizerState.includeFringing = newValue == '1';
         },
         fits(coilFits) {
             this.coilFits = coilFits;
@@ -154,6 +154,9 @@ export default {
                     this.retries -= 1;
                 }, 1000);
             }
+        },
+        showParasiticsView() {
+            this.$stateStore.magneticBuilder.mode.coil = this.$stateStore.MagneticBuilderModes.Advanced;
         },
     }
 }
@@ -174,20 +177,31 @@ export default {
                 :forceUpdate="forceUpdate"
                 :operatingPointIndex="operatingPointIndex"
                 :enableZoom="false"
-                :enableOptions="enableOptions"
+                :enableOptions="false"
                 :enableHideOnFitting="enableSimulation"
                 :coilFits="true"
-                :showFieldPlotInit="$stateStore.magnetic2DVisualizerState.plotMagneticField"
-                :includeFringingInit="$stateStore.magnetic2DVisualizerState.plotFringingField"
+                :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
+                :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
                 :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                 :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
-                @swapFieldPlot="swapFieldPlot"
+                @plotModeChange="plotModeChange"
                 @swapIncludeFringing="swapIncludeFringing"
                 @errorInImage="errorInImage"
                 :loadingGif="$settingsStore.loadingGif"
                 />
         </div>
         <h4 v-else class="mb-5" > {{"Coil Description"}} </h4>
+
+        <button
+            v-if="enableSimulation && useVisualizers"
+            :style="$styleStore.magneticBuilder.showAlignmentOptionsButton"
+            :disabled="masStore.mas.magnetic == null || masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''"
+            :data-cy="dataTestLabel + '-Coil-ShowParasiticsView-button'"
+            class="btn mx-auto d-block mb-3 mt-0"
+            @click="showParasiticsView"
+        >
+            {{'Open Advanced Parasitics Section'}}
+        </button>
 
         <div class="row mb-2">
             <BasicCoilSelector

@@ -4,6 +4,7 @@ import CoreBuilder from './MagneticBuilder/Core/CoreBuilder.vue'
 import BasicWireBuilder from './MagneticBuilder/Wire/BasicWireBuilder.vue'
 import BasicCoilBuilder from './MagneticBuilder/Coil/BasicCoilBuilder.vue'
 import AdvancedCoreSelector from './MagneticBuilder/Core/AdvancedCoreSelector.vue'
+import AdvancedCoilInfo from './MagneticBuilder/Coil/AdvancedCoilInfo.vue'
 import GraphInfo from './MagneticBuilder/GraphInfo.vue'
 import { isMobile } from '/WebSharedComponents/assets/js/utils.js'
 import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
@@ -12,6 +13,7 @@ import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettin
 
 <script>
 export default {
+    emits: ["canContinue"],
     props: {
         dataTestLabel: {
             type: String,
@@ -196,6 +198,16 @@ export default {
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreSelector'"
                 :masStore="masStore"
                 :enableSimulation="true"
+            />
+        </div>
+        <div
+            class="row"
+            v-else-if="$stateStore.magneticBuilder.mode.coil == $stateStore.MagneticBuilderModes.Advanced"
+        >
+            <AdvancedCoilInfo
+                :dataTestLabel="dataTestLabel + '-AdvancedCoilInfo'"
+                :masStore="masStore"
+                :operatingPointIndex="operatingPointIndex"
             />
         </div>
         <div 

@@ -33,6 +33,9 @@ export default {
     mounted () {
     },
     methods: {
+        goToMagneticsAdviser() {
+            this.$router.push('/magnetic_adviser');
+        },
         coreSubmodeShape() {
             this.$stateStore.magneticBuilder.submode.core = this.$stateStore.MagneticBuilderCoreSubmodes.Shape;
         },
@@ -48,6 +51,9 @@ export default {
         coreAdvancedModeCancelChanges() {
             this.$stateStore.cancelChanges();
         },
+        coilAdvancedModeClose() {
+            this.$stateStore.closeCoilAdvancedInfo();
+        },
     }
 }
 </script>
@@ -55,6 +61,15 @@ export default {
 <template>
     <div class="pb-2 p-0 container" v-tooltip="styleTooltip" :style="$styleStore.contextMenu.main">
         <div class="row px-3">
+            <button
+                :style="$styleStore.contextMenu.changeToolButton"
+                v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Basic && $stateStore.magneticBuilder.mode.coil == $stateStore.MagneticBuilderModes.Basic"
+                :data-cy="dataTestLabel + '-magnetics-adviser-button'"
+                class="btn mx-auto d-block mt-1 col-2"
+                @click="goToMagneticsAdviser"
+            >
+                {{'Magnetic Adviser'}}
+            </button>
             <button
                 :style="$styleStore.contextMenu.customizeCoreSectionButton"
                 v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced && $stateStore.magneticBuilder.submode.core != $stateStore.MagneticBuilderCoreSubmodes.Shape"  
@@ -97,6 +112,14 @@ export default {
                 @click="coreAdvancedModeCancelChanges"
             >
                 {{'Cancel'}}
+            </button>
+            <button
+                :style="$styleStore.contextMenu.cancelButton"
+                v-if="$stateStore.magneticBuilder.mode.coil == $stateStore.MagneticBuilderModes.Advanced"  
+                class="btn mx-auto d-block mt-1 col-2"
+                @click="coilAdvancedModeClose"
+            >
+                {{'Close'}}
             </button>
         </div>
     </div>

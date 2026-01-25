@@ -564,7 +564,7 @@ export default {
                 <div
                     v-if="core.functionalDescription != null"
                     class="row"
-                    style="height: 30vh"
+                    style="height: 50vh"
                     :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
                 >
                     <Core3DVisualizer 

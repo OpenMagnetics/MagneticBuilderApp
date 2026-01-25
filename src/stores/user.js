@@ -64,8 +64,8 @@ export const useUserStore = defineStore("user", () => {
 
         this.magnetic2DVisualizerState = {
             PlotCurrentView: null,
-            PlotMagneticField: false,
-            PlotFringingField: true,
+            PlotMode: 'basic',
+            IncludeFringing: true,
         };
 
 
