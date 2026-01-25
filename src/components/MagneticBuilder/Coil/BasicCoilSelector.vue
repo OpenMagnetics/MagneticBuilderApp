@@ -251,6 +251,19 @@ export default {
                         console.error(args[1])
                     }
                 }
+                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated") {
+                    if (args[0]) {
+                        // Clear old winding positions and re-wind with new bobbin
+                        this.masStore.mas.magnetic.coil.turnsDescription = null;
+                        this.masStore.mas.magnetic.coil.layersDescription = null;
+                        this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                        this.recentChange = true;
+                        this.tryToWind();
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
             });
         }))
     },

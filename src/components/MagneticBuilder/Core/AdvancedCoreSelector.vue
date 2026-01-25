@@ -97,7 +97,9 @@ export default {
 
             this.masStore.mas.magnetic.core = deepCopy(this.localCore);
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;
-            this.taskQueueStore.generateBobbinFromCoreShape(this.localCore, this.masStore.mas.inputs.designRequirements.wiringTechnology);
+            this.taskQueueStore.generateBobbinFromCoreShape(this.localCore, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
+                this.masStore.mas.magnetic.coil.bobbin = bobbin;
+            });
         },
         cancelChanges() {
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Basic;

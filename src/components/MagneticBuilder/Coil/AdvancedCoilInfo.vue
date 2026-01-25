@@ -130,26 +130,23 @@ export default {
             this.calculatingMatrices = true;
             
             try {
-                await this.$mkf.ready;
-                
                 const magnetic = this.masStore.mas.magnetic;
                 const operatingPoint = this.masStore.mas.inputs?.operatingPoints?.[this.operatingPointIndex];
                 const frequency = operatingPoint?.excitationsPerWinding?.[0]?.frequency || 100000;
                 
                 // Calculate resistance matrix (TBD - placeholder)
                 // TODO: When calculate_resistance_matrix is exposed in WASM
-                // const resistanceResult = this.$mkf.calculate_resistance_matrix(JSON.stringify(magnetic), frequency, 25);
-                // this.resistanceMatrix = JSON.parse(resistanceResult);
+                // const resistanceMatrix = await this.taskQueueStore.calculateResistanceMatrix(magnetic, frequency, 25);
+                // this.resistanceMatrix = resistanceMatrix;
                 this.resistanceMatrix = this.createPlaceholderMatrix(magnetic.coil.functionalDescription?.length || 1);
                 
                 // Calculate inductance matrix from leakage inductance
                 try {
-                    const leakageResult = await this.$mkf.calculate_leakage_inductance(
-                        JSON.stringify(magnetic),
+                    const leakageData = await this.taskQueueStore.calculateLeakageInductance(
+                        magnetic,
                         frequency,
                         0
                     );
-                    const leakageData = JSON.parse(leakageResult);
                     if (leakageData.leakageInductancePerWinding) {
                         this.inductanceMatrix = this.buildInductanceMatrix(leakageData.leakageInductancePerWinding);
                     }
@@ -160,8 +157,7 @@ export default {
                 
                 // Calculate capacitance matrices (TBD - placeholder)
                 // TODO: When calculate_stray_capacitance is exposed in WASM
-                // const capacitanceResult = this.$mkf.calculate_stray_capacitance(JSON.stringify(magnetic.coil));
-                // const capacitanceData = JSON.parse(capacitanceResult);
+                // const capacitanceData = await this.taskQueueStore.calculateStrayCapacitance(magnetic.coil);
                 // this.maxwellCapacitanceMatrix = capacitanceData.maxwellCapacitanceMatrix;
                 // this.capacitanceMatrix = capacitanceData.capacitanceMatrix;
                 this.maxwellCapacitanceMatrix = this.createPlaceholderMatrix(magnetic.coil.functionalDescription?.length || 1);

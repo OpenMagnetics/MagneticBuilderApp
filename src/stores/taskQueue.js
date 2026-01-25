@@ -29,7 +29,7 @@ function toArray(vectorOrArray) {
     return vectorOrArray;
 }
 
-export const useTaskQueueStore = defineStore('taskQueue', {
+export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
     state: () => ({
         task_standard_response_delay: 20
     }),
@@ -38,10 +38,9 @@ export const useTaskQueueStore = defineStore('taskQueue', {
         },
 
         async checkAndFixMas(mas) {
-            const mkf = await waitForMkf();
-            await mkf.ready;
-
-            checkAndFixMas(mas, mkf).then(response => {
+            // Pass 'this' (the taskQueueStore) so checkAndFixMas uses masAutocomplete
+            // which properly JSON stringifies before calling the worker
+            checkAndFixMas(mas, this).then(response => {
                 setTimeout(() => {this.masCheckedAndFixed(true, response)}, this.task_standard_response_delay);
                 return response;
             })
@@ -49,6 +48,23 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                 setTimeout(() => {this.masCheckedAndFixed(false, error)}, this.task_standard_response_delay);
                 throw new Error(error);
             });
+        },
+
+        masAutocompleted(success = true, dataOrMessage = '') {
+        },
+
+        async masAutocomplete(mas, flag = false, settings = {}) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.mas_autocomplete(JSON.stringify(mas), flag, JSON.stringify(settings));
+            if (result.startsWith('Exception')) {
+                setTimeout(() => { this.masAutocompleted(false, result); }, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            const masResult = JSON.parse(result);
+            setTimeout(() => { this.masAutocompleted(true, masResult); }, this.task_standard_response_delay);
+            return masResult;
         },
 
         coreShapeProcessed(success = true, dataOrMessage = '') {
@@ -360,7 +376,8 @@ export const useTaskQueueStore = defineStore('taskQueue', {
                         throw new Error(result);
                     }
                     else {
-                        magnetizingInductance = JSON.parse(result);
+                        // Result is already a number from the worker, no need to parse
+                        magnetizingInductance = result;
                     }
                 }
 

@@ -127,7 +127,9 @@ export default {
                             this.masStore.mas.magnetic.core = core;
                             this.changeMadeByUser = false;
                             this.masStore.mas.magnetic.manufacturerInfo = null;
-                            this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
+                            this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
+                                this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                            });
                         }
                         else {
                         }
@@ -147,6 +149,17 @@ export default {
 
                             if (coreHash != JSON.stringify(mas.magnetic.core)) {
                                 this.taskQueueStore.processCore(mas.magnetic.core);
+                            }
+                            else if (this.changeMadeByUser) {
+                                // Core hash is the same but user changed shape - still need to regenerate bobbin
+                                this.masStore.mas.magnetic.core = mas.magnetic.core;
+                                this.changeMadeByUser = false;
+                                this.taskQueueStore.generateBobbinFromCoreShape(
+                                    mas.magnetic.core,
+                                    this.masStore.mas.inputs.designRequirements.wiringTechnology
+                                ).then((bobbin) => {
+                                    this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                                });
                             }
                         }
                     }
@@ -242,6 +255,13 @@ export default {
             this.taskQueueStore.processCoreShape(value).then((shape) => {
                 if (this.localData.material == null) {
                     this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
+                    // Still need to regenerate bobbin even without material
+                    this.taskQueueStore.generateBobbinFromCoreShape(
+                        this.masStore.mas.magnetic.core, 
+                        this.masStore.mas.inputs.designRequirements.wiringTechnology
+                    ).then((bobbin) => {
+                        this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                    });
                 }
                 else {
                     const mas = deepCopy(this.masStore.mas);

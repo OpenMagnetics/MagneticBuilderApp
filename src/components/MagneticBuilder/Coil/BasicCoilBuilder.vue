@@ -169,7 +169,7 @@ export default {
         <div
             v-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
             class="row"
-            :class="enableOptions? 'mb-3' : ''"
+            :class="enableOptions? 'mb-1' : ''"
             :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;' + ((masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')? 'height: 50vh;' : 'height: 40vh;')"
         >
             <Magnetic2DVisualizer 
