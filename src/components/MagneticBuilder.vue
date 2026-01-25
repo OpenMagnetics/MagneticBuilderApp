@@ -95,6 +95,14 @@ export default {
             }
             
         },
+        enableAutoSimulationComputed() {
+            if (this.isIsolatedApp) {
+                return true; // Isolated app always auto-simulates
+            }
+            else {
+                return this.magneticBuilderSettingsStore.enableAutoSimulation;
+            }
+        },
         enableSubmenu() {
             // if (this.isIsolatedApp) {
             //     return false;
@@ -220,6 +228,7 @@ export default {
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && enableVisualizers"
                     :enableSimulation="enableSimulationComputed"
+                    :enableAutoSimulation="enableAutoSimulationComputed"
                     :enableSubmenu="enableSubmenu"
                     :enableCustomize="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
@@ -233,6 +242,7 @@ export default {
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && enableVisualizers"
                     :enableSimulation="enableSimulationComputed"
+                    :enableAutoSimulation="enableAutoSimulationComputed"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :isIsolatedApp="isIsolatedApp"
@@ -245,6 +255,7 @@ export default {
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers && enableVisualizers"
                     :enableSimulation="enableSimulationComputed"
+                    :enableAutoSimulation="enableAutoSimulationComputed"
                     :enableOptions="enableCoilOptions"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"

@@ -237,6 +237,14 @@ export const useStyleStore = defineStore("style", () => {
             "background-color": theme["primary"],
             "color": theme["dark"],
         },
+        resimulateButton: {
+            "background-color": theme["warning"],
+            "color": theme["dark"],
+        },
+        resimulateButtonUpToDate: {
+            "background-color": theme["secondary"],
+            "color": theme["white"],
+        },
         showAlignmentOptionsButton: {
             "background-color": theme["primary"],
             "color": theme["dark"],
@@ -369,6 +377,10 @@ export const useStyleStore = defineStore("style", () => {
         },
         redrawButton: {
             "background": theme["success"],
+            "color": theme["dark"],
+        },
+        resimulateButton: {
+            "background": theme["warning"],
             "color": theme["dark"],
         },
         confirmButton: {

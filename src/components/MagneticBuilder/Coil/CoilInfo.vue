@@ -26,6 +26,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
@@ -73,17 +77,29 @@ export default {
             },
           deep: true
         },
+        'enableAutoSimulation': {
+            handler(newValue, oldValue) {
+                // When auto-simulation is turned off, mark data as outdated
+                // so the user knows they need to manually resimulate
+                if (!newValue) {
+                    this.dataUptoDate = false;
+                }
+            },
+        },
     },
     mounted () {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            // Mark as outdated immediately when wind starts
+            if (name == "wind" || name == "windPlanar") {
+                this.dataUptoDate = false;
+            }
             after(() => {
-                if (name == "wind" || name == "windPlanar") {
-                    this.dataUptoDate = false;
-                }
                 if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed") {
                     if (args[0]) {
                         this.dataUptoDate = false;
-                        this.simulate();
+                        if (this.enableAutoSimulation) {
+                            this.simulate();
+                        }
                     }
                     else {
                         console.error(args[1])
@@ -93,9 +109,24 @@ export default {
             });
         }))
 
-        this.loading = true;
-        this.recentChange = true;
-        this.tryToSimulate();
+        // Listen for global resimulate action from stateStore
+        this.subscriptions.push(this.$stateStore.$onAction(({name, after}) => {
+            after(() => {
+                if (name == "resimulate") {
+                    this.loading = true;
+                    this.simulate();
+                }
+            });
+        }))
+
+        if (this.enableAutoSimulation) {
+            this.loading = true;
+            this.recentChange = true;
+            this.tryToSimulate();
+        } else {
+            this.loading = false;
+            this.dataUptoDate = false;
+        }
     },
     beforeUnmount () {
         this.subscriptions.forEach((subscription) => {subscription();})
@@ -112,9 +143,13 @@ export default {
                         this.tryToSimulate()
                     }
                     else {
-                        this.simulate();
+                        if (this.enableAutoSimulation) {
+                            this.simulate();
+                            this.loading = true;
+                        } else {
+                            this.loading = false;
+                        }
                         this.tryingToSend = false;
-                        this.loading = true;
                     }
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
@@ -147,9 +182,11 @@ export default {
                 this.outputsData.dcResistancePerWinding.push(outputs[this.operatingPointIndex].windingLosses.dcResistancePerWinding[windingIndex]);
             }
 
-            for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length - 1; windingIndex++) {
-                const leakageInductance = outputs[this.operatingPointIndex].leakageInductance.leakageInductancePerWinding[windingIndex].nominal;
-                this.outputsData.leakageInductancePerWinding.push(leakageInductance);
+            if (outputs[this.operatingPointIndex].leakageInductance?.leakageInductancePerWinding) {
+                for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length - 1; windingIndex++) {
+                    const leakageInductance = outputs[this.operatingPointIndex].leakageInductance.leakageInductancePerWinding[windingIndex].nominal;
+                    this.outputsData.leakageInductancePerWinding.push(leakageInductance);
+                }
             }
             for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length; windingIndex++) {
                 this.outputsData.effectiveResistancePerWinding.push(this.outputsData.windingLossesPerWinding[windingIndex] / Math.pow(this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex].excitationsPerWinding[windingIndex].current.processed.rms, 2));

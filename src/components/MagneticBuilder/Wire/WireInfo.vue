@@ -29,6 +29,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
@@ -132,6 +136,15 @@ export default {
             },
           deep: true
         },
+        'enableAutoSimulation': {
+            handler(newValue, oldValue) {
+                // When auto-simulation is turned off, mark data as outdated
+                // so the user knows they need to manually resimulate
+                if (!newValue) {
+                    this.dataUptoDate = false;
+                }
+            },
+        },
     },
     mounted () {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
@@ -175,7 +188,10 @@ export default {
                 }
                 if (name == "newWireCreated") {
                     if (args[0]) {
-                        this.calculateWireData();
+                        this.dataUptoDate = false;
+                        if (this.enableAutoSimulation) {
+                            this.calculateWireData();
+                        }
                     }
                     else {
                         console.error(args[1])
@@ -183,7 +199,19 @@ export default {
                 }
             });
         }))
-        this.calculateWireData();
+
+        // Listen for global resimulate action from stateStore
+        this.subscriptions.push(this.$stateStore.$onAction(({name, after}) => {
+            after(() => {
+                if (name == "resimulate") {
+                    this.calculateWireData();
+                }
+            });
+        }))
+
+        if (this.enableAutoSimulation) {
+            this.calculateWireData();
+        }
         this.taskQueueStore.checkAndFixMas(this.masStore.mas);
     },
     beforeUnmount () {
@@ -203,8 +231,8 @@ export default {
                     else {
                         this.calculateWireData();
                         this.tryingToSend = false;
-                }
-                        this.dataUptoDate = true;
+                    }
+                    this.dataUptoDate = true;
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
             }

@@ -384,6 +384,9 @@ export const useStateStore = defineStore("state", () => {
     function redraw() {
     };
 
+    function resimulate() {
+    };
+
     function applyChanges() {
     };
 
@@ -429,6 +432,7 @@ export const useStateStore = defineStore("state", () => {
         wire2DVisualizerState,
         magnetic2DVisualizerState,
         redraw,
+        resimulate,
 
         OperatingPointsMode,
         currentOperatingPoint,

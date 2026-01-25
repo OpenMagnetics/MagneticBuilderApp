@@ -25,6 +25,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
@@ -67,6 +71,15 @@ export default {
         },
     },
     watch: {
+        'enableAutoSimulation': {
+            handler(newValue, oldValue) {
+                // When auto-simulation is turned off, mark data as outdated
+                // so the user knows they need to manually resimulate
+                if (!newValue) {
+                    this.dataUptoDate = false;
+                }
+            },
+        },
     },
     mounted () {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
@@ -82,7 +95,9 @@ export default {
                         const core = args[1];
                         this.coreEffectiveParameters = core.processedDescription.effectiveParameters;
                         this.dataUptoDate = false;
-                        this.calculateCoreLosses();
+                        if (this.enableAutoSimulation) {
+                            this.calculateCoreLosses();
+                        }
                     }
                     else {
                         console.error(args[1])
@@ -91,7 +106,9 @@ export default {
                 if (name == "numberTurnsUpdated") {
                     if (args[0]) {
                         this.dataUptoDate = false;
-                        this.calculateCoreLosses();
+                        if (this.enableAutoSimulation) {
+                            this.calculateCoreLosses();
+                        }
                     }
                     else {
                         console.error(args[1])
@@ -100,11 +117,22 @@ export default {
                 if (name == "coreMaterialChanged") {
                     if (args[0]) {
                         this.dataUptoDate = false;
-                        this.calculateCoreLosses();
+                        if (this.enableAutoSimulation) {
+                            this.calculateCoreLosses();
+                        }
                     }
                     else {
                         console.error(args[1])
                     }
+                }
+            });
+        }))
+
+        // Listen for global resimulate action from stateStore
+        this.subscriptions.push(this.$stateStore.$onAction(({name, after}) => {
+            after(() => {
+                if (name == "resimulate") {
+                    this.calculateCoreLosses();
                 }
             });
         }))

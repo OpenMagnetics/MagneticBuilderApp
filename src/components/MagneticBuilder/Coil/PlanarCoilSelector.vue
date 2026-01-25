@@ -29,6 +29,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
         enableSubmenu: {
             type: Boolean,
             default: true,
@@ -126,7 +130,7 @@ export default {
 
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
-                if (name == "numberTurnsUpdated" || name == "wireDataCalculated" || (name == "newWireCreated" && !this.enableSimulation)) {
+                if (name == "numberTurnsUpdated" || name == "newWireCreated") {
                     if (args[0]) {
                         this.recentChange = true;
                         this.tryToWind();
@@ -371,13 +375,15 @@ export default {
             @update="coilUpdated"
         />
 
-        <div v-if="enableSimulation" class="col-12">
+        <div class="col-12">
             <CoilInfo
-                v-if="!loading"
+                v-if="!loading && enableSimulation"
+                ref="coilInfo"
                 :dataTestLabel="dataTestLabel + '-CoilInfo'"
                 :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
                 :masStore="masStore"
                 :operatingPointIndex="operatingPointIndex"
+                :enableAutoSimulation="enableAutoSimulation"
             />
         </div>
         <button

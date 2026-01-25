@@ -29,6 +29,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
         enableSubmenu: {
             type: Boolean,
             default: true,
@@ -146,6 +150,8 @@ export default {
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
                 this.cleanCoil();
                 this.$emit("wireUpdated", this.windingIndex);
+                // Trigger wire data calculation and coil winding
+                this.taskQueueStore.newWireCreated(true, wire);
                 // this.historyStore.addToHistory(this.masStore.mas);
             })
             .catch(error => {
@@ -155,9 +161,9 @@ export default {
         },
         getWireThicknesses() {
             this.wireThicknesses = [];
-            this.taskQueueStore.getPlanarThicknesses().then((planarThicknessesHandle) => {
-                for (let i = planarThicknessesHandle.size() - 1; i >= 0; i--) {
-                    const wireThickness = planarThicknessesHandle.get(i);
+            this.taskQueueStore.getPlanarThicknesses().then((planarThicknesses) => {
+                for (let i = planarThicknesses.length - 1; i >= 0; i--) {
+                    const wireThickness = planarThicknesses[i];
                     this.wireThicknesses.push(toTitleCase(wireThickness));
                 }
 
@@ -283,14 +289,16 @@ export default {
                 @update="wireUpdated"
             />
 
-            <div v-if="enableSimulation" class="col-12 p-0">
+            <div class="col-12 p-0">
                 <WireInfo 
-                    v-if="!loading"
+                    v-if="!loading && enableSimulation"
+                    ref="wireInfo"
                     :dataTestLabel="dataTestLabel + '-WireInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
                     :windingIndex="windingIndex"
+                    :enableAutoSimulation="enableAutoSimulation"
                 />
             </div>
 

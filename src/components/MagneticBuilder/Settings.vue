@@ -20,10 +20,10 @@ export default {
     data() {
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const localData = {
-            enableVisualizers: magneticBuilderSettingsStore.enableVisualizers? '1' : '0',
-            enableSimulation: magneticBuilderSettingsStore.enableSimulation? '1' : '0',
-            enableSubmenu: magneticBuilderSettingsStore.enableSubmenu? '1' : '0',
-            enableGraphs: magneticBuilderSettingsStore.enableGraphs? '1' : '0',
+            enableVisualizers: magneticBuilderSettingsStore.enableVisualizers,
+            enableSimulation: magneticBuilderSettingsStore.enableSimulation,
+            enableSubmenu: magneticBuilderSettingsStore.enableSubmenu,
+            enableGraphs: magneticBuilderSettingsStore.enableGraphs,
         }
 
         const settingsChanged = false;
@@ -34,8 +34,9 @@ export default {
         }
     },
     methods: {
-        onSettingChanged(event, setting) {
-            this.magneticBuilderSettingsStore[setting] = event.target.value == '1';
+        onSettingChanged(setting) {
+            this.localData[setting] = !this.localData[setting];
+            this.magneticBuilderSettingsStore[setting] = this.localData[setting];
             this.settingsChanged = true;
         },
         onSettingsUpdated(event) {
@@ -49,54 +50,96 @@ export default {
 
 <template>
     <div class="modal fade" :id="modalName" tabindex="-1" :aria-labelledby="modalName + '-settingsModalLabel'" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable settings">
-            <div class="modal-content" :style="$styleStore.controlPanel.main">
-                <div class="modal-header">
-                    <p :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title fs-5" :id="modalName + '-settingsModalLabel'">Magnetic Builder Settings</p>
+        <div class="modal-dialog modal-md modal-dialog-centered settings">
+            <div class="modal-content bg-dark border-0 shadow-lg">
+                <div class="modal-header border-bottom border-secondary px-4 py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fa-solid fa-gear text-primary me-2 fs-5"></i>
+                        <h5 :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title text-white mb-0" :id="modalName + '-settingsModalLabel'">Settings</h5>
+                    </div>
                     <button ref="closeSettingsModalRef" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="settingsModalClose"></button>
                 </div>
-                <div class="modal-body container">
-                    <div class="row" :style="$styleStore.controlPanel.setting">
-                        <h5 class="offset-0 col-6 text-end">Enable Visualization</h5>
-                        <div class="col-sm-6 col-md-6 col-lg-4">
-                            <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableVisualizers" @change="onSettingChanged($event, 'enableVisualizers')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
-                            <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
+                <div class="modal-body px-4 py-4">
+                    <!-- Visualization Setting -->
+                    <div class="setting-item d-flex justify-content-between align-items-center py-3 border-bottom border-secondary">
+                        <div>
+                            <h6 class="text-white mb-1">3D Visualization</h6>
+                            <small class="text-secondary">Show 3D preview of magnetic components</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input 
+                                :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" 
+                                class="form-check-input custom-switch" 
+                                type="checkbox" 
+                                role="switch"
+                                :checked="localData.enableVisualizers"
+                                @change="onSettingChanged('enableVisualizers')"
+                            >
                         </div>
                     </div>
-                    <div class="row" :style="$styleStore.controlPanel.setting">
-                        <h5 class="offset-0 col-6 text-end">Enable Simulation</h5>
-                        <div class="col-sm-6 col-md-6 col-lg-4">
-                            <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableSimulation" @change="onSettingChanged($event, 'enableSimulation')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
-                            <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
+
+                    <!-- Simulation Setting -->
+                    <div class="setting-item d-flex justify-content-between align-items-center py-3 border-bottom border-secondary">
+                        <div>
+                            <h6 class="text-white mb-1">Auto Simulation</h6>
+                            <small class="text-secondary">Automatically run simulations on changes</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input 
+                                :data-cy="dataTestLabel + '-Settings-Modal-enable-simulation-button'" 
+                                class="form-check-input custom-switch" 
+                                type="checkbox" 
+                                role="switch"
+                                :checked="localData.enableSimulation"
+                                @change="onSettingChanged('enableSimulation')"
+                            >
                         </div>
                     </div>
-                    <div class="row" :style="$styleStore.controlPanel.setting">
-                        <h5 class="offset-0 col-6 text-end">Enable Submenu</h5>
-                        <div class="col-sm-6 col-md-6 col-lg-4">
-                            <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableSubmenu" @change="onSettingChanged($event, 'enableSubmenu')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
-                            <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
+
+                    <!-- Submenu Setting -->
+                    <div class="setting-item d-flex justify-content-between align-items-center py-3 border-bottom border-secondary">
+                        <div>
+                            <h6 class="text-white mb-1">Sidebar Menu</h6>
+                            <small class="text-secondary">Show navigation submenu in sidebar</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input 
+                                :data-cy="dataTestLabel + '-Settings-Modal-enable-submenu-button'" 
+                                class="form-check-input custom-switch" 
+                                type="checkbox" 
+                                role="switch"
+                                :checked="localData.enableSubmenu"
+                                @change="onSettingChanged('enableSubmenu')"
+                            >
                         </div>
                     </div>
-                    <div class="row" :style="$styleStore.controlPanel.setting">
-                        <h5 class="offset-0 col-6 text-end">Enable Graphs</h5>
-                        <div class="col-sm-6 col-md-6 col-lg-4">
-                            <label class="fs-6 p-0 ps-3 pe-3 text-end col-4 ">Disable</label>
-                            <input :data-cy="dataTestLabel + '-Settings-Modal-enable-visualization-button'" v-model="localData.enableGraphs" @change="onSettingChanged($event, 'enableGraphs')" type="range" class="form-range col-1 pt-2" min="0" max="1" step="1" style="width: 30px">
-                            <label class="fs-6 p-0 ps-3 col-6 text-start">Enable</label>
+
+                    <!-- Graphs Setting -->
+                    <div class="setting-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <h6 class="text-white mb-1">Interactive Graphs</h6>
+                            <small class="text-secondary">Display interactive charts and graphs</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input 
+                                :data-cy="dataTestLabel + '-Settings-Modal-enable-graphs-button'" 
+                                class="form-check-input custom-switch" 
+                                type="checkbox" 
+                                role="switch"
+                                :checked="localData.enableGraphs"
+                                @change="onSettingChanged('enableGraphs')"
+                            >
                         </div>
                     </div>
+                </div>
+                <div class="modal-footer border-top border-secondary px-4 py-3">
                     <button
-                        :style="$styleStore.controlPanel.closeButton"
-                        :disabled="!settingsChanged"
                         :data-cy="dataTestLabel + '-Settings-Modal-update-settings-button'"
-                        class="btn btn-success mx-auto d-block mt-4"
+                        class="btn btn-primary px-4"
                         data-bs-dismiss="modal"
                         @click="onSettingsUpdated"
                     >
-                        Close
+                        Done
                     </button>
                 </div>
             </div>
@@ -104,9 +147,32 @@ export default {
     </div>
 </template>
 
-<style>
+<style scoped>
+.settings {
+    z-index: 9999;
+}
 
-    .settings {
-        z-index: 9999;
-    }
+.custom-switch {
+    width: 3em;
+    height: 1.5em;
+    cursor: pointer;
+}
+
+.custom-switch:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.custom-switch:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.setting-item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-radius: 0.5rem;
+}
 </style>

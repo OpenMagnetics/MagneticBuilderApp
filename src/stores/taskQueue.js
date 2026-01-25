@@ -819,7 +819,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             let coating = null;
             if (newWireDataDict["coating"] != null) {
-                coating = JSON.parse(mkf.get_wire_coating_by_label(newWireDataDict["coating"]));
+                coating = JSON.parse(await mkf.get_wire_coating_by_label(newWireDataDict["coating"]));
             }
 
             wire.standard = "IEC 60317";
@@ -829,7 +829,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 if (newWireDataDict["standard"] != null) {
                     wire.standard = newWireDataDict["standard"];
                 }
-                wire = JSON.parse(mkf.get_wire_data_by_standard_name(newWireDataDict["roundConductingDiameter"]));
+                wire = JSON.parse(await mkf.get_wire_data_by_standard_name(newWireDataDict["roundConductingDiameter"]));
             }
             else if (newWireDataDict["type"] == "litz") {
                 if (newWireDataDict["standard"] != null) {

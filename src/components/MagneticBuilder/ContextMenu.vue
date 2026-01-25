@@ -1,6 +1,6 @@
 <script setup>
 import { toDashCase, toPascalCase, toTitleCase } from '/WebSharedComponents/assets/js/utils.js'
-
+import { useMagneticBuilderSettingsStore } from '../../stores/magneticBuilderSettings'
 </script>
 
 <script>
@@ -13,7 +13,9 @@ export default {
         },
     },
     data() {
+        const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         return {
+            magneticBuilderSettingsStore,
         }
     },
     computed: {
@@ -27,6 +29,11 @@ export default {
                 },
             }
         },
+        showResimulateButton() {
+            return !this.magneticBuilderSettingsStore.enableSimulation && 
+                   this.$stateStore.magneticBuilder.mode.core == this.$stateStore.MagneticBuilderModes.Basic && 
+                   this.$stateStore.magneticBuilder.mode.coil == this.$stateStore.MagneticBuilderModes.Basic;
+        },
     },
     watch: {
     },
@@ -35,6 +42,9 @@ export default {
     methods: {
         goToMagneticsAdviser() {
             this.$router.push('/magnetic_adviser');
+        },
+        resimulate() {
+            this.$stateStore.resimulate();
         },
         coreSubmodeShape() {
             this.$stateStore.magneticBuilder.submode.core = this.$stateStore.MagneticBuilderCoreSubmodes.Shape;

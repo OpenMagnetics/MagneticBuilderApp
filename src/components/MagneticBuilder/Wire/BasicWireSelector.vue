@@ -29,6 +29,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
         enableSubmenu: {
             type: Boolean,
             default: true,
@@ -606,14 +610,16 @@ export default {
                 @update="wireUpdated"
             />
 
-            <div v-if="enableSimulation" class="col-12 p-0">
+            <div class="col-12 p-0">
                 <WireInfo 
-                    v-if="!loading"
+                    v-if="!loading && enableSimulation"
+                    ref="wireInfo"
                     :dataTestLabel="dataTestLabel + '-WireInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
                     :windingIndex="windingIndex"
+                    :enableAutoSimulation="enableAutoSimulation"
                 />
             </div>
 

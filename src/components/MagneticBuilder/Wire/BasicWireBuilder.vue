@@ -29,6 +29,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
         enableSubmenu: {
             type: Boolean,
             default: true,
@@ -102,14 +106,26 @@ export default {
             });
         }))
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            // Mark image as outdated immediately when wire creation starts
+            if (name == "createNewWire" || name == "newWireCreated") {
+                this.imageUpToDate = false;
+            }
             after(() => {
-                if (name == "windingIndexChanged" || name == "wireDataCalculated") {
+                if (name == "windingIndexChanged") {
                     this.imageUpToDate = true;
                     this.forceUpdate += 1;
                 }
-                if (name == "newWireCreated" && !this.enableSimulation) {
-                    this.imageUpToDate = true;
-                    this.forceUpdate += 1;
+                if (name == "wireDataCalculated") {
+                    if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                        this.imageUpToDate = true;
+                        this.forceUpdate += 1;
+                    }
+                }
+                if (name == "newWireCreated") {
+                    if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                        this.imageUpToDate = true;
+                        this.forceUpdate += 1;
+                    }
                 }
             });
         }))
@@ -277,6 +293,7 @@ export default {
                     :operatingPointIndex="operatingPointIndex"
                     :windingIndex="key"
                     :enableSimulation="enableSimulation"
+                    :enableAutoSimulation="enableAutoSimulation"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvise"
                     @wireUpdated="wireUpdated"
@@ -288,6 +305,7 @@ export default {
                     :operatingPointIndex="operatingPointIndex"
                     :windingIndex="key"
                     :enableSimulation="enableSimulation"
+                    :enableAutoSimulation="enableAutoSimulation"
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvise"
                     @wireUpdated="wireUpdated"

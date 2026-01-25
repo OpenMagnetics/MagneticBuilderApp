@@ -25,6 +25,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
         enableSubmenu: {
             type: Boolean,
             default: true,
@@ -97,6 +101,10 @@ export default {
         }))
 
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            // Mark image as outdated immediately when wire creation or winding starts
+            if (name == "createNewWire") {
+                this.imageUpToDate = false;
+            }
             after(() => {
                 if (name == "wind" || name == "windPlanar") {
                     this.imageUpToDate = false;
@@ -113,6 +121,12 @@ export default {
                     }
                     else {
                         console.error(args[1])
+                    }
+                }
+                if (name == "newWireCreated") {
+                    if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                        this.imageUpToDate = false;
+                        this.tryPlot(false);
                     }
                 }
             });
@@ -170,7 +184,7 @@ export default {
             v-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
             class="row"
             :class="enableOptions? 'mb-1' : ''"
-            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;' + ((masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')? 'height: 50vh;' : 'height: 40vh;')"
+            :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ((masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')? ' max-height: 50vh;' : ' max-height: 40vh;')"
         >
             <Magnetic2DVisualizer 
                 :modelValue="masStore.mas"
@@ -210,6 +224,7 @@ export default {
                 :readOnly="readOnly"
                 :operatingPointIndex="operatingPointIndex"
                 :enableSimulation="enableSimulation"
+                :enableAutoSimulation="enableAutoSimulation"
                 :enableSubmenu="enableSubmenu"
                 @fits="fits"
             />
@@ -219,6 +234,7 @@ export default {
                 :readOnly="readOnly"
                 :operatingPointIndex="operatingPointIndex"
                 :enableSimulation="enableSimulation"
+                :enableAutoSimulation="enableAutoSimulation"
                 :enableSubmenu="enableSubmenu"
                 @fits="fits"
             />

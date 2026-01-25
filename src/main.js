@@ -58,6 +58,8 @@ router.beforeEach((to, from, next) => {
         }
         else if (app.config.globalProperties.$mkf == null && (to.name == "EngineLoader")) {
             const loadAllParts = true;
+            const minimumLoaderTime = 500; // Minimum time to show the engine loader in ms
+            const loaderStartTime = Date.now();
             
             // Mark as loading to prevent re-entry
             app.config.globalProperties.$mkf = { ready: Promise.resolve(), _loading: true };
@@ -89,24 +91,26 @@ router.beforeEach((to, from, next) => {
                     const mkf = await initWorker(wasmJsUrl);
                     app.config.globalProperties.$mkf = mkf;
 
-                    console.warn("Loading core materials in simulator")
+                    // Load materials, shapes, and wires in the background (non-blocking)
                     if (loadAllParts) {
-                        await mkf.load_core_materials("");
+                        console.warn("Loading core materials, shapes and wires...")
+                        await Promise.all([
+                            mkf.load_core_materials("").then(() => console.log("Core materials loaded")),
+                            mkf.load_core_shapes("").then(() => console.log("Core shapes loaded")),
+                            mkf.load_wires("").then(() => console.log("Wires loaded"))
+                        ]);
+                        console.warn("All data loaded");
                     }
                     
-                    console.warn("Loading core shapes in simulator")
-                    if (loadAllParts) {
-                        await mkf.load_core_shapes("");
-                    }
+                    // Ensure minimum loader display time
+                    const elapsedTime = Date.now() - loaderStartTime;
+                    const remainingTime = Math.max(0, minimumLoaderTime - elapsedTime);
                     
-                    console.warn("Loading wires in simulator")
-                    if (loadAllParts) {
-                        await mkf.load_wires("");
-                    }
-                    
-                    const stateStore = useStateStore();
-                    const loadingPath = stateStore.loadingPath || '/';
-                    router.push(loadingPath);
+                    setTimeout(() => {
+                        const stateStore = useStateStore();
+                        const loadingPath = stateStore.loadingPath || '/';
+                        router.push(loadingPath);
+                    }, remainingTime);
                 } catch (error) {
                     console.error("Error initializing MKF:", error);
                 }

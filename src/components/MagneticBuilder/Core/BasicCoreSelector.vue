@@ -29,6 +29,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
         enableSubmenu: {
             type: Boolean,
             default: true,
@@ -440,16 +444,17 @@ export default {
             />
 
             <div
-                v-if= "enableSimulation"
                 class="col-12 p-0"
                 >
 
                 <CoreInfo 
-                    v-if="!loading"
+                    v-if="!loading && enableSimulation"
+                    ref="coreInfo"
                     :dataTestLabel="dataTestLabel + '-CoreInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
+                    :enableAutoSimulation="enableAutoSimulation"
                 />
             </div>
 

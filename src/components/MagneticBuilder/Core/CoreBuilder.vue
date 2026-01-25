@@ -24,6 +24,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        enableAutoSimulation: {
+            type: Boolean,
+            default: true,
+        },
         enableSubmenu: {
             type: Boolean,
             default: true,
@@ -124,6 +128,7 @@ export default {
                 :readOnly="readOnly"
                 :operatingPointIndex="operatingPointIndex"
                 :enableSimulation="enableSimulation"
+                :enableAutoSimulation="enableAutoSimulation"
                 :enableSubmenu="enableSubmenu"
                 :enableAdvise="enableAdvise"
                 @customizeCore="$emit('customizeCore')"
