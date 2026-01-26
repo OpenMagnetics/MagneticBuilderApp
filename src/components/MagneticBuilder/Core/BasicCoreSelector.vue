@@ -2,6 +2,7 @@
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import CoreGappingSelector from '/WebSharedComponents/Common/CoreGappingSelector.vue'
+import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights } from '/WebSharedComponents/assets/js/defaults.js'
 import CoreInfo from './CoreInfo.vue'
@@ -53,6 +54,18 @@ export default {
             type: Number,
             default: 0,
         },
+        useVisualizers: {
+            type: Boolean,
+            default: true,
+        },
+        forceUpdateVisualizer: {
+            type: Number,
+            default: 0,
+        },
+        imageUpToDate: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
@@ -85,17 +98,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    width: '100px',
-                    'transition-delay': '1s',
-                    "text-align": "start",
-                },
-            }
-        }
     },
     watch: {
         'operatingPointIndex': {
@@ -353,14 +355,36 @@ export default {
 
 <template>
     <div class="container">
-        <div class="row" v-tooltip="styleTooltip">
-            <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
-            <CoreShapeSelector
-                :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
-                :readOnly="readOnly"
-                :masStore="masStore"
-                @update="coreShapeUpdated"
-            />
+        <div class="card bg-dark border-0 shadow-lg">
+            <div class="card-header border-bottom border-secondary px-3 py-2">
+                <div class="d-flex align-items-center">
+                    <i class="fa-solid fa-cube text-primary me-2"></i>
+                    <h6 class="card-title mb-0 text-white">Core Configuration</h6>
+                </div>
+            </div>
+            <div class="card-body px-3 py-2">
+                <div
+                    v-if="useVisualizers && masStore.mas.magnetic.core.functionalDescription != null"
+                    class="row mb-4"
+                    style="height: 25vh"
+                    :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
+                >
+                    <Core3DVisualizer 
+                        :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
+                        :core="masStore.mas.magnetic.core"
+                        :forceUpdate="forceUpdateVisualizer"
+                        :fullCoreModel="true"
+                        :loadingGif="$settingsStore.loadingGif"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                    />
+                </div>
+                <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
+                <CoreShapeSelector
+                    :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
+                    :readOnly="readOnly"
+                    :masStore="masStore"
+                    @update="coreShapeUpdated"
+                />
 
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreMaterialManufacturer"
@@ -458,21 +482,20 @@ export default {
                 />
             </div>
 
-            <BasicCoreSubmenu 
-                v-if="enableSubmenu && !readOnly"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
-                :masStore="masStore"
-                :enableAdvise="!loading"
-                :enableCustomize="enableCustomize"
-                :allowAdvise="enableAdvise"
-                @adviseCore="adviseCoreRequested"
-                @customizeCore="$emit('customizeCore')"
-                @loadCore="loadCore"
-            />
-            <label class="text-danger col-12 pt-1" style="font-size: 0.7em">{{errorMessage}}</label>
-
-
+                <BasicCoreSubmenu 
+                    v-if="enableSubmenu && !readOnly"
+                    class="col-12 mb-1 text-start"
+                    :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
+                    :masStore="masStore"
+                    :enableAdvise="!loading"
+                    :enableCustomize="enableCustomize"
+                    :allowAdvise="enableAdvise"
+                    @adviseCore="adviseCoreRequested"
+                    @customizeCore="$emit('customizeCore')"
+                    @loadCore="loadCore"
+                />
+                <label class="text-danger col-12 pt-1" style="font-size: 0.7em">{{errorMessage}}</label>
+            </div>
         </div>
     </div>
 </template>

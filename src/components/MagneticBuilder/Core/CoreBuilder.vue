@@ -106,22 +106,6 @@ export default {
 
 <template>
     <div class="container">
-        <div
-            v-if="useVisualizers && masStore.mas.magnetic.core.functionalDescription != null"
-            class="row"
-            style="height: 30vh"
-            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
-        >
-            <Core3DVisualizer 
-                :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
-                :core="masStore.mas.magnetic.core"
-                :forceUpdate="forceUpdateCore3DVisualizer"
-                :fullCoreModel="true"
-                :loadingGif="$settingsStore.loadingGif"
-                :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
-            />
-        </div>
-        <h4 v-else class="mb-5" > {{"Core Description"}} </h4>
         <div class="row">
             <BasicCoreSelector 
                 :masStore="masStore"
@@ -131,6 +115,9 @@ export default {
                 :enableAutoSimulation="enableAutoSimulation"
                 :enableSubmenu="enableSubmenu"
                 :enableAdvise="enableAdvise"
+                :useVisualizers="useVisualizers"
+                :forceUpdateVisualizer="forceUpdateCore3DVisualizer"
+                :imageUpToDate="imageUpToDate"
                 @customizeCore="$emit('customizeCore')"
             />
         </div>

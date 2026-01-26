@@ -51,17 +51,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    width: '100px',
-                    'transition-delay': '1s',
-                    "text-align": "start",
-                },
-            }
-        }
     },
     watch: {
     },
@@ -243,7 +232,7 @@ export default {
     />
 
     <div class="container">
-        <div class="row" v-tooltip="styleTooltip">
+        <div class="row">
             <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreShapeFamily"
@@ -288,8 +277,8 @@ export default {
 
             <div
                 v-if="!loading && localData.shapeFamily != null && coreShapeNames[localData.shapeFamily] != null && coreShapeNames[localData.shapeFamily].length > 0"
-                class="ms-3 col-1 p-0 pt-1 "
-                v-tooltip="styleTooltip"
+                class="ms-3 col-1 p-0 pt-1"
+                v-tooltip="'Open core shape table'"
             >
                 <button 
                     style="height: 35px;"

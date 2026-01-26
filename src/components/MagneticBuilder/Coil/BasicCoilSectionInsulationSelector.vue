@@ -49,15 +49,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    "text-align": "start",
-                },
-            }
-        },
         topOrLeftMarginTooltip() {
             if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
                 return tooltipsMagneticBuilder.leftMargin;
@@ -137,7 +128,7 @@ export default {
 
 <template>
     <div class="container">
-        <div class="row ms-1" v-tooltip="styleTooltip">
+        <div class="row ms-1">
             <Dimension 
                 v-if="showInsulationOptions"
                 :disabled="readOnly"

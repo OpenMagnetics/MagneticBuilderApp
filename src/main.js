@@ -6,8 +6,7 @@ import router from "./router";
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import VueCookies from 'vue3-cookies'
-import tooltip from "./directives/tooltip.js";
-import "/src/assets/css/tooltip.css";
+import tooltip from "/WebSharedComponents/Common/TooltipDirective.vue";
 import axios from "axios";
 import { useUserStore } from '/src/stores/user'
 import { useSettingsStore } from '/src/stores/settings'

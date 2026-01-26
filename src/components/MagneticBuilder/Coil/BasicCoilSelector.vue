@@ -133,17 +133,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    'transition-delay': '1s',
-                    width: '300px',
-                    "text-align": "start",
-                },
-            }
-        },
         conductiveSections() {
             const sections = [];
 
@@ -593,7 +582,7 @@ export default {
 </script>
 
 <template>
-    <div class="container" v-tooltip="styleTooltip">
+    <div class="container">
         <div class="row">
             <Dimension 
                 v-if="masStore.mas.magnetic.core.functionalDescription.shape.family != 't'"

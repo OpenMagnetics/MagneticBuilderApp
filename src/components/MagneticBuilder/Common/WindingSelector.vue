@@ -32,17 +32,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    width: '200px',
-                    'transition-delay': '1s',
-                    "text-align": "start",
-                },
-            }
-        },
     },
     watch: { 
     },
@@ -105,7 +94,7 @@ export default {
 </script>
 
 <template>
-    <div v-if="coil.functionalDescription.length > 1" v-tooltip="styleTooltip">
+    <div v-if="coil.functionalDescription.length > 1">
         <div class="accordion row m-0 p-0" id="wireBuilderAccordion bg-dark" v-tooltip="tooltipsMagneticBuilder.windingSelector">
             <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription" :key="key">
                 <h2 class="accordion-header" :id="'wireBuilderAccordionHeading-' + key">

@@ -80,17 +80,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    'transition-delay': '1s',
-                    width: '300px',
-                    "text-align": "start",
-                },
-            }
-        },
         windingIndexesCharacters() {
             let pattern = "";
             this.masStore.mas.magnetic.coil.functionalDescription.forEach((item, index) => {
@@ -341,7 +330,7 @@ export default {
 </script>
 
 <template>
-    <div class="container" v-tooltip="styleTooltip">
+    <div class="container">
         <div class="row"  ref="coilSelectorContainer">
             <img :data-cy="dataTestLabel + '-BasicCoilSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <ListOfCharacters

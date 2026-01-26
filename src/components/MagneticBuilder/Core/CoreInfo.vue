@@ -56,16 +56,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    width: '200px',
-                    "text-align": "start",
-                },
-            }
-        },
         closeOrOverSaturation() {
             return (this.coreLossesData.magneticFluxDensityPeak / this.coreTemperatureDependantParametersData.magneticFluxDensitySaturation) > 0.85;
         },
@@ -170,7 +160,6 @@ export default {
         <div
             v-if="coreEffectiveParameters.effectiveLength != null"
             class="row ps-2"
-            v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <DimensionReadOnly 
@@ -421,7 +410,6 @@ export default {
         <div
             v-if="coreEffectiveParameters.effectiveLength != null"
             class="row"
-            v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <DimensionReadOnly 

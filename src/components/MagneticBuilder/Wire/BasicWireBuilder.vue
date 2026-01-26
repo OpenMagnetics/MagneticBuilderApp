@@ -226,90 +226,99 @@ export default {
     <h5 v-if="masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape ==''" class="text-danger my-2">Select a core first</h5>
 
     <div v-else class="container">
-        <div
-            v-if="useVisualizers && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null"
-            class="row mb-5"
-            style="max-height: 20vh"
-            :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
-        >
-            <Wire2DVisualizer 
-                v-if="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire.type != null"
-                :dataTestLabel="`${dataTestLabel}-Wire2DVisualizer`"
-                :wire="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire"
-                :forceUpdate="forceUpdate"
-                :windingIndex="selectedWindingIndex"
-                :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
-                :includeCurrentDensity="false"
-                :loadingGif="$settingsStore.loadingGif"
-                :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
-            />
-        </div>
-        <h4 v-else class="mb-5" > {{"Wires Description"}} </h4>
+        <div class="card bg-dark border-0 shadow-lg">
+            <div class="card-header border-bottom border-secondary px-3 py-2">
+                <div class="d-flex align-items-center">
+                    <i class="fa-solid fa-lines-leaning text-primary me-2"></i>
+                    <h6 class="card-title mb-0 text-white">Wire Configuration</h6>
+                </div>
+            </div>
+            <div class="card-body px-3 py-2">
+                <div
+                    v-if="useVisualizers && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex] != null"
+                    class="row mb-4"
+                    style="max-height: 20vh"
+                    :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
+                >
+                    <Wire2DVisualizer 
+                        v-if="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire != null && masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire.type != null"
+                        :dataTestLabel="`${dataTestLabel}-Wire2DVisualizer`"
+                        :wire="masStore.mas.magnetic.coil.functionalDescription[selectedWindingIndex].wire"
+                        :forceUpdate="forceUpdate"
+                        :windingIndex="selectedWindingIndex"
+                        :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
+                        :includeCurrentDensity="false"
+                        :loadingGif="$settingsStore.loadingGif"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                    />
+                </div>
 
-        <div v-if="isIsolatedApp" class="row">
-            <ElementFromList class="border-bottom py-2 px-4 col-12 text-start"
-                :name="'numberWindings'"
-                :disabled="readOnly"
-                :dataTestLabel="dataTestLabel + '-NumberWindings'"
-                :options="Array.from({length: 12}, (_, i) => i + 1)"
-                :titleSameRow="true"
-                v-model="numberWindingsAux"
-                :labelWidthProportionClass="'col-8'"
-                :selectStyleClass="'col-4'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                :justifyContent="true"
-                @update="updatedNumberElements"
-            />
-        </div>
+                <div v-if="isIsolatedApp" class="row">
+                    <ElementFromList class="border-bottom py-2 px-4 col-12 text-start"
+                        :name="'numberWindings'"
+                        :disabled="readOnly"
+                        :dataTestLabel="dataTestLabel + '-NumberWindings'"
+                        :options="Array.from({length: 12}, (_, i) => i + 1)"
+                        :titleSameRow="true"
+                        v-model="numberWindingsAux"
+                        :labelWidthProportionClass="'col-8'"
+                        :selectStyleClass="'col-4'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        :justifyContent="true"
+                        @update="updatedNumberElements"
+                    />
+                </div>
 
-        <div class="row">
-            <WindingSelector
-                v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
-                :dataTestLabel="`${dataTestLabel}-WindingSelector`"
-                :coil="masStore.mas.magnetic.coil"
-                :masStore="masStore"
-                @windingIndexChanged="windingIndexChanged"
-            />
-        </div>
+                <div class="row">
+                    <WindingSelector
+                        v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
+                        :dataTestLabel="`${dataTestLabel}-WindingSelector`"
+                        :coil="masStore.mas.magnetic.coil"
+                        :masStore="masStore"
+                        @windingIndexChanged="windingIndexChanged"
+                    />
+                </div>
 
-        <div class="row">
-            <div v-for="value, key in masStore.mas.magnetic.coil.functionalDescription" :key="key">
-                <BasicTurnsSelector
-                    class="mt-1"
-                    v-if="selectedWindingIndex==key"
-                    :readOnly="readOnly"
-                    :masStore="masStore"
-                    :windingIndex="key"
-                    @turnsUpdated="turnsUpdated"
-                />
-                <BasicWireSelector
-                    v-if="selectedWindingIndex==key && (masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')"
-                    :masStore="masStore"
-                    :readOnly="readOnly"
-                    :operatingPointIndex="operatingPointIndex"
-                    :windingIndex="key"
-                    :enableSimulation="enableSimulation"
-                    :enableAutoSimulation="enableAutoSimulation"
-                    :enableSubmenu="enableSubmenu"
-                    :enableAdvise="enableAdvise"
-                    @wireUpdated="wireUpdated"
-                />
-                <PlanarWireSelector
-                    v-if="selectedWindingIndex==key && (masStore.mas.inputs.designRequirements.wiringTechnology != null && masStore.mas.inputs.designRequirements.wiringTechnology == 'Printed')"
-                    :masStore="masStore"
-                    :readOnly="readOnly"
-                    :operatingPointIndex="operatingPointIndex"
-                    :windingIndex="key"
-                    :enableSimulation="enableSimulation"
-                    :enableAutoSimulation="enableAutoSimulation"
-                    :enableSubmenu="enableSubmenu"
-                    :enableAdvise="enableAdvise"
-                    @wireUpdated="wireUpdated"
-                />
+                <div class="row">
+                    <div v-for="value, key in masStore.mas.magnetic.coil.functionalDescription" :key="key">
+                        <BasicTurnsSelector
+                            class="mt-1"
+                            v-if="selectedWindingIndex==key"
+                            :readOnly="readOnly"
+                            :masStore="masStore"
+                            :windingIndex="key"
+                            @turnsUpdated="turnsUpdated"
+                        />
+                        <BasicWireSelector
+                            v-if="selectedWindingIndex==key && (masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')"
+                            :masStore="masStore"
+                            :readOnly="readOnly"
+                            :operatingPointIndex="operatingPointIndex"
+                            :windingIndex="key"
+                            :enableSimulation="enableSimulation"
+                            :enableAutoSimulation="enableAutoSimulation"
+                            :enableSubmenu="enableSubmenu"
+                            :enableAdvise="enableAdvise"
+                            @wireUpdated="wireUpdated"
+                        />
+                        <PlanarWireSelector
+                            v-if="selectedWindingIndex==key && (masStore.mas.inputs.designRequirements.wiringTechnology != null && masStore.mas.inputs.designRequirements.wiringTechnology == 'Printed')"
+                            :masStore="masStore"
+                            :readOnly="readOnly"
+                            :operatingPointIndex="operatingPointIndex"
+                            :windingIndex="key"
+                            :enableSimulation="enableSimulation"
+                            :enableAutoSimulation="enableAutoSimulation"
+                            :enableSubmenu="enableSubmenu"
+                            :enableAdvise="enableAdvise"
+                            @wireUpdated="wireUpdated"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     </div>

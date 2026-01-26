@@ -1580,11 +1580,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         maxwellCapacitanceMatrixCalculated(success = true, dataOrMessage = '') {
         },
 
-        async calculateMaxwellCapacitanceMatrix(coil, capacitanceAmongWindings) {
+        async calculateMaxwellCapacitanceMatrix(coil, modelsData = {}) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = await mkf.calculate_maxwell_capacitance_matrix(JSON.stringify(coil), JSON.stringify(capacitanceAmongWindings));
+            const result = await mkf.calculate_maxwell_capacitance_matrix(JSON.stringify(coil), JSON.stringify(modelsData));
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.maxwellCapacitanceMatrixCalculated(false, result);}, this.task_standard_response_delay);
@@ -1593,6 +1593,26 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             else {
                 const matrix = JSON.parse(result);
                 setTimeout(() => {this.maxwellCapacitanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
+                return matrix;
+            }
+        },
+
+        capacitanceMatrixCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateCapacitanceMatrix(coil, modelsData = {}) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.calculate_capacitance_matrix(JSON.stringify(coil), JSON.stringify(modelsData));
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.capacitanceMatrixCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const matrix = JSON.parse(result);
+                setTimeout(() => {this.capacitanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
                 return matrix;
             }
         },

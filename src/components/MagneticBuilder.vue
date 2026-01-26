@@ -220,7 +220,7 @@ export default {
         </div>
         <div 
             v-else
-            class="row"
+            class="row gx-0"
         >
             <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
                 <CoreBuilder 

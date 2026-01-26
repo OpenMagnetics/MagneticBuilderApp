@@ -32,17 +32,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    'transition-delay': '1s',
-                    width: '300px',
-                    "text-align": "start",
-                },
-            }
-        },
     },
     watch: {
         'data': {
@@ -55,7 +44,7 @@ export default {
 </script>
 
 <template>
-    <div class="container p-0" v-tooltip="styleTooltip">
+    <div class="container p-0">
         <Dimension class="col-12 text-start"
             v-tooltip="tooltipsMagneticBuilder.coreToLayerDistance"
             v-if="!loading"

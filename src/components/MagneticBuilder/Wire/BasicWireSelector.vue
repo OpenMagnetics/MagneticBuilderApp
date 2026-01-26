@@ -101,16 +101,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    width: '200px',
-                    "text-align": "start",
-                },
-            }
-        },
     },
     watch: {
         // 'masStore.mas.magnetic.coil.functionalDescription': {
@@ -396,7 +386,7 @@ export default {
 
 <template>
     <div class="container">
-        <div class="row" v-tooltip="styleTooltip">
+        <div class="row">
             <img :data-cy="dataTestLabel + '-BasicWireSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.wireType"

@@ -59,16 +59,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    width: '200px',
-                    "text-align": "start",
-                },
-            }
-        },
     },
     watch: {
         'operatingPointIndex': {
@@ -248,7 +238,6 @@ export default {
     <div v-else-if="advancedMode" class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2" :style="$styleStore.magneticBuilder.main">
         <div
             class="row ps-2"
-            v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <DimensionReadOnly 
@@ -503,7 +492,6 @@ export default {
     <div v-else class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2" :style="$styleStore.magneticBuilder.main">
         <div
             class="row"
-            v-tooltip="styleTooltip"
             :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
         >
             <DimensionReadOnly 

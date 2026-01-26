@@ -180,64 +180,72 @@ export default {
     <h5 v-if="masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''" class="text-danger my-2">Select a core first</h5>
     <h5 v-if="missingWires" class="text-danger my-2">Select wires</h5>
     <div v-if="!missingWires && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''" class="container">
-        <div
-            v-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
-            class="row"
-            :class="enableOptions? 'mb-1' : ''"
-            :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ((masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')? ' max-height: 50vh;' : ' max-height: 40vh;')"
-        >
-            <Magnetic2DVisualizer 
-                :modelValue="masStore.mas"
-                :forceUpdate="forceUpdate"
-                :operatingPointIndex="operatingPointIndex"
-                :enableZoom="false"
-                :enableOptions="false"
-                :enableHideOnFitting="enableSimulation"
-                :coilFits="true"
-                :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
-                :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
-                :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
-                :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
-                @plotModeChange="plotModeChange"
-                @swapIncludeFringing="swapIncludeFringing"
-                @errorInImage="errorInImage"
-                :loadingGif="$settingsStore.loadingGif"
-                />
-        </div>
-        <h4 v-else class="mb-5" > {{"Coil Description"}} </h4>
+        <div class="card bg-dark border-0 shadow-lg">
+            <div class="card-header border-bottom border-secondary px-3 py-2">
+                <div class="d-flex align-items-center">
+                    <i class="fa-solid fa-circle-notch text-primary me-2"></i>
+                    <h6 class="card-title mb-0 text-white">Coil Configuration</h6>
+                </div>
+            </div>
+            <div class="card-body px-3 py-2">
+                <div
+                    v-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
+                    class="row mb-3"
+                    :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ((masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')? ' max-height: 50vh;' : ' max-height: 40vh;')"
+                >
+                    <Magnetic2DVisualizer 
+                        :modelValue="masStore.mas"
+                        :forceUpdate="forceUpdate"
+                        :operatingPointIndex="operatingPointIndex"
+                        :enableZoom="false"
+                        :enableOptions="false"
+                        :enableHideOnFitting="enableSimulation"
+                        :coilFits="true"
+                        :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
+                        :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                        :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
+                        @plotModeChange="plotModeChange"
+                        @swapIncludeFringing="swapIncludeFringing"
+                        @errorInImage="errorInImage"
+                        :loadingGif="$settingsStore.loadingGif"
+                        />
+                </div>
 
-        <button
-            v-if="enableSimulation && useVisualizers"
-            :style="$styleStore.magneticBuilder.showAlignmentOptionsButton"
-            :disabled="masStore.mas.magnetic == null || masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''"
-            :data-cy="dataTestLabel + '-Coil-ShowParasiticsView-button'"
-            class="btn mx-auto d-block mb-3 mt-0"
-            @click="showParasiticsView"
-        >
-            {{'Open Advanced Parasitics Section'}}
-        </button>
+                <button
+                    v-if="enableSimulation && useVisualizers"
+                    :style="$styleStore.magneticBuilder.showAlignmentOptionsButton"
+                    :disabled="masStore.mas.magnetic == null || masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''"
+                    :data-cy="dataTestLabel + '-Coil-ShowParasiticsView-button'"
+                    class="btn mx-auto d-block mb-3 mt-0"
+                    @click="showParasiticsView"
+                >
+                    {{'Open Advanced Parasitics Section'}}
+                </button>
 
-        <div class="row mb-2">
-            <BasicCoilSelector
-                v-if="(masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')"
-                :masStore="masStore"
-                :readOnly="readOnly"
-                :operatingPointIndex="operatingPointIndex"
-                :enableSimulation="enableSimulation"
-                :enableAutoSimulation="enableAutoSimulation"
-                :enableSubmenu="enableSubmenu"
-                @fits="fits"
-            />
-            <PlanarCoilSelector
-                v-else
-                :masStore="masStore"
-                :readOnly="readOnly"
-                :operatingPointIndex="operatingPointIndex"
-                :enableSimulation="enableSimulation"
-                :enableAutoSimulation="enableAutoSimulation"
-                :enableSubmenu="enableSubmenu"
-                @fits="fits"
-            />
+                <div class="row">
+                    <BasicCoilSelector
+                        v-if="(masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology == 'Wound')"
+                        :masStore="masStore"
+                        :readOnly="readOnly"
+                        :operatingPointIndex="operatingPointIndex"
+                        :enableSimulation="enableSimulation"
+                        :enableAutoSimulation="enableAutoSimulation"
+                        :enableSubmenu="enableSubmenu"
+                        @fits="fits"
+                    />
+                    <PlanarCoilSelector
+                        v-else
+                        :masStore="masStore"
+                        :readOnly="readOnly"
+                        :operatingPointIndex="operatingPointIndex"
+                        :enableSimulation="enableSimulation"
+                        :enableAutoSimulation="enableAutoSimulation"
+                        :enableSubmenu="enableSubmenu"
+                        @fits="fits"
+                    />
+                </div>
+            </div>
         </div>
     </div>
 </template>

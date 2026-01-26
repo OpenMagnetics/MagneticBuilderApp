@@ -26,15 +26,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'left';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    "text-align": "start",
-                },
-            }
-        },
         contiguousLabel() {
             try {
                 if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
@@ -69,7 +60,7 @@ export default {
 
 <template>
     <div class="container p-0">
-        <div class="row text-start"  ref="coilSelectorContainer" v-tooltip="styleTooltip">
+        <div class="row text-start"  ref="coilSelectorContainer">
             <DimensionReadOnly 
                 v-tooltip="tooltipsMagneticBuilder.areaFillingFactor"
                 class="col-6 pe-4 ps-4 mt-1"

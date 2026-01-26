@@ -50,15 +50,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'top';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    "text-align": "start",
-                },
-            }
-        },
         conductiveSections() {
             const sections = [];
 
@@ -160,7 +151,7 @@ export default {
 
 <template>
     <div class="container p-0">
-        <div class="row"  ref="coilSelectorContainer" v-tooltip="styleTooltip">
+        <div class="row"  ref="coilSelectorContainer">
 
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.windingsOrientation"

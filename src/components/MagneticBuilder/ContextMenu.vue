@@ -19,16 +19,6 @@ export default {
         }
     },
     computed: {
-        styleTooltip() {
-            const relative_placement = 'right';
-            return {
-                theme: {
-                    placement: relative_placement,
-                    width: '150px',
-                    "text-align": "end",
-                },
-            }
-        },
         showResimulateButton() {
             return !this.magneticBuilderSettingsStore.enableSimulation && 
                    this.$stateStore.magneticBuilder.mode.core == this.$stateStore.MagneticBuilderModes.Basic && 
@@ -69,7 +59,7 @@ export default {
 </script>
 
 <template>
-    <div class="pb-2 p-0 container" v-tooltip="styleTooltip" :style="$styleStore.contextMenu.main">
+    <div class="pb-2 p-0 container" :style="$styleStore.contextMenu.main">
         <div class="row px-3">
             <button
                 :style="$styleStore.contextMenu.changeToolButton"
