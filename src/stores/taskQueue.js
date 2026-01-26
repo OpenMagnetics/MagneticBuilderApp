@@ -1478,5 +1478,123 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 return sweepData;
             }
         },
+
+        // ==========================================
+        // Matrix Calculation Methods
+        // ==========================================
+
+        resistanceMatrixCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateResistanceMatrix(magnetic, temperature, frequency) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const magneticJson = JSON.stringify(magnetic);
+            console.log('📤 Sending to calculate_resistance_matrix:', {
+                magneticKeys: Object.keys(magnetic),
+                coreKeys: magnetic.core ? Object.keys(magnetic.core) : 'NO CORE',
+                hasProcessedDescription: !!magnetic.core?.processedDescription,
+                coilKeys: magnetic.coil ? Object.keys(magnetic.coil) : 'NO COIL',
+                turnsCount: magnetic.coil?.turnsDescription?.length || 0,
+                layersCount: magnetic.coil?.layersDescription?.length || 0,
+                temperature,
+                frequency
+            });
+
+            const result = await mkf.calculate_resistance_matrix(magneticJson, temperature, frequency);
+
+            if (result.startsWith("Exception")) {
+                console.error('❌ calculate_resistance_matrix Exception:', result);
+                setTimeout(() => {this.resistanceMatrixCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const matrix = JSON.parse(result);
+                setTimeout(() => {this.resistanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
+                return matrix;
+            }
+        },
+
+        inductanceMatrixCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateInductanceMatrix(magnetic, frequency, modelsData = {}) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const magneticJson = JSON.stringify(magnetic);
+            console.log('📤 Sending to calculate_inductance_matrix:', {
+                magneticKeys: Object.keys(magnetic),
+                coreKeys: magnetic.core ? Object.keys(magnetic.core) : 'NO CORE',
+                hasProcessedDescription: !!magnetic.core?.processedDescription,
+                hasEffectiveParams: !!magnetic.core?.processedDescription?.effectiveParameters,
+                coilKeys: magnetic.coil ? Object.keys(magnetic.coil) : 'NO COIL',
+                windingsCount: magnetic.coil?.functionalDescription?.length || 0,
+                frequency
+            });
+
+            const result = await mkf.calculate_inductance_matrix(magneticJson, frequency, JSON.stringify(modelsData));
+
+            if (result.startsWith("Exception")) {
+                console.error('❌ calculate_inductance_matrix Exception:', result);
+                setTimeout(() => {this.inductanceMatrixCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const matrix = JSON.parse(result);
+                setTimeout(() => {this.inductanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
+                return matrix;
+            }
+        },
+
+        strayCapacitanceCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateStrayCapacitance(coil, operatingPoint, modelsData = {}) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            console.log('📤 Sending to calculate_stray_capacitance:', {
+                coilKeys: Object.keys(coil),
+                turnsCount: coil.turnsDescription?.length || 0,
+                layersCount: coil.layersDescription?.length || 0,
+                windingsCount: coil.functionalDescription?.length || 0,
+                hasOperatingPoint: !!operatingPoint
+            });
+
+            const result = await mkf.calculate_stray_capacitance(JSON.stringify(coil), JSON.stringify(operatingPoint), JSON.stringify(modelsData));
+
+            if (result.startsWith("Exception")) {
+                console.error('❌ calculate_stray_capacitance Exception:', result);
+                setTimeout(() => {this.strayCapacitanceCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const capacitanceData = JSON.parse(result);
+                setTimeout(() => {this.strayCapacitanceCalculated(true, capacitanceData);}, this.task_standard_response_delay);
+                return capacitanceData;
+            }
+        },
+
+        maxwellCapacitanceMatrixCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateMaxwellCapacitanceMatrix(coil, capacitanceAmongWindings) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.calculate_maxwell_capacitance_matrix(JSON.stringify(coil), JSON.stringify(capacitanceAmongWindings));
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.maxwellCapacitanceMatrixCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const matrix = JSON.parse(result);
+                setTimeout(() => {this.maxwellCapacitanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
+                return matrix;
+            }
+        },
     }
 })
