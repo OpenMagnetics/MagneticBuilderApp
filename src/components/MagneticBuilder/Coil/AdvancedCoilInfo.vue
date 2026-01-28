@@ -34,7 +34,7 @@ export default {
             PLOT_MODES,
             forceUpdate: 0,
             resistanceMatrix: null,
-            resistanceFrequencyInput: { resistanceFrequency: null },  // Will be set from operating point
+            resistanceFrequencyInput: { resistanceFrequency: 100000 },  // Default, will be updated from operating point
             calculatingResistance: false,
             inductanceMatrix: null,
             maxwellCapacitanceMatrix: null,
@@ -197,12 +197,25 @@ export default {
         },
         getUnitForSymbol(symbol) {
             const unitMap = {
-                'R': 'Ω',
+                'R': '\\Omega',
                 'L': 'H',
                 'C': 'F',
                 'C_M': 'F'
             };
             return unitMap[symbol] || '';
+        },
+        // Convert Unicode unit characters to LaTeX commands
+        unicodeToLatex(unit) {
+            const replacements = {
+                'μ': '\\mu ',
+                'Ω': '\\Omega ',
+                'Ω': '\\Omega ',  // Different omega character
+            };
+            let result = unit;
+            for (const [unicode, latex] of Object.entries(replacements)) {
+                result = result.replace(new RegExp(unicode, 'g'), latex);
+            }
+            return result;
         },
         swapIncludeFringing() {
             this.includeFringing = !this.includeFringing;
@@ -233,7 +246,12 @@ export default {
             // Use formatUnit for proper scaling and removeTrailingZeroes for clean display
             const { label, unit } = formatUnit(num, unitSymbol);
             const cleanLabel = removeTrailingZeroes(label, 3);
-            return `${cleanLabel}\\,\\text{${unit}}`;
+            const latexUnit = this.unicodeToLatex(unit);
+            // Don't wrap in \text{} if unit already contains LaTeX commands
+            if (latexUnit.includes('\\')) {
+                return `${cleanLabel}\\,${latexUnit}`;
+            }
+            return `${cleanLabel}\\,\\text{${latexUnit}}`;
         },
         formatValue(val) {
             if (val === null || val === undefined) return '0';

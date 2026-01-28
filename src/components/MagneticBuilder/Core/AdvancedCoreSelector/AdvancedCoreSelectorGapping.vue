@@ -93,7 +93,7 @@ export default {
     methods: {
         getEngineConstants() {
             this.taskQueueStore.getConstants().then((constants) => {
-                this.engineConstants['residualGap'] = constants.get('residualGap');
+                this.engineConstants['residualGap'] = constants['residualGap'];
                 if (this.core.processedDescription != null) {
                     this.assignLocalData(this.core);
                     this.calculateData();
