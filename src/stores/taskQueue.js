@@ -350,7 +350,35 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async calculateCoreLosses(magnetic, inputs, operatingPointIndex, modelsData) {
-            if (magnetic.core['functionalDescription']['shape'] != "" && magnetic.core['functionalDescription']['material'] != "") {
+            // Validate all required fields exist
+            const shape = magnetic.core?.functionalDescription?.shape;
+            const material = magnetic.core?.functionalDescription?.material;
+            const gapping = magnetic.core?.functionalDescription?.gapping;
+            const operatingPoint = inputs?.operatingPoints?.[operatingPointIndex];
+            const ambientTemperature = operatingPoint?.conditions?.ambientTemperature;
+            const coil = magnetic.coil;
+            
+            // Check shape - can be a string (name) or object (with family/dimensions)
+            const hasValidShape = shape && (
+                (typeof shape === 'string' && shape !== '') ||
+                (typeof shape === 'object' && shape.family)
+            );
+            
+            // Check coil has required fields - need at least one winding with numberTurns > 0
+            const hasValidCoil = coil && 
+                coil.functionalDescription && 
+                Array.isArray(coil.functionalDescription) && 
+                coil.functionalDescription.length > 0 &&
+                coil.functionalDescription.some(w => w.numberTurns > 0);
+            
+            // Check all required fields (coil is optional - we'll skip inductance/loss calculations if missing)
+            if (!hasValidShape || !material || material === '' || 
+                !gapping || !Array.isArray(gapping) ||
+                !operatingPoint || ambientTemperature == null) {
+                return null;
+            }
+            
+            try {
                 const mkf = await waitForMkf();
                 await mkf.ready;
 
@@ -362,8 +390,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 {
                     const result = await mkf.get_core_temperature_dependant_parameters(JSON.stringify(magnetic.core), inputs.operatingPoints[operatingPointIndex].conditions.ambientTemperature);
                     if (result.startsWith("Exception")) {
-                        setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
-                        throw new Error(result);
+                        return null;
                     }
                     else {
                         coreTemperatureDependantParametersData = JSON.parse(result);
@@ -374,8 +401,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 {
                     const result = await mkf.calculate_inductance_from_number_turns_and_gapping(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs.operatingPoints[operatingPointIndex]), JSON.stringify(modelsData));
                     if (result == -1) {
-                        setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
-                        throw new Error(result);
+                        return null;
                     }
                     else {
                         // Result is already a number from the worker, no need to parse
@@ -386,8 +412,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 {
                     const result = await mkf.calculate_core_losses(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs), JSON.stringify(modelsData), operatingPointIndex);
                     if (result.startsWith("Exception")) {
-                        setTimeout(() => {this.coreLossesCalculated(false, result);}, this.task_standard_response_delay);
-                        throw new Error(result);
+                        return null;
                     }
                     else {
                         coreLossesData = JSON.parse(result);
@@ -410,6 +435,9 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
                 setTimeout(() => {this.coreLossesCalculated(true, data);}, this.task_standard_response_delay);
                 return data;
+            } catch (error) {
+                // Silently return null - data may be incomplete during editing
+                return null;
             }
         },
 

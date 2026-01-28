@@ -4,7 +4,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import CoreGappingSelector from '/WebSharedComponents/Common/CoreGappingSelector.vue'
 import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
 import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
-import { coreAdviserWeights } from '/WebSharedComponents/assets/js/defaults.js'
+import { coreAdviserWeights, defaultUngappedGapping } from '/WebSharedComponents/assets/js/defaults.js'
 import CoreInfo from './CoreInfo.vue'
 import CoreShapeSelector from './CoreShapeSelector.vue'
 import { useHistoryStore } from '../../../stores/history'
@@ -160,12 +160,15 @@ export default {
                                 // Core hash is the same but user changed shape - still need to regenerate bobbin
                                 this.masStore.mas.magnetic.core = mas.magnetic.core;
                                 this.changeMadeByUser = false;
-                                this.taskQueueStore.generateBobbinFromCoreShape(
-                                    mas.magnetic.core,
-                                    this.masStore.mas.inputs.designRequirements.wiringTechnology
-                                ).then((bobbin) => {
-                                    this.masStore.mas.magnetic.coil.bobbin = bobbin;
-                                });
+                                // Only generate bobbin if material is set (backend requires it)
+                                if (mas.magnetic.core.functionalDescription?.material) {
+                                    this.taskQueueStore.generateBobbinFromCoreShape(
+                                        mas.magnetic.core,
+                                        this.masStore.mas.inputs.designRequirements.wiringTechnology
+                                    ).then((bobbin) => {
+                                        this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                                    });
+                                }
                             }
                         }
                     }
@@ -261,13 +264,7 @@ export default {
             this.taskQueueStore.processCoreShape(value).then((shape) => {
                 if (this.localData.material == null) {
                     this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
-                    // Still need to regenerate bobbin even without material
-                    this.taskQueueStore.generateBobbinFromCoreShape(
-                        this.masStore.mas.magnetic.core, 
-                        this.masStore.mas.inputs.designRequirements.wiringTechnology
-                    ).then((bobbin) => {
-                        this.masStore.mas.magnetic.coil.bobbin = bobbin;
-                    });
+                    // Cannot generate bobbin without material - backend requires it
                 }
                 else {
                     const mas = deepCopy(this.masStore.mas);
@@ -287,7 +284,27 @@ export default {
         materialUpdated(value) {
             this.changeMadeByUser = true;
             this.taskQueueStore.changeCoreMaterial(value, deepCopy(this.masStore.mas.magnetic.core)).then((core) => {
+                // Ensure default gapping is set so core losses can be calculated
+                if (!core.functionalDescription.gapping || (core.functionalDescription.type == 'two-piece set' && core.functionalDescription.gapping.length === 0)) {
+                    core.functionalDescription.gapping = deepCopy(defaultUngappedGapping);
+                }
                 this.masStore.mas.magnetic.core = core;
+
+                this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
+                    this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                    this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                    this.forceUpdate += 1;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+                
+                // Ensure coil has at least one turn so core losses can be calculated
+                const coil = this.masStore.mas.magnetic.coil;
+                const hasValidCoil = coil?.functionalDescription?.some(w => w.numberTurns > 0);
+                if (!hasValidCoil && coil?.functionalDescription?.length > 0) {
+                    coil.functionalDescription[0].numberTurns = 1;
+                }
             }) 
         },
         numberStacksUpdated(value) {
@@ -452,7 +469,7 @@ export default {
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
             <CoreGappingSelector class="col-12 mb-1 text-start"
-                v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set'&& masStore.mas.magnetic.core.processedDescription != null"
+                v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set' && masStore.mas.magnetic.core.processedDescription != null"
                 :disabled="readOnly"
                 :title="'Gap Info: '"
                 :dataTestLabel="dataTestLabel + '-Gap'"

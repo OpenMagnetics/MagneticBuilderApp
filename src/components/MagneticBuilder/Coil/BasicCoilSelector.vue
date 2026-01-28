@@ -326,6 +326,12 @@ export default {
             }
         },
         wind() {
+            // Skip winding for toroidal cores or when bobbin is dummy/invalid
+            const bobbin = this.masStore.mas.magnetic.coil?.bobbin;
+            if (!bobbin || bobbin === "Dummy" || bobbin === "") {
+                this.tryingToSend = false;
+                return;
+            }
 
             const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 

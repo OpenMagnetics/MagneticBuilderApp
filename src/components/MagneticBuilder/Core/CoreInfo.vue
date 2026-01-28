@@ -138,13 +138,29 @@ export default {
                 coreTemperature: this.$userStore.selectedModels['coreTemperature'] || Defaults.coreTemperatureModelDefault,
                 gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault
             };
-            if (this.masStore.mas.magnetic.core['functionalDescription']['shape'] != "" && this.masStore.mas.magnetic.core['functionalDescription']['material'] != "") {
+            const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
+            const material = this.masStore.mas.magnetic.core?.functionalDescription?.material;
+            const gapping = this.masStore.mas.magnetic.core?.functionalDescription?.gapping;
+            const operatingPoint = this.masStore.mas.inputs?.operatingPoints?.[this.operatingPointIndex];
+            
+            // Check shape - can be a string (name) or object (with family/dimensions)
+            const hasValidShape = shape && (
+                (typeof shape === 'string' && shape !== '') ||
+                (typeof shape === 'object' && shape.family)
+            );
+            
+            // All required fields must exist (gapping can be empty for toroidal cores)
+            if (hasValidShape && material && material !== '' && 
+                gapping && Array.isArray(gapping) &&
+                operatingPoint?.conditions?.ambientTemperature != null) {
                 this.taskQueueStore.calculateCoreLosses(this.masStore.mas.magnetic, this.masStore.mas.inputs, this.operatingPointIndex, modelsData).then((data) => {
-                    this.coreTemperatureDependantParametersData = data.coreTemperatureDependantParametersData;
-                    this.magnetizingInductance = data.magnetizingInductance;
-                    this.coreLossesData = data.coreLossesData;
-                    this.magnetizingInductanceCheck = data.magnetizingInductanceCheck;
-                    this.dataUptoDate = true;
+                    if (data) {
+                        this.coreTemperatureDependantParametersData = data.coreTemperatureDependantParametersData;
+                        this.magnetizingInductance = data.magnetizingInductance;
+                        this.coreLossesData = data.coreLossesData;
+                        this.magnetizingInductanceCheck = data.magnetizingInductanceCheck;
+                        this.dataUptoDate = true;
+                    }
                 })
                 .catch(error => {
                     console.error(error);
