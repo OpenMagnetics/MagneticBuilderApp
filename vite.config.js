@@ -4,9 +4,12 @@ import { defineConfig } from 'vite'
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
 import viteCompression from 'vite-plugin-compression';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    // Include WASM-related files as assets so they're copied to the build output
+    assetsInclude: ['**/*.wasm'],
     build: {
         rollupOptions: {
             output: {
@@ -20,6 +23,11 @@ export default defineConfig({
                     
                     if (/\.css$/.test(name ?? '')) {
                         return 'assets/css/[name]-[hash][extname]';
+                    }
+                    
+                    // Keep WASM files in assets/wasm without hash for predictable paths
+                    if (/\.wasm$/.test(name ?? '')) {
+                        return 'assets/wasm/[name][extname]';
                     }
  
                     // default value
@@ -44,6 +52,19 @@ export default defineConfig({
         }),
         vueJsx(),
         viteCompression({filter: '/\.(js|mjs|json|css|html|wasm)$/i'}),
+        // Copy WASM files from assets to wasm/ folder in build output
+        viteStaticCopy({
+            targets: [
+                {
+                    src: 'src/assets/js/libMKF.wasm.js',
+                    dest: 'wasm'
+                },
+                {
+                    src: 'src/assets/js/libMKF.wasm.wasm',
+                    dest: 'wasm'
+                }
+            ]
+        }),
     ],
     resolve: {
         alias: {

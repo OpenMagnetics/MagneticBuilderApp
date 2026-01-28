@@ -86,7 +86,8 @@ router.beforeEach((to, from, next) => {
 
                     // Initialize MKF in Web Worker
                     console.warn("Initializing MKF in Web Worker...")
-                    const wasmJsUrl = new URL('/src/assets/js/libMKF.wasm.js', window.location.origin).href;
+                    // WASM files are in public/wasm folder, served at /wasm/ in production
+                    const wasmJsUrl = '/wasm/libMKF.wasm.js';
                     const mkf = await initWorker(wasmJsUrl);
                     app.config.globalProperties.$mkf = mkf;
 
