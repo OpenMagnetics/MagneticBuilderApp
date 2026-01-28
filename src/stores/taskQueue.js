@@ -224,16 +224,18 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const dimensionsArr = toArray(await mkf.get_shape_family_dimensions(family, familySubtype));
             const dimensions = {};
             for (const key of dimensionsArr) {
+                // Skip dimensions that are in the exceptions list for this family
                 if (family in dimensionsExceptionsPerFamily) {
                     if (dimensionsExceptionsPerFamily[family].includes(key)) {
                         continue;
                     }
-                    if (key in oldDimensions) {
-                        dimensions[key] = oldDimensions[key];
-                    }
-                    else {
-                        dimensions[key] = 0;
-                    }
+                }
+                // Preserve old dimension value or default to 0
+                if (key in oldDimensions) {
+                    dimensions[key] = oldDimensions[key];
+                }
+                else {
+                    dimensions[key] = 0;
                 }
             }
             setTimeout(() => {this.coreShapeFamilyDimensionsGotten(true, dimensions);}, this.task_standard_response_delay);
