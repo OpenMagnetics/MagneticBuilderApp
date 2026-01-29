@@ -147,7 +147,20 @@ export default {
             .catch(error => {
                 console.error(error);
                 this.loading = false;
-                this.errorMessage = "Error calculating impedance";
+                
+                // Parse the error message to provide user-friendly feedback
+                const errorStr = error?.message || error?.toString() || "";
+                if (errorStr.includes("MATERIAL_DATA_MISSING") && errorStr.includes("Complex permeability")) {
+                    // Extract material name from error message
+                    const materialMatch = errorStr.match(/Material data missing for: ([^(]+)/);
+                    const materialName = materialMatch ? materialMatch[1].trim() : "the selected material";
+                    this.errorMessage = `Complex permeability data is not available for ${materialName}. Please select a different material with complex permeability data.`;
+                } else if (errorStr.includes("MATERIAL_DATA_MISSING")) {
+                    this.errorMessage = "Required material data is missing. Please select a different material.";
+                } else {
+                    this.errorMessage = "Error calculating impedance";
+                }
+                
                 this.impedanceOverFrequencyData[0].data = {
                     x: [],
                     y: [],

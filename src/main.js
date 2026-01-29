@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import './assets/css/custom.css'
+import { Tooltip } from 'bootstrap';
 import 'bootstrap';
 import router from "./router";
 import { createPinia } from 'pinia'
@@ -16,6 +17,15 @@ import { useStyleStore } from '/src/stores/style'
 import { initWorker } from '/WebSharedComponents/assets/js/mkfRuntime'
 import VueLatex from 'vatex'
 import { checkAndClearOutdatedStores } from '/src/stores/storeVersioning'
+
+// Monkey-patch Bootstrap Tooltip to fix _activeTrigger null errors
+const originalIsWithActiveTrigger = Tooltip.prototype._isWithActiveTrigger;
+Tooltip.prototype._isWithActiveTrigger = function() {
+    if (!this._activeTrigger || typeof this._activeTrigger !== 'object') {
+        this._activeTrigger = {};
+    }
+    return originalIsWithActiveTrigger.call(this);
+};
 
 // Check and clear outdated stores BEFORE Pinia is initialized
 // This ensures old store data with incompatible field names is cleared

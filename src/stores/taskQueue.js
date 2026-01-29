@@ -1082,6 +1082,32 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async adviseWire(mas, windingIndex) {
+            // Check if bobbin is valid (not Dummy or empty) - if so, generate one from core
+            let bobbin = mas?.magnetic?.coil?.bobbin;
+            if (!bobbin || bobbin === 'Dummy' || bobbin === '') {
+                // Check if we have a valid core to generate a bobbin from
+                const core = mas?.magnetic?.core;
+                const hasValidCore = core?.functionalDescription?.shape && 
+                                     core?.functionalDescription?.material;
+                
+                if (!hasValidCore) {
+                    const error = 'Cannot advise wire: core shape and material must be set first.';
+                    setTimeout(() => {this.allWiresAdvised(false, error);}, this.task_standard_response_delay);
+                    return null;
+                }
+                
+                // Generate a basic bobbin from the core shape
+                try {
+                    const wiringTechnology = mas?.inputs?.designRequirements?.wiringTechnology || 'Wound';
+                    bobbin = await this.generateBobbinFromCoreShape(core, wiringTechnology);
+                    mas.magnetic.coil.bobbin = bobbin;
+                } catch (error) {
+                    const errorMsg = 'Cannot advise wire: failed to generate bobbin from core shape.';
+                    setTimeout(() => {this.allWiresAdvised(false, errorMsg);}, this.task_standard_response_delay);
+                    return null;
+                }
+            }
+            
             const mkf = await waitForMkf();
             await mkf.ready;
 
