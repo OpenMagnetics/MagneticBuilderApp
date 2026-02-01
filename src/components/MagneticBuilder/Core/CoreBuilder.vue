@@ -1,5 +1,5 @@
 <script setup>
-import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
+import Magnetic3DVisualizer from '/WebSharedComponents/Common/Magnetic3DVisualizer.vue'
 import BasicCoreSelector from './BasicCoreSelector.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'

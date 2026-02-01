@@ -2,7 +2,7 @@
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import CoreGappingSelector from '/WebSharedComponents/Common/CoreGappingSelector.vue'
-import Core3DVisualizer from '/WebSharedComponents/Common/Core3DVisualizer.vue'
+import Magnetic3DVisualizer from '/WebSharedComponents/Common/Magnetic3DVisualizer.vue'
 import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights, defaultUngappedGapping } from '/WebSharedComponents/assets/js/defaults.js'
 import CoreInfo from './CoreInfo.vue'
@@ -386,11 +386,13 @@ export default {
                     style="height: 25vh"
                     :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
                 >
-                    <Core3DVisualizer 
-                        :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
-                        :core="masStore.mas.magnetic.core"
+                    <Magnetic3DVisualizer 
+                        :dataTestLabel="`${dataTestLabel}-Magnetic3DVisualizer`"
+                        :magnetic="masStore.mas.magnetic"
                         :forceUpdate="forceUpdateVisualizer"
-                        :fullCoreModel="true"
+                        :showCore="true"
+                        :showTurns="true"
+                        :showBobbin="true"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                     />
