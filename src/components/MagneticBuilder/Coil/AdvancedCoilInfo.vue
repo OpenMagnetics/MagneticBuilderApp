@@ -2,7 +2,6 @@
 import { deepCopy, formatUnit, removeTrailingZeroes } from '/WebSharedComponents/assets/js/utils.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 import Magnetic2DVisualizer, { PLOT_MODES } from '/WebSharedComponents/Common/Magnetic2DVisualizer.vue'
-import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 </script>
 
 <script>
@@ -34,9 +33,8 @@ export default {
             PLOT_MODES,
             forceUpdate: 0,
             resistanceMatrix: null,
-            resistanceFrequencyInput: { resistanceFrequency: 100000 },  // Default, will be updated from operating point
-            calculatingResistance: false,
             inductanceMatrix: null,
+            couplingCoefficientMatrix: null,
             maxwellCapacitanceMatrix: null,
             capacitanceMatrix: null,
             calculatingMatrices: false,
@@ -51,6 +49,10 @@ export default {
         inductanceMatrixLatex() {
             if (!this.inductanceMatrix) return null;
             return this.formatMatrixAsLatex(this.inductanceMatrix, 'L');
+        },
+        couplingCoefficientMatrixLatex() {
+            if (!this.couplingCoefficientMatrix) return null;
+            return this.formatMatrixAsLatex(this.couplingCoefficientMatrix, 'k', '');
         },
         maxwellCapacitanceMatrixLatex() {
             if (!this.maxwellCapacitanceMatrix) return null;
@@ -70,11 +72,6 @@ export default {
         },
     },
     mounted () {
-        // Initialize resistance frequency from operating point
-        const operatingPoint = this.masStore.mas.inputs?.operatingPoints?.[this.operatingPointIndex];
-        const frequency = operatingPoint?.excitationsPerWinding?.[0]?.frequency || 100000;
-        this.resistanceFrequencyInput.resistanceFrequency = frequency;
-        
         this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "closeCoilAdvancedInfo") {
@@ -132,7 +129,7 @@ export default {
             }
             
             // Handle nested capacitance matrix: {windingName: {windingName: ScalarMatrixAtFrequency}}
-            // This structure has winding pairs, each containing a ScalarMatrixAtFrequency
+            // This structure has winding pairs, each containing a 3x3 matrix
             if (matrix && typeof matrix === 'object' && !Array.isArray(matrix) && !matrix.magnitude) {
                 const windingNames = Object.keys(matrix).sort();
                 
@@ -148,37 +145,30 @@ export default {
                         const sample = firstWinding[secondLevelKeys[0]];
                         // Check if it's a ScalarMatrixAtFrequency (has magnitude property)
                         if (sample && sample.magnitude) {
-                            // Build an NxN matrix from the winding-to-winding capacitance map
-                            const rows = windingNames.map(rowWinding => {
-                                return windingNames.map(colWinding => {
-                                    const cellMatrix = matrix[rowWinding]?.[colWinding];
-                                    if (cellMatrix && cellMatrix.magnitude) {
-                                        // Extract a representative value from the magnitude
-                                        // magnitude is {name: {name: value}}, sum all values for total capacitance
-                                        const mag = cellMatrix.magnitude;
-                                        let total = 0;
-                                        for (const outerKey of Object.keys(mag)) {
-                                            for (const innerKey of Object.keys(mag[outerKey] || {})) {
-                                                const val = mag[outerKey][innerKey];
-                                                if (typeof val === 'number') {
-                                                    total += val;
-                                                } else if (val && typeof val === 'object' && val.nominal !== undefined) {
-                                                    total += val.nominal;
-                                                }
-                                            }
-                                        }
-                                        return this.formatValueWithUnit(total, unitSymbol);
+                            // This is a winding-to-winding capacitance map
+                            // For now, show a summary or first diagonal entry
+                            const entries = [];
+                            for (const winding of windingNames) {
+                                const selfMatrix = matrix[winding]?.[winding];
+                                if (selfMatrix && selfMatrix.magnitude) {
+                                    // Get the total capacitance (sum of diagonal elements or a specific value)
+                                    const mag = selfMatrix.magnitude;
+                                    const keys = Object.keys(mag);
+                                    if (keys.length > 0) {
+                                        // Get the first diagonal value as representative
+                                        const val = mag[keys[0]]?.[keys[0]];
+                                        entries.push(`C_{${winding}} = ${this.formatValueWithUnit(val, unitSymbol)}`);
                                     }
-                                    return '0';
-                                }).join(' & ');
-                            });
-                            
-                            return `${symbol} = \\begin{bmatrix} ${rows.join(' \\\\ ')} \\end{bmatrix}`;
+                                }
+                            }
+                            if (entries.length > 0) {
+                                return entries.join(', \\quad ');
+                            }
                         }
                     }
                 }
                 
-                return `${symbol} = \\text{N/A}`;
+                return `${symbol} = \\text{Complex structure}`;
             }
             
             // Legacy array-based matrix format
@@ -197,25 +187,12 @@ export default {
         },
         getUnitForSymbol(symbol) {
             const unitMap = {
-                'R': '\\Omega',
+                'R': 'Ω',
                 'L': 'H',
                 'C': 'F',
                 'C_M': 'F'
             };
             return unitMap[symbol] || '';
-        },
-        // Convert Unicode unit characters to LaTeX commands
-        unicodeToLatex(unit) {
-            const replacements = {
-                'μ': '\\mu ',
-                'Ω': '\\Omega ',
-                'Ω': '\\Omega ',  // Different omega character
-            };
-            let result = unit;
-            for (const [unicode, latex] of Object.entries(replacements)) {
-                result = result.replace(new RegExp(unicode, 'g'), latex);
-            }
-            return result;
         },
         swapIncludeFringing() {
             this.includeFringing = !this.includeFringing;
@@ -243,15 +220,56 @@ export default {
             
             if (Math.abs(num) < 1e-15) return '0';
             
+            // Handle dimensionless values (empty unit)
+            if (!unitSymbol || unitSymbol === '') {
+                // Format as plain number with reasonable precision
+                if (Math.abs(num) >= 0.01 && Math.abs(num) < 1000) {
+                    return num.toFixed(3).replace(/\.?0+$/, '');
+                }
+                return num.toExponential(2);
+            }
+            
             // Use formatUnit for proper scaling and removeTrailingZeroes for clean display
             const { label, unit } = formatUnit(num, unitSymbol);
             const cleanLabel = removeTrailingZeroes(label, 3);
-            const latexUnit = this.unicodeToLatex(unit);
-            // Don't wrap in \text{} if unit already contains LaTeX commands
-            if (latexUnit.includes('\\')) {
-                return `${cleanLabel}\\,${latexUnit}`;
+            
+            // Convert unit to LaTeX, properly handling Greek letters outside \text{}
+            // Split unit into parts: prefix (text) + base unit (may have Greek)
+            const latexUnit = this.convertUnitToLatex(unit);
+            
+            return `${cleanLabel}\\,${latexUnit}`;
+        },
+        convertUnitToLatex(unit) {
+            // Map of Unicode to LaTeX commands (must be outside \text{})
+            const greekMap = {
+                'Ω': '\\Omega',
+                'μ': '\\mu',
+                '°': '^{\\circ}'
+            };
+            
+            // Build LaTeX string, wrapping non-Greek chars in \text{} and Greek in math mode
+            let result = '';
+            let textBuffer = '';
+            
+            for (const char of unit) {
+                if (greekMap[char]) {
+                    // Flush text buffer first
+                    if (textBuffer) {
+                        result += `\\text{${textBuffer}}`;
+                        textBuffer = '';
+                    }
+                    result += greekMap[char];
+                } else {
+                    textBuffer += char;
+                }
             }
-            return `${cleanLabel}\\,\\text{${latexUnit}}`;
+            
+            // Flush remaining text buffer
+            if (textBuffer) {
+                result += `\\text{${textBuffer}}`;
+            }
+            
+            return result;
         },
         formatValue(val) {
             if (val === null || val === undefined) return '0';
@@ -285,25 +303,7 @@ export default {
             // Require full magnetic data including core and coil processing
             const magnetic = this.masStore.mas?.magnetic;
             
-            // Debug logging - check what data is available
-            console.group('🔍 Matrix Calculation Debug');
-            console.log('magnetic:', magnetic ? 'present' : 'MISSING');
-            console.log('magnetic.core:', magnetic?.core ? 'present' : 'MISSING');
-            console.log('magnetic.core.processedDescription:', magnetic?.core?.processedDescription ? 'present' : 'MISSING');
-            console.log('magnetic.core.processedDescription.effectiveParameters:', magnetic?.core?.processedDescription?.effectiveParameters ? 'present' : 'MISSING');
-            console.log('magnetic.coil:', magnetic?.coil ? 'present' : 'MISSING');
-            console.log('magnetic.coil.functionalDescription:', magnetic?.coil?.functionalDescription?.length || 0, 'windings');
-            console.log('magnetic.coil.turnsDescription:', magnetic?.coil?.turnsDescription?.length || 0, 'turns');
-            console.log('magnetic.coil.layersDescription:', magnetic?.coil?.layersDescription?.length || 0, 'layers');
-            if (magnetic?.coil?.turnsDescription?.length > 0) {
-                const firstTurn = magnetic.coil.turnsDescription[0];
-                console.log('First turn keys:', Object.keys(firstTurn));
-                console.log('First turn coordinates:', firstTurn.coordinates ? 'present' : 'MISSING');
-            }
-            console.groupEnd();
-            
             if (!magnetic?.coil?.turnsDescription || !magnetic?.core?.processedDescription) {
-                console.warn('⚠️ Skipping matrix calculation - missing required data');
                 return;
             }
             
@@ -314,8 +314,6 @@ export default {
                 const frequency = operatingPoint?.excitationsPerWinding?.[0]?.frequency || 100000;
                 const temperature = operatingPoint?.conditions?.ambientTemperature || 25;
                 
-                console.log('📊 Calculating matrices with frequency:', frequency, 'Hz, temperature:', temperature, '°C');
-                
                 // Validate we have required coil data for matrix calculations
                 const coil = magnetic.coil;
                 const hasLayers = coil.layersDescription && coil.layersDescription.length > 0;
@@ -323,20 +321,28 @@ export default {
                 
                 // Calculate resistance matrix (requires turns with coordinates)
                 if (hasTurns) {
-                    // Initialize frequency input to the operating point frequency
-                    this.resistanceFrequencyInput.resistanceFrequency = frequency;
-                    await this.calculateResistanceAtFrequency();
+                    try {
+                        const resistanceData = await this.taskQueueStore.calculateResistanceMatrix(magnetic, temperature, frequency);
+                        // Format is {frequency: number, magnitude: {windingName: {windingName: value}}}
+                        if (resistanceData && resistanceData.magnitude) {
+                            this.resistanceMatrix = resistanceData;
+                        } else if (resistanceData && Array.isArray(resistanceData)) {
+                            this.resistanceMatrix = resistanceData;
+                        } else {
+                            this.resistanceMatrix = null;
+                        }
+                    } catch (e) {
+                        console.error('Resistance matrix error:', e.message || e);
+                        this.resistanceMatrix = null;
+                    }
                 } else {
-                    console.log('⏭️ Skipping resistance matrix - no turns data');
                     this.resistanceMatrix = null;
                 }
                 
                 // Calculate inductance matrix (requires core processing)
                 if (magnetic.core?.processedDescription?.effectiveParameters) {
                     try {
-                        console.log('🟢 Calling calculateInductanceMatrix...');
                         const inductanceData = await this.taskQueueStore.calculateInductanceMatrix(magnetic, frequency, {});
-                        console.log('🟢 Inductance matrix result:', inductanceData);
                         // Format is {frequency: number, magnitude: {windingName: {windingName: value}}}
                         if (inductanceData && inductanceData.magnitude) {
                             this.inductanceMatrix = inductanceData;
@@ -346,47 +352,72 @@ export default {
                             this.inductanceMatrix = null;
                         }
                     } catch (e) {
-                        console.error('❌ Inductance matrix error:', e.message || e);
+                        console.error('Inductance matrix error:', e.message || e);
                         this.inductanceMatrix = null;
                     }
+                    
+                    // Calculate coupling coefficient matrix
+                    try {
+                        const couplingData = await this.taskQueueStore.calculateCouplingCoefficientMatrix(magnetic, frequency, {});
+                        if (couplingData && couplingData.magnitude) {
+                            this.couplingCoefficientMatrix = couplingData;
+                        } else {
+                            this.couplingCoefficientMatrix = null;
+                        }
+                    } catch (e) {
+                        console.error('Coupling coefficient matrix error:', e.message || e);
+                        this.couplingCoefficientMatrix = null;
+                    }
                 } else {
-                    console.log('⏭️ Skipping inductance matrix - no effectiveParameters');
                     this.inductanceMatrix = null;
+                    this.couplingCoefficientMatrix = null;
                 }
                 
                 // Calculate capacitance matrices (requires layers)
-                if (hasLayers) {
-                    // Calculate Maxwell capacitance matrix
+                if (hasLayers && operatingPoint) {
                     try {
-                        console.log('🟠 Calling calculateMaxwellCapacitanceMatrix...');
-                        const maxwellData = await this.taskQueueStore.calculateMaxwellCapacitanceMatrix(coil, {});
-                        console.log('🟠 Maxwell matrix result:', maxwellData);
-                        if (maxwellData && Array.isArray(maxwellData) && maxwellData.length > 0) {
-                            this.maxwellCapacitanceMatrix = maxwellData[0];
-                        } else {
-                            this.maxwellCapacitanceMatrix = null;
+                        const capacitanceData = await this.taskQueueStore.calculateStrayCapacitance(
+                            coil,
+                            operatingPoint,
+                            {}
+                        );
+                        
+                        if (capacitanceData) {
+                            // Use the maxwellCapacitanceMatrix directly from capacitanceData if available
+                            if (capacitanceData.maxwellCapacitanceMatrix && capacitanceData.maxwellCapacitanceMatrix.length > 0) {
+                                // It's an array of ScalarMatrixAtFrequency, take the first one
+                                this.maxwellCapacitanceMatrix = capacitanceData.maxwellCapacitanceMatrix[0];
+                            } else if (capacitanceData.capacitanceAmongWindings) {
+                                // Fall back to calculating separately
+                                try {
+                                    const maxwellData = await this.taskQueueStore.calculateMaxwellCapacitanceMatrix(
+                                        coil,
+                                        capacitanceData.capacitanceAmongWindings
+                                    );
+                                    if (maxwellData && Array.isArray(maxwellData) && maxwellData.length > 0) {
+                                        this.maxwellCapacitanceMatrix = maxwellData[0];
+                                    } else {
+                                        this.maxwellCapacitanceMatrix = null;
+                                    }
+                                } catch (e) {
+                                    console.error('Maxwell matrix error:', e.message || e);
+                                    this.maxwellCapacitanceMatrix = null;
+                                }
+                            }
+                            
+                            // Extract capacitance matrix from stray capacitance data
+                            if (capacitanceData.capacitanceMatrix) {
+                                this.capacitanceMatrix = capacitanceData.capacitanceMatrix;
+                            } else {
+                                this.capacitanceMatrix = null;
+                            }
                         }
                     } catch (e) {
-                        console.error('❌ Maxwell matrix error:', e.message || e);
+                        console.error('Stray capacitance error:', e.message || e);
                         this.maxwellCapacitanceMatrix = null;
-                    }
-                    
-                    // Calculate capacitance matrix
-                    try {
-                        console.log('🔵 Calling calculateCapacitanceMatrix...');
-                        const capacitanceData = await this.taskQueueStore.calculateCapacitanceMatrix(coil, {});
-                        console.log('🔵 Capacitance matrix result:', capacitanceData);
-                        if (capacitanceData && typeof capacitanceData === 'object') {
-                            this.capacitanceMatrix = capacitanceData;
-                        } else {
-                            this.capacitanceMatrix = null;
-                        }
-                    } catch (e) {
-                        console.error('❌ Capacitance matrix error:', e.message || e);
                         this.capacitanceMatrix = null;
                     }
                 } else {
-                    console.log('⏭️ Skipping capacitance matrices - hasLayers:', hasLayers);
                     this.maxwellCapacitanceMatrix = null;
                     this.capacitanceMatrix = null;
                 }
@@ -428,36 +459,6 @@ export default {
             }
             return matrix;
         },
-        async calculateResistanceAtFrequency() {
-            const magnetic = this.masStore.mas?.magnetic;
-            if (!magnetic?.coil?.turnsDescription) {
-                this.resistanceMatrix = null;
-                return;
-            }
-            
-            this.calculatingResistance = true;
-            
-            try {
-                const operatingPoint = this.masStore.mas.inputs?.operatingPoints?.[this.operatingPointIndex];
-                const temperature = operatingPoint?.conditions?.ambientTemperature || 25;
-                const frequency = this.resistanceFrequencyInput.resistanceFrequency || 0;
-                
-                console.log(`🔵 Calling calculateResistanceMatrix at ${frequency} Hz...`);
-                const resistanceData = await this.taskQueueStore.calculateResistanceMatrix(magnetic, temperature, frequency);
-                console.log(`🔵 Resistance matrix result at ${frequency} Hz:`, resistanceData);
-                
-                if (resistanceData && (resistanceData.magnitude || Array.isArray(resistanceData))) {
-                    this.resistanceMatrix = resistanceData;
-                } else {
-                    this.resistanceMatrix = null;
-                }
-            } catch (e) {
-                console.error(`❌ Resistance matrix error:`, e.message || e);
-                this.resistanceMatrix = null;
-            } finally {
-                this.calculatingResistance = false;
-            }
-        },
     }
 }
 </script>
@@ -494,27 +495,7 @@ export default {
                 </div>
                 <!-- Resistance Matrix -->
                 <div class="text-center mt-2">
-                    <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="mb-2">
-                        <Dimension
-                            :dataTestLabel="dataTestLabel + '-ResistanceFrequency'"
-                            :name="'resistanceFrequency'"
-                            :replaceTitle="'Frequency'"
-                            :unit="'Hz'"
-                            :min="0"
-                            :max="1e9"
-                            :allowZero="true"
-                            v-model="resistanceFrequencyInput"
-                            :labelWidthProportionClass="'col-5'"
-                            :valueWidthProportionClass="'col-7'"
-                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                            :textColor="$styleStore.magneticBuilder.inputTextColor"
-                            @update="calculateResistanceAtFrequency"
-                        />
-                    </div>
-                    <div v-if="calculatingResistance" class="text-muted">
+                    <div v-if="calculatingMatrices" class="text-muted">
                         <i class="fas fa-spinner fa-spin"></i> Calculating...
                     </div>
                     <vue-latex
@@ -523,7 +504,7 @@ export default {
                         :display-mode="true"
                         :fontsize="16"
                     />
-                    <div v-else-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="text-muted small">
+                    <div v-else class="text-muted small">
                         <em>No resistance data available</em>
                     </div>
                 </div>
@@ -569,6 +550,22 @@ export default {
                     />
                     <div v-else class="text-muted small">
                         <em>No inductance data</em>
+                    </div>
+                </div>
+                <!-- Coupling Coefficient Matrix -->
+                <div class="text-center mt-2">
+                    <span class="text-muted d-block">Coupling Coefficient</span>
+                    <div v-if="calculatingMatrices" class="text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Calculating...
+                    </div>
+                    <vue-latex
+                        v-else-if="couplingCoefficientMatrixLatex"
+                        :expression="couplingCoefficientMatrixLatex"
+                        :display-mode="true"
+                        :fontsize="16"
+                    />
+                    <div v-else class="text-muted small">
+                        <em>No coupling data</em>
                     </div>
                 </div>
             </div>

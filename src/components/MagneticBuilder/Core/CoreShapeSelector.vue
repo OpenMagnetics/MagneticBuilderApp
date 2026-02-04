@@ -51,8 +51,32 @@ export default {
         }
     },
     computed: {
+        wiringTechnology() {
+            return this.masStore.mas?.inputs?.designRequirements?.wiringTechnology;
+        }
     },
     watch: {
+        wiringTechnology(newVal, oldVal) {
+            // When wiringTechnology changes, reload core shapes to filter appropriately
+            // (e.g., exclude toroidal cores when in Planar mode)
+            if (newVal !== oldVal) {
+                // If switching to Printed/Planar and currently a toroidal core is selected, clear it
+                if (newVal === 'Printed' && this.localData.shapeFamily?.toLowerCase() === 't') {
+                    this.localData.shapeFamily = null;
+                    this.localData.shape = null;
+                    // Also clear from the mas store
+                    if (this.masStore.mas?.magnetic?.core?.functionalDescription?.shape) {
+                        this.masStore.mas.magnetic.core.functionalDescription.shape = {};
+                        this.masStore.mas.magnetic.core.processedDescription = null;
+                        this.masStore.mas.magnetic.core.geometricalDescription = null;
+                    }
+                }
+                this.coreShapeNames = {};
+                this.coreShapeFamilies = {};
+                this.coreShapeData = [];
+                this.getShapeNames();
+            }
+        }
     },
     created () {
     },

@@ -256,7 +256,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             for (const shapeFamily of coreShapeFamiliesArr) {
                 if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
                     !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
-                    if (mas.inputs.designRequirements.wiringTechnology == null || mas.inputs.designRequirements.wiringTechnology == 'Wound' || shapeFamily != 'T') {
+                    // Exclude toroidal cores (T family) when in Planar/Printed mode
+                    const isToroidal = shapeFamily.toLowerCase() === 't';
+                    const isPlanarMode = mas.inputs.designRequirements.wiringTechnology != null && 
+                                         mas.inputs.designRequirements.wiringTechnology !== 'Wound';
+                    if (!(isToroidal && isPlanarMode)) {
                         coreShapeFamilies.push(shapeFamily);
                     }
                 }
@@ -1600,6 +1604,35 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             else {
                 const matrix = JSON.parse(result);
                 setTimeout(() => {this.inductanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
+                return matrix;
+            }
+        },
+
+        couplingCoefficientMatrixCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateCouplingCoefficientMatrix(magnetic, frequency, modelsData = {}) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const magneticJson = JSON.stringify(magnetic);
+            console.log('📤 Sending to calculate_coupling_coefficient_matrix:', {
+                magneticKeys: Object.keys(magnetic),
+                hasProcessedDescription: !!magnetic.core?.processedDescription,
+                windingsCount: magnetic.coil?.functionalDescription?.length || 0,
+                frequency
+            });
+
+            const result = await mkf.calculate_coupling_coefficient_matrix(magneticJson, frequency, JSON.stringify(modelsData));
+
+            if (result.startsWith("Exception")) {
+                console.error('❌ calculate_coupling_coefficient_matrix Exception:', result);
+                setTimeout(() => {this.couplingCoefficientMatrixCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const matrix = JSON.parse(result);
+                setTimeout(() => {this.couplingCoefficientMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
                 return matrix;
             }
         },
