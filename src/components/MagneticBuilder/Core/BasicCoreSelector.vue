@@ -184,16 +184,10 @@ export default {
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
-        isStackable(shape) {
-            let shapeName = shape;
-            if (shape == null) {
-                shapeName = this.masStore.mas.magnetic.core.functionalDescription.shape;
-            }
-            if (! (typeof shapeName === 'string' || shapeName instanceof String)) {
-                shapeName = shapeName.name;
-            }
+        isStackable() {
+            let shapeFamily = this.masStore.mas.magnetic.core.functionalDescription.shape.family;
 
-            if (shapeName.startsWith("E ") || shapeName.startsWith("U ") || shapeName.startsWith("T ")) {
+            if (shapeFamily == "e" || shapeFamily == "planar e" || shapeFamily == "t" || shapeFamily == "u") {
                 return true;
             }
             else {
@@ -259,27 +253,36 @@ export default {
             this.shapeUpdated(name);
         },
         async shapeUpdated(value) {
-            this.masStore.mas.magnetic.core.name = "Custom";
-            this.changeMadeByUser = true;
-            this.taskQueueStore.processCoreShape(value).then((shape) => {
-                if (this.localData.material == null) {
-                    this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
-                    // Cannot generate bobbin without material - backend requires it
-                }
-                else {
-                    const mas = deepCopy(this.masStore.mas);
-                    mas.magnetic.core.functionalDescription.shape = shape;
-
-                    if (!this.isStackable(shape)) {
-                        mas.magnetic.core.functionalDescription.numberStacks = 1;
+            console.warn("value")
+            console.warn(value)
+            console.warn(value)
+            if (value.startsWith("Custom")) {
+                const mas = deepCopy(this.masStore.mas);
+                this.taskQueueStore.checkAndFixMas(mas);
+            }
+            else {
+                this.masStore.mas.magnetic.core.name = "Custom";
+                this.changeMadeByUser = true;
+                this.taskQueueStore.processCoreShape(value).then((shape) => {
+                    if (this.localData.material == null) {
+                        this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
+                        // Cannot generate bobbin without material - backend requires it
                     }
+                    else {
+                        const mas = deepCopy(this.masStore.mas);
+                        mas.magnetic.core.functionalDescription.shape = shape;
 
-                    this.taskQueueStore.checkAndFixMas(mas);
-                }
-            })
-            .catch(error => {
-                console.error(error);
-            });
+                        if (!this.isStackable()) {
+                            mas.magnetic.core.functionalDescription.numberStacks = 1;
+                        }
+
+                        this.taskQueueStore.checkAndFixMas(mas);
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+            }
         },
         materialUpdated(value) {
             this.changeMadeByUser = true;

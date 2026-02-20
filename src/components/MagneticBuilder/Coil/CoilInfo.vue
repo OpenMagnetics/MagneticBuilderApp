@@ -172,9 +172,9 @@ export default {
                 this.outputsData.dcResistancePerWinding.push(outputs[this.operatingPointIndex].windingLosses.dcResistancePerWinding[windingIndex]);
             }
 
-            if (outputs[this.operatingPointIndex].leakageInductance?.leakageInductancePerWinding) {
+            if (outputs[this.operatingPointIndex].inductance.leakageInductance?.leakageInductancePerWinding) {
                 for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length - 1; windingIndex++) {
-                    const leakageInductance = outputs[this.operatingPointIndex].leakageInductance.leakageInductancePerWinding[windingIndex].nominal;
+                    const leakageInductance = outputs[this.operatingPointIndex].inductance.leakageInductance.leakageInductancePerWinding[windingIndex].nominal;
                     this.outputsData.leakageInductancePerWinding.push(leakageInductance);
                 }
             }
