@@ -34,6 +34,7 @@ export default {
             forceUpdate: 0,
             resistanceMatrix: null,
             inductanceMatrix: null,
+            leakageInductanceMatrix: null,
             couplingCoefficientMatrix: null,
             maxwellCapacitanceMatrix: null,
             capacitanceMatrix: null,
@@ -49,6 +50,10 @@ export default {
         inductanceMatrixLatex() {
             if (!this.inductanceMatrix) return null;
             return this.formatMatrixAsLatex(this.inductanceMatrix, 'L');
+        },
+        leakageInductanceMatrixLatex() {
+            if (!this.leakageInductanceMatrix) return null;
+            return this.formatMatrixAsLatex(this.leakageInductanceMatrix, 'L_{lk}');
         },
         couplingCoefficientMatrixLatex() {
             if (!this.couplingCoefficientMatrix) return null;
@@ -109,6 +114,10 @@ export default {
             // Determine unit symbol based on matrix type
             const unitSymbol = unit || this.getUnitForSymbol(symbol);
             
+            // Determine decimal precision based on symbol type
+            // Coupling coefficient (k) should have 5 decimal places
+            const decimals = symbol === 'k' ? 5 : 3;
+            
             // Handle the ScalarMatrixAtFrequency format: {frequency: number, magnitude: {name: {name: value}}}
             if (matrix && matrix.magnitude && typeof matrix.magnitude === 'object') {
                 const magnitude = matrix.magnitude;
@@ -121,7 +130,7 @@ export default {
                 const rows = windingNames.map(rowName => {
                     return windingNames.map(colName => {
                         const val = magnitude[rowName]?.[colName];
-                        return this.formatValueWithUnit(val, unitSymbol);
+                        return this.formatValueWithUnit(val, unitSymbol, decimals);
                     }).join(' & ');
                 });
                 
@@ -157,7 +166,7 @@ export default {
                                     if (keys.length > 0) {
                                         // Get the first diagonal value as representative
                                         const val = mag[keys[0]]?.[keys[0]];
-                                        entries.push(`C_{${winding}} = ${this.formatValueWithUnit(val, unitSymbol)}`);
+                                        entries.push(`C_{${winding}} = ${this.formatValueWithUnit(val, unitSymbol, decimals)}`);
                                     }
                                 }
                             }
@@ -178,9 +187,9 @@ export default {
             
             const rows = matrix.map(row => {
                 if (Array.isArray(row)) {
-                    return row.map(val => this.formatValueWithUnit(val, unitSymbol)).join(' & ');
+                    return row.map(val => this.formatValueWithUnit(val, unitSymbol, decimals)).join(' & ');
                 }
-                return this.formatValueWithUnit(row, unitSymbol);
+                return this.formatValueWithUnit(row, unitSymbol, decimals);
             });
             
             return `${symbol} = \\begin{bmatrix} ${rows.join(' \\\\ ')} \\end{bmatrix}`;
@@ -197,7 +206,7 @@ export default {
         swapIncludeFringing() {
             this.includeFringing = !this.includeFringing;
         },
-        formatValueWithUnit(val, unitSymbol) {
+        formatValueWithUnit(val, unitSymbol, decimals = 3) {
             if (val === null || val === undefined) return '0';
             
             // Handle object with nominal property
@@ -224,14 +233,14 @@ export default {
             if (!unitSymbol || unitSymbol === '') {
                 // Format as plain number with reasonable precision
                 if (Math.abs(num) >= 0.01 && Math.abs(num) < 1000) {
-                    return num.toFixed(3).replace(/\.?0+$/, '');
+                    return num.toFixed(decimals).replace(/\.?0+$/, '');
                 }
                 return num.toExponential(2);
             }
             
             // Use formatUnit for proper scaling and removeTrailingZeroes for clean display
             const { label, unit } = formatUnit(num, unitSymbol);
-            const cleanLabel = removeTrailingZeroes(label, 3);
+            const cleanLabel = removeTrailingZeroes(label, decimals);
             
             // Convert unit to LaTeX, properly handling Greek letters outside \text{}
             // Split unit into parts: prefix (text) + base unit (may have Greek)
@@ -355,7 +364,23 @@ export default {
                         console.error('Inductance matrix error:', e.message || e);
                         this.inductanceMatrix = null;
                     }
-                    
+
+                    // Calculate leakage inductance matrix
+                    try {
+                        const leakageInductanceData = await this.taskQueueStore.calculateLeakageInductanceMatrix(magnetic, frequency, {});
+                        // Format is {frequency: number, magnitude: {windingName: {windingName: value}}}
+                        if (leakageInductanceData && leakageInductanceData.magnitude) {
+                            this.leakageInductanceMatrix = leakageInductanceData;
+                        } else if (leakageInductanceData && Array.isArray(leakageInductanceData)) {
+                            this.leakageInductanceMatrix = leakageInductanceData;
+                        } else {
+                            this.leakageInductanceMatrix = null;
+                        }
+                    } catch (e) {
+                        console.error('Leakage inductance matrix error:', e.message || e);
+                        this.leakageInductanceMatrix = null;
+                    }
+
                     // Calculate coupling coefficient matrix
                     try {
                         const couplingData = await this.taskQueueStore.calculateCouplingCoefficientMatrix(magnetic, frequency, {});
@@ -370,6 +395,7 @@ export default {
                     }
                 } else {
                     this.inductanceMatrix = null;
+                    this.leakageInductanceMatrix = null;
                     this.couplingCoefficientMatrix = null;
                 }
                 
@@ -539,6 +565,7 @@ export default {
                 </div>
                 <!-- Inductance Matrix -->
                 <div class="text-center mt-2">
+                    <span class="text-muted d-block">Inductance Matrix</span>
                     <div v-if="calculatingMatrices" class="text-muted">
                         <i class="fas fa-spinner fa-spin"></i> Calculating...
                     </div>
@@ -550,6 +577,22 @@ export default {
                     />
                     <div v-else class="text-muted small">
                         <em>No inductance data</em>
+                    </div>
+                </div>
+                <!-- Leakage Inductance Matrix -->
+                <div class="text-center mt-2">
+                    <span class="text-muted d-block">Leakage Inductance Matrix</span>
+                    <div v-if="calculatingMatrices" class="text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Calculating...
+                    </div>
+                    <vue-latex
+                        v-else-if="leakageInductanceMatrixLatex"
+                        :expression="leakageInductanceMatrixLatex"
+                        :display-mode="true"
+                        :fontsize="16"
+                    />
+                    <div v-else class="text-muted small">
+                        <em>No leakage inductance data</em>
                     </div>
                 </div>
                 <!-- Coupling Coefficient Matrix -->

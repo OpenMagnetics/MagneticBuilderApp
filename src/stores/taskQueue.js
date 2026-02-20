@@ -1608,6 +1608,38 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
         },
 
+        leakageInductanceMatrixCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateLeakageInductanceMatrix(magnetic, frequency, modelsData = {}) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const magneticJson = JSON.stringify(magnetic);
+            console.log('📤 Sending to calculate_leakage_inductance_matrix:', {
+                magneticKeys: Object.keys(magnetic),
+                coreKeys: magnetic.core ? Object.keys(magnetic.core) : 'NO CORE',
+                hasProcessedDescription: !!magnetic.core?.processedDescription,
+                hasEffectiveParams: !!magnetic.core?.processedDescription?.effectiveParameters,
+                coilKeys: magnetic.coil ? Object.keys(magnetic.coil) : 'NO COIL',
+                windingsCount: magnetic.coil?.functionalDescription?.length || 0,
+                frequency
+            });
+
+            const result = await mkf.calculate_leakage_inductance_matrix(magneticJson, frequency, JSON.stringify(modelsData));
+
+            if (result.startsWith("Exception")) {
+                console.error('❌ calculate_leakage_inductance_matrix Exception:', result);
+                setTimeout(() => {this.leakageInductanceMatrixCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const matrix = JSON.parse(result);
+                setTimeout(() => {this.leakageInductanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
+                return matrix;
+            }
+        },
+
         couplingCoefficientMatrixCalculated(success = true, dataOrMessage = '') {
         },
 
