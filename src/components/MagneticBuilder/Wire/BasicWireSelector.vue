@@ -330,9 +330,13 @@ export default {
                     this.masStore.mas.magnetic.coil.functionalDescription = coil.functionalDescription;
                     this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
                     this.cleanCoil();
+                    this.$emit("wireUpdated", this.windingIndex);
 
                     this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
                     setTimeout(() => this.loading = false, 100);
+
+                    // Trigger rewinding and resimulation
+                    this.taskQueueStore.newWireCreated(true, coil.functionalDescription[this.windingIndex].wire);
 
                 })
                 .catch(error => {
@@ -359,9 +363,13 @@ export default {
                     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
                     this.assignLocalData(winding.wire);
                     this.cleanCoil();
+                    this.$emit("wireUpdated", this.windingIndex);
 
-                    this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
+                    this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                     setTimeout(() => this.loading = false, 100);
+
+                    // Trigger rewinding and resimulation
+                    this.taskQueueStore.newWireCreated(true, winding.wire);
 
                 })
                 .catch(error => {

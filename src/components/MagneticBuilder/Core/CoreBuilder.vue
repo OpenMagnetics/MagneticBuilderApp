@@ -7,6 +7,7 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 <script>
 export default {
+    emits: ['customizeCore'],
     props: {
         dataTestLabel: {
             type: String,
@@ -119,6 +120,8 @@ export default {
                 :forceUpdateVisualizer="forceUpdateCore3DVisualizer"
                 :imageUpToDate="imageUpToDate"
                 @customizeCore="$emit('customizeCore')"
+                @gappingUpdated="imageUpToDate = false; $emit('gappingUpdated')"
+                @coreProcessed="forceUpdateCore3DVisualizer += 1; imageUpToDate = true"
             />
         </div>
     </div>

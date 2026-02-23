@@ -1,8 +1,10 @@
-<script setup>
-import { removeTrailingZeroes, deepCopy, isMobile} from '/WebSharedComponents/assets/js/utils.js'
+    <script setup>
+import { toTitleCase } from '/WebSharedComponents/assets/js/utils.js'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
+import * as Defaults from '/WebSharedComponents/assets/js/defaults.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { useModelSettingsStore } from '../../../stores/modelSettings'
 </script>
 
 <script>
@@ -32,6 +34,7 @@ export default {
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
+        const modelSettingsStore = useModelSettingsStore();
         const coreTemperatureDependantParametersData = {};
         const coreEffectiveParameters = {};
         const coreLossesData = {};
@@ -44,6 +47,7 @@ export default {
 
         return {
             taskQueueStore,
+            modelSettingsStore,
             coreTemperatureDependantParametersData,
             coreEffectiveParameters,
             coreLossesData,
@@ -133,11 +137,23 @@ export default {
     },
     methods: {
         calculateCoreLosses() {
+            // Check if there are pending simulation models from the state store
+            const pendingModels = this.$stateStore.pendingSimulationModels;
+            console.log('[CoreInfo] pendingSimulationModels:', pendingModels);
+            
+            // Use pending models if available, otherwise fall back to store values
             const modelsData = {
                 coreLosses: this.$userStore.selectedModels['coreLosses'] || Defaults.coreLossesModelDefault,
                 coreTemperature: this.$userStore.selectedModels['coreTemperature'] || Defaults.coreTemperatureModelDefault,
-                gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault
+                gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault,
+                magneticFieldStrength: pendingModels?.magneticFieldStrengthModel || this.modelSettingsStore.magneticFieldStrengthModel,
+                magneticFieldStrengthFringingEffect: pendingModels?.magneticFieldStrengthFringingEffectModel || this.modelSettingsStore.magneticFieldStrengthFringingEffectModel
             };
+            
+            // Note: Don't clear pending models here - let CoilInfo.vue also use them
+            if (pendingModels) {
+                console.log('[CoreInfo] Using pending simulation models (not clearing yet)');
+            }
             const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
             const material = this.masStore.mas.magnetic.core?.functionalDescription?.material;
             const gapping = this.masStore.mas.magnetic.core?.functionalDescription?.gapping;

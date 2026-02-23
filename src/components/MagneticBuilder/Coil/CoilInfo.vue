@@ -4,6 +4,7 @@ import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.
 import WindingSelector from '../Common/WindingSelector.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { useModelSettingsStore } from '../../../stores/modelSettings'
 </script>
 
 <script>
@@ -33,6 +34,7 @@ export default {
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
+        const modelSettingsStore = useModelSettingsStore();
         const outputsData = {};
         const selectedWindingIndex = 0;
         const loading = false;
@@ -46,6 +48,7 @@ export default {
 
         return {
             taskQueueStore,
+            modelSettingsStore,
             outputsData,
             selectedWindingIndex,
             recentChange,
@@ -84,7 +87,7 @@ export default {
                 this.dataUptoDate = false;
             }
             after(() => {
-                if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed") {
+                if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed" || name == "coreProcessed") {
                     if (args[0]) {
                         this.dataUptoDate = false;
                         if (this.enableAutoSimulation) {
@@ -109,19 +112,30 @@ export default {
             });
         }))
 
-        if (this.enableAutoSimulation) {
-            this.loading = true;
-            this.recentChange = true;
-            this.tryToSimulate();
-        } else {
-            this.loading = false;
-            this.dataUptoDate = false;
-        }
+        // Wait for modelSettings to be initialized before starting simulation
+        this.waitForModelSettingsAndSimulate();
     },
     beforeUnmount () {
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
+        waitForModelSettingsAndSimulate() {
+            // Wait for modelSettings to be initialized AND have valid models before calculating
+            if (this.modelSettingsStore.isInitialized &&
+                Object.keys(this.modelSettingsStore.availableMagneticFieldStrengthModels).length > 0) {
+                if (this.enableAutoSimulation) {
+                    this.loading = true;
+                    this.recentChange = true;
+                    this.tryToSimulate();
+                } else {
+                    this.loading = false;
+                    this.dataUptoDate = false;
+                }
+            } else {
+                // Check again in 100ms
+                setTimeout(() => this.waitForModelSettingsAndSimulate(), 100);
+            }
+        },
         tryToSimulate() {
             if (!this.tryingToSend) {
                 this.recentChange = false
@@ -186,21 +200,56 @@ export default {
             this.outputsData.totalLosses = outputs[this.operatingPointIndex].windingLosses.windingLosses + outputs[this.operatingPointIndex].coreLosses.coreLosses;
         },
         simulate() {
+            console.log('[CoilInfo] =========================================');
+            console.log('[CoilInfo] simulate() called');
+            console.log('[CoilInfo] turnsDescription exists:', this.masStore.mas.magnetic.coil['turnsDescription'] != null);
+            
             if (this.masStore.mas.magnetic.coil['turnsDescription'] != null) {
 
+                // Check if there are pending simulation models from the state store
+                const pendingModels = this.$stateStore.pendingSimulationModels;
+                console.log('[CoilInfo] pendingSimulationModels:', pendingModels);
+                
+                // Use pending models if available, otherwise fall back to store values
+                const magneticFieldStrength = pendingModels?.magneticFieldStrengthModel || this.modelSettingsStore.magneticFieldStrengthModel;
+                const magneticFieldStrengthFringingEffect = pendingModels?.magneticFieldStrengthFringingEffectModel || this.modelSettingsStore.magneticFieldStrengthFringingEffectModel;
+                console.log('[CoilInfo] magneticFieldStrength:', magneticFieldStrength);
+                console.log('[CoilInfo] magneticFieldStrengthFringingEffect:', magneticFieldStrengthFringingEffect);
+                
                 const modelsData = {
                     coreLosses: this.$userStore.selectedModels['coreLosses'] || Defaults.coreLossesModelDefault,
                     coreTemperature: this.$userStore.selectedModels['coreTemperature'] || Defaults.coreTemperatureModelDefault,
-                    gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault
+                    gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault,
+                    windingSkinEffectLosses: pendingModels?.windingSkinEffectLossesModel || this.modelSettingsStore.windingSkinEffectLossesModel,
+                    windingProximityEffectLosses: pendingModels?.windingProximityEffectLossesModel || this.modelSettingsStore.windingProximityEffectLossesModel,
+                    magneticFieldStrength: magneticFieldStrength,
+                    magneticFieldStrengthFringingEffect: magneticFieldStrengthFringingEffect
                 };
+                
+                // Clear pending models after using them
+                if (pendingModels) {
+                    console.log('[CoilInfo] Using pending simulation models');
+                    this.$stateStore.pendingSimulationModels = null;
+                }
+
+                console.log('[CoilInfo] modelsData created:', modelsData);
+                console.log('[CoilInfo] windingSkinEffectLossesModel from store:', this.modelSettingsStore.windingSkinEffectLossesModel);
+                console.log('[CoilInfo] windingProximityEffectLossesModel from store:', this.modelSettingsStore.windingProximityEffectLossesModel);
 
                 const inputsString = JSON.stringify(this.masStore.mas.inputs);
                 const magneticsString = JSON.stringify(this.masStore.mas.magnetic);
                 const modelsString = JSON.stringify(modelsData);
 
+                console.log('[CoilInfo] modelsString:', modelsString);
+                console.log('[CoilInfo] lastSimulatedModels:', this.lastSimulatedModels);
+                console.log('[CoilInfo] modelsString != lastSimulatedModels:', modelsString != this.lastSimulatedModels);
+
                 if (this.masStore.mas.magnetic.coil.turnsDescription != null && (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels)) {
 
+                    console.log('[CoilInfo] Cache check PASSED - calling taskQueueStore.simulate()');
                     this.taskQueueStore.simulate(this.masStore.mas, modelsData).then((mas) => {
+                        console.log('[CoilInfo] Simulation completed successfully');
+                        console.log('[CoilInfo] Winding losses:', mas.outputs[this.operatingPointIndex].windingLosses.windingLosses);
 
                         this.lastSimulatedInputs = inputsString;
                         this.lastSimulatedMagnetics = magneticsString;
@@ -212,11 +261,15 @@ export default {
                         this.dataUptoDate = true;
                     })
                     .catch(error => {
+                        console.error('[CoilInfo] Simulation error:', error);
                         this.loading = false;
-                        console.error(error);
                     });
                 }
                 else {
+                    console.log('[CoilInfo] Cache check FAILED - SKIPPING SIMULATION');
+                    console.log('[CoilInfo] inputs match:', inputsString == this.lastSimulatedInputs);
+                    console.log('[CoilInfo] magnetics match:', magneticsString == this.lastSimulatedMagnetics);
+                    console.log('[CoilInfo] models match:', modelsString == this.lastSimulatedModels);
                     this.dataUptoDate = true;
                     this.loading = false;
                 }

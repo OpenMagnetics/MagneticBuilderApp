@@ -109,7 +109,7 @@ export default {
                 if (name == "wind" || name == "windPlanar") {
                     this.imageUpToDate = false;
                 }
-                if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed") {
+                if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed" || name == "coreProcessed") {
                     if (args[0]) {
                         if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                             this.imageUpToDate = false;

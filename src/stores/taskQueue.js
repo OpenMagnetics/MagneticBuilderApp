@@ -414,6 +414,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 }
 
                 {
+                    console.log('[TaskQueue] ABOUT TO CALL WASM calculate_core_losses');
+                    console.log('[TaskQueue] modelsData:', modelsData);
                     const result = await mkf.calculate_core_losses(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs), JSON.stringify(modelsData), operatingPointIndex);
                     if (result.startsWith("Exception")) {
                         return null;
@@ -1139,6 +1141,9 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const magneticsString = JSON.stringify(mas.magnetic);
             const modelsString = JSON.stringify(modelsData);
 
+            console.log('[TaskQueue] ABOUT TO CALL WASM SIMULATE');
+            console.log('[TaskQueue] modelsData:', modelsData);
+            console.log('[TaskQueue] modelsString:', modelsString);
             const result = await mkf.simulate(inputsString, magneticsString, modelsString);
 
             if (result.startsWith("Exception")) {
@@ -1735,6 +1740,26 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 const matrix = JSON.parse(result);
                 setTimeout(() => {this.capacitanceMatrixCalculated(true, matrix);}, this.task_standard_response_delay);
                 return matrix;
+            }
+        },
+
+        capacitanceModelsBetweenWindingsCalculated(success = true, dataOrMessage = '') {
+        },
+
+        async calculateCapacitanceModelsBetweenWindings(energy, voltageDrop, relativeTurnsRatio) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.calculate_capacitance_models_between_windings(energy, voltageDrop, relativeTurnsRatio);
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.capacitanceModelsBetweenWindingsCalculated(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const models = JSON.parse(result);
+                setTimeout(() => {this.capacitanceModelsBetweenWindingsCalculated(true, models);}, this.task_standard_response_delay);
+                return models;
             }
         },
     }

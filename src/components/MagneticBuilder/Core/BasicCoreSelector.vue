@@ -17,6 +17,7 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 <script>
 
 export default {
+    emits: ['customizeCore', 'gappingUpdated', 'coreProcessed'],
     props: {
         dataTestLabel: {
             type: String,
@@ -317,8 +318,17 @@ export default {
         },
         gappingUpdated(value) {
             this.masStore.mas.magnetic.core.functionalDescription.gapping = value;
-            this.shapeUpdated(this.localData.shape)
-            this.historyStore.addToHistory(this.masStore.mas);
+            this.$emit('gappingUpdated');
+            // Set image as outdated immediately
+            this.$emit('coreProcessingStarted');
+            this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
+                this.masStore.mas.magnetic.core = core;
+                this.historyStore.addToHistory(this.masStore.mas);
+                this.$emit('coreProcessed');
+            })
+            .catch(error => {
+                console.error(error);
+            });
         },
         adviseCoreRequested() {
             this.loading = true;

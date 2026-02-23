@@ -359,8 +359,19 @@ export default {
             }
             inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
             inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
-            const newMagneticCoilHash = generateHash(JSON.stringify(this.masStore.mas.magnetic.coil));
-            const newInputsCoilHash = generateHash(JSON.stringify(inputCoil));
+            
+            // Include margins in hash computation to detect margin changes even when sectionsDescription doesn't exist yet
+            const coilWithMargins = {
+                ...this.masStore.mas.magnetic.coil,
+                _margins: margins
+            };
+            const inputCoilWithMargins = {
+                ...inputCoil,
+                _margins: margins
+            };
+            
+            const newMagneticCoilHash = generateHash(JSON.stringify(coilWithMargins));
+            const newInputsCoilHash = generateHash(JSON.stringify(inputCoilWithMargins));
 
             if (this.oldMagneticCoilHash != newMagneticCoilHash || this.oldInputsCoilHash != newInputsCoilHash) {
                 this.oldMagneticCoilHash = newMagneticCoilHash;
@@ -535,6 +546,21 @@ export default {
 
             this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment = this.localData.sectionsAlignment;
             this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation = this.localData.sectionsOrientation;
+
+            // Update margins in the coil's sectionsDescription
+            if (this.masStore.mas.magnetic.coil.sectionsDescription != null) {
+                let conductionSectionIndex = 0;
+                this.masStore.mas.magnetic.coil.sectionsDescription.forEach((section) => {
+                    if (section.type == "conduction" && conductionSectionIndex < this.localData.dataPerSection.length) {
+                        if (section.margin == null) {
+                            section.margin = {};
+                        }
+                        section.margin.topOrLeftWidth = this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin;
+                        section.margin.bottomOrRightWidth = this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin;
+                        conductionSectionIndex++;
+                    }
+                });
+            }
         },
         coilUpdated() {
             this.updateDataPerSection();
