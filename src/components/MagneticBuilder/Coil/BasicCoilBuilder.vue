@@ -111,6 +111,13 @@ export default {
                 }
                 if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed" || name == "coreProcessed") {
                     if (args[0]) {
+                        // If coreMaterialProcessed, update MAS with full material object
+                        if (name == "coreMaterialProcessed" && args[1]) {
+                            const coreMaterial = args[1];
+                            if (this.masStore?.mas?.magnetic?.core?.functionalDescription) {
+                                this.masStore.mas.magnetic.core.functionalDescription.material = coreMaterial;
+                            }
+                        }
                         if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                             this.imageUpToDate = false;
                             this.tryPlot(false);

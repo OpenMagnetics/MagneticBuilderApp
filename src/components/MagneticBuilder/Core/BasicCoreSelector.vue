@@ -84,6 +84,7 @@ export default {
         const loading = false;
         const forceUpdate = 0;
         const subscriptions = [];
+        const pendingBobbinThickness = null; // Store bobbin thickness during material change
 
         return {
             taskQueueStore,
@@ -96,6 +97,7 @@ export default {
             loading,
             forceUpdate,
             subscriptions,
+            pendingBobbinThickness,
         }
     },
     computed: {
@@ -134,8 +136,20 @@ export default {
                             this.masStore.mas.magnetic.core = core;
                             this.changeMadeByUser = false;
                             this.masStore.mas.magnetic.manufacturerInfo = null;
-                            this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
+                        this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
                                 this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                                // Restore bobbin thickness values after regeneration
+                                if (this.pendingBobbinThickness && bobbin?.processedDescription) {
+                                    if (this.pendingBobbinThickness.wallThickness !== undefined) {
+                                        bobbin.processedDescription.wallThickness = this.pendingBobbinThickness.wallThickness;
+                                    }
+                                    if (this.pendingBobbinThickness.columnThickness !== undefined) {
+                                        bobbin.processedDescription.columnThickness = this.pendingBobbinThickness.columnThickness;
+                                    }
+                                    this.pendingBobbinThickness = null;
+                                }
+                                // Note: BasicCoilSelector listens for bobbinFromCoreShapeGenerated 
+                                // and will automatically trigger rewinding
                             });
                         }
                         else {
@@ -287,6 +301,14 @@ export default {
         },
         materialUpdated(value) {
             this.changeMadeByUser = true;
+            
+            // Save current bobbin wall and column thickness before material change
+            const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
+            this.pendingBobbinThickness = {
+                wallThickness: currentBobbin?.processedDescription?.wallThickness,
+                columnThickness: currentBobbin?.processedDescription?.columnThickness
+            };
+            
             this.taskQueueStore.changeCoreMaterial(value, deepCopy(this.masStore.mas.magnetic.core)).then((core) => {
                 // Ensure default gapping is set so core losses can be calculated
                 if (!core.functionalDescription.gapping || (core.functionalDescription.type == 'two-piece set' && core.functionalDescription.gapping.length === 0)) {
@@ -298,6 +320,7 @@ export default {
                     this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
                     this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
                     this.forceUpdate += 1;
+                    // Note: Bobbin thickness will be restored in coreProcessed handler after bobbin regeneration
                 })
                 .catch(error => {
                     console.error(error);
@@ -422,7 +445,7 @@ export default {
                 v-tooltip="tooltipsMagneticBuilder.coreMaterialManufacturer"
                 v-if="localData.shape != '' && localData.shapeFamily != null && !loading"
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-1 text-start ms-2"
                 :dataTestLabel="dataTestLabel + '-MaterialManufacturers'"
                 :name="'materialManufacturer'"
                 :replaceTitle="'Manufacturer'"
@@ -443,7 +466,7 @@ export default {
                 v-tooltip="tooltipsMagneticBuilder.coreMaterial"
                 v-if="localData.shape != '' && !loading && localData.materialManufacturer != null && coreMaterialNames[localData.materialManufacturer] != null && coreMaterialNames[localData.materialManufacturer].length > 0"
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-1 text-start ms-2"
                 :dataTestLabel="dataTestLabel + '-MaterialNames'"
                 :name="'material'"
                 :titleSameRow="true"

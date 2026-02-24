@@ -1218,7 +1218,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 throw new Error(result);
             }
             else {
-                const coil = JSON.parse(result);
+                let coil = JSON.parse(result);
+                // Call delimit_and_compact to compact additional turns for toroidal coils
+                const compactResult = await mkf.delimit_and_compact(JSON.stringify(coil));
+                if (!compactResult.startsWith("Exception")) {
+                    coil = JSON.parse(compactResult);
+                }
                 setTimeout(() => {this.wound(true, coil);}, this.task_standard_response_delay);
                 return coil;
             }
@@ -1256,7 +1261,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 throw new Error(result);
             }
             else {
-                const coil = JSON.parse(result);
+                let coil = JSON.parse(result);
+                // Call delimit_and_compact to compact additional turns
+                const compactResult = await mkf.delimit_and_compact(JSON.stringify(coil));
+                if (!compactResult.startsWith("Exception")) {
+                    coil = JSON.parse(compactResult);
+                }
                 setTimeout(() => {this.planarWound(true, coil);}, this.task_standard_response_delay);
                 return coil;
             }

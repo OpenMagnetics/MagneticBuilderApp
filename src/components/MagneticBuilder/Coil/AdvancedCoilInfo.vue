@@ -39,12 +39,19 @@ export default {
             dataUptoDate,
             PLOT_MODES,
             forceUpdate: 0,
+            // Matrix data
             resistanceMatrix: null,
             inductanceMatrix: null,
             leakageInductanceMatrix: null,
             couplingCoefficientMatrix: null,
-            maxwellCapacitanceMatrix: null,
-            capacitanceMatrix: null,
+            // Full capacitance data from MKF
+            fullCapacitanceData: null,
+            capacitanceError: null,
+            // Winding pair selection
+            selectedWindingPair: {
+                primary: null,
+                secondary: null
+            },
             isCalculating: false,
             isMounted: false,
             calculatingMatrices: false,
@@ -77,186 +84,137 @@ export default {
             if (!this.maxwellCapacitanceMatrix) return null;
             return this.formatMatrixAsLatex(this.maxwellCapacitanceMatrix, 'C_M');
         },
-        capacitanceMatrixLatex() {
-            if (!this.capacitanceMatrix) return null;
-            return this.formatMatrixAsLatex(this.capacitanceMatrix, 'C');
+        // Winding names for dropdowns
+        windingNames() {
+            const functionalDesc = this.masStore?.mas?.magnetic?.coil?.functionalDescription;
+            if (!functionalDesc || !Array.isArray(functionalDesc)) return [];
+            return functionalDesc.map(w => w.name).filter(name => name);
         },
-        threeCapacitorModel() {
-            // For 2-winding transformers: C1, C2, C3 when terminals B-D are connected
-            // This is a simplified representation for specific terminal configurations
-            if (!this.capacitanceMatrix || !this.maxwellCapacitanceMatrix) return null;
-            
-            const numWindings = Object.keys(this.capacitanceMatrix).length;
-            if (numWindings !== 2) return null; // 3-capacitor model only for 2 windings
-            
-            const windingNames = Object.keys(this.capacitanceMatrix).sort();
-            const w1 = windingNames[0];
-            const w2 = windingNames[1];
-            
-            // Helper to extract numeric value from matrix entry
-            // The capacitance matrix contains ScalarMatrixAtFrequency objects
-            // which have a 'magnitude' property that is a map of maps
-            const getCapacitanceValue = (winding1, winding2) => {
-                const scalarMatrix = this.capacitanceMatrix[winding1]?.[winding2];
-                if (!scalarMatrix) return 0;
-                
-                // Get the magnitude map
-                const magnitude = scalarMatrix.magnitude || scalarMatrix.get_magnitude?.();
-                if (!magnitude) return 0;
-                
-                // The magnitude is a map of maps: {turn1: {turn2: DimensionWithTolerance}}
-                // For self-capacitance, sum the diagonal elements
-                // For mutual capacitance, use the off-diagonal
-                let total = 0;
-                for (const [key1, innerMap] of Object.entries(magnitude)) {
-                    for (const [key2, dimWithTol] of Object.entries(innerMap)) {
-                        let value = 0;
-                        if (typeof dimWithTol === 'number') {
-                            value = dimWithTol;
-                        } else if (dimWithTol && typeof dimWithTol === 'object') {
-                            if (dimWithTol.nominal !== undefined) value = dimWithTol.nominal;
-                            else if (dimWithTol.value !== undefined) value = dimWithTol.value;
-                        }
-                        total += value;
-                    }
-                }
-                return total;
+        // Winding options as dict: {realName: TitleCaseName} for dropdowns
+        windingOptions() {
+            const toTitleCase = (str) => {
+                if (!str) return '';
+                return str.charAt(0).toUpperCase() + str.slice(1);
             };
+            const options = {};
+            for (const name of this.windingNames) {
+                options[name] = toTitleCase(name);
+            }
+            return options;
+        },
+        
+        // Section 1: Capacitance Matrix (All Windings) - N×N matrix
+        capacitanceMatrixAllWindingsLatex() {
+            if (!this.fullCapacitanceData?.capacitanceAmongWindings) return null;
+            return this.formatMatrixAsLatex(this.fullCapacitanceData.capacitanceAmongWindings, 'C');
+        },
+        
+        // Section 3: Maxwell Capacitance Matrix for selected pair
+        maxwellCapacitanceMatrixForSelectedPairLatex() {
+            if (!this.fullCapacitanceData?.maxwellCapacitanceMatrix) return null;
             
-            // Get capacitance values from the capacitance matrix (C11, C22, C12)
-            const C11 = getCapacitanceValue(w1, w1);
-            const C22 = getCapacitanceValue(w2, w2);
-            const C12 = getCapacitanceValue(w1, w2) || getCapacitanceValue(w2, w1);
+            const { primary, secondary } = this.selectedWindingPair;
+            if (!primary || !secondary) return null;
             
-            console.log('[AdvancedCoilInfo] 3-capacitor model values:', { C11, C22, C12 });
+            // maxwellCapacitanceMatrix is an array, get first element
+            const maxwellArray = this.fullCapacitanceData.maxwellCapacitanceMatrix;
+            if (!Array.isArray(maxwellArray) || maxwellArray.length === 0) return null;
             
-            // Calculate C1, C2, C3 for the reduced circuit (B connected to D)
-            // C1 = C11 + C12, C2 = C22 + C12, C3 = -C12
-            const C1 = C11 + C12;
-            const C2 = C22 + C12;
-            const C3 = -C12;
+            const maxwellMatrix = maxwellArray[0];
+            if (!maxwellMatrix?.magnitude) return null;
+            
+            // Extract 2×2 submatrix for selected windings
+            const subMatrix = {};
+            if (maxwellMatrix.magnitude[primary]) {
+                subMatrix[primary] = {};
+                if (maxwellMatrix.magnitude[primary][primary] !== undefined) {
+                    subMatrix[primary][primary] = maxwellMatrix.magnitude[primary][primary];
+                }
+                if (maxwellMatrix.magnitude[primary][secondary] !== undefined) {
+                    subMatrix[primary][secondary] = maxwellMatrix.magnitude[primary][secondary];
+                }
+            }
+            if (maxwellMatrix.magnitude[secondary]) {
+                subMatrix[secondary] = {};
+                if (maxwellMatrix.magnitude[secondary][primary] !== undefined) {
+                    subMatrix[secondary][primary] = maxwellMatrix.magnitude[secondary][primary];
+                }
+                if (maxwellMatrix.magnitude[secondary][secondary] !== undefined) {
+                    subMatrix[secondary][secondary] = maxwellMatrix.magnitude[secondary][secondary];
+                }
+            }
+            
+            if (Object.keys(subMatrix).length === 0) return null;
+            return this.formatMatrixAsLatex(subMatrix, 'C_M');
+        },
+        
+        // Section 4: Tripole Capacitance for selected pair
+        threeCapacitorModel() {
+            if (!this.fullCapacitanceData?.tripoleCapacitancePerWinding) return null;
+            
+            const { primary, secondary } = this.selectedWindingPair;
+            if (!primary || !secondary) return null;
+            
+            const tripoleData = this.fullCapacitanceData.tripoleCapacitancePerWinding[primary]?.[secondary];
+            if (!tripoleData) return null;
+            
+            console.log('[AdvancedCoilInfo] Using MKF 3-capacitor model for', primary, '-', secondary, tripoleData);
+            const C1 = tripoleData.C1 || tripoleData.c1 || 0;
+            const C2 = tripoleData.C2 || tripoleData.c2 || 0;
+            const C3 = tripoleData.C3 || tripoleData.c3 || 0;
             
             return {
                 C1: C1,
-                C2: C2, 
+                C2: C2,
                 C3: C3,
                 C1_valid: C1 > 0,
                 C2_valid: C2 > 0,
                 C3_valid: C3 > 0,
                 configuration: 'B connected to D (reduced circuit)',
-                windingNames: windingNames
+                windingNames: [primary, secondary]
             };
         },
+        // Section 5: 6 Capacitor Network for selected pair
         sixCapacitorModel() {
-            // For 2-winding transformers: γ1 to γ6 - the complete electrostatic model
-            // Based on Cogitore et al. 1994 paper
-            if (!this.capacitanceMatrix || !this.maxwellCapacitanceMatrix) return null;
-
-            const numWindings = Object.keys(this.capacitanceMatrix).length;
-            if (numWindings !== 2) return null; // 6-capacitor model for 2 windings
-
-            const windingNames = Object.keys(this.capacitanceMatrix).sort();
-            const w1 = windingNames[0];  // Primary
-            const w2 = windingNames[1];  // Secondary
-
-            // Helper to extract numeric value from ScalarMatrixAtFrequency
-            // The maxwellCapacitanceMatrix is a ScalarMatrixAtFrequency with magnitude property
-            const getMaxwellValue = (winding1, winding2) => {
-                const magnitude = this.maxwellCapacitanceMatrix.magnitude || 
-                                  this.maxwellCapacitanceMatrix.get_magnitude?.();
-                if (!magnitude) return 0;
-                
-                const innerMap = magnitude[winding1];
-                if (!innerMap) return 0;
-                
-                const dimWithTol = innerMap[winding2];
-                if (!dimWithTol) return 0;
-                
-                if (typeof dimWithTol === 'number') return dimWithTol;
-                if (dimWithTol && typeof dimWithTol === 'object') {
-                    if (dimWithTol.nominal !== undefined) return dimWithTol.nominal;
-                    if (dimWithTol.value !== undefined) return dimWithTol.value;
-                }
-                return 0;
-            };
-
-            // Get Maxwell capacitance coefficients (C11, C22, C12, C13, C23, C33)
-            // C33 represents the capacitance between windings (inter-winding)
-            const C11 = getMaxwellValue(w1, w1);
-            const C22 = getMaxwellValue(w2, w2);
-            const C12 = getMaxwellValue(w1, w2) || getMaxwellValue(w2, w1);
-
-            // For the 6-capacitor model, we need to estimate C13, C23, C33
-            // These represent the coupling to the third node (core/ground)
-            // We can estimate them from the capacitance matrix
-            const getCapacitanceValue = (winding1, winding2) => {
-                const scalarMatrix = this.capacitanceMatrix[winding1]?.[winding2];
-                if (!scalarMatrix) return 0;
-                
-                const magnitude = scalarMatrix.magnitude || scalarMatrix.get_magnitude?.();
-                if (!magnitude) return 0;
-                
-                let total = 0;
-                for (const [key1, innerMap] of Object.entries(magnitude)) {
-                    for (const [key2, dimWithTol] of Object.entries(innerMap)) {
-                        let value = 0;
-                        if (typeof dimWithTol === 'number') {
-                            value = dimWithTol;
-                        } else if (dimWithTol && typeof dimWithTol === 'object') {
-                            if (dimWithTol.nominal !== undefined) value = dimWithTol.nominal;
-                            else if (dimWithTol.value !== undefined) value = dimWithTol.value;
-                        }
-                        total += value;
-                    }
-                }
-                return total;
-            };
+            if (!this.fullCapacitanceData?.sixCapacitorNetworkPerWinding) return null;
             
-            const C_self_1 = getCapacitanceValue(w1, w1);
-            const C_self_2 = getCapacitanceValue(w2, w2);
-            const C_mutual = getCapacitanceValue(w1, w2) || getCapacitanceValue(w2, w1);
-
-            console.log('[AdvancedCoilInfo] 6-capacitor model values:', { C11, C22, C12, C_self_1, C_self_2, C_mutual });
-
-            // Estimate C33 (inter-winding capacitance) and coupling coefficients
-            // C13, C23 represent capacitance from each winding to ground/core
-            const C33 = Math.abs(C_mutual);  // Inter-winding capacitance
-            const C13 = C_self_1 - C11;      // Winding 1 to ground
-            const C23 = C_self_2 - C22;      // Winding 2 to ground
-
-            // Calculate the 6 capacitors according to Cogitore paper:
-            // γ1 = C13, γ2 = C23 * q^2, γ3 = C33 (approximation)
-            // γ4 = C33 + C13 + q*C23
-            // γ5 = -q*C23
-            // γ6 = -C13
-            // where q is the transformation ratio (approximated as 1 for now)
-            const q = 1;  // Could be calculated from inductance ratio if needed
-
-            const gamma1 = C13;
-            const gamma2 = C23 * q * q;
-            const gamma3 = C33;
-            const gamma4 = C33 + C13 + q * C23;
-            const gamma5 = -q * C23;
-            const gamma6 = -C13;
-
+            const { primary, secondary } = this.selectedWindingPair;
+            if (!primary || !secondary) return null;
+            
+            const sixCapData = this.fullCapacitanceData.sixCapacitorNetworkPerWinding[primary]?.[secondary];
+            if (!sixCapData) return null;
+            
+            console.log('[AdvancedCoilInfo] Using MKF 6-capacitor model for', primary, '-', secondary, sixCapData);
+            const C1 = sixCapData.C1 || sixCapData.c1 || 0;
+            const C2 = sixCapData.C2 || sixCapData.c2 || 0;
+            const C3 = sixCapData.C3 || sixCapData.c3 || 0;
+            const C4 = sixCapData.C4 || sixCapData.c4 || 0;
+            const C5 = sixCapData.C5 || sixCapData.c5 || 0;
+            const C6 = sixCapData.C6 || sixCapData.c6 || 0;
+            
             return {
                 // Gamma notation (Cogitore paper)
-                gamma1: gamma1,
-                gamma2: gamma2,
-                gamma3: gamma3,
-                gamma4: gamma4,
-                gamma5: gamma5,
-                gamma6: gamma6,
+                gamma1: C1,
+                gamma2: C2,
+                gamma3: C3,
+                gamma4: C4,
+                gamma5: C5,
+                gamma6: C6,
                 // C notation (for schematic labels)
-                C1: gamma1,
-                C2: gamma2,
-                C3: gamma3,
-                C4: gamma4,
-                C5: gamma5,
-                C6: gamma6,
-                windingNames: windingNames,
+                C1: C1,
+                C2: C2,
+                C3: C3,
+                C4: C4,
+                C5: C5,
+                C6: C6,
+                windingNames: [primary, secondary],
                 isComplete: true
             };
+        },
+        
+        // Helper to check if we have multiple windings
+        hasMultipleWindings() {
+            return this.windingNames.length >= 2;
         },
         numberOfWindings() {
             if (!this.capacitanceMatrix) return 0;
@@ -307,6 +265,16 @@ export default {
                 }
             }
         },
+        // Watch for coil changes (new design, wizard, MAS load) and reset winding selection
+        'masStore.mas.magnetic.coil.functionalDescription': {
+            handler(newValue, oldValue) {
+                if (this.isMounted && JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+                    console.log('[AdvancedCoilInfo] Coil windings changed, resetting winding selection');
+                    this.initializeWindingSelection();
+                }
+            },
+            deep: true
+        },
     },
     mounted () {
         this.isMounted = true;
@@ -316,6 +284,9 @@ export default {
         const defaultFrequency = operatingPoint?.excitationsPerWinding?.[0]?.frequency || 100000;
         this.frequencyData.frequency = defaultFrequency;
         console.log('[AdvancedCoilInfo] Initial frequency set to:', this.frequencyData.frequency);
+        
+        // Initialize winding selection
+        this.initializeWindingSelection();
         
         this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
             after(() => {
@@ -390,17 +361,24 @@ export default {
             // Coupling coefficient (k) should have 5 decimal places
             const decimals = symbol === 'k' ? 5 : 3;
             
+            // Get winding names in order from functionalDescription (not alphabetically sorted)
+            const orderedWindingNames = this.windingNames;
+            
             // Handle the ScalarMatrixAtFrequency format: {frequency: number, magnitude: {name: {name: value}}}
             if (matrix && matrix.magnitude && typeof matrix.magnitude === 'object') {
                 const magnitude = matrix.magnitude;
-                const windingNames = Object.keys(magnitude).sort();
+                // Use ordered winding names, filtering to only those present in the matrix
+                const matrixKeys = Object.keys(magnitude);
+                const windingNamesOrdered = orderedWindingNames.length > 0 
+                    ? orderedWindingNames.filter(name => matrixKeys.includes(name))
+                    : matrixKeys.sort();
                 
-                if (windingNames.length === 0) {
+                if (windingNamesOrdered.length === 0) {
                     return `${symbol} = \\text{N/A}`;
                 }
                 
-                const rows = windingNames.map(rowName => {
-                    return windingNames.map(colName => {
+                const rows = windingNamesOrdered.map(rowName => {
+                    return windingNamesOrdered.map(colName => {
                         const val = magnitude[rowName]?.[colName];
                         return this.formatValueWithUnit(val, unitSymbol, decimals);
                     }).join(' & ');
@@ -409,39 +387,33 @@ export default {
                 return `${symbol} = \\begin{bmatrix} ${rows.join(' \\\\ ')} \\end{bmatrix}`;
             }
             
-            // Handle nested capacitance matrix: {windingName: {windingName: ScalarMatrixAtFrequency}}
-            // This structure has winding pairs, each containing a 3x3 matrix
+            // Handle nested capacitance matrix: {windingName: {windingName: value}}
+            // This includes both simple numeric values and ScalarMatrixAtFrequency objects
             if (matrix && typeof matrix === 'object' && !Array.isArray(matrix) && !matrix.magnitude) {
-                const windingNames = Object.keys(matrix).sort();
+                // Use ordered winding names, filtering to only those present in the matrix
+                const matrixKeys = Object.keys(matrix);
+                const windingNamesOrdered = orderedWindingNames.length > 0 
+                    ? orderedWindingNames.filter(name => matrixKeys.includes(name))
+                    : matrixKeys.sort();
                 
-                if (windingNames.length === 0) {
+                if (windingNamesOrdered.length === 0) {
                     return `${symbol} = \\text{N/A}`;
                 }
                 
                 // Check if this is the nested capacitance structure
-                const firstWinding = matrix[windingNames[0]];
+                const firstWinding = matrix[windingNamesOrdered[0]];
                 if (firstWinding && typeof firstWinding === 'object') {
                     const secondLevelKeys = Object.keys(firstWinding);
                     if (secondLevelKeys.length > 0) {
                         const sample = firstWinding[secondLevelKeys[0]];
-                        // Check if it's a ScalarMatrixAtFrequency (has magnitude property)
+                        
+                        // Case 1: ScalarMatrixAtFrequency with magnitude property (detailed turn-level data)
                         if (sample && sample.magnitude) {
-                            // Debug: log the structure
-                            console.log('[formatMatrixAsLatex] Capacitance matrix structure:', {
-                                sample: sample,
-                                sampleMagnitude: sample.magnitude,
-                                sampleMagnitudeKeys: Object.keys(sample.magnitude),
-                                firstValue: sample.magnitude[Object.keys(sample.magnitude)[0]]
-                            });
-                            
-                            // This is a winding-to-winding capacitance map from calculate_capacitance_matrix
-                            // The magnitude contains the actual capacitance value directly
-                            const rows = windingNames.map(rowName => {
-                                return windingNames.map(colName => {
+                            const rows = windingNamesOrdered.map(rowName => {
+                                return windingNamesOrdered.map(colName => {
                                     const scalarMatrix = matrix[rowName]?.[colName];
                                     let val = null;
                                     if (scalarMatrix && scalarMatrix.magnitude) {
-                                        // The magnitude is a 2D nested structure with turn numbers
                                         // Sum all nominal values to get total capacitance
                                         let total = 0;
                                         for (const turn1 in scalarMatrix.magnitude) {
@@ -457,6 +429,18 @@ export default {
                                         }
                                         val = total;
                                     }
+                                    return this.formatValueWithUnit(val, unitSymbol, decimals);
+                                }).join(' & ');
+                            });
+                            
+                            return `${symbol} = \\begin{bmatrix} ${rows.join(' \\\\ ')} \\end{bmatrix}`;
+                        }
+                        
+                        // Case 2: Simple numeric values (capacitanceAmongWindings structure)
+                        if (typeof sample === 'number' || (typeof sample === 'object' && sample !== null && 'nominal' in sample)) {
+                            const rows = windingNamesOrdered.map(rowName => {
+                                return windingNamesOrdered.map(colName => {
+                                    const val = matrix[rowName]?.[colName];
                                     return this.formatValueWithUnit(val, unitSymbol, decimals);
                                 }).join(' & ');
                             });
@@ -819,68 +803,51 @@ export default {
                             // Validate coil has required geometric data
                             if (!coil.layersDescription || coil.layersDescription.length === 0) {
                                 console.warn('[AdvancedCoilInfo] Coil missing layers description, skipping capacitance calculation');
-                                this.safeSet('maxwellCapacitanceMatrix', null);
-                                this.safeSet('capacitanceMatrix', null);
+                                this.safeSet('fullCapacitanceData', null);
+                                this.capacitanceError = 'Coil missing layers description';
                             } else {
-                                const capacitanceData = await this.taskQueueStore.calculateStrayCapacitance(
-                                    coil,
-                                    operatingPoint,
-                                    modelsData
-                                );
-                                
-                                if (capacitanceData) {
-                                    // Use the maxwellCapacitanceMatrix directly from capacitanceData if available
-                                    if (capacitanceData.maxwellCapacitanceMatrix && capacitanceData.maxwellCapacitanceMatrix.length > 0) {
-                                        // It's an array of ScalarMatrixAtFrequency, take the first one
-                                        this.safeSet('maxwellCapacitanceMatrix', capacitanceData.maxwellCapacitanceMatrix[0]);
-                                    } else if (capacitanceData.capacitanceAmongWindings) {
-                                        // Fall back to calculating separately
-                                        try {
-                                            const maxwellData = await this.taskQueueStore.calculateMaxwellCapacitanceMatrix(
-                                                coil,
-                                                capacitanceData.capacitanceAmongWindings
-                                            );
-                                            if (maxwellData && Array.isArray(maxwellData) && maxwellData.length > 0) {
-                                                this.safeSet('maxwellCapacitanceMatrix', maxwellData[0]);
-                                            } else {
-                                                this.safeSet('maxwellCapacitanceMatrix', null);
-                                            }
-                                        } catch (e) {
-                                            console.error('Maxwell matrix error:', e.message || e);
-                                            this.safeSet('maxwellCapacitanceMatrix', null);
-                                        }
-                                    }
+                                try {
+                                    console.log('[AdvancedCoilInfo] Calculating full capacitance data...');
+                                    const capacitanceData = await this.taskQueueStore.calculateStrayCapacitance(
+                                        coil,
+                                        operatingPoint,
+                                        modelsData
+                                    );
                                     
-                                    // Extract capacitance matrix from stray capacitance data
-                                    if (capacitanceData.capacitanceMatrix) {
-                                        this.safeSet('capacitanceMatrix', capacitanceData.capacitanceMatrix);
+                                    if (capacitanceData) {
+                                        // Store the full capacitance data
+                                        this.safeSet('fullCapacitanceData', capacitanceData);
+                                        this.capacitanceError = null;
+                                        console.log('[AdvancedCoilInfo] Full capacitance data received:', {
+                                            hasCapacitanceAmongWindings: !!capacitanceData.capacitanceAmongWindings,
+                                            hasMaxwellCapacitanceMatrix: !!(capacitanceData.maxwellCapacitanceMatrix?.length),
+                                            hasSixCapacitorNetwork: !!capacitanceData.sixCapacitorNetworkPerWinding,
+                                            hasTripoleCapacitance: !!capacitanceData.tripoleCapacitancePerWinding
+                                        });
+                                        
+                                        // Initialize winding selection if not already set
+                                        if (!this.selectedWindingPair.primary || !this.selectedWindingPair.secondary) {
+                                            this.initializeWindingSelection();
+                                        }
                                     } else {
-                                        this.safeSet('capacitanceMatrix', null);
+                                        this.safeSet('fullCapacitanceData', null);
+                                        this.capacitanceError = 'No capacitance data returned';
                                     }
-                                    
-                                    // Get proper capacitance matrix from mkf.calculate_capacitance_matrix
-                                    try {
-                                        const properCapMatrix = await this.taskQueueStore.calculateCapacitanceMatrix(
-                                            coil,
-                                            modelsData
-                                        );
-                                        if (properCapMatrix && Array.isArray(properCapMatrix) && properCapMatrix.length > 0) {
-                                            this.safeSet('capacitanceMatrix', properCapMatrix[0]);
-                                        }
-                                    } catch (capMatrixError) {
-                                        console.warn('[AdvancedCoilInfo] Could not calculate proper capacitance matrix:', capMatrixError.message || capMatrixError);
-                                    }
+                                } catch (e) {
+                                    console.error('Stray capacitance error:', e.message || e);
+                                    this.safeSet('fullCapacitanceData', null);
+                                    this.capacitanceError = e.message || 'Failed to calculate capacitance';
                                 }
                             }
                         }
                     } catch (e) {
                         console.error('Stray capacitance error:', e.message || e);
-                        this.safeSet('maxwellCapacitanceMatrix', null);
-                        this.safeSet('capacitanceMatrix', null);
+                        this.safeSet('fullCapacitanceData', null);
+                        this.capacitanceError = e.message || 'Failed to calculate capacitance';
                     }
                 } else {
-                    this.safeSet('maxwellCapacitanceMatrix', null);
-                    this.safeSet('capacitanceMatrix', null);
+                    this.safeSet('fullCapacitanceData', null);
+                    this.capacitanceError = null;
                 }
                 
                 if (this.isMounted) {
@@ -930,6 +897,63 @@ export default {
                 matrix.push(row);
             }
             return matrix;
+        },
+        
+        // Winding selection methods
+        initializeWindingSelection() {
+            // Called on: new design, wizard usage, MAS load
+            // Reset to default: primary=winding[0], secondary=winding[1]
+            const windings = this.windingNames;
+            if (windings.length >= 2) {
+                this.selectedWindingPair = {
+                    primary: windings[0],
+                    secondary: windings[1]
+                };
+            } else {
+                this.selectedWindingPair = {
+                    primary: null,
+                    secondary: null
+                };
+            }
+            console.log('[AdvancedCoilInfo] Winding selection initialized:', this.selectedWindingPair);
+        },
+        
+        onPrimaryWindingChange(newWinding) {
+            console.log('[AdvancedCoilInfo] Primary winding changed to:', newWinding);
+            // Ensure primary and secondary are not the same
+            if (newWinding === this.selectedWindingPair.secondary) {
+                // Find a different winding for secondary
+                const windings = this.windingNames;
+                const differentWinding = windings.find(w => w !== newWinding);
+                if (differentWinding) {
+                    this.selectedWindingPair.secondary = differentWinding;
+                }
+            }
+            this.selectedWindingPair.primary = newWinding;
+        },
+        
+        onSecondaryWindingChange(newWinding) {
+            console.log('[AdvancedCoilInfo] Secondary winding changed to:', newWinding);
+            // Ensure primary and secondary are not the same
+            if (newWinding === this.selectedWindingPair.primary) {
+                // Find a different winding for primary
+                const windings = this.windingNames;
+                const differentWinding = windings.find(w => w !== newWinding);
+                if (differentWinding) {
+                    this.selectedWindingPair.primary = differentWinding;
+                }
+            }
+            this.selectedWindingPair.secondary = newWinding;
+        },
+        
+        formatCapacitance(value) {
+            if (value === null || value === undefined || value === 0) return '0';
+            if (Math.abs(value) < 1e-15) return '0';
+            
+            // Use formatUnit for proper unit scaling
+            const { label, unit } = formatUnit(value, 'F');
+            const cleanLabel = removeTrailingZeroes(label, 3);
+            return `${cleanLabel} ${unit}`;
         },
     }
 }
@@ -1102,279 +1126,268 @@ export default {
                 <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="text-center">
                     <small class="text-muted d-block"><i class="fas fa-info-circle"></i> Hover over the image to see values</small>
                 </div>
-                <!-- Capacitance Matrices -->
+                
+                <!-- Section 1: Capacitance Matrix (All Windings) -->
                 <div class="text-center mt-2">
-                    <span class="text-muted d-block">Capacitance Matrix</span>
+                    <span class="text-muted d-block"><strong>Capacitance Matrix (All Windings)</strong></span>
                     <div v-if="calculatingMatrices" class="text-muted">
                         <i class="fas fa-spinner fa-spin"></i> Calculating...
                     </div>
                     <vue-latex
-                        v-else-if="capacitanceMatrixLatex && capacitanceMatrix"
-                        :expression="capacitanceMatrixLatex"
+                        v-else-if="capacitanceMatrixAllWindingsLatex"
+                        :expression="capacitanceMatrixAllWindingsLatex"
                         :display-mode="true"
                         :fontsize="16"
                     />
+                    <div v-else-if="capacitanceError" class="text-danger small">
+                        <em>Error: {{ capacitanceError }}</em>
+                    </div>
                     <div v-else class="text-muted small">
                         <em>No capacitance data available</em>
                     </div>
+                </div>
+                
+                <!-- Section 2: Winding Pair Selection -->
+                <div v-if="hasMultipleWindings" class="mt-3 p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
+                    <small class="d-block mb-2 text-white"><strong>Select Winding Pair</strong></small>
                     
-                    <span class="text-muted d-block mt-2">Maxwell Capacitance Matrix</span>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label text-white small mb-1">Primary</label>
+                            <select 
+                                class="form-select form-select-sm" 
+                                v-model="selectedWindingPair.primary"
+                                @change="onPrimaryWindingChange($event.target.value)"
+                                style="background-color: #3a3a3a; color: #fff; border-color: #555;"
+                            >
+                                <option v-for="(displayName, realName) in windingOptions" :key="realName" :value="realName">
+                                    {{ displayName }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-white small mb-1">Secondary</label>
+                            <select 
+                                class="form-select form-select-sm" 
+                                v-model="selectedWindingPair.secondary"
+                                @change="onSecondaryWindingChange($event.target.value)"
+                                style="background-color: #3a3a3a; color: #fff; border-color: #555;"
+                            >
+                                <option v-for="(displayName, realName) in windingOptions" :key="realName" :value="realName">
+                                    {{ displayName }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Message for single winding -->
+                <div v-else-if="!calculatingMatrices" class="mt-3 p-2 border rounded text-center" style="background-color: #2a2a2a; border-color: #444;">
+                    <small class="text-muted">Single winding: No inter-winding capacitance models available</small>
+                </div>
+                
+                <!-- Section 3: Maxwell Capacitance Matrix (for selected pair) -->
+                <div v-if="selectedWindingPair.primary && selectedWindingPair.secondary" class="text-center mt-3">
+                    <span class="text-muted d-block"><strong>Maxwell Capacitance Matrix</strong></span>
+                    <small class="text-muted d-block mb-1">{{ selectedWindingPair.primary }} - {{ selectedWindingPair.secondary }}</small>
                     <div v-if="calculatingMatrices" class="text-muted">
                         <i class="fas fa-spinner fa-spin"></i> Calculating...
                     </div>
                     <vue-latex
-                        v-else-if="maxwellCapacitanceMatrixLatex && maxwellCapacitanceMatrix"
-                        :expression="maxwellCapacitanceMatrixLatex"
+                        v-else-if="maxwellCapacitanceMatrixForSelectedPairLatex"
+                        :expression="maxwellCapacitanceMatrixForSelectedPairLatex"
                         :display-mode="true"
                         :fontsize="16"
                     />
                     <div v-else class="text-muted small">
-                        <em>No Maxwell capacitance data available</em>
+                        <em>No Maxwell matrix for selected pair</em>
                     </div>
-                    
-                    <!-- 3C Capacitor Model -->
-                    <div v-if="threeCapacitorModel" class="mt-2">
-                        <div class="mt-2 p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
-                            <small class="d-block mb-2 text-white"><strong>3 Capacitor Model</strong></small>
+                </div>
+                
+                <!-- Section 4: Tripole Capacitance (for selected pair) -->
+                <div v-if="threeCapacitorModel" class="mt-3">
+                    <div class="p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
+                        <small class="d-block mb-2 text-white"><strong>Tripole Capacitance</strong></small>
+                        <small class="d-block mb-2 text-muted">{{ threeCapacitorModel.windingNames[0] }} - {{ threeCapacitorModel.windingNames[1] }}</small>
+                        
+                        <!-- 3-Capacitor Equivalent Circuit Diagram -->
+                        <svg viewBox="0 0 320 230" class="w-100" style="max-width: 300px; height: auto; display: block; margin: 0 auto;">
+                            <!-- Left Port (Primary) - Terminals A and B -->
+                            <circle cx="60" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="48" y="35" font-size="14" fill="#fff" font-weight="bold">A</text>
                             
-                            <!-- 3-Capacitor Equivalent Circuit Diagram -->
-                            <svg viewBox="0 0 320 230" class="w-100" style="max-width: 300px; height: auto; display: block; margin: 0 auto;">
-                                <!-- Left Port (Primary) - Terminals A and B -->
-                                <!-- Terminal A -->
-                                <circle cx="60" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="48" y="35" font-size="14" fill="#fff" font-weight="bold">A</text>
-                                
-                                <!-- Terminal B -->
-                                <circle cx="60" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="48" y="175" font-size="14" fill="#fff" font-weight="bold">B</text>
-                                
-                                <!-- Left winding connections -->
-                                <line x1="60" y1="40" x2="100" y2="40" stroke="#fff" stroke-width="2"/>
-                                <line x1="60" y1="160" x2="100" y2="160" stroke="#fff" stroke-width="2"/>
-                                
-                                <!-- Left winding (inductor symbol) - 5 loops, ends down toward bottom -->
-                                <path d="M 100 40 Q 115 40 115 52 Q 115 64 100 64 Q 85 64 85 76 Q 85 88 100 88 Q 115 88 115 100 Q 115 112 100 112 Q 85 112 85 124 Q 85 136 100 136 Q 115 136 115 148 Q 115 160 100 160" 
-                                      stroke="#fff" stroke-width="2" fill="none"/>
-                                
-                                <!-- Transformer Core (two vertical bars) - smaller -->
-                                <line x1="150" y1="50" x2="150" y2="150" stroke="#fff" stroke-width="3"/>
-                                <line x1="165" y1="50" x2="165" y2="150" stroke="#fff" stroke-width="3"/>
-                                
-                                <!-- Right winding (inductor symbol) - 5 loops, ends down toward bottom -->
-                                <path d="M 215 40 Q 200 40 200 52 Q 200 64 215 64 Q 230 64 230 76 Q 230 88 215 88 Q 200 88 200 100 Q 200 112 215 112 Q 230 112 230 124 Q 230 136 215 136 Q 200 136 200 148 Q 200 160 215 160" 
-                                      stroke="#fff" stroke-width="2" fill="none"/>
-                                
-                                <!-- Right winding connections -->
-                                <line x1="215" y1="40" x2="255" y2="40" stroke="#fff" stroke-width="2"/>
-                                <line x1="215" y1="160" x2="255" y2="160" stroke="#fff" stroke-width="2"/>
-                                
-                                <!-- Right Port (Secondary) - Terminals C and D -->
-                                <!-- Terminal C -->
-                                <circle cx="255" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="265" y="35" font-size="14" fill="#fff" font-weight="bold">C</text>
-                                
-                                <!-- Terminal D -->
-                                <circle cx="255" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="265" y="175" font-size="14" fill="#fff" font-weight="bold">D</text>
-                                
-                                <!-- C1 Capacitor between A and B - rotated 90°, centered on left side, larger -->
-                                <line x1="5" y1="92" x2="35" y2="92" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="5" y1="108" x2="35" y2="108" stroke="#fff" stroke-width="2.5"/>
-                                <!-- Connections to capacitor -->
-                                <line x1="20" y1="40" x2="20" y2="92" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="20" y1="108" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="60" y1="40" x2="20" y2="40" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="60" y1="160" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <text x="40" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₁</text>
-                                
-                                <!-- C2 Capacitor between C and D - rotated 90°, centered on right side, larger -->
-                                <line x1="285" y1="92" x2="315" y2="92" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="285" y1="108" x2="315" y2="108" stroke="#fff" stroke-width="2.5"/>
-                                <!-- Connections to capacitor -->
-                                <line x1="300" y1="40" x2="300" y2="92" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="300" y1="108" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="40" x2="300" y2="40" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="160" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <text x="265" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₂</text>
-                                
-                                <!-- C3 Capacitor between B and D - vertical, centered on the wire connecting B and D, larger, plates closer -->
-                                <line x1="147" y1="174" x2="147" y2="198" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="163" y1="174" x2="163" y2="198" stroke="#fff" stroke-width="2.5"/>
-                                
-                                <!-- Connections from B and D to capacitor -->
-                                <line x1="60" y1="186" x2="147" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="147" y1="186" x2="147" y2="174" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="186" x2="163" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="163" y1="186" x2="163" y2="174" stroke="#fff" stroke-width="1.5"/>
-                                
-                                <!-- Vertical drops from terminals B and D to horizontal line -->
-                                <line x1="60" y1="160" x2="60" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="160" x2="255" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                
-                                <text x="172" y="168" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₃</text>
-                            </svg>
+                            <circle cx="60" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="48" y="175" font-size="14" fill="#fff" font-weight="bold">B</text>
                             
-                            <!-- 3C Values displayed below schematic -->
-                            <div class="mt-2 small text-center" style="color: #fff;">
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_1 = ${formatCapacitance(threeCapacitorModel.C1)}`" :fontsize="13" />
-                                </div>
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_2 = ${formatCapacitance(threeCapacitorModel.C2)}`" :fontsize="13" />
-                                </div>
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_3 = ${formatCapacitance(threeCapacitorModel.C3)}`" :fontsize="13" />
-                                </div>
+                            <line x1="60" y1="40" x2="100" y2="40" stroke="#fff" stroke-width="2"/>
+                            <line x1="60" y1="160" x2="100" y2="160" stroke="#fff" stroke-width="2"/>
+                            
+                            <path d="M 100 40 Q 115 40 115 52 Q 115 64 100 64 Q 85 64 85 76 Q 85 88 100 88 Q 115 88 115 100 Q 115 112 100 112 Q 85 112 85 124 Q 85 136 100 136 Q 115 136 115 148 Q 115 160 100 160" 
+                                  stroke="#fff" stroke-width="2" fill="none"/>
+                            
+                            <line x1="150" y1="50" x2="150" y2="150" stroke="#fff" stroke-width="3"/>
+                            <line x1="165" y1="50" x2="165" y2="150" stroke="#fff" stroke-width="3"/>
+                            
+                            <path d="M 215 40 Q 200 40 200 52 Q 200 64 215 64 Q 230 64 230 76 Q 230 88 215 88 Q 200 88 200 100 Q 200 112 215 112 Q 230 112 230 124 Q 230 136 215 136 Q 200 136 200 148 Q 200 160 215 160" 
+                                  stroke="#fff" stroke-width="2" fill="none"/>
+                            
+                            <line x1="215" y1="40" x2="255" y2="40" stroke="#fff" stroke-width="2"/>
+                            <line x1="215" y1="160" x2="255" y2="160" stroke="#fff" stroke-width="2"/>
+                            
+                            <circle cx="255" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="265" y="35" font-size="14" fill="#fff" font-weight="bold">C</text>
+                            
+                            <circle cx="255" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="265" y="175" font-size="14" fill="#fff" font-weight="bold">D</text>
+                            
+                            <line x1="5" y1="92" x2="35" y2="92" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="5" y1="108" x2="35" y2="108" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="20" y1="40" x2="20" y2="92" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="20" y1="108" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="60" y1="40" x2="20" y2="40" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="60" y1="160" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <text x="40" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₁</text>
+                            
+                            <line x1="285" y1="92" x2="315" y2="92" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="285" y1="108" x2="315" y2="108" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="300" y1="40" x2="300" y2="92" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="300" y1="108" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="40" x2="300" y2="40" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="160" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <text x="265" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₂</text>
+                            
+                            <line x1="147" y1="174" x2="147" y2="198" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="163" y1="174" x2="163" y2="198" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="60" y1="186" x2="147" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="147" y1="186" x2="147" y2="174" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="186" x2="163" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="163" y1="186" x2="163" y2="174" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="60" y1="160" x2="60" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="160" x2="255" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <text x="172" y="168" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₃</text>
+                        </svg>
+                        
+                        <div class="mt-2 small text-center" style="color: #fff;">
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_1 = ${formatCapacitance(threeCapacitorModel.C1)}`" :fontsize="13" />
+                            </div>
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_2 = ${formatCapacitance(threeCapacitorModel.C2)}`" :fontsize="13" />
+                            </div>
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_3 = ${formatCapacitance(threeCapacitorModel.C3)}`" :fontsize="13" />
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- 6C Capacitor Model -->
-                    <div v-if="sixCapacitorModel && sixCapacitorModel.isComplete" class="mt-3">
-                        <div class="mt-2 p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
-                            <small class="d-block mb-2 text-white"><strong>6 Capacitor Model</strong></small>
+                </div>
+                
+                <!-- Section 5: 6 Capacitor Network (for selected pair) -->
+                <div v-if="sixCapacitorModel && sixCapacitorModel.isComplete" class="mt-3">
+                    <div class="p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
+                        <small class="d-block mb-2 text-white"><strong>6 Capacitor Network</strong></small>
+                        <small class="d-block mb-2 text-muted">{{ sixCapacitorModel.windingNames[0] }} - {{ sixCapacitorModel.windingNames[1] }}</small>
+                        
+                        <!-- 6-Capacitor Equivalent Circuit Diagram -->
+                        <svg viewBox="0 0 320 240" class="w-100" style="max-width: 300px; height: auto; display: block; margin: 0 auto;">
+                            <circle cx="60" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="48" y="35" font-size="14" fill="#fff" font-weight="bold">A</text>
                             
-                            <!-- 6-Capacitor Equivalent Circuit Diagram -->
-                            <svg viewBox="0 0 320 240" class="w-100" style="max-width: 300px; height: auto; display: block; margin: 0 auto;">
-                                <!-- Left Port (Primary) - Terminals A and B -->
-                                <!-- Terminal A -->
-                                <circle cx="60" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="48" y="35" font-size="14" fill="#fff" font-weight="bold">A</text>
-                                
-                                <!-- Terminal B -->
-                                <circle cx="60" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="48" y="175" font-size="14" fill="#fff" font-weight="bold">B</text>
-                                
-                                <!-- Left winding (inductor symbol) - 5 loops -->
-                                <path d="M 100 40 Q 115 40 115 52 Q 115 64 100 64 Q 85 64 85 76 Q 85 88 100 88 Q 115 88 115 100 Q 115 112 100 112 Q 85 112 85 124 Q 85 136 100 136 Q 115 136 115 148 Q 115 160 100 160" 
-                                      stroke="#fff" stroke-width="2" fill="none" opacity="0.25"/>
-                                
-                                <!-- Transformer Core -->
-                                <line x1="150" y1="50" x2="150" y2="150" stroke="#fff" stroke-width="3" opacity="0.25"/>
-                                <line x1="165" y1="50" x2="165" y2="150" stroke="#fff" stroke-width="3" opacity="0.25"/>
-                                
-                                <!-- Right winding (inductor symbol) - 5 loops -->
-                                <path d="M 215 40 Q 200 40 200 52 Q 200 64 215 64 Q 230 64 230 76 Q 230 88 215 88 Q 200 88 200 100 Q 200 112 215 112 Q 230 112 230 124 Q 230 136 215 136 Q 200 136 200 148 Q 200 160 215 160" 
-                                      stroke="#fff" stroke-width="2" fill="none" opacity="0.25"/>
-                                
-                                <!-- Left winding connections (terminal to winding) -->
-                                <line x1="60" y1="40" x2="100" y2="40" stroke="#fff" stroke-width="2" opacity="0.25"/>
-                                <line x1="60" y1="160" x2="100" y2="160" stroke="#fff" stroke-width="2" opacity="0.25"/>
-                                
-                                <!-- Right winding connections (terminal to winding) -->
-                                <line x1="215" y1="40" x2="255" y2="40" stroke="#fff" stroke-width="2" opacity="0.25"/>
-                                <line x1="215" y1="160" x2="255" y2="160" stroke="#fff" stroke-width="2" opacity="0.25"/>
-                                
-                                <!-- Right Port (Secondary) - Terminals C and D -->
-                                <circle cx="255" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="265" y="35" font-size="14" fill="#fff" font-weight="bold">C</text>
-                                
-                                <circle cx="255" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
-                                <text x="265" y="175" font-size="14" fill="#fff" font-weight="bold">D</text>
-                                
-                                <!-- C1 Capacitor between A and B - rotated 90°, centered on left side, larger -->
-                                <line x1="5" y1="92" x2="35" y2="92" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="5" y1="108" x2="35" y2="108" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="20" y1="40" x2="20" y2="92" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="20" y1="108" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="60" y1="40" x2="20" y2="40" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="60" y1="160" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <text x="40" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₁</text>
-                                
-                                <!-- C2 Capacitor between C and D - rotated 90°, centered on right side, larger -->
-                                <line x1="285" y1="92" x2="315" y2="92" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="285" y1="108" x2="315" y2="108" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="300" y1="40" x2="300" y2="92" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="300" y1="108" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="40" x2="300" y2="40" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="160" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
-                                <text x="265" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₂</text>
-                                
-                                <!-- C3 Capacitor between B and D - vertical, centered on the wire connecting B and D, larger, plates closer -->
-                                <line x1="147" y1="174" x2="147" y2="198" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="163" y1="174" x2="163" y2="198" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="60" y1="186" x2="147" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="147" y1="186" x2="147" y2="174" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="186" x2="163" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="163" y1="186" x2="163" y2="174" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="60" y1="160" x2="60" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="160" x2="255" y2="186" stroke="#fff" stroke-width="1.5"/>
-                                <text x="172" y="168" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₃</text>
-                                
-                                <!-- C4 Capacitor between A and C - vertical, on top of the magnetic core, same distance from core as C3 -->
-                                <line x1="147" y1="2" x2="147" y2="26" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="163" y1="2" x2="163" y2="26" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="60" y1="14" x2="147" y2="14" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="147" y1="14" x2="147" y2="26" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="14" x2="163" y2="14" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="163" y1="14" x2="163" y2="26" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="60" y1="40" x2="60" y2="14" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="40" x2="255" y2="14" stroke="#fff" stroke-width="1.5"/>
-                                <text x="172" y="36" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₄</text>
-                                
-                                <!-- C5 Capacitor between A and D - shifted toward A to make room for C6 -->
-                                <!-- Center shifted by -40 along AD: (157.5-34, 100-20.8) = (123.5, 79.2) -->
-                                <!-- AD direction unit vector ≈ (0.85, 0.52) -->
-                                <!-- Perpendicular unit vector ≈ (0.52, -0.85) - plates go from bottom-left to top-right "/" -->
-                                <!-- Plate length = 24px (12px each side), gap = 16px (8px from center each way) -->
-                                <!-- Plate 1 center: (123.5 - 8*0.85, 79.2 - 8*0.52) = (116.7, 75) -->
-                                <!-- Plate 1: from (110.5, 85.2) to (122.9, 64.8) - "/" shape -->
-                                <!-- Plate 2 center: (123.5 + 8*0.85, 79.2 + 8*0.52) = (130.3, 83.4) -->
-                                <!-- Plate 2: from (124.1, 93.6) to (136.5, 73.2) - "/" shape -->
-                                <line x1="110.5" y1="85.2" x2="122.9" y2="64.8" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="124.1" y1="93.6" x2="136.5" y2="73.2" stroke="#fff" stroke-width="2.5"/>
-                                
-                                <!-- Connections to middle of capacitor plates (plate centers) -->
-                                <line x1="60" y1="40" x2="116.7" y2="75" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="160" x2="130.3" y2="83.4" stroke="#fff" stroke-width="1.5"/>
-                                
-                                <text x="138" y="68" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₅</text>
-                                
-                                <!-- C6 Capacitor between B and C - shifted toward C to mirror C5 -->
-                                <!-- B(60,160) to C(255,40), direction ≈ (0.85, -0.52) -->
-                                <!-- Perpendicular unit vector ≈ (0.52, 0.85) - plates go from top-left to bottom-right "\" -->
-                                <!-- Midpoint of BC: (157.5, 100), shifted +40 toward C: (191.5, 79.2) -->
-                                <!-- Plate length = 24px (12px each side), gap = 16px (8px from center each way) -->
-                                <!-- Plate 1 center: (191.5 - 8*0.85, 79.2 + 8*0.52) = (184.7, 83.4) -->
-                                <!-- Plate 1: from (178.5, 73.2) to (190.9, 93.6) - "\" shape -->
-                                <!-- Plate 2 center: (191.5 + 8*0.85, 79.2 - 8*0.52) = (198.3, 75) -->
-                                <!-- Plate 2: from (192.1, 64.8) to (204.5, 85.2) - "\" shape -->
-                                <line x1="178.5" y1="73.2" x2="190.9" y2="93.6" stroke="#fff" stroke-width="2.5"/>
-                                <line x1="192.1" y1="64.8" x2="204.5" y2="85.2" stroke="#fff" stroke-width="2.5"/>
-                                
-                                <!-- Connections to middle of capacitor plates (plate centers) -->
-                                <line x1="60" y1="160" x2="184.7" y2="83.4" stroke="#fff" stroke-width="1.5"/>
-                                <line x1="255" y1="40" x2="198.3" y2="75" stroke="#fff" stroke-width="1.5"/>
-                                
-                                <text x="208" y="95" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₆</text>
-                            </svg>
+                            <circle cx="60" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="48" y="175" font-size="14" fill="#fff" font-weight="bold">B</text>
                             
-                            <!-- 6C Values displayed below schematic -->
-                            <div class="mt-2 small text-center" style="color: #fff;">
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_1 = ${formatCapacitance(sixCapacitorModel.C1 || threeCapacitorModel.C1)}`" :fontsize="13" />
-                                </div>
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_2 = ${formatCapacitance(sixCapacitorModel.C2 || threeCapacitorModel.C2)}`" :fontsize="13" />
-                                </div>
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_3 = ${formatCapacitance(sixCapacitorModel.C3 || threeCapacitorModel.C3)}`" :fontsize="13" />
-                                </div>
+                            <path d="M 100 40 Q 115 40 115 52 Q 115 64 100 64 Q 85 64 85 76 Q 85 88 100 88 Q 115 88 115 100 Q 115 112 100 112 Q 85 112 85 124 Q 85 136 100 136 Q 115 136 115 148 Q 115 160 100 160" 
+                                  stroke="#fff" stroke-width="2" fill="none" opacity="0.25"/>
+                            
+                            <line x1="150" y1="50" x2="150" y2="150" stroke="#fff" stroke-width="3" opacity="0.25"/>
+                            <line x1="165" y1="50" x2="165" y2="150" stroke="#fff" stroke-width="3" opacity="0.25"/>
+                            
+                            <path d="M 215 40 Q 200 40 200 52 Q 200 64 215 64 Q 230 64 230 76 Q 230 88 215 88 Q 200 88 200 100 Q 200 112 215 112 Q 230 112 230 124 Q 230 136 215 136 Q 200 136 200 148 Q 200 160 215 160" 
+                                  stroke="#fff" stroke-width="2" fill="none" opacity="0.25"/>
+                            
+                            <line x1="60" y1="40" x2="100" y2="40" stroke="#fff" stroke-width="2" opacity="0.25"/>
+                            <line x1="60" y1="160" x2="100" y2="160" stroke="#fff" stroke-width="2" opacity="0.25"/>
+                            
+                            <line x1="215" y1="40" x2="255" y2="40" stroke="#fff" stroke-width="2" opacity="0.25"/>
+                            <line x1="215" y1="160" x2="255" y2="160" stroke="#fff" stroke-width="2" opacity="0.25"/>
+                            
+                            <circle cx="255" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="265" y="35" font-size="14" fill="#fff" font-weight="bold">C</text>
+                            
+                            <circle cx="255" cy="160" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
+                            <text x="265" y="175" font-size="14" fill="#fff" font-weight="bold">D</text>
+                            
+                            <line x1="5" y1="92" x2="35" y2="92" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="5" y1="108" x2="35" y2="108" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="20" y1="40" x2="20" y2="92" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="20" y1="108" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="60" y1="40" x2="20" y2="40" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="60" y1="160" x2="20" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <text x="40" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₁</text>
+                            
+                            <line x1="285" y1="92" x2="315" y2="92" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="285" y1="108" x2="315" y2="108" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="300" y1="40" x2="300" y2="92" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="300" y1="108" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="40" x2="300" y2="40" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="160" x2="300" y2="160" stroke="#fff" stroke-width="1.5"/>
+                            <text x="265" y="102" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₂</text>
+                            
+                            <line x1="147" y1="174" x2="147" y2="198" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="163" y1="174" x2="163" y2="198" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="60" y1="186" x2="147" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="147" y1="186" x2="147" y2="174" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="186" x2="163" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="163" y1="186" x2="163" y2="174" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="60" y1="160" x2="60" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="160" x2="255" y2="186" stroke="#fff" stroke-width="1.5"/>
+                            <text x="172" y="168" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₃</text>
+                            
+                            <line x1="147" y1="2" x2="147" y2="26" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="163" y1="2" x2="163" y2="26" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="60" y1="14" x2="147" y2="14" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="147" y1="14" x2="147" y2="26" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="14" x2="163" y2="14" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="163" y1="14" x2="163" y2="26" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="60" y1="40" x2="60" y2="14" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="40" x2="255" y2="14" stroke="#fff" stroke-width="1.5"/>
+                            <text x="172" y="36" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₄</text>
+                            
+                            <line x1="110.5" y1="85.2" x2="122.9" y2="64.8" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="124.1" y1="93.6" x2="136.5" y2="73.2" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="60" y1="40" x2="116.7" y2="75" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="160" x2="130.3" y2="83.4" stroke="#fff" stroke-width="1.5"/>
+                            <text x="138" y="68" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₅</text>
+                            
+                            <line x1="178.5" y1="73.2" x2="190.9" y2="93.6" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="192.1" y1="64.8" x2="204.5" y2="85.2" stroke="#fff" stroke-width="2.5"/>
+                            <line x1="60" y1="160" x2="184.7" y2="83.4" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="255" y1="40" x2="198.3" y2="75" stroke="#fff" stroke-width="1.5"/>
+                            <text x="208" y="95" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₆</text>
+                        </svg>
+                        
+                        <div class="mt-2 small text-center" style="color: #fff;">
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_1 = ${formatCapacitance(sixCapacitorModel.C1)}`" :fontsize="13" />
                             </div>
-                            <div class="mt-1 small text-center" style="color: #fff;">
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_4 = ${formatCapacitance(sixCapacitorModel.C4 || threeCapacitorModel.C1)}`" :fontsize="13" />
-                                </div>
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_5 = ${formatCapacitance(sixCapacitorModel.C5 || threeCapacitorModel.C2)}`" :fontsize="13" />
-                                </div>
-                                <div class="d-inline-block mx-2">
-                                    <vue-latex :expression="`C_6 = ${formatCapacitance(sixCapacitorModel.C6 || threeCapacitorModel.C3)}`" :fontsize="13" />
-                                </div>
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_2 = ${formatCapacitance(sixCapacitorModel.C2)}`" :fontsize="13" />
+                            </div>
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_3 = ${formatCapacitance(sixCapacitorModel.C3)}`" :fontsize="13" />
+                            </div>
+                        </div>
+                        <div class="mt-1 small text-center" style="color: #fff;">
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_4 = ${formatCapacitance(sixCapacitorModel.C4)}`" :fontsize="13" />
+                            </div>
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_5 = ${formatCapacitance(sixCapacitorModel.C5)}`" :fontsize="13" />
+                            </div>
+                            <div class="d-inline-block mx-2">
+                                <vue-latex :expression="`C_6 = ${formatCapacitance(sixCapacitorModel.C6)}`" :fontsize="13" />
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

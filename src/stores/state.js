@@ -402,6 +402,7 @@ export const useStateStore = defineStore("state", () => {
     };
 
     function closeCoilAdvancedInfo() {
+        this.magneticBuilder.mode.coil = MagneticBuilderModes.Basic;
     };
 
     return {
