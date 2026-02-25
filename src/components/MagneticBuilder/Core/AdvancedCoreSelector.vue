@@ -69,9 +69,13 @@ export default {
                 if (name == "bobbinFromCoreShapeGenerated") {
                     if (args[0]) {
                         const bobbin = args[1];
-                        this.masStore.mas.magnetic.coil.turnsDescription = null;
-                        this.masStore.mas.magnetic.coil.layersDescription = null;
-                        this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                        const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
+                        // Only clear turns if bobbin actually changed
+                        if (JSON.stringify(currentBobbin) !== JSON.stringify(bobbin)) {
+                            this.masStore.mas.magnetic.coil.turnsDescription = null;
+                            this.masStore.mas.magnetic.coil.layersDescription = null;
+                            this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                        }
                         this.masStore.mas.magnetic.coil.bobbin = bobbin;
                         this.historyStore.addToHistory(this.masStore.mas);
                     }

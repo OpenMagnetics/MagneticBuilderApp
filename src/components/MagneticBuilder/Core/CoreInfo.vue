@@ -139,7 +139,6 @@ export default {
         calculateCoreLosses() {
             // Check if there are pending simulation models from the state store
             const pendingModels = this.$stateStore.pendingSimulationModels;
-            console.log('[CoreInfo] pendingSimulationModels:', pendingModels);
             
             // Use pending models if available, otherwise fall back to store values
             const modelsData = {
@@ -152,7 +151,6 @@ export default {
             
             // Note: Don't clear pending models here - let CoilInfo.vue also use them
             if (pendingModels) {
-                console.log('[CoreInfo] Using pending simulation models (not clearing yet)');
             }
             const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
             const material = this.masStore.mas.magnetic.core?.functionalDescription?.material;

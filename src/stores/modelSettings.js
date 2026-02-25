@@ -71,7 +71,6 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             availableWindingProximityEffectModels.value = arrayToDict(JSON.parse(proximityEffect))
             availableStrayCapacitanceModels.value = arrayToDict(JSON.parse(strayCapacitance))
             
-            console.log('[ModelSettings] Available models loaded from WASM')
         } catch (error) {
             console.error('[ModelSettings] Failed to load available models:', error)
         }
@@ -89,7 +88,6 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             
             const settings = JSON.parse(await mkf.get_settings())
             
-            console.log('[ModelSettings] Loading settings from WASM:', settings)
             
             // Settings come as integers, convert to display names using available models
             const magneticFieldStrengthOptions = Object.keys(availableMagneticFieldStrengthModels.value)
@@ -145,7 +143,6 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             }
             
             isInitialized.value = true
-            console.log('[ModelSettings] Settings loaded from WASM successfully')
         } catch (error) {
             console.error('[ModelSettings] Failed to load from WASM:', error)
         } finally {
@@ -172,21 +169,13 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             const strayCapacitanceOptions = Object.keys(availableStrayCapacitanceModels.value)
             
             // Only sync valid (non-null) model values
-            console.log('[ModelSettings] Syncing to WASM:', {
-                magneticFieldStrengthModel: magneticFieldStrengthModel.value,
-                fringingEffectModel: magneticFieldStrengthFringingEffectModel.value,
-                availableFieldStrength: magneticFieldStrengthOptions,
-                availableFringing: fringingEffectOptions
-            })
             
             if (magneticFieldStrengthModel.value !== null && magneticFieldStrengthModel.value !== undefined) {
                 const index = magneticFieldStrengthOptions.indexOf(magneticFieldStrengthModel.value)
-                console.log(`[ModelSettings] MagneticFieldStrength: "${magneticFieldStrengthModel.value}" -> index ${index}`)
                 if (index >= 0) settings.magneticFieldStrengthModel = index
             }
             if (magneticFieldStrengthFringingEffectModel.value !== null && magneticFieldStrengthFringingEffectModel.value !== undefined) {
                 const index = fringingEffectOptions.indexOf(magneticFieldStrengthFringingEffectModel.value)
-                console.log(`[ModelSettings] FringingEffect: "${magneticFieldStrengthFringingEffectModel.value}" -> index ${index}`)
                 if (index >= 0) settings.magneticFieldStrengthFringingEffectModel = index
             }
             if (reluctanceModel.value !== null && reluctanceModel.value !== undefined) {
@@ -216,27 +205,21 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             }
             settings.coilEnableUserWindingLossesModels = coilEnableUserWindingLossesModels.value
             
-            console.log('[ModelSettings] About to call set_settings with:', JSON.stringify(settings, null, 2))
             await mkf.set_settings(JSON.stringify(settings))
-            console.log('[ModelSettings] Settings synced to WASM')
             
             // Verify the setting was applied
             const verifySettings = JSON.parse(await mkf.get_settings())
-            console.log('[ModelSettings] Verification - coilEnableUserWindingLossesModels in WASM:', verifySettings.coilEnableUserWindingLossesModels)
             
             // Trigger resimulation AFTER settings are synced to WASM
-            console.log('[ModelSettings] Settings synced to WASM, now triggering resimulation...')
             try {
                 // Small delay to ensure WASM has processed the settings
                 await new Promise(resolve => setTimeout(resolve, 100))
                 
                 // Access the state store via Pinia's getActivePinia
                 const pinia = getActivePinia()
-                console.log('[ModelSettings] Got active Pinia:', pinia)
                 if (pinia) {
                     // Get the state store from Pinia's store cache
                     const stateStore = pinia._s.get('state')
-                    console.log('[ModelSettings] Got state store from Pinia:', stateStore)
                     if (stateStore && stateStore.resimulate) {
                         // Pass current model values to ensure they're used in simulation
                         const currentModels = {
@@ -251,14 +234,10 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
                             strayCapacitanceModel: strayCapacitanceModel.value,
                             coilEnableUserWindingLossesModels: coilEnableUserWindingLossesModels.value,
                         }
-                        console.log('[ModelSettings] Calling stateStore.resimulate() with models:', currentModels)
                         stateStore.resimulate(currentModels)
-                        console.log('[ModelSettings] Resimulation triggered after WASM sync')
                     } else {
-                        console.warn('[ModelSettings] stateStore.resimulate not available')
                     }
                 } else {
-                    console.warn('[ModelSettings] No active Pinia instance')
                 }
             } catch (e) {
                 console.error('[ModelSettings] Failed to trigger resimulation:', e)
@@ -280,7 +259,6 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             // Set winding losses to automatic mode (not manual)
             coilEnableUserWindingLossesModels.value = false
             
-            console.log('[ModelSettings] Settings reset to MKF defaults, winding losses set to automatic')
         } catch (error) {
             console.error('[ModelSettings] Failed to reset:', error)
         }
@@ -318,7 +296,6 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
                 availableCoreLossesMethodsError.value = result.error || 'No core material data available'
             }
             
-            console.log('[ModelSettings] Available core losses methods:', result.methods)
         } catch (error) {
             console.error('[ModelSettings] Failed to fetch available core losses methods:', error)
             availableCoreLossesMethods.value = []
@@ -341,11 +318,6 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
         strayCapacitanceModel,
         coilEnableUserWindingLossesModels,
     ], (newValues, oldValues) => {
-        console.log('[ModelSettings] WATCHER TRIGGERED - Model values changed');
-        console.log('[ModelSettings] magneticFieldStrengthModel:', magneticFieldStrengthModel.value);
-        console.log('[ModelSettings] windingSkinEffectLossesModel:', windingSkinEffectLossesModel.value);
-        console.log('[ModelSettings] windingProximityEffectLossesModel:', windingProximityEffectLossesModel.value);
-        console.log('[ModelSettings] isInitialized:', isInitialized.value);
         if (isInitialized.value) {
             syncToWASM()
         }

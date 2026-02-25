@@ -229,7 +229,7 @@ export default {
         <div class="card bg-dark border-0 shadow-lg">
             <div class="card-header border-bottom border-secondary px-3 py-2">
                 <div class="d-flex align-items-center">
-                    <i class="fa-solid fa-lines-leaning text-primary me-2"></i>
+                    <i class="fa-solid fa-lines-leaning text-primary me-2" style="transform: rotate(90deg);"></i>
                     <h6 class="card-title mb-0 text-white">Wire Configuration</h6>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 <script setup>
 import { useHistoryStore } from '../stores/history'
+import { useTaskQueueStore } from '../stores/taskQueue'
 import CoreBuilder from './MagneticBuilder/Core/CoreBuilder.vue'
 import BasicWireBuilder from './MagneticBuilder/Wire/BasicWireBuilder.vue'
 import BasicCoilBuilder from './MagneticBuilder/Coil/BasicCoilBuilder.vue'
@@ -65,6 +66,7 @@ export default {
     },
     data() {
         const historyStore = useHistoryStore();
+        const taskQueueStore = useTaskQueueStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const magneticBuilt = false;
         const subscriptions = [];
@@ -72,6 +74,7 @@ export default {
 
         return {
             magneticBuilderSettingsStore,
+            taskQueueStore,
             magneticBuilt,
             historyStore,
             subscriptions,
@@ -134,6 +137,14 @@ export default {
                 }
             }
         }));
+
+        // Notify components that builder is ready with existing design
+        // This triggers visualizers and simulations to refresh
+        if (this.magneticBuilt) {
+            setTimeout(() => {
+                this.taskQueueStore.magneticBuilderReady(this.masStore.mas.magnetic);
+            }, 100);
+        }
 
     },
     beforeUnmount() {

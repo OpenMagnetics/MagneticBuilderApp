@@ -81,6 +81,12 @@ export default {
         },
     },
     mounted () {
+        // Reset simulation cache when component is mounted to ensure fresh simulation
+        // This handles the case when returning from operating points or other views
+        this.lastSimulatedInputs = "";
+        this.lastSimulatedMagnetics = "";
+        this.lastSimulatedModels = "";
+
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             // Mark as outdated immediately when wind starts
             if (name == "wind" || name == "windPlanar") {
@@ -97,6 +103,14 @@ export default {
                     else {
                         console.error(args[1])
                         this.dataUptoDate = false;
+                    }
+                }
+                // When builder is ready with an existing design, run simulation
+                if (name == "magneticBuilderReady") {
+                    if (this.masStore.mas.magnetic?.coil?.turnsDescription != null && this.enableAutoSimulation) {
+                        this.loading = true;
+                        this.dataUptoDate = false;
+                        this.simulate();
                     }
                 }
             });
@@ -200,21 +214,22 @@ export default {
             this.outputsData.totalLosses = outputs[this.operatingPointIndex].windingLosses.windingLosses + outputs[this.operatingPointIndex].coreLosses.coreLosses;
         },
         simulate() {
-            console.log('[CoilInfo] =========================================');
-            console.log('[CoilInfo] simulate() called');
-            console.log('[CoilInfo] turnsDescription exists:', this.masStore.mas.magnetic.coil['turnsDescription'] != null);
+            
+            if (this.masStore.mas.magnetic.coil['turnsDescription'] == null) {
+                // turnsDescription not available yet, stop loading state
+                this.loading = false;
+                this.dataUptoDate = false;
+                return;
+            }
             
             if (this.masStore.mas.magnetic.coil['turnsDescription'] != null) {
 
                 // Check if there are pending simulation models from the state store
                 const pendingModels = this.$stateStore.pendingSimulationModels;
-                console.log('[CoilInfo] pendingSimulationModels:', pendingModels);
                 
                 // Use pending models if available, otherwise fall back to store values
                 const magneticFieldStrength = pendingModels?.magneticFieldStrengthModel || this.modelSettingsStore.magneticFieldStrengthModel;
                 const magneticFieldStrengthFringingEffect = pendingModels?.magneticFieldStrengthFringingEffectModel || this.modelSettingsStore.magneticFieldStrengthFringingEffectModel;
-                console.log('[CoilInfo] magneticFieldStrength:', magneticFieldStrength);
-                console.log('[CoilInfo] magneticFieldStrengthFringingEffect:', magneticFieldStrengthFringingEffect);
                 
                 const modelsData = {
                     coreLosses: this.$userStore.selectedModels['coreLosses'] || Defaults.coreLossesModelDefault,
@@ -228,28 +243,18 @@ export default {
                 
                 // Clear pending models after using them
                 if (pendingModels) {
-                    console.log('[CoilInfo] Using pending simulation models');
                     this.$stateStore.pendingSimulationModels = null;
                 }
 
-                console.log('[CoilInfo] modelsData created:', modelsData);
-                console.log('[CoilInfo] windingSkinEffectLossesModel from store:', this.modelSettingsStore.windingSkinEffectLossesModel);
-                console.log('[CoilInfo] windingProximityEffectLossesModel from store:', this.modelSettingsStore.windingProximityEffectLossesModel);
 
                 const inputsString = JSON.stringify(this.masStore.mas.inputs);
                 const magneticsString = JSON.stringify(this.masStore.mas.magnetic);
                 const modelsString = JSON.stringify(modelsData);
 
-                console.log('[CoilInfo] modelsString:', modelsString);
-                console.log('[CoilInfo] lastSimulatedModels:', this.lastSimulatedModels);
-                console.log('[CoilInfo] modelsString != lastSimulatedModels:', modelsString != this.lastSimulatedModels);
 
                 if (this.masStore.mas.magnetic.coil.turnsDescription != null && (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels)) {
 
-                    console.log('[CoilInfo] Cache check PASSED - calling taskQueueStore.simulate()');
                     this.taskQueueStore.simulate(this.masStore.mas, modelsData).then((mas) => {
-                        console.log('[CoilInfo] Simulation completed successfully');
-                        console.log('[CoilInfo] Winding losses:', mas.outputs[this.operatingPointIndex].windingLosses.windingLosses);
 
                         this.lastSimulatedInputs = inputsString;
                         this.lastSimulatedMagnetics = magneticsString;
@@ -266,10 +271,6 @@ export default {
                     });
                 }
                 else {
-                    console.log('[CoilInfo] Cache check FAILED - SKIPPING SIMULATION');
-                    console.log('[CoilInfo] inputs match:', inputsString == this.lastSimulatedInputs);
-                    console.log('[CoilInfo] magnetics match:', magneticsString == this.lastSimulatedMagnetics);
-                    console.log('[CoilInfo] models match:', modelsString == this.lastSimulatedModels);
                     this.dataUptoDate = true;
                     this.loading = false;
                 }

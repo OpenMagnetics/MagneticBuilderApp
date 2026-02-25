@@ -90,6 +90,11 @@ export default {
     watch: {
     },
     mounted () {
+        // Reset hashes on mount to force fresh plot when returning to builder
+        this.coilHash = "";
+        this.inputsHash = "";
+        this.imageUpToDate = false;
+
         this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "redraw") {
@@ -134,6 +139,13 @@ export default {
                     if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                         this.imageUpToDate = false;
                         this.tryPlot(false);
+                    }
+                }
+                // When builder is ready with an existing design, refresh the visualizer
+                if (name == "magneticBuilderReady") {
+                    if (this.masStore.mas.magnetic?.coil?.turnsDescription != null) {
+                        this.imageUpToDate = false;
+                        this.tryPlot(true);
                     }
                 }
             });

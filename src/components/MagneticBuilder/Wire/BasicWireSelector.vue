@@ -193,21 +193,19 @@ export default {
                     this.localData["numberConductors"] = wire.numberConductors;
                 }
                 else if (wire.type == "rectangular") {
-                    this.taskQueueStore.resolveDimensionWithTolerance(wire.conductingHeight).then((value) => {
-                        this.localData["rectangularConductingHeight"] = value;
-                    });
-                    this.taskQueueStore.resolveDimensionWithTolerance(wire.conductingWidth).then((value) => {
-                        this.localData["rectangularConductingWidth"] = value;
-                    });
+                    // Handle both dimension object and simple numeric value
+                    const heightValue = wire.conductingHeight?.nominal || wire.conductingHeight;
+                    const widthValue = wire.conductingWidth?.nominal || wire.conductingWidth;
+                    this.localData["rectangularConductingHeight"] = heightValue;
+                    this.localData["rectangularConductingWidth"] = widthValue;
                     this.localData["numberConductors"] = 1;
                 }
                 else if (wire.type == "foil") {
-                    if (this.masStore.mas.magnetic.coil.bobbin != "Dummy"){
-                        this.localData["foilConductingHeight"] = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height * 0.9 // hardcoded;
-                    }
-                    this.taskQueueStore.resolveDimensionWithTolerance(wire.conductingWidth).then((value) => {
-                        this.localData["foilConductingWidth"] = value;
-                    });
+                    // Handle both dimension object and simple numeric value
+                    const heightValue = wire.conductingHeight?.nominal || wire.conductingHeight;
+                    const widthValue = wire.conductingWidth?.nominal || wire.conductingWidth;
+                    this.localData["foilConductingHeight"] = heightValue;
+                    this.localData["foilConductingWidth"] = widthValue;
                     this.localData["numberConductors"] = 1;
                 }
                 this.taskQueueStore.getWireCoatingLabel(wire).then((coatingLabel) => {
@@ -220,9 +218,9 @@ export default {
             this.getWireDiameters();
             this.getWireCoatings();
         },
-        assignWire() {
+        async assignWire() {
             this.errorMessage = "";
-            this.taskQueueStore.createNewWire(this.localData, this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
+            return await this.taskQueueStore.createNewWire(this.localData, this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire);
         },
         getWireTypes() {
             this.taskQueueStore.getAvailableWires().then((wireTypes) => {
@@ -255,15 +253,15 @@ export default {
                 });
             }
         },
-        wireStandardUpdated() {
+        async wireStandardUpdated() {
             this.getWireDiameters();
-            this.assignWire();
+            await this.assignWire();
         },
-        wireCoatingUpdated() {
-            this.assignWire();
+        async wireCoatingUpdated() {
+            await this.assignWire();
         },
-        wireUpdated() {
-            this.assignWire();
+        async wireUpdated() {
+            await this.assignWire();
         },
         isAnyLitzLoaded() {
             return this.localData["litzStrandConductingDiameter"] != null
@@ -277,7 +275,7 @@ export default {
         isAnyFoilLoaded() {
             return this.localData["foilConductingWidth"] != null
         },
-        wireTypeUpdated() {
+        async wireTypeUpdated() {
             try {
 
                 this.getWireCoatings();
@@ -293,16 +291,32 @@ export default {
                         (newType == "rectangular" && !this.isAnyRectangularLoaded()) ||
                         (newType == "foil" && !this.isAnyFoilLoaded())) {
 
-                        this.taskQueueStore.calculateEquivalentWire(oldWire, newType, effectiveFrequency).then((wire) => {
+                        this.taskQueueStore.calculateEquivalentWire(oldWire, newType, effectiveFrequency).then(async (wire) => {
                             this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
                             this.assignLocalData(wire);
-                            this.assignWire();
+                            await this.assignWire();
                         });
 
                     }
-                    else {
-                        this.assignWire();
+                    else if (newType == "rectangular" || newType == "foil") {
+                        // For rectangular and foil, always trigger rewinding when type changes
+                        // even if dimensions are already filled
+                        const newWire = await this.assignWire();
+                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = newWire;
+                        this.cleanCoil();
+                        this.taskQueueStore.newWireCreated(true, newWire);
                     }
+                    else {
+                        await this.assignWire();
+                    }
+                }
+                else if (newType == "rectangular" || newType == "foil") {
+                    // For rectangular and foil, trigger rewinding even when wire is initially empty
+                    // This handles the case when manually setting up a new inductor
+                    const newWire = await this.assignWire();
+                    this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = newWire;
+                    this.cleanCoil();
+                    this.taskQueueStore.newWireCreated(true, newWire);
                 }
             }
             catch(e) {

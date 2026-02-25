@@ -16,7 +16,7 @@ import { VueWindowSizePlugin } from 'vue-window-size/plugin';
 import { useStyleStore } from '/src/stores/style'
 import { initWorker } from '/WebSharedComponents/assets/js/mkfRuntime'
 import VueLatex from 'vatex'
-import { checkAndClearOutdatedStores } from '/src/stores/storeVersioning'
+import { checkAndClearOutdatedStores, getVersionedWasmUrl } from '/src/stores/storeVersioning'
 
 // Monkey-patch Bootstrap Tooltip to fix _activeTrigger null errors
 const originalIsWithActiveTrigger = Tooltip.prototype._isWithActiveTrigger;
@@ -97,7 +97,7 @@ router.beforeEach((to, from, next) => {
                     // Initialize MKF in Web Worker
                     console.warn("Initializing MKF in Web Worker...")
                     // WASM files are in public/wasm folder, served at /wasm/ in production
-                    const wasmJsUrl = '/wasm/libMKF.wasm.js';
+                    const wasmJsUrl = getVersionedWasmUrl('/wasm/libMKF.wasm.js');
                     const mkf = await initWorker(wasmJsUrl);
                     app.config.globalProperties.$mkf = mkf;
 

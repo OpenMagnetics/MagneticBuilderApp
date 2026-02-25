@@ -246,10 +246,8 @@ export default {
                 }
                 if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated") {
                     if (args[0]) {
-                        // Clear old winding positions and re-wind with new bobbin
-                        this.masStore.mas.magnetic.coil.turnsDescription = null;
-                        this.masStore.mas.magnetic.coil.layersDescription = null;
-                        this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                        // Bobbin was already assigned by BasicCoreSelector
+                        // Just trigger rewinding if we have turns to wind
                         this.recentChange = true;
                         this.tryToWind();
                     }

@@ -105,7 +105,9 @@ export default {
     watch: {
         'operatingPointIndex': {
             handler(newValue, oldValue) {
-                this.taskQueueStore.processCore(this.masStore.mas.magnetic.core);
+                if (oldValue !== undefined) {
+                    this.taskQueueStore.processCore(this.masStore.mas.magnetic.core);
+                }
             },
           deep: true
         },
@@ -136,17 +138,25 @@ export default {
                             this.masStore.mas.magnetic.core = core;
                             this.changeMadeByUser = false;
                             this.masStore.mas.magnetic.manufacturerInfo = null;
-                        this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
-                                this.masStore.mas.magnetic.coil.bobbin = bobbin;
-                                // Restore bobbin thickness values after regeneration
-                                if (this.pendingBobbinThickness && bobbin?.processedDescription) {
-                                    if (this.pendingBobbinThickness.wallThickness !== undefined) {
-                                        bobbin.processedDescription.wallThickness = this.pendingBobbinThickness.wallThickness;
+                            const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
+                            this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
+                                // Only update if bobbin actually changed
+                                if (JSON.stringify(currentBobbin) !== JSON.stringify(bobbin)) {
+                                    this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                                    // Restore bobbin thickness values after regeneration
+                                    if (this.pendingBobbinThickness && bobbin?.processedDescription) {
+                                        if (this.pendingBobbinThickness.wallThickness !== undefined) {
+                                            bobbin.processedDescription.wallThickness = this.pendingBobbinThickness.wallThickness;
+                                        }
+                                        if (this.pendingBobbinThickness.columnThickness !== undefined) {
+                                            bobbin.processedDescription.columnThickness = this.pendingBobbinThickness.columnThickness;
+                                        }
+                                        this.pendingBobbinThickness = null;
                                     }
-                                    if (this.pendingBobbinThickness.columnThickness !== undefined) {
-                                        bobbin.processedDescription.columnThickness = this.pendingBobbinThickness.columnThickness;
-                                    }
-                                    this.pendingBobbinThickness = null;
+                                    // Clear coil data since bobbin changed
+                                    this.masStore.mas.magnetic.coil.turnsDescription = null;
+                                    this.masStore.mas.magnetic.coil.layersDescription = null;
+                                    this.masStore.mas.magnetic.coil.sectionsDescription = null;
                                 }
                                 // Note: BasicCoilSelector listens for bobbinFromCoreShapeGenerated 
                                 // and will automatically trigger rewinding
@@ -177,11 +187,19 @@ export default {
                                 this.changeMadeByUser = false;
                                 // Only generate bobbin if material is set (backend requires it)
                                 if (mas.magnetic.core.functionalDescription?.material) {
+                                    const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
                                     this.taskQueueStore.generateBobbinFromCoreShape(
                                         mas.magnetic.core,
                                         this.masStore.mas.inputs.designRequirements.wiringTechnology
                                     ).then((bobbin) => {
-                                        this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                                        // Only update if bobbin actually changed
+                                        if (JSON.stringify(currentBobbin) !== JSON.stringify(bobbin)) {
+                                            this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                                            // Clear coil data since bobbin changed
+                                            this.masStore.mas.magnetic.coil.turnsDescription = null;
+                                            this.masStore.mas.magnetic.coil.layersDescription = null;
+                                            this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                                        }
                                     });
                                 }
                             }
@@ -268,9 +286,6 @@ export default {
             this.shapeUpdated(name);
         },
         async shapeUpdated(value) {
-            console.warn("value")
-            console.warn(value)
-            console.warn(value)
             if (value.startsWith("Custom")) {
                 const mas = deepCopy(this.masStore.mas);
                 this.taskQueueStore.checkAndFixMas(mas);
@@ -392,6 +407,7 @@ export default {
                 .catch(error => {
                     console.error(error)
                     this.errorMessage = "No core can be advised. You are on your own."
+                    this.loading = false;
                     setTimeout(() => {this.errorMessage = ""}, 10000);
                 });
             }
@@ -440,7 +456,6 @@ export default {
                     :masStore="masStore"
                     @update="coreShapeUpdated"
                 />
-
             <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreMaterialManufacturer"
                 v-if="localData.shape != '' && localData.shapeFamily != null && !loading"

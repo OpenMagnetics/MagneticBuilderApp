@@ -90,6 +90,11 @@ export default {
                         this.imageUpToDate = false;
                     }
                 }
+                // When builder is ready with an existing design, refresh the 3D visualizer
+                if (name == "magneticBuilderReady") {
+                    this.forceUpdateCore3DVisualizer += 1;
+                    this.imageUpToDate = true;
+                }
             });
         }))
 

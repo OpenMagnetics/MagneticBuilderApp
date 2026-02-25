@@ -34,6 +34,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         task_standard_response_delay: 20
     }),
     actions: {
+        // Called when the magnetic builder mounts with an existing complete design
+        // This allows components to subscribe and refresh their visualizations/simulations
+        magneticBuilderReady(magnetic) {
+        },
+
         masCheckedAndFixed(success = true, dataOrMessage = '') {
         },
 
@@ -414,8 +419,6 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 }
 
                 {
-                    console.log('[TaskQueue] ABOUT TO CALL WASM calculate_core_losses');
-                    console.log('[TaskQueue] modelsData:', modelsData);
                     const result = await mkf.calculate_core_losses(JSON.stringify(magnetic.core), JSON.stringify(magnetic.coil), JSON.stringify(inputs), JSON.stringify(modelsData), operatingPointIndex);
                     if (result.startsWith("Exception")) {
                         return null;
@@ -571,6 +574,9 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 const magnetic = data[0].mas.magnetic;
                 setTimeout(() => {this.coreAdvised(true, magnetic);}, this.task_standard_response_delay);
                 return magnetic;
+            }
+            else {
+                throw new Error("No suitable core found for the given requirements");
             }
         },
 
@@ -911,13 +917,17 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 wire.conductingHeight.nominal = newWireDataDict["rectangularConductingHeight"];
                 wire.conductingWidth.nominal = newWireDataDict["rectangularConductingWidth"];
                 wire.numberConductors = 1;
+                
+                // Always set outerHeight and outerWidth for rectangular wires
+                // If coating exists, calculate with coating thickness, otherwise default to conducting dimensions
+                if (wire.outerHeight == null) {
+                    wire.outerHeight = {};
+                }
+                if (wire.outerWidth == null) {
+                    wire.outerWidth = {};
+                }
+                
                 if (coating != null) {
-                    if (wire.outerHeight == null) {
-                        wire.outerHeight = {};
-                    }
-                    if (wire.outerWidth == null) {
-                        wire.outerWidth = {};
-                    }
                     const grade = coating.grade || 1;
                     if (coating.type != "bare" || coating.type != "enamelled") {
                         coating.type = "enamelled"
@@ -925,6 +935,10 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     }
                     wire.outerHeight.nominal = await mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], grade, wire.standard);
                     wire.outerWidth.nominal = await mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], grade, wire.standard);
+                } else {
+                    // Default to conducting dimensions if no coating
+                    wire.outerHeight.nominal = newWireDataDict["rectangularConductingHeight"];
+                    wire.outerWidth.nominal = newWireDataDict["rectangularConductingWidth"];
                 }
             }
             else if (newWireDataDict["type"] == "foil") {
@@ -938,16 +952,17 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 wire.conductingHeight.nominal = newWireDataDict["foilConductingHeight"];
                 wire.conductingWidth.nominal = newWireDataDict["foilConductingWidth"];
                 wire.numberConductors = 1;
-                if (coating != null) {
-                    if (wire.outerHeight == null) {
-                        wire.outerHeight = {};
-                    }
-                    if (wire.outerWidth == null) {
-                        wire.outerWidth = {};
-                    }
-                    wire.outerHeight.nominal = wire.conductingHeight.nominal;
-                    wire.outerWidth.nominal = wire.conductingWidth.nominal;
+                
+                // Always set outerHeight and outerWidth for foil wires
+                // Default to conducting dimensions
+                if (wire.outerHeight == null) {
+                    wire.outerHeight = {};
                 }
+                if (wire.outerWidth == null) {
+                    wire.outerWidth = {};
+                }
+                wire.outerHeight.nominal = wire.conductingHeight.nominal;
+                wire.outerWidth.nominal = wire.conductingWidth.nominal;
             }
 
             wire.coating = coating;
@@ -1141,9 +1156,6 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const magneticsString = JSON.stringify(mas.magnetic);
             const modelsString = JSON.stringify(modelsData);
 
-            console.log('[TaskQueue] ABOUT TO CALL WASM SIMULATE');
-            console.log('[TaskQueue] modelsData:', modelsData);
-            console.log('[TaskQueue] modelsString:', modelsString);
             const result = await mkf.simulate(inputsString, magneticsString, modelsString);
 
             if (result.startsWith("Exception")) {
