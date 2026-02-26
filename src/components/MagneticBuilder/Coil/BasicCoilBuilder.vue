@@ -191,6 +191,17 @@ export default {
         showParasiticsView() {
             this.$stateStore.magneticBuilder.mode.coil = this.$stateStore.MagneticBuilderModes.Advanced;
         },
+        toggleTemperaturePlot() {
+            // Toggle between basic and temperature field plot modes
+            const currentMode = this.$stateStore.magnetic2DVisualizerState.plotMode;
+            if (currentMode === 'temperature_field') {
+                this.$stateStore.magnetic2DVisualizerState.plotMode = 'basic';
+            } else {
+                this.$stateStore.magnetic2DVisualizerState.plotMode = 'temperature_field';
+            }
+            // Force redraw by updating forceUpdate
+            this.forceUpdate += 1;
+        },
     }
 }
 </script>
@@ -240,6 +251,18 @@ export default {
                     @click="showParasiticsView"
                 >
                     {{'Open Advanced Parasitics Section'}}
+                </button>
+
+                <button
+                    v-if="enableSimulation && useVisualizers"
+                    :style="$styleStore.magneticBuilder.showAlignmentOptionsButton"
+                    :disabled="masStore.mas.magnetic == null || masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''"
+                    :data-cy="dataTestLabel + '-Coil-ToggleTemperaturePlot-button'"
+                    class="btn mx-auto d-block mb-3 mt-0"
+                    :class="$stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'btn-success' : 'btn-primary'"
+                    @click="toggleTemperaturePlot"
+                >
+                    {{ $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'Hide Temperature Plot' : 'Show Temperature Plot' }}
                 </button>
 
                 <div class="row">
