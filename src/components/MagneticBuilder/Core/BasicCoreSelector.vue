@@ -427,11 +427,11 @@ export default {
 
 <template>
     <div class="container">
-        <div class="card bg-dark border-0 shadow-lg">
-            <div class="card-header border-bottom border-secondary px-3 py-2">
+        <div class="card border-0 shadow-lg" :style="{ background: $styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a' }">
+            <div class="card-header border-bottom px-3 py-2" :style="{ borderColor: $styleStore.magneticBuilder.main['border-color'] || 'var(--bs-border-color)' }">
                 <div class="d-flex align-items-center">
                     <i class="fa-solid fa-cube text-primary me-2"></i>
-                    <h6 class="card-title mb-0 text-white">Core Configuration</h6>
+                    <h6 class="card-title mb-0" :style="{ color: $styleStore.magneticBuilder.main['color'] }">Core Configuration</h6>
                 </div>
             </div>
             <div class="card-body px-3 py-2">
@@ -449,7 +449,7 @@ export default {
                         :showTurns="true"
                         :showBobbin="true"
                         :loadingGif="$settingsStore.loadingGif"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
                     />
                 </div>
                 <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">

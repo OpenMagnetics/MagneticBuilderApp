@@ -211,11 +211,11 @@ export default {
     <h5 v-if="masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''" class="text-danger my-2">Select a core first</h5>
     <h5 v-if="missingWires" class="text-danger my-2">Select wires</h5>
     <div v-if="!missingWires && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''" class="container">
-        <div class="card bg-dark border-0 shadow-lg">
-            <div class="card-header border-bottom border-secondary px-3 py-2">
+        <div class="card border-0 shadow-lg" :style="{ background: $styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a' }">
+            <div class="card-header border-bottom px-3 py-2" :style="{ borderColor: $styleStore.magneticBuilder.main['border-color'] || 'var(--bs-border-color)' }">
                 <div class="d-flex align-items-center">
                     <i class="fa-solid fa-circle-notch text-primary me-2"></i>
-                    <h6 class="card-title mb-0 text-white">Coil Configuration</h6>
+                    <h6 class="card-title mb-0" :style="{ color: $styleStore.magneticBuilder.main['color'] }">Coil Configuration</h6>
                 </div>
             </div>
             <div class="card-body px-3 py-2">
@@ -234,7 +234,7 @@ export default {
                         :coilFits="true"
                         :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
                         :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
                         :textColor="$styleStore.magneticBuilder.inputTextColor?.color || '#ffffff'"
                         :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
                         @plotModeChange="plotModeChange"
