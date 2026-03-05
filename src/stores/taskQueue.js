@@ -1094,6 +1094,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 const masWithCoil = JSON.parse(resultMasWithCoil);
+                console.warn("masWithCoil")
+                console.warn(deepCopy(masWithCoil))
                 setTimeout(() => {this.allWiresAdvised(true, masWithCoil.magnetic.coil);}, this.task_standard_response_delay);
                 return masWithCoil.magnetic.coil;
             }

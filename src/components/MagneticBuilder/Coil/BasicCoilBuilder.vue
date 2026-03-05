@@ -135,6 +135,7 @@ export default {
                         console.error(args[1])
                     }
                 }
+
                 if (name == "newWireCreated") {
                     if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                         this.imageUpToDate = false;
@@ -234,6 +235,7 @@ export default {
                         :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
                         :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor?.color || '#ffffff'"
                         :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
                         @plotModeChange="plotModeChange"
                         @swapIncludeFringing="swapIncludeFringing"

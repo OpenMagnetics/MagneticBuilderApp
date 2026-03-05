@@ -100,7 +100,7 @@ export default {
         fitsOuterDimensionsHeight() {
             if (this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
                 if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height != null) {
-                    if (this.outerDimensions[0] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height) {
+                    if (this.outerDimensions[1] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height) {
                         return true;
                     }
                     else {
@@ -185,6 +185,15 @@ export default {
                     }
                     else {
                         console.error(args[1])
+                    }
+                }
+                // Recalculate wire data when number of parallels changes
+                if (name == "numberTurnsUpdated") {
+                    if (args[0]) {
+                        this.dataUptoDate = false;
+                        if (this.enableAutoSimulation) {
+                            this.calculateWireData();
+                        }
                     }
                 }
             });

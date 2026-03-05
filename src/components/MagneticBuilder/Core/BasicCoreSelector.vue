@@ -139,20 +139,23 @@ export default {
                             this.changeMadeByUser = false;
                             this.masStore.mas.magnetic.manufacturerInfo = null;
                             const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
-                            this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
+                            // Use custom thickness if available, otherwise use default
+                            const hasCustomThickness = this.pendingBobbinThickness && 
+                                (this.pendingBobbinThickness.wallThickness !== undefined || this.pendingBobbinThickness.columnThickness !== undefined);
+                            
+                            const generateBobbinPromise = hasCustomThickness
+                                ? this.taskQueueStore.generateBobbinDifferentThicknesses(
+                                    core, 
+                                    this.pendingBobbinThickness.wallThickness, 
+                                    this.pendingBobbinThickness.columnThickness
+                                  )
+                                : this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
+                            
+                            generateBobbinPromise.then((bobbin) => {
                                 // Only update if bobbin actually changed
                                 if (JSON.stringify(currentBobbin) !== JSON.stringify(bobbin)) {
                                     this.masStore.mas.magnetic.coil.bobbin = bobbin;
-                                    // Restore bobbin thickness values after regeneration
-                                    if (this.pendingBobbinThickness && bobbin?.processedDescription) {
-                                        if (this.pendingBobbinThickness.wallThickness !== undefined) {
-                                            bobbin.processedDescription.wallThickness = this.pendingBobbinThickness.wallThickness;
-                                        }
-                                        if (this.pendingBobbinThickness.columnThickness !== undefined) {
-                                            bobbin.processedDescription.columnThickness = this.pendingBobbinThickness.columnThickness;
-                                        }
-                                        this.pendingBobbinThickness = null;
-                                    }
+                                    this.pendingBobbinThickness = null;
                                     // Clear coil data since bobbin changed
                                     this.masStore.mas.magnetic.coil.turnsDescription = null;
                                     this.masStore.mas.magnetic.coil.layersDescription = null;

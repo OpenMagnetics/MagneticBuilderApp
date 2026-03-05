@@ -209,6 +209,31 @@ export default {
                     this.tryToWind();
                     this.assignLocalData(this.masStore.mas.magnetic);
                 }
+                if (action.name == "resetMas") {
+                    // Reset localData to defaults based on application type
+                    if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+                        this.localData.sectionsOrientation = "contiguous";
+                        this.localData.sectionsAlignment = "spread";
+                        this.localData.dataPerSection = [{
+                            layersOrientation: "overlapping",
+                            turnsAlignment: "centered",
+                            topOrLeftMargin: 0,
+                            bottomOrRightMargin: 0,
+                        }];
+                    }
+                    else {
+                        this.localData.sectionsOrientation = "overlapping";
+                        this.localData.sectionsAlignment = "inner or top";
+                        this.localData.dataPerSection = [{
+                            layersOrientation: "overlapping",
+                            turnsAlignment: "spread",
+                            topOrLeftMargin: 0,
+                            bottomOrRightMargin: 0,
+                        }];
+                    }
+                    this.resetProportionPerWinding(this.localData);
+                    this.assignLocalData(this.masStore.mas.magnetic);
+                }
             });
         }));
 
@@ -236,7 +261,9 @@ export default {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "numberTurnsUpdated" || name == "newWireCreated") {
+                    console.log(`[BasicCoilSelector] Received action: ${name}, args:`, args);
                     if (args[0]) {
+                        console.log('[BasicCoilSelector] Setting recentChange=true and calling tryToWind()');
                         this.recentChange = true;
                         this.tryToWind();
                     }
@@ -244,10 +271,12 @@ export default {
                         console.error(args[1])
                     }
                 }
-                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated") {
+                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated" || name == "coreProcessed") {
                     if (args[0]) {
                         // Bobbin was already assigned by BasicCoreSelector
-                        // Just trigger rewinding if we have turns to wind
+                        // Apply current coil configuration settings to the new bobbin
+                        // This ensures user's selected options (like sectionsOrientation) are preserved
+                        this.assignCoilData();
                         this.recentChange = true;
                         this.tryToWind();
                     }
@@ -370,6 +399,14 @@ export default {
             
             const newMagneticCoilHash = generateHash(JSON.stringify(coilWithMargins));
             const newInputsCoilHash = generateHash(JSON.stringify(inputCoilWithMargins));
+
+            console.log('[BasicCoilSelector.wind()] Hash check:', {
+                oldMagnetic: this.oldMagneticCoilHash,
+                newMagnetic: newMagneticCoilHash,
+                oldInputs: this.oldInputsCoilHash,
+                newInputs: newInputsCoilHash,
+                functionalDescription: inputCoil.functionalDescription?.map(fd => ({name: fd.name, numberParallels: fd.numberParallels, numberTurns: fd.numberTurns}))
+            });
 
             if (this.oldMagneticCoilHash != newMagneticCoilHash || this.oldInputsCoilHash != newInputsCoilHash) {
                 this.oldMagneticCoilHash = newMagneticCoilHash;

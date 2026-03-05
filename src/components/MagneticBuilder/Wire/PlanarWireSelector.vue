@@ -182,10 +182,14 @@ export default {
 
                     this.taskQueueStore.adviseAllWires(this.masStore.mas)
                     .then((coil) => {
+                        console.log('[mierdaFront] adviseAllWires returned coil:', JSON.stringify(coil, null, 2));
+                        console.log('[mierdaFront] coil.layersDescription:', coil?.layersDescription);
+                        console.log('[mierdaFront] coil.turnsDescription:', coil?.turnsDescription);
+                        console.log('[mierdaFront] coil.sectionsDescription:', coil?.sectionsDescription);
                         this.errorMessage = "";
                         this.masStore.mas.magnetic.coil = coil;
                         this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
-                        this.cleanCoil();
+                        // Don't clean coil here - the advised coil already has valid layers/turns
                         this.$emit("wireUpdated", this.windingIndex);
 
                         this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
@@ -213,7 +217,7 @@ export default {
                         this.errorMessage = "";
                         this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
                         this.assignLocalData(winding.wire);
-                        this.cleanCoil();
+                        // Don't clean coil here - the advised winding already has valid layers/turns
                         this.$emit("wireUpdated", this.windingIndex);
 
                         this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;

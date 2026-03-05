@@ -856,6 +856,8 @@ export default {
                     this.lastSimulatedMagnetics = magneticsString;
                     this.lastSimulatedModels = modelsString;
                     this.lastSimulatedFrequency = frequencyString;
+                    // Clear pending simulation models so subsequent changes use store values
+                    this.$stateStore.pendingSimulationModels = null;
                     console.log('[AdvancedCoilInfo] Cache updated with new models');
                 }
             } catch (e) {

@@ -6,6 +6,7 @@ import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import CoilInfo from './CoilInfo.vue'
 import BasicCoilFillingFactors from './BasicCoilFillingFactors.vue'
 import PlanarInsulationSelector from './PlanarInsulationSelector.vue'
+import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
@@ -63,8 +64,10 @@ export default {
             insulationThicknessPerLayer: {},
             clearancePerWinding: {},
             coreToLayerDistance: 0.0001,
-            borderToWireDistance: 0.0001
+            borderToWireDistance: 0.0001,
+            sectionsAlignment: "centered"
         }
+        const coilAlignments = {};
 
         return {
             taskQueueStore,
@@ -77,6 +80,7 @@ export default {
             recentChange,
             tryingToSend,
             subscriptions,
+            coilAlignments,
         }
     },
     computed: {
@@ -114,6 +118,15 @@ export default {
                     this.getStackUp(this.masStore.mas.magnetic.coil);
                     this.tryToWind();
                 }
+                if (name == "resetMas") {
+                    // Reset localData to defaults
+                    this.localData.stackUp = "";
+                    this.localData.insulationThicknessPerLayer = {};
+                    this.localData.clearancePerWinding = {};
+                    this.localData.coreToLayerDistance = 0.0001;
+                    this.localData.borderToWireDistance = 0.0001;
+                    this.localData.sectionsAlignment = "centered";
+                }
             });
         }))
 
@@ -128,9 +141,26 @@ export default {
                         console.error(args[1])
                     }
                 }
+                if (name == "allWiresAdvised") {
+                    console.log('[PlanarCoilSelector] allWiresAdvised triggered, current stackUp:', this.localData.stackUp);
+                    if (args[0]) {
+                        const advisedCoil = args[1];
+                        console.log('[PlanarCoilSelector] Advised coil has layersDescription:', advisedCoil?.layersDescription?.length || 'null/undefined');
+                        console.log('[PlanarCoilSelector] Current masStore coil layersDescription:', this.masStore.mas.magnetic.coil?.layersDescription?.length || 'null/undefined');
+                        // The coil will be wound after this, so we need to wait for newWireCreated
+                    }
+                }
+                if (name == "newWireCreated") {
+                    console.log('[PlanarCoilSelector] newWireCreated triggered, success:', args[0]);
+                    if (args[0]) {
+                        console.log('[PlanarCoilSelector] After newWireCreated, masStore coil layersDescription:', this.masStore.mas.magnetic.coil?.layersDescription?.length || 'null/undefined');
+                        console.log('[PlanarCoilSelector] Current localData.stackUp:', this.localData.stackUp);
+                    }
+                }
             });
         }))
 
+        this.getCoilAlignments();
     },
     beforeUnmount () {
         this.subscriptions.forEach((subscription) => {subscription();})
@@ -146,6 +176,7 @@ export default {
             return foundWindingIndex;
         },
         getStackUp(coil) {
+            console.log('[PlanarCoilSelector] getStackUp called, sectionsDescription:', coil?.sectionsDescription?.length || 'null');
             if (coil.sectionsDescription != null) {
                 this.localData.pattern = "";
                 coil.sectionsDescription.forEach((section) => {
@@ -154,7 +185,16 @@ export default {
                         this.localData.pattern += String(windingIndex + 1)
                     }
                 })
+                console.log('[PlanarCoilSelector] Generated pattern:', this.localData.pattern);
             }
+        },
+        getCoilAlignments() {
+            this.taskQueueStore.getAvailableCoilAlignments().then((coilAlignments) => {
+                this.coilAlignments = coilAlignments;
+            })
+            .catch(error => {
+                console.error(error);
+            });
         },
         wind() {
             this.$emit("fits", true);
@@ -170,6 +210,26 @@ export default {
                     });
 
                     this.taskQueueStore.generateBobbinFromCoreShape(this.masStore.mas.magnetic.core, "Printed").then((bobbin) => {
+                        // Set sectionsAlignment from localData FIRST (user's current selection takes priority)
+                        if (bobbin?.processedDescription?.windingWindows != null && this.localData.sectionsAlignment != null) {
+                            bobbin.processedDescription.windingWindows.forEach((window) => {
+                                window.sectionsAlignment = this.localData.sectionsAlignment;
+                            });
+                        }
+                        
+                        // Preserve other windingWindows settings from original bobbin (only if not set in localData)
+                        const originalWindingWindows = this.masStore.mas.magnetic.coil.bobbin?.processedDescription?.windingWindows;
+                        if (originalWindingWindows != null && bobbin?.processedDescription?.windingWindows != null) {
+                            bobbin.processedDescription.windingWindows.forEach((window, index) => {
+                                if (originalWindingWindows[index] != null) {
+                                    // Only preserve sectionsOrientation, not sectionsAlignment (which comes from localData)
+                                    if (originalWindingWindows[index].sectionsOrientation != null && window.sectionsOrientation == null) {
+                                        window.sectionsOrientation = originalWindingWindows[index].sectionsOrientation;
+                                    }
+                                }
+                            });
+                        }
+                        
                         inputCoil.bobbin = bobbin;
 
                         this.taskQueueStore.windPlanar(inputCoil, stackUp, this.localData.borderToWireDistance, this.localData.clearancePerWinding, this.localData.insulationThicknessPerLayer, this.localData.coreToLayerDistance)
@@ -213,7 +273,16 @@ export default {
                         this.tryToWind()
                     }
                     else {
-                        this.wind();
+                        // Check if coil already has layers (from adviser) - if so, skip rewinding
+                        if (this.masStore.mas.magnetic.coil?.layersDescription != null && 
+                            this.masStore.mas.magnetic.coil.layersDescription.length > 0) {
+                            console.log('[PlanarCoilSelector] Coil already has layers, skipping re-wind');
+                            this.assignLocalData(this.masStore.mas.magnetic);
+                            this.tryingToSend = false;
+                        }
+                        else {
+                            this.wind();
+                        }
                     }
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
@@ -230,9 +299,9 @@ export default {
             return windingIndex;
         },
         assignLocalData(magnetic) {
+            console.log('[PlanarCoilSelector] assignLocalData called, layersDescription:', this.masStore.mas.magnetic.coil?.layersDescription?.length || 'null');
             if (!this.blockingRebounds) {
                 try {
-
                     if (this.masStore.mas.magnetic.coil.layersDescription != null) {
                         let stackUp = "";
                         this.localData.coreToLayerDistance = (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].width - this.masStore.mas.magnetic.coil.layersDescription[0].dimensions[0]) / 2;
@@ -272,6 +341,7 @@ export default {
 
 
                         this.localData.stackUp = stackUp;
+                        console.log('[PlanarCoilSelector] Generated stackUp:', stackUp);
                         this.extractInsulationThicknessPerLayer();
                     }
                     else if (this.localData.stackUp == "") {
@@ -351,6 +421,27 @@ export default {
                 :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="stackUpUpdated"
+            />
+            <ElementFromList
+                v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
+                v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 0"
+                :disabled="readOnly"
+                class="col-12 mb-1 text-start ps-4"
+                :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
+                :name="'sectionsAlignment'"
+                :replaceTitle="'Section Alignment'"
+                :titleSameRow="true"
+                :justifyContent="true"
+                v-model="localData"
+                :options="coilAlignments"
+                :labelWidthProportionClass="'col-5'"
+                :selectStyleClass="'col-5'"
+                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                :textColor="$styleStore.magneticBuilder.inputTextColor"
+                @update="coilUpdated"
             />
         </div>
 

@@ -167,7 +167,7 @@ export const useStateStore = defineStore("state", () => {
 
     function updatedSignals() {};
 
-    function initializeOperatingPoints(temperature=100) {
+    function initializeOperatingPoints(temperature=25) {
 
         const masStore = useMasStore();
 

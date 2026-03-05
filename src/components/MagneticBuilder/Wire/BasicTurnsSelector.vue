@@ -143,12 +143,21 @@ export default {
             this.forceUpdate += 1;
         },
         assignTurns() {
+            console.log('[BasicTurnsSelector] assignTurns() called', {
+                windingIndex: this.windingIndex,
+                numberTurns: this.localData["numberTurns"],
+                numberParallels: this.localData["numberParallels"],
+                blockingRebounds: this.blockingRebounds
+            });
             if (!this.blockingRebounds) {
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberTurns = this.localData["numberTurns"];
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberParallels = this.localData["numberParallels"];
+                console.log('[BasicTurnsSelector] Updated store functionalDescription:', 
+                    this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]);
             }
             this.tryingToAssign = false;
             this.$emit("turnsUpdated", this.windingIndex);
+            console.log('[BasicTurnsSelector] Calling taskQueueStore.numberTurnsUpdated(true)');
             this.taskQueueStore.numberTurnsUpdated(true);
         },
         turnsUpdated() {

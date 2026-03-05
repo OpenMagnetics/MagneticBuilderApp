@@ -125,6 +125,7 @@ export default {
                     else {
                         console.error(args[1]);
                     }
+                    this.loading = false;
                 }
                 if (name == "allCoresFromShapesProcessed") {
                     if (args[0]) {
@@ -219,6 +220,7 @@ export default {
             this.taskQueueStore.processCoreFromShape(shapeName)
         },
         getShapeNames() {
+            this.loading = true;
             this.taskQueueStore.getCoreShapes(this.masStore.mas, this.onlyManufacturer);
         },
         loadCore() {
