@@ -340,8 +340,24 @@ export default {
                         })
 
 
-                        this.localData.stackUp = stackUp;
-                        console.log('[PlanarCoilSelector] Generated stackUp:', stackUp);
+                        // Only update stackUp from layers if user hasn't set a custom value
+                        // Check if current stackUp is empty or has the same length as generated
+                        // If different, user likely customized it - preserve their input
+                        const userStackUpLength = this.localData.stackUp ? this.localData.stackUp.length : 0;
+                        const generatedStackUpLength = stackUp.length;
+                        
+                        if (this.localData.stackUp === "" || userStackUpLength === generatedStackUpLength) {
+                            // Either empty or same layer count - safe to update
+                            // But if same length and values are different, preserve user's input
+                            if (this.localData.stackUp !== "" && this.localData.stackUp !== stackUp) {
+                                console.log('[PlanarCoilSelector] Preserving user stackUp:', this.localData.stackUp, 'instead of generated:', stackUp);
+                            } else {
+                                this.localData.stackUp = stackUp;
+                                console.log('[PlanarCoilSelector] Set stackUp from layers:', stackUp);
+                            }
+                        } else {
+                            console.log('[PlanarCoilSelector] Preserving user stackUp:', this.localData.stackUp, '(length:', userStackUpLength, ') vs generated length:', generatedStackUpLength);
+                        }
                         this.extractInsulationThicknessPerLayer();
                     }
                     else if (this.localData.stackUp == "") {
@@ -380,6 +396,11 @@ export default {
             this.localData.insulationThicknessPerLayer = insulationThicknessPerLayer;
         },
         stackUpUpdated() {
+            // Clear existing coil layers to force re-wind with new stackUp
+            this.masStore.mas.magnetic.coil.layersDescription = null;
+            this.masStore.mas.magnetic.coil.turnsDescription = null;
+            this.masStore.mas.magnetic.coil.sectionsDescription = null;
+            console.log('[PlanarCoilSelector] StackUp updated, cleared coil layers to force re-wind');
             this.extractInsulationThicknessPerLayer();
             this.coilUpdated();
         },

@@ -1299,6 +1299,25 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             return planarThicknesses;
         },
 
+        planarWireByStandardNameGotten(success = true, dataOrMessage = '') {
+        },
+
+        async getPlanarWireByStandardName(standardName) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.get_planar_wire_by_standard_name(standardName);
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.planarWireByStandardNameGotten(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const wire = JSON.parse(result);
+                setTimeout(() => {this.planarWireByStandardNameGotten(true, wire);}, this.task_standard_response_delay);
+                return wire;
+            }
+        },
+
         fillingFactorsCalculated(success = true, dataOrMessage = '') {
         },
 

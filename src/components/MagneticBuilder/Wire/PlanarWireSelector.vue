@@ -126,7 +126,11 @@ export default {
                 wire = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire;
             }
 
-            this.taskQueueStore.getWireDataByStandardName(this.localData["wireThickness"]).then((wire) => {
+            this.taskQueueStore.getPlanarWireByStandardName(this.localData["wireThickness"]).then((wire) => {
+                if (!wire || !wire.conductingHeight || !wire.conductingHeight.nominal) {
+                    console.warn(`[PlanarWireSelector] Invalid wire data returned for thickness: "${this.localData["wireThickness"]}"`);
+                    return;
+                }
                 wire.conductingWidth = {};
                 wire.conductingWidth.nominal = this.localData["wireWidth"];
                 wire.outerWidth = {};
