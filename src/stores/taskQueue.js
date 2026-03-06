@@ -560,6 +560,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             await mkf.set_settings(JSON.stringify(settings));
 
+            console.log('[DEBUG MagneticBuilder adviseCore] adviserSettings.coreAdviseMode:', adviserSettings.coreAdviseMode);
+            console.log('[DEBUG MagneticBuilder adviseCore] adviserSettings:', adviserSettings);
             const result = await mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, adviserSettings.coreAdviseMode);
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.coreAdvised(false, result);}, this.task_standard_response_delay);
