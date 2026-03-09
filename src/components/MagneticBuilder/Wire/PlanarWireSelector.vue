@@ -294,6 +294,7 @@ export default {
                 :name="'wireWidth'"
                 :replaceTitle="'Cond. Width'"
                 :unit="'m'"
+                :defaultZeroUnit="0.001"
                 :dataTestLabel="dataTestLabel + '-WirWidth'"
                 :min="1e-9"
                 :max="0.1"

@@ -335,6 +335,9 @@ export const useStyleStore = defineStore("style", () => {
         removeElementButtonColor: {
             "color": theme["danger"],
         },
+        visualizerButtonColor: {
+            "color": theme["white"],
+        },
     });
 
     const controlPanel = ref({

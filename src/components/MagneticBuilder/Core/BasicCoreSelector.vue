@@ -471,6 +471,7 @@ export default {
                         :showCore="true"
                         :showTurns="true"
                         :showBobbin="true"
+                        :buttonColor="$styleStore.magneticBuilder.visualizerButtonColor?.color || 'white'"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
                     />
