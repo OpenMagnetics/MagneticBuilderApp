@@ -79,8 +79,8 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
-                bobbinWallThickness: 0,
-                bobbinColumnThickness: 0,
+                bobbinWallThickness: 0.001,
+                bobbinColumnThickness: 0.001,
                 fillingFactors: {
                     areaFillingFactor: 0,
                     overlappingFillingFactor: 0,
@@ -103,8 +103,8 @@ export default {
                 pattern: pattern,
                 repetitions: 1,
                 proportionPerWinding: [],
-                bobbinWallThickness: 0,
-                bobbinColumnThickness: 0,
+                bobbinWallThickness: 0.001,
+                bobbinColumnThickness: 0.001,
                 fillingFactors: {
                     areaFillingFactor: 0,
                     overlappingFillingFactor: 0,
@@ -261,9 +261,9 @@ export default {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "numberTurnsUpdated" || name == "newWireCreated") {
-                    console.log(`[BasicCoilSelector] Received action: ${name}, args:`, args);
-                    if (args[0]) {
-                        console.log('[BasicCoilSelector] Setting recentChange=true and calling tryToWind()');
+                    console.log('[DEBUG_COIL] Received action:', name, 'args[0]:', args[0], 'windingIndexChangeBlock:', this.taskQueueStore.windingIndexChangeBlock);
+                    if (args[0] && !this.taskQueueStore.windingIndexChangeBlock) {
+                        console.log('[DEBUG_COIL] Setting recentChange=true and calling tryToWind()');
                         this.recentChange = true;
                         this.tryToWind();
                     }
@@ -272,10 +272,12 @@ export default {
                     }
                 }
                 if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated" || name == "coreProcessed") {
+                    console.log('[DEBUG_COIL] Received action:', name, 'args[0]:', args[0]);
                     if (args[0]) {
                         // Bobbin was already assigned by BasicCoreSelector
-                        // Apply current coil configuration settings to the new bobbin
-                        // This ensures user's selected options (like sectionsOrientation) are preserved
+                        // First read bobbin data FROM masStore to update localData
+                        // Then apply current coil configuration settings to the new bobbin
+                        this.assignLocalData(this.masStore.mas.magnetic);
                         this.assignCoilData();
                         this.recentChange = true;
                         this.tryToWind();
@@ -400,13 +402,7 @@ export default {
             const newMagneticCoilHash = generateHash(JSON.stringify(coilWithMargins));
             const newInputsCoilHash = generateHash(JSON.stringify(inputCoilWithMargins));
 
-            console.log('[BasicCoilSelector.wind()] Hash check:', {
-                oldMagnetic: this.oldMagneticCoilHash,
-                newMagnetic: newMagneticCoilHash,
-                oldInputs: this.oldInputsCoilHash,
-                newInputs: newInputsCoilHash,
-                functionalDescription: inputCoil.functionalDescription?.map(fd => ({name: fd.name, numberParallels: fd.numberParallels, numberTurns: fd.numberTurns}))
-            });
+
 
             if (this.oldMagneticCoilHash != newMagneticCoilHash || this.oldInputsCoilHash != newInputsCoilHash) {
                 this.oldMagneticCoilHash = newMagneticCoilHash;
@@ -419,8 +415,9 @@ export default {
                         pattern.push(Number(char) - 1);
                     });
 
+                    console.log('[DEBUG_WIND] About to call wind()...');
                     this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins).then((coil) => {
-
+                        console.log('[DEBUG_WIND] wind() returned successfully');
                         
                         this.taskQueueStore.calculateFillingFactors(coil).then((fillingFactors) => {
                             this.localData.fillingFactors = fillingFactors;
@@ -430,18 +427,26 @@ export default {
                             this.$emit("fits", fits);
                         })
 
+                        // Preserve the bobbin from the existing coil before assigning the new coil
+                        // The wind() function returns a coil without bobbin data
+                        const existingBobbin = this.masStore.mas.magnetic.coil.bobbin;
+                        console.log('[DEBUG_WIND] Preserving bobbin:', existingBobbin);
                         this.masStore.mas.magnetic.coil = coil;
+                        this.masStore.mas.magnetic.coil.bobbin = existingBobbin;
+                        console.log('[DEBUG_WIND] Bobbin restored');
 
                         this.historyStore.addToHistory(this.masStore.mas);
                         this.tryingToSend = false;
                         this.historyStore.unblockAdditions();
+                        console.log('[DEBUG_WIND] Wind complete');
                     })
                     .catch(error => {
+                        console.error('[DEBUG_WIND] Error in wind():', error);
                         this.tryingToSend = false;
-                        console.error(error);
                     });
                 }
                 catch (e) {
+                    console.error('[DEBUG_WIND] Exception in wind try block:', e);
                     this.tryingToSend = false;
                     this.recentChange = true;
                     this.blockingRebounds = true;
@@ -451,6 +456,7 @@ export default {
                 }
             }
             else {
+                console.log('[DEBUG_WIND] Hashes unchanged, skipping wind');
                 this.tryingToSend = false;
             }
 
@@ -470,6 +476,29 @@ export default {
                     }
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
+            }
+        },
+        tryToWind() {
+            console.log('[DEBUG_COIL] tryToWind() called, tryingToSend:', this.tryingToSend);
+            if (!this.tryingToSend) {
+                this.recentChange = false
+                this.tryingToSend = true
+                console.log('[DEBUG_COIL] Starting timeout for wind...');
+                setTimeout(() => {
+                    console.log('[DEBUG_COIL] Timeout fired, recentChange:', this.recentChange);
+                    if (this.recentChange) {
+                        this.tryingToSend = false
+                        this.tryToWind()
+                    }
+                    else {
+                        console.log('[DEBUG_COIL] Calling wind()...');
+                        this.wind();
+                    }
+                }
+                , this.$settingsStore.waitingTimeAfterChange);
+            }
+            else {
+                console.log('[DEBUG_COIL] Already trying to send, skipping');
             }
         },
         assignLocalData(magnetic) {
@@ -634,6 +663,28 @@ export default {
         customizeCoil() {
         },
         bobbinUpdated(thickness) {
+            // Prevent regenerating bobbin with zero thickness values
+            if (this.localData.bobbinWallThickness <= 0 || this.localData.bobbinColumnThickness <= 0) {
+                console.warn('[BasicCoilSelector] Bobbin thickness must be greater than 0. Current values:', {
+                    wall: this.localData.bobbinWallThickness,
+                    column: this.localData.bobbinColumnThickness
+                });
+                return;
+            }
+
+            // Check if thickness actually changed from current bobbin to avoid infinite loop
+            const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
+            if (currentBobbin && currentBobbin !== "Dummy" && currentBobbin.processedDescription) {
+                const currentWall = currentBobbin.processedDescription.wallThickness;
+                const currentColumn = currentBobbin.processedDescription.columnThickness;
+                const newWall = this.localData.bobbinWallThickness;
+                const newColumn = this.localData.bobbinColumnThickness;
+                
+                if (Math.abs(currentWall - newWall) < 1e-9 && Math.abs(currentColumn - newColumn) < 1e-9) {
+                    console.log('[BasicCoilSelector] Bobbin thickness unchanged, skipping regeneration');
+                    return;
+                }
+            }
 
             this.taskQueueStore.generateBobbinDifferentThicknesses(this.masStore.mas.magnetic.core, this.localData.bobbinWallThickness, this.localData.bobbinColumnThickness).then((bobbin) => {
                 this.masStore.mas.magnetic.coil.bobbin = bobbin;

@@ -141,7 +141,7 @@ export default {
     },
     methods: {
         turnsUpdated(modifiedWindingIndex) {
-            if (!this.blockingRebounds) {
+            if (!this.blockingRebounds && !this.taskQueueStore.windingIndexChangeBlock) {
                 this.blockingRebounds = true;
                 if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
                     const tempCoilFunctionalDescription = deepCopy(this.masStore.mas.magnetic.coil.functionalDescription)
@@ -158,7 +158,7 @@ export default {
             }
         },
         wireUpdated(modifiedWindingIndex) {
-            if (!this.blockingRebounds) {
+            if (!this.blockingRebounds && !this.taskQueueStore.windingIndexChangeBlock) {
                 this.blockingRebounds = true;
                 if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
                     const tempCoilFunctionalDescription = deepCopy(this.masStore.mas.magnetic.coil.functionalDescription)
@@ -214,6 +214,7 @@ export default {
         },
         windingIndexChanged(windingIndex) {
             this.selectedWindingIndex = windingIndex;
+            this.taskQueueStore.setWindingIndexChangeBlock();
         },
         onPlotCurrentChange(event) {
             this.$stateStore.wire2DVisualizerState.plotCurrentDensity = event.target.value == '1';

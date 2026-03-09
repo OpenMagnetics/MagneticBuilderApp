@@ -122,7 +122,9 @@ export default {
             after(() => {
                 if (name == "wireProcessed") {
                     if (args[0]) {
-                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = args[1];
+                        if (!this.taskQueueStore.windingIndexChangeBlock) {
+                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = args[1];
+                        }
                     }
                     else {
                         console.error(args[1])
@@ -130,8 +132,8 @@ export default {
                 }
                 if (name == "newWireCreated") {
                     if (args[0]) {
-                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = args[1];
-                        if (!this.$stateStore.loadingDesign) {
+                        if (!this.$stateStore.loadingDesign && !this.taskQueueStore.windingIndexChangeBlock) {
+                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = args[1];
                             this.cleanCoil();
                             this.$emit("wireUpdated", this.windingIndex);
                         }
@@ -163,7 +165,7 @@ export default {
         },
         assignLocalData(wire) {
             this.errorMessage = "";
-            if (wire != "" && wire.type != null) {
+            if (wire && wire != "" && wire.type != null) {
 
                 this.localData["type"] = wire.type;
                 if (wire.standard != null) {
@@ -184,7 +186,9 @@ export default {
                 else if (wire.type == "litz") {
                     if (typeof(wire.strand) == 'string') {
                         this.taskQueueStore.getWireByName(wire.strand).then((wire) => {
-                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = wire;
+                            if (!this.taskQueueStore.windingIndexChangeBlock) {
+                                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = wire;
+                            }
                         });
                     }
 
@@ -303,8 +307,10 @@ export default {
                         // even if dimensions are already filled
                         const newWire = await this.assignWire();
                         this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = newWire;
-                        this.cleanCoil();
-                        this.taskQueueStore.newWireCreated(true, newWire);
+                        if (!this.taskQueueStore.windingIndexChangeBlock) {
+                            this.cleanCoil();
+                            this.taskQueueStore.newWireCreated(true, newWire);
+                        }
                     }
                     else {
                         await this.assignWire();
@@ -315,8 +321,10 @@ export default {
                     // This handles the case when manually setting up a new inductor
                     const newWire = await this.assignWire();
                     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = newWire;
-                    this.cleanCoil();
-                    this.taskQueueStore.newWireCreated(true, newWire);
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.cleanCoil();
+                        this.taskQueueStore.newWireCreated(true, newWire);
+                    }
                 }
             }
             catch(e) {
@@ -341,16 +349,23 @@ export default {
                 this.taskQueueStore.adviseAllWires(this.masStore.mas)
                 .then((coil) => {
                     this.errorMessage = "";
-                    this.masStore.mas.magnetic.coil.functionalDescription = coil.functionalDescription;
+                    
+                    // Always update UI (localData) regardless of block
                     this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
-                    this.cleanCoil();
-                    this.$emit("wireUpdated", this.windingIndex);
+                    
+                    // Only update coil and trigger actions if not blocked
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.masStore.mas.magnetic.coil.functionalDescription = coil.functionalDescription;
+                        this.cleanCoil();
+                        this.$emit("wireUpdated", this.windingIndex);
 
-                    this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
+                        this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
+
+                        // Trigger rewinding and resimulation
+                        this.taskQueueStore.newWireCreated(true, coil.functionalDescription[this.windingIndex].wire);
+                    }
+                    
                     setTimeout(() => this.loading = false, 100);
-
-                    // Trigger rewinding and resimulation
-                    this.taskQueueStore.newWireCreated(true, coil.functionalDescription[this.windingIndex].wire);
 
                 })
                 .catch(error => {
@@ -366,35 +381,57 @@ export default {
             }
         },
         adviseWire() {
+            console.log('[DEBUG_ADVISE_WIRE] adviseWire() START');
             if (this.masStore.mas.inputs.operatingPoints.length > 0) {
-
-                // this.taskQueueStore.checkAndFixMas(this.masStore.mas).then(() => {
-                // });
-
+                console.log('[DEBUG_ADVISE_WIRE] Calling taskQueueStore.adviseWire...');
                 this.taskQueueStore.adviseWire(this.masStore.mas, this.windingIndex)
-                .then((winding) => {
+                .then((result) => {
+                    console.log('[DEBUG_ADVISE_WIRE] adviseWire returned:', result);
+                    if (!result) {
+                        this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
+                        this.loading = false;
+                        setTimeout(() => {this.errorMessage = ""}, 10000);
+                        return;
+                    }
                     this.errorMessage = "";
-                    this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
+                    
+                    const winding = result.winding;
+                    
+                    // Always update UI (localData) regardless of block
+                    console.log('[DEBUG_ADVISE_WIRE] Updating localData...');
                     this.assignLocalData(winding.wire);
-                    this.cleanCoil();
-                    this.$emit("wireUpdated", this.windingIndex);
+                    
+                    // Only update coil and trigger actions if not blocked
+                    console.log('[DEBUG_ADVISE_WIRE] windingIndexChangeBlock:', this.taskQueueStore.windingIndexChangeBlock);
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        console.log('[DEBUG_ADVISE_WIRE] Updating coil...');
+                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
+                        console.log('[DEBUG_ADVISE_WIRE] Cleaning coil...');
+                        this.cleanCoil();
+                        console.log('[DEBUG_ADVISE_WIRE] Emitting wireUpdated...');
+                        this.$emit("wireUpdated", this.windingIndex);
 
-                    this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+                        this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+
+                        // Trigger rewinding and resimulation
+                        console.log('[DEBUG_ADVISE_WIRE] Calling newWireCreated...');
+                        this.taskQueueStore.newWireCreated(true, winding.wire);
+                        console.log('[DEBUG_ADVISE_WIRE] newWireCreated complete');
+                    }
+                    
                     setTimeout(() => this.loading = false, 100);
-
-                    // Trigger rewinding and resimulation
-                    this.taskQueueStore.newWireCreated(true, winding.wire);
+                    console.log('[DEBUG_ADVISE_WIRE] adviseWire() COMPLETE');
 
                 })
                 .catch(error => {
                     this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
                     this.loading = false;
                     setTimeout(() => {this.errorMessage = ""}, 10000);
-                    console.error(error);
+                    console.error('[DEBUG_ADVISE_WIRE] Error:', error);
                 })
             }
             else {
-                console.error("No operating points found")
+                console.error("[DEBUG_ADVISE_WIRE] No operating points found")
                 this.loading = false;
             }
         },

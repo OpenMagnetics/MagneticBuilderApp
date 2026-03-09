@@ -133,7 +133,7 @@ export default {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "numberTurnsUpdated" || name == "newWireCreated") {
-                    if (args[0]) {
+                    if (args[0] && !this.taskQueueStore.windingIndexChangeBlock) {
                         this.recentChange = true;
                         this.tryToWind();
                     }
@@ -155,6 +155,9 @@ export default {
                     if (args[0]) {
                         console.log('[PlanarCoilSelector] After newWireCreated, masStore coil layersDescription:', this.masStore.mas.magnetic.coil?.layersDescription?.length || 'null/undefined');
                         console.log('[PlanarCoilSelector] Current localData.stackUp:', this.localData.stackUp);
+                        // Update local data when wire is advised/created
+                        this.assignLocalData(this.masStore.mas.magnetic);
+                        this.getStackUp(this.masStore.mas.magnetic.coil);
                     }
                 }
             });
@@ -178,14 +181,15 @@ export default {
         getStackUp(coil) {
             console.log('[PlanarCoilSelector] getStackUp called, sectionsDescription:', coil?.sectionsDescription?.length || 'null');
             if (coil.sectionsDescription != null) {
-                this.localData.pattern = "";
+                let stackUp = "";
                 coil.sectionsDescription.forEach((section) => {
                     if (section.type == "conduction") {
                         const windingIndex = this.getWindingIndex(coil, section.partialWindings[0].winding);
-                        this.localData.pattern += String(windingIndex + 1)
+                        stackUp += String(windingIndex + 1)
                     }
                 })
-                console.log('[PlanarCoilSelector] Generated pattern:', this.localData.pattern);
+                this.localData.stackUp = stackUp;
+                console.log('[PlanarCoilSelector] Generated stackUp:', this.localData.stackUp);
             }
         },
         getCoilAlignments() {
@@ -308,7 +312,20 @@ export default {
                         const layerBorderCoordinate = this.masStore.mas.magnetic.coil.layersDescription[0].coordinates[0] - this.masStore.mas.magnetic.coil.layersDescription[0].dimensions[0] / 2;
                         const firstTurnBorderCoordinate = this.masStore.mas.magnetic.coil.turnsDescription[0].coordinates[0] - this.masStore.mas.magnetic.coil.turnsDescription[0].dimensions[0] / 2;
                         this.localData.borderToWireDistance = firstTurnBorderCoordinate - layerBorderCoordinate;
+                        
+                        console.log('[PlanarCoilSelector] Calculated distances:', {
+                            coreToLayerDistance: this.localData.coreToLayerDistance,
+                            borderToWireDistance: this.localData.borderToWireDistance,
+                            bobbinWidth: this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].width,
+                            layerDimension0: this.masStore.mas.magnetic.coil.layersDescription[0].dimensions[0],
+                            layerCoordinate0: this.masStore.mas.magnetic.coil.layersDescription[0].coordinates[0],
+                            firstTurnCoordinate0: this.masStore.mas.magnetic.coil.turnsDescription[0].coordinates[0],
+                            firstTurnDimension0: this.masStore.mas.magnetic.coil.turnsDescription[0].dimensions[0]
+                        });
 
+                        // Create new objects to ensure reactivity
+                        const insulationThicknessPerLayer = {};
+                        
                         this.masStore.mas.magnetic.coil.layersDescription.forEach((layer, index) => {
                             if (layer.type == "conduction") {
                                 const windingIndex = this.getLayerWindingIndex(layer);
@@ -320,25 +337,41 @@ export default {
                                     const nextWindingIndex = this.getLayerWindingIndex(this.masStore.mas.magnetic.coil.layersDescription[index + 1]);
                                     const key = `${previousWindingIndex + 1}-${nextWindingIndex + 1}`;
 
-                                    this.localData.insulationThicknessPerLayer[key] = layer.dimensions[1];
+                                    insulationThicknessPerLayer[key] = layer.dimensions[1];
                                 }
                             }
                         })
+                        
+                        // Assign new object to trigger reactivity
+                        this.localData.insulationThicknessPerLayer = insulationThicknessPerLayer;
 
+                        // Create new object to ensure reactivity
+                        const clearancePerWinding = {};
+                        
                         this.masStore.mas.magnetic.coil.functionalDescription.forEach((winding, windingIndex) => {
-                            this.localData.clearancePerWinding[windingIndex] = 0.0001;
+                            clearancePerWinding[windingIndex] = 0.0001;
 
                             for (let i = 0; i < this.masStore.mas.magnetic.coil.turnsDescription.length - 1; i++) {
                                 if (this.masStore.mas.magnetic.coil.turnsDescription[i].winding == winding.name &&
                                     this.masStore.mas.magnetic.coil.turnsDescription[i].layer == this.masStore.mas.magnetic.coil.turnsDescription[i + 1].layer) {
                                     let firstBorder = this.masStore.mas.magnetic.coil.turnsDescription[i].coordinates[0] + this.masStore.mas.magnetic.coil.turnsDescription[i].dimensions[0] / 2;
                                     let secondBorder = this.masStore.mas.magnetic.coil.turnsDescription[i + 1].coordinates[0] - this.masStore.mas.magnetic.coil.turnsDescription[i + 1].dimensions[0] / 2;
-                                    this.localData.clearancePerWinding[windingIndex] = secondBorder - firstBorder;
+                                    clearancePerWinding[windingIndex] = secondBorder - firstBorder;
                                     break;
                                 }
                             }
                         })
-
+                        
+                        // Assign new object to trigger reactivity
+                        this.localData.clearancePerWinding = clearancePerWinding;
+                        
+                        console.log('[PlanarCoilSelector] Calculated insulation:', {
+                            insulationThicknessPerLayer: this.localData.insulationThicknessPerLayer,
+                            clearancePerWinding: this.localData.clearancePerWinding
+                        });
+                        
+                        // Ensure all expected insulation keys exist
+                        this.extractInsulationThicknessPerLayer();
 
                         // Only update stackUp from layers if user hasn't set a custom value
                         // Check if current stackUp is empty or has the same length as generated
@@ -408,6 +441,22 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
+        sectionsAlignmentUpdated() {
+            // Clear existing coil layers to force re-wind with new alignment
+            this.masStore.mas.magnetic.coil.layersDescription = null;
+            this.masStore.mas.magnetic.coil.turnsDescription = null;
+            this.masStore.mas.magnetic.coil.sectionsDescription = null;
+            console.log('[PlanarCoilSelector] SectionsAlignment updated, cleared coil layers to force re-wind');
+            this.coilUpdated();
+        },
+        insulationUpdated() {
+            // Clear existing coil layers to force re-wind with new insulation parameters
+            this.masStore.mas.magnetic.coil.layersDescription = null;
+            this.masStore.mas.magnetic.coil.turnsDescription = null;
+            this.masStore.mas.magnetic.coil.sectionsDescription = null;
+            console.log('[PlanarCoilSelector] Insulation parameters updated, cleared coil layers to force re-wind');
+            this.coilUpdated();
+        },
         marginUpdated(sectionIndex) {
             this.coilUpdated();
         },
@@ -450,7 +499,7 @@ export default {
                 class="col-12 mb-1 text-start ps-4"
                 :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
                 :name="'sectionsAlignment'"
-                :replaceTitle="'Section Alignment'"
+                :replaceTitle="'PCB Alignment'"
                 :titleSameRow="true"
                 :justifyContent="true"
                 v-model="localData"
@@ -462,7 +511,7 @@ export default {
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                 :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="coilUpdated"
+                @update="sectionsAlignmentUpdated"
             />
         </div>
 
@@ -473,7 +522,7 @@ export default {
             :loading="loading"
             :readOnly="readOnly"
             :data="localData"
-            @update="coilUpdated"
+            @update="insulationUpdated"
         />
 
         <div class="col-12">

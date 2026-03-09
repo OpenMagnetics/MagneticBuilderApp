@@ -86,6 +86,12 @@ export default {
                         console.error(args[1])
                     }
                 }
+                if (name == "newWireCreated") {
+                    if (args[0]) {
+                        // Update local data when wire is advised/created
+                        this.assignLocalData(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]);
+                    }
+                }
             });
         }))
 
@@ -149,23 +155,29 @@ export default {
                 numberParallels: this.localData["numberParallels"],
                 blockingRebounds: this.blockingRebounds
             });
-            if (!this.blockingRebounds) {
+            if (!this.blockingRebounds && !this.taskQueueStore.windingIndexChangeBlock) {
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberTurns = this.localData["numberTurns"];
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberParallels = this.localData["numberParallels"];
                 console.log('[BasicTurnsSelector] Updated store functionalDescription:', 
                     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]);
+                this.tryingToAssign = false;
+                this.$emit("turnsUpdated", this.windingIndex);
+                console.log('[BasicTurnsSelector] Calling taskQueueStore.numberTurnsUpdated(true)');
+                this.taskQueueStore.numberTurnsUpdated(true);
             }
-            this.tryingToAssign = false;
-            this.$emit("turnsUpdated", this.windingIndex);
-            console.log('[BasicTurnsSelector] Calling taskQueueStore.numberTurnsUpdated(true)');
-            this.taskQueueStore.numberTurnsUpdated(true);
+            else {
+                this.tryingToAssign = false;
+                this.$emit("turnsUpdated", this.windingIndex);
+            }
         },
         turnsUpdated() {
             if (this.masStore.mas != null) {
                 if (this.localData["numberTurns"] != this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberTurns ||
                     this.localData["numberParallels"] != this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].numberParallels) {
 
-                    this.cleanCoil();
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.cleanCoil();
+                    }
                 }
                 this.recentChange = true;
                 this.tryToAssign();

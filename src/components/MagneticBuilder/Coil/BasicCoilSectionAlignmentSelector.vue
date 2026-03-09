@@ -157,7 +157,7 @@ export default {
                 v-tooltip="tooltipsMagneticBuilder.windingsOrientation"
                 v-if="showAlignmentOptions"
                 :disabled="readOnly"
-                class="col-12 mb-2 text-start"
+                class="col-12 mb-2 text-start ps-4"
                 :dataTestLabel="dataTestLabel + '-sectionsOrientation'"
                 :name="'sectionsOrientation'"
                 :replaceTitle="'Windings Orientation'"
@@ -179,7 +179,7 @@ export default {
                 v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
                 v-if="showAlignmentOptions"
                 :disabled="readOnly"
-                class="col-12 mb-2 text-start"
+                class="col-12 mb-2 text-start ps-4"
                 :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
                 :name="'sectionsAlignment'"
                 :replaceTitle="'Section Alignment'"
@@ -207,7 +207,7 @@ export default {
 
 
 <!--             <ElementFromList
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-1 text-start ps-4"
                 :dataTestLabel="dataTestLabel + '-LayersOrientation'"
                 :name="'layersOrientation'"
                 :replaceTitle="'Layers Orientation'"
@@ -229,7 +229,7 @@ export default {
                 v-tooltip="tooltipsMagneticBuilder.turnsAlignment"
                 v-if="showAlignmentOptions"
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-1 text-start ps-4"
                 :dataTestLabel="dataTestLabel + '-TurnsAlignment'"
                 :name="'turnsAlignment'"
                 :titleSameRow="true"

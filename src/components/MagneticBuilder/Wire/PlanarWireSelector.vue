@@ -63,8 +63,9 @@ export default {
         };
         if (typeof(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire) == 'string' && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "Dummy") {
             taskQueueStore.processWire(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]).then((wire) => {
-                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
-
+                if (!taskQueueStore.windingIndexChangeBlock) {
+                    this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
+                }
             })
         }
 
@@ -142,10 +143,12 @@ export default {
 
                 this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
-                this.cleanCoil();
-                this.$emit("wireUpdated", this.windingIndex);
-                // Trigger wire data calculation and coil winding
-                this.taskQueueStore.newWireCreated(true, wire);
+                if (!this.taskQueueStore.windingIndexChangeBlock) {
+                    this.cleanCoil();
+                    this.$emit("wireUpdated", this.windingIndex);
+                    // Trigger wire data calculation and coil winding
+                    this.taskQueueStore.newWireCreated(true, wire);
+                }
                 // this.historyStore.addToHistory(this.masStore.mas);
             })
             .catch(error => {
@@ -191,16 +194,18 @@ export default {
                         console.log('[mierdaFront] coil.turnsDescription:', coil?.turnsDescription);
                         console.log('[mierdaFront] coil.sectionsDescription:', coil?.sectionsDescription);
                         this.errorMessage = "";
-                        this.masStore.mas.magnetic.coil = coil;
-                        this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
-                        // Don't clean coil here - the advised coil already has valid layers/turns
-                        this.$emit("wireUpdated", this.windingIndex);
+                        if (!this.taskQueueStore.windingIndexChangeBlock) {
+                            this.masStore.mas.magnetic.coil = coil;
+                            this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
+                            // Don't clean coil here - the advised coil already has valid layers/turns
+                            this.$emit("wireUpdated", this.windingIndex);
 
-                        this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
-                        setTimeout(() => this.loading = false, 100);
+                            this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
+                            setTimeout(() => this.loading = false, 100);
 
-                        // Trigger rewinding and resimulation
-                        this.taskQueueStore.newWireCreated(true, coil.functionalDescription[this.windingIndex].wire);
+                            // Trigger rewinding and resimulation
+                            this.taskQueueStore.newWireCreated(true, coil.functionalDescription[this.windingIndex].wire);
+                        }
 
                     })
                     .catch(error => {
@@ -217,18 +222,27 @@ export default {
                 settings["coilMaximumLayersPlanar"] = 24;
                 this.taskQueueStore.setSettings(settings).then(() => {
                     this.taskQueueStore.adviseWire(this.masStore.mas, this.windingIndex)
-                    .then((winding) => {
+                    .then((result) => {
                         this.errorMessage = "";
-                        this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
+                        const winding = result.winding;
+                        const coil = result.coil;
+                        
+                        // Always update UI (localData) regardless of block
                         this.assignLocalData(winding.wire);
-                        // Don't clean coil here - the advised winding already has valid layers/turns
-                        this.$emit("wireUpdated", this.windingIndex);
+                        
+                        // Only update coil and trigger actions if not blocked
+                        if (!this.taskQueueStore.windingIndexChangeBlock) {
+                            this.masStore.mas.magnetic.coil = coil;
+                            // Don't clean coil here - the advised coil already has valid layers/turns
+                            this.$emit("wireUpdated", this.windingIndex);
 
-                        this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+                            this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+
+                            // Trigger rewinding and resimulation
+                            this.taskQueueStore.newWireCreated(true, winding.wire);
+                        }
+                        
                         setTimeout(() => this.loading = false, 100);
-
-                        // Trigger rewinding and resimulation
-                        this.taskQueueStore.newWireCreated(true, winding.wire);
 
                     })
                     .catch(error => {

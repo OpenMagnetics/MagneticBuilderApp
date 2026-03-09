@@ -2,6 +2,7 @@
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, range } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
+import { useTaskQueueStore } from '../../../stores/taskQueue'
 </script>
 
 <script>
@@ -26,19 +27,31 @@ export default {
         }
     },
     data() {
+        const taskQueueStore = useTaskQueueStore();
         const forceUpdate = 0;
+        const subscriptions = [];
         return {
-            forceUpdate
+            taskQueueStore,
+            forceUpdate,
+            subscriptions
         }
     },
     computed: {
     },
-    watch: {
-        'data': {
-            handler(newValue, oldValue) {
-                this.forceUpdate += 1;
-            }
-        }
+    mounted() {
+        this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
+            after(() => {
+                if (name == "newWireCreated") {
+                    if (args[0]) {
+                        console.log('[PlanarInsulationSelector] newWireCreated triggered, updating forceUpdate');
+                        this.forceUpdate += 1;
+                    }
+                }
+            });
+        }));
+    },
+    beforeUnmount() {
+        this.subscriptions.forEach((subscription) => {subscription();});
     }
 }
 </script>

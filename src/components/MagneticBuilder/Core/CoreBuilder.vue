@@ -66,8 +66,10 @@ export default {
         this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "redraw") {
-                    this.forceUpdateCore3DVisualizer += 1;
-                    this.imageUpToDate = true;
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.forceUpdateCore3DVisualizer += 1;
+                        this.imageUpToDate = true;
+                    }
                 }
             });
         }))
@@ -77,7 +79,7 @@ export default {
                 if (name == "coreProcessed") {
                     if (args[0]) {
                         const core = args[1];
-                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw && !this.taskQueueStore.windingIndexChangeBlock) {
                             this.forceUpdateCore3DVisualizer += 1;
                             this.imageUpToDate = true;
                         }
@@ -94,6 +96,18 @@ export default {
                 if (name == "magneticBuilderReady") {
                     this.forceUpdateCore3DVisualizer += 1;
                     this.imageUpToDate = true;
+                }
+                // When bobbin is generated from core shape (e.g., after Advise Core), refresh the 3D visualizer
+                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated") {
+                    if (args[0] && !this.taskQueueStore.windingIndexChangeBlock) {
+                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                            this.forceUpdateCore3DVisualizer += 1;
+                            this.imageUpToDate = true;
+                        }
+                        else {
+                            this.imageUpToDate = false;
+                        }
+                    }
                 }
             });
         }))

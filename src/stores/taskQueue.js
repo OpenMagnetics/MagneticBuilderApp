@@ -31,12 +31,24 @@ function toArray(vectorOrArray) {
 
 export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
     state: () => ({
-        task_standard_response_delay: 20
+        task_standard_response_delay: 20,
+        windingIndexChangeBlock: false
     }),
     actions: {
         // Called when the magnetic builder mounts with an existing complete design
         // This allows components to subscribe and refresh their visualizations/simulations
         magneticBuilderReady(magnetic) {
+        },
+
+        windingIndexChanged(success = true, dataOrMessage = '') {
+        },
+
+        setWindingIndexChangeBlock() {
+            this.windingIndexChangeBlock = true;
+            setTimeout(() => {
+                this.windingIndexChangeBlock = false;
+            }, 1000);
+            setTimeout(() => {this.windingIndexChanged(true);}, this.task_standard_response_delay);
         },
 
         masCheckedAndFixed(success = true, dataOrMessage = '') {
@@ -503,6 +515,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             else {
                 bobbinResult = await mkf.create_simple_bobbin_from_core(JSON.stringify(core));
             }
+            
             if (bobbinResult.startsWith("Exception")) {
                 setTimeout(() => {this.bobbinFromCoreShapeGenerated(false, bobbinResult);}, this.task_standard_response_delay);
                 throw new Error(bobbinResult);
@@ -560,8 +573,6 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             await mkf.set_settings(JSON.stringify(settings));
 
-            console.log('[DEBUG MagneticBuilder adviseCore] adviserSettings.coreAdviseMode:', adviserSettings.coreAdviseMode);
-            console.log('[DEBUG MagneticBuilder adviseCore] adviserSettings:', adviserSettings);
             const result = await mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, adviserSettings.coreAdviseMode);
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.coreAdvised(false, result);}, this.task_standard_response_delay);
@@ -1144,8 +1155,13 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 const masWithCoil = JSON.parse(resultMasWithCoil);
+                console.warn("masWithCoil")
+                console.warn(deepCopy(masWithCoil))
                 setTimeout(() => {this.allWiresAdvised(true, masWithCoil.magnetic.coil.functionalDescription[windingIndex]);}, this.task_standard_response_delay);
-                return masWithCoil.magnetic.coil.functionalDescription[windingIndex];
+                return {
+                    winding: masWithCoil.magnetic.coil.functionalDescription[windingIndex],
+                    coil: masWithCoil.magnetic.coil
+                };
             }
         },
 

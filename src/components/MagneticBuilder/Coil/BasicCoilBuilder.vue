@@ -98,9 +98,11 @@ export default {
         this.subscriptions.push(this.$stateStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "redraw") {
-                    this.retries = 1;
-                    this.imageUpToDate = false;
-                    this.tryPlot(false);
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.retries = 1;
+                        this.imageUpToDate = false;
+                        this.tryPlot(false);
+                    }
                 }
             });
         }))
@@ -108,11 +110,15 @@ export default {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             // Mark image as outdated immediately when wire creation or winding starts
             if (name == "createNewWire") {
-                this.imageUpToDate = false;
+                if (!this.taskQueueStore.windingIndexChangeBlock) {
+                    this.imageUpToDate = false;
+                }
             }
             after(() => {
                 if (name == "wind" || name == "windPlanar") {
-                    this.imageUpToDate = false;
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.imageUpToDate = false;
+                    }
                 }
                 if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed" || name == "coreProcessed") {
                     if (args[0]) {
@@ -123,7 +129,7 @@ export default {
                                 this.masStore.mas.magnetic.core.functionalDescription.material = coreMaterial;
                             }
                         }
-                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw && !this.taskQueueStore.windingIndexChangeBlock) {
                             this.imageUpToDate = false;
                             this.tryPlot(false);
                         }
@@ -137,7 +143,7 @@ export default {
                 }
 
                 if (name == "newWireCreated") {
-                    if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
+                    if (this.$settingsStore.magneticBuilderSettings.autoRedraw && !this.taskQueueStore.windingIndexChangeBlock) {
                         this.imageUpToDate = false;
                         this.tryPlot(false);
                     }

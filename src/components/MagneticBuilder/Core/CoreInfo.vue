@@ -98,7 +98,7 @@ export default {
                     }
                 }
                 if (name == "numberTurnsUpdated") {
-                    if (args[0]) {
+                    if (args[0] && !this.taskQueueStore.windingIndexChangeBlock) {
                         this.dataUptoDate = false;
                         if (this.enableAutoSimulation) {
                             this.calculateCoreLosses();

@@ -85,6 +85,7 @@ export default {
         const forceUpdate = 0;
         const subscriptions = [];
         const pendingBobbinThickness = null; // Store bobbin thickness during material change
+        const cachedMagnetic = deepCopy(this.masStore.mas.magnetic); // Cache magnetic data for 3D visualizer
 
         return {
             taskQueueStore,
@@ -98,9 +99,21 @@ export default {
             forceUpdate,
             subscriptions,
             pendingBobbinThickness,
+            cachedMagnetic,
         }
     },
     computed: {
+        magneticForVisualizer() {
+            // Force re-evaluation when visualizer update is triggered
+            const forceUpdate = this.forceUpdateVisualizer;
+            // Only update magnetic data for visualizer when not blocked
+            if (this.taskQueueStore.windingIndexChangeBlock) {
+                return this.cachedMagnetic;
+            }
+            // Update cache when not blocked (deep copy to prevent reference issues)
+            this.cachedMagnetic = deepCopy(this.masStore.mas.magnetic);
+            return this.cachedMagnetic;
+        },
     },
     watch: {
         'operatingPointIndex': {
@@ -376,46 +389,56 @@ export default {
             setTimeout(() => this.adviseCore(), 100);
         },
         adviseCore() {
+            console.log('[DEBUG_ADVISE] adviseCore() START');
             if (this.masStore.mas.inputs.operatingPoints.length > 0) {
                 this.$settingsStore.adviserSettings.coreAdviseMode = "standard cores";
 
-                this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.$stateStore.hasCurrentApplicationMirroredWindings(), this.masStore.coreAdviserWeights, this.$settingsStore.adviserSettings).then((magnetic) => {
+                this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.$stateStore.hasCurrentApplicationMirroredWindings(), this.masStore.coreAdviserWeights, this.$settingsStore.adviserSettings).then(async (magnetic) => {
+                    console.log('[DEBUG_ADVISE] adviseCore returned, setting core');
                     this.masStore.mas.magnetic.core = magnetic.core;
-                    this.taskQueueStore.generateBobbinFromCoreShape(magnetic.core, this.masStore.mas.inputs.designRequirements.wiringTechnology).then((bobbin) => {
-                        this.masStore.mas.magnetic.coil.turnsDescription = null;
-                        this.masStore.mas.magnetic.coil.layersDescription = null;
-                        this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                        this.masStore.mas.magnetic.coil.bobbin = bobbin;
-                        setTimeout(() => {this.historyStore.addToHistory(this.masStore.mas);}, 1000);
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
-
-                    this.taskQueueStore.calculateNumberTurns(magnetic.coil.functionalDescription[0].numberTurns, this.masStore.mas.inputs.designRequirements).then((numberTurns) => {
-                        const windings = this.masStore.mas.magnetic.coil.functionalDescription;
-                        for (let i = 0; i < numberTurns.length; i++) {
-                            windings[i].numberTurns = numberTurns[i];
-                        }
-                        this.masStore.mas.magnetic.coil.functionalDescription = windings;
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
+                    
+                    // Generate bobbin first
+                    console.log('[DEBUG_ADVISE] About to generate bobbin...');
+                    const bobbin = await this.taskQueueStore.generateBobbinFromCoreShape(magnetic.core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
+                    console.log('[DEBUG_ADVISE] Bobbin generated:', bobbin);
+                    
+                    // Then calculate turns
+                    console.log('[DEBUG_ADVISE] About to calculate turns...');
+                    const numberTurns = await this.taskQueueStore.calculateNumberTurns(magnetic.coil.functionalDescription[0].numberTurns, this.masStore.mas.inputs.designRequirements);
+                    console.log('[DEBUG_ADVISE] Turns calculated:', numberTurns);
+                    
+                    // Update windings with calculated turns
+                    console.log('[DEBUG_ADVISE] Updating windings...');
+                    const windings = this.masStore.mas.magnetic.coil.functionalDescription;
+                    for (let i = 0; i < numberTurns.length; i++) {
+                        windings[i].numberTurns = numberTurns[i];
+                    }
+                    
+                    // Assign everything atomically: first coil data, then bobbin last
+                    console.log('[DEBUG_ADVISE] Assigning coil data...');
+                    this.masStore.mas.magnetic.coil.turnsDescription = null;
+                    this.masStore.mas.magnetic.coil.layersDescription = null;
+                    this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                    this.masStore.mas.magnetic.coil.functionalDescription = windings;
+                    this.masStore.mas.magnetic.coil.bobbin = bobbin;
+                    console.log('[DEBUG_ADVISE] Bobbin assigned, thickness:', this.masStore.mas.magnetic.coil.bobbin?.processedDescription?.wallThickness);
+                    
+                    setTimeout(() => {this.historyStore.addToHistory(this.masStore.mas);}, 1000);
 
                     this.errorMessage = "";
                     this.assignLocalData(magnetic.core);
                     this.loading = false;
+                    console.log('[DEBUG_ADVISE] adviseCore() COMPLETE');
                 })
                 .catch(error => {
-                    console.error(error)
+                    console.error('[DEBUG_ADVISE] Error in adviseCore:', error);
                     this.errorMessage = "No core can be advised. You are on your own."
                     this.loading = false;
                     setTimeout(() => {this.errorMessage = ""}, 10000);
                 });
             }
             else {
-                console.error("No operating points found")
+                console.error("[DEBUG_ADVISE] No operating points found")
                 this.loading = false;
             }
         },
@@ -443,7 +466,7 @@ export default {
                 >
                     <Magnetic3DVisualizer 
                         :dataTestLabel="`${dataTestLabel}-Magnetic3DVisualizer`"
-                        :magnetic="masStore.mas.magnetic"
+                        :magnetic="magneticForVisualizer"
                         :forceUpdate="forceUpdateVisualizer"
                         :showCore="true"
                         :showTurns="true"
