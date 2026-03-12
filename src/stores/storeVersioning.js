@@ -108,3 +108,25 @@ export function forceResetAllStores() {
 export function getStoredVersionDate() {
     return localStorage.getItem(STORE_VERSION_KEY);
 }
+
+/**
+ * Gets the cache-busting query parameter for WASM files.
+ * This should be appended to WASM URLs to force cache refresh when the version changes.
+ * @returns {string} The query parameter string (e.g., "?v=2026-01-28")
+ */
+export function getWasmCacheBuster() {
+    return `?v=${STORE_VERSION_DATE}`;
+}
+
+/**
+ * Appends cache-busting query parameter to a WASM file URL
+ * @param {string} url - The base URL to the WASM file
+ * @returns {string} The URL with cache-busting parameter appended
+ */
+export function getVersionedWasmUrl(url) {
+    // Don't add version if URL already has query params
+    if (url.includes('?')) {
+        return url;
+    }
+    return `${url}${getWasmCacheBuster()}`;
+}

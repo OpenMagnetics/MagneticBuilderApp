@@ -1,10 +1,30 @@
 import { fileURLToPath, URL } from "node:url";
+import fs from "node:fs";
+import path from "node:path";
 
 import { defineConfig } from 'vite'
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
 import viteCompression from 'vite-plugin-compression';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+
+// Determine the correct path for WebSharedComponents
+// When standalone (own .git directory): use ./WebSharedComponents
+// When used as submodule (.git is a file pointing to parent): use ../WebSharedComponents
+function getWebSharedComponentsPath() {
+    const parentPath = path.resolve(__dirname, "../WebSharedComponents");
+    const localPath = path.resolve(__dirname, "./WebSharedComponents");
+    const gitPath = path.resolve(__dirname, ".git");
+    
+    // If .git is a file, this is a submodule -> use parent WebSharedComponents
+    // If .git is a directory, this is standalone -> use local WebSharedComponents
+    const isSubmodule = fs.existsSync(gitPath) && fs.statSync(gitPath).isFile();
+    
+    if (isSubmodule && fs.existsSync(parentPath)) {
+        return parentPath;
+    }
+    return localPath;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -40,6 +60,9 @@ export default defineConfig({
     optimizeDeps: {
         disabled: false,
     },
+    worker: {
+        format: 'es',
+    },
     publicDir: 'src/public',
     plugins: [
         vue({
@@ -69,7 +92,7 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": fileURLToPath(new URL("./src", import.meta.url)),
-            "/WebSharedComponents": fileURLToPath(new URL("../WebSharedComponents", import.meta.url)),
+            "/WebSharedComponents": getWebSharedComponentsPath(),
         },
     },
     server: {

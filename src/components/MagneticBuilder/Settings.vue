@@ -2,7 +2,7 @@
 import { Modal } from "bootstrap";
 import { useMagneticBuilderSettingsStore } from '../../stores/magneticBuilderSettings'
 import { useModelSettingsStore } from '../../stores/modelSettings'
-import { useStateStore } from '../../../stores/state'
+import { useStateStore } from '../../stores/state'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 </script>
 
