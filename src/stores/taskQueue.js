@@ -551,8 +551,10 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async adviseCore(inputs, hasCurrentApplicationMirroredWindings, coreAdviserWeights, adviserSettings) {
+            console.log('[DEBUG adviseCore] Starting...');
             const mkf = await waitForMkf();
             await mkf.ready;
+            console.log('[DEBUG adviseCore] MKF ready');
 
             const settings = JSON.parse(await mkf.get_settings());
 
@@ -573,16 +575,51 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             await mkf.set_settings(JSON.stringify(settings));
 
-            const result = await mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, adviserSettings.coreAdviseMode);
+            // Ensure coreAdviseMode is a string, not an object
+            let coreAdviseMode = adviserSettings.coreAdviseMode;
+            if (typeof coreAdviseMode === 'object') {
+                console.warn('[taskQueue] coreAdviseMode was an object, resetting to default');
+                coreAdviseMode = "standard cores";
+            }
+            
+            console.log('[DEBUG adviseCore] Calling calculate_advised_cores...');
+            console.log('[DEBUG adviseCore] Inputs:', JSON.stringify(inputs).substring(0, 200));
+            console.log('[DEBUG adviseCore] Weights:', JSON.stringify(coreAdviserWeights));
+            console.log('[DEBUG adviseCore] Mode:', coreAdviseMode);
+
+            // Validate and fix frequency before calling WASM
+            const DEFAULT_FREQUENCY = 100000; // 100 kHz default
+            if (inputs.operatingPoints && inputs.operatingPoints.length > 0) {
+                inputs.operatingPoints.forEach((op, opIndex) => {
+                    if (op.excitationsPerWinding && op.excitationsPerWinding.length > 0) {
+                        op.excitationsPerWinding.forEach((exc, excIndex) => {
+                            if (!exc.frequency || exc.frequency <= 0) {
+                                console.warn(`[DEBUG adviseCore] Fixed frequency=0 in operating point ${opIndex}, excitation ${excIndex}. Set to ${DEFAULT_FREQUENCY}`);
+                                exc.frequency = DEFAULT_FREQUENCY;
+                            }
+                        });
+                    }
+                });
+            }
+
+            const result = await mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, coreAdviseMode);
+            console.log('[DEBUG adviseCore] Result received, length:', result.length);
+            console.log('[DEBUG adviseCore] Result preview:', result.substring(0, 500));
+            
             if (result.startsWith("Exception")) {
+                console.error('[DEBUG adviseCore] Exception:', result);
                 setTimeout(() => {this.coreAdvised(false, result);}, this.task_standard_response_delay);
                 throw new Error(result);
             }
 
             const aux = JSON.parse(result);
+            console.log('[DEBUG adviseCore] Parsed result:', aux);
 
             const log = aux["log"];
             const data = aux["data"];
+            console.log('[DEBUG adviseCore] Data length:', data.length);
+            console.log('[DEBUG adviseCore] Log:', log);
+            
             if (data.length > 0) {
                 const magnetic = data[0].mas.magnetic;
                 setTimeout(() => {this.coreAdvised(true, magnetic);}, this.task_standard_response_delay);

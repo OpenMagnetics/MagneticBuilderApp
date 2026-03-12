@@ -77,10 +77,14 @@ export default {
                 }
             });
         }))
+        console.log('[AdvancedCoreSelectorMaterial] mounted, material type:', typeof(this.core.functionalDescription.material));
+        console.log('[AdvancedCoreSelectorMaterial] material:', this.core.functionalDescription.material);
         if (typeof(this.core.functionalDescription.material) == "string") {
+            console.log('[AdvancedCoreSelectorMaterial] calling loadMaterialData');
             this.loadMaterialData();
         }
         else {
+            console.log('[AdvancedCoreSelectorMaterial] calling loadAdvancedMaterialData');
             this.loadAdvancedMaterialData();
         }
     },
@@ -155,33 +159,80 @@ export default {
     },
     methods: {
         loadAdvancedMaterialData() {
+            const material = this.core.functionalDescription.material;
+            console.log('[AdvancedCoreSelectorMaterial] loadAdvancedMaterialData START');
+            console.log('[AdvancedCoreSelectorMaterial] material.bhCycle:', material.bhCycle);
+            console.log('[AdvancedCoreSelectorMaterial] material.volumetricLosses:', material.volumetricLosses);
+            
+            // Check if advanced data (bhCycle, volumetricLosses with actual data points) already exists
+            // This handles custom materials and materials that already have their data loaded
+            const hasBhCycleData = material.bhCycle != null && material.bhCycle.length > 0;
+            console.log('[AdvancedCoreSelectorMaterial] hasBhCycleData:', hasBhCycleData);
+            
+            // volumetricLosses.default contains either:
+            // 1. Arrays of data points (measured data) - these are displayable
+            // 2. Method objects with Steinmetz coefficients (k, alpha, beta) - displayable via equation
+            // 3. Method objects with other coefficients (roshen, etc.) - NOT displayable as charts
+            // We need to check if there's actually displayable data (measured points or Steinmetz)
+            let hasVolumetricLossesData = false;
+            if (material.volumetricLosses != null && material.volumetricLosses.default != null) {
+                material.volumetricLosses.default.forEach((method) => {
+                    if (Array.isArray(method) && method.length > 0) {
+                        // Has measured data points - displayable
+                        hasVolumetricLossesData = true;
+                    } else if (method != null && !Array.isArray(method)) {
+                        // Check for Steinmetz/micrometals/magnetics equation coefficients
+                        // These methods have 'a' coefficient for equation-based display
+                        // Roshen method has 'coefficients' object but no 'a' - not displayable as chart
+                        if (method.a != null || method.k != null) {
+                            hasVolumetricLossesData = true;
+                        }
+                    }
+                });
+            }
+            
+            if (hasBhCycleData || hasVolumetricLossesData) {
+                console.log('[AdvancedCoreSelectorMaterial] Data already present, returning early');
+                // Data already present, just load complex permeability if missing
+                if (material.permeability != null && material.permeability.complex == null) {
+                    this.loadMaterialComplexPermeabilityData();
+                }
+                return;
+            }
+
             const url = import.meta.env.VITE_API_ENDPOINT + '/read_advanced_core_material_by_name'
             const data = {
-                "name": this.core.functionalDescription.material.name
+                "name": material.name
             }
+            console.log('[AdvancedCoreSelectorMaterial] Fetching from API for material:', material.name);
             this.$axios.post(url, data)
             .then(response => {
+                console.log('[AdvancedCoreSelectorMaterial] API response:', response.data);
+                console.log('[AdvancedCoreSelectorMaterial] API bhCycle:', response.data.bhCycle);
+                console.log('[AdvancedCoreSelectorMaterial] API volumetricLosses:', response.data.volumetricLosses);
 
                 if (response.data.bhCycle != null && response.data.bhCycle.length > 0) {
-                    this.core.functionalDescription.material.bhCycle = response.data.bhCycle;
+                    material.bhCycle = response.data.bhCycle;
+                    console.log('[AdvancedCoreSelectorMaterial] Set bhCycle:', material.bhCycle);
                 }
                 if (response.data.volumetricLosses != null) {
                     Object.keys(response.data.volumetricLosses).forEach((key) => {
                         response.data.volumetricLosses[key].forEach((method) => {
-                            this.core.functionalDescription.material.volumetricLosses[key].push(method)
+                            material.volumetricLosses[key].push(method)
                         })
                     })
+                    console.log('[AdvancedCoreSelectorMaterial] Updated volumetricLosses:', material.volumetricLosses);
                 }
                 if (response.data.permeability != null && response.data.permeability.amplitude != null) {
-                    this.core.functionalDescription.material.permeability.amplitude = response.data.permeability.amplitude;
+                    material.permeability.amplitude = response.data.permeability.amplitude;
                 }
 
-                if (this.core.functionalDescription.material.permeability.complex == null) {
+                if (material.permeability.complex == null) {
                     this.loadMaterialComplexPermeabilityData();
                 }
             })
             .catch(error => {
-                console.error(error);
+                console.error('[AdvancedCoreSelectorMaterial] API error:', error);
             });
         },
         loadMaterialData() {

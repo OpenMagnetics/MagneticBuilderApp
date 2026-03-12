@@ -427,6 +427,65 @@ export default {
                             </div>
                         </div><!-- End v-else -->
                     </div>
+
+                    <!-- Field Plot Resolution Section -->
+                    <div class="mt-4">
+                        <h6 class="text-white mb-3 border-bottom border-secondary pb-2">
+                            <i class="fa-solid fa-chart-area text-primary me-2"></i>
+                            Field Plot Resolution
+                        </h6>
+                        <small class="text-secondary d-block mb-3">Control the grid resolution for magnetic and electric field visualizations</small>
+
+                        <div v-if="modelSettingsStore.isLoading || !modelSettingsStore.isInitialized" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading settings...</span>
+                            </div>
+                            <small class="text-secondary d-block mt-2">Loading settings from MKF...</small>
+                        </div>
+
+                        <div v-else>
+                            <!-- Number of Points X -->
+                            <div class="model-setting mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="text-white mb-0">Horizontal Resolution (X)</label>
+                                    <span class="text-primary fw-bold">{{ modelSettingsStore.painterNumberPointsX }}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    class="form-range"
+                                    min="10"
+                                    max="200"
+                                    step="5"
+                                    v-model.number="modelSettingsStore.painterNumberPointsX"
+                                >
+                                <small class="text-muted">Number of grid points in the horizontal direction (10-200)</small>
+                            </div>
+
+                            <!-- Number of Points Y -->
+                            <div class="model-setting mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="text-white mb-0">Vertical Resolution (Y)</label>
+                                    <span class="text-primary fw-bold">{{ modelSettingsStore.painterNumberPointsY }}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    class="form-range"
+                                    min="10"
+                                    max="200"
+                                    step="5"
+                                    v-model.number="modelSettingsStore.painterNumberPointsY"
+                                >
+                                <small class="text-muted">Number of grid points in the vertical direction (10-200)</small>
+                            </div>
+
+                            <div class="alert alert-dark border-secondary mt-3" role="alert">
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-circle-info me-1"></i>
+                                    Higher values produce finer visualizations but may slow down rendering. Default: 25×50
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-top border-secondary px-4 py-3">
                     <button

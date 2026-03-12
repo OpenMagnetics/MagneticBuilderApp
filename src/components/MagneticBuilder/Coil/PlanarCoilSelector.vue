@@ -352,7 +352,9 @@ export default {
                             clearancePerWinding[windingIndex] = 0.0001;
 
                             for (let i = 0; i < this.masStore.mas.magnetic.coil.turnsDescription.length - 1; i++) {
+                                // Check that both current and next turn belong to the same winding AND same layer
                                 if (this.masStore.mas.magnetic.coil.turnsDescription[i].winding == winding.name &&
+                                    this.masStore.mas.magnetic.coil.turnsDescription[i + 1].winding == winding.name &&
                                     this.masStore.mas.magnetic.coil.turnsDescription[i].layer == this.masStore.mas.magnetic.coil.turnsDescription[i + 1].layer) {
                                     let firstBorder = this.masStore.mas.magnetic.coil.turnsDescription[i].coordinates[0] + this.masStore.mas.magnetic.coil.turnsDescription[i].dimensions[0] / 2;
                                     let secondBorder = this.masStore.mas.magnetic.coil.turnsDescription[i + 1].coordinates[0] - this.masStore.mas.magnetic.coil.turnsDescription[i + 1].dimensions[0] / 2;

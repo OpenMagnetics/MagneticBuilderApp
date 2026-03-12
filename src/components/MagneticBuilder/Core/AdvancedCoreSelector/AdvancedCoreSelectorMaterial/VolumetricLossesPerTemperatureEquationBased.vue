@@ -86,7 +86,7 @@ export default {
                     if (method.method == "magnetics" || method.method == "micrometals") {
 
                         this.taskQueueStore.getCoreVolumetricLossesEquations(this.data.default[0]).then((handle) => {
-                            const equation = handle.get("volumetricCoreLosses");
+                            const equation = handle["volumetricCoreLosses"];
 
                             this.bFieldValues.forEach((bValue) => {
                                 this.coefficients.push(deepCopy(method));

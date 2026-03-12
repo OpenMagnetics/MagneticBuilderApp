@@ -72,7 +72,7 @@ export default {
             if (this.data.modifiers != null && this.data.modifiers.default.temperatureFactor != null) {
                 this.coefficients = this.data.modifiers.default.temperatureFactor;
                 this.taskQueueStore.getInitialPermeabilityEquations(this.data).then((handle) => {
-                    this.equation = handle.get("temperatureFactor");
+                    this.equation = handle["temperatureFactor"];
                 })
             }
 

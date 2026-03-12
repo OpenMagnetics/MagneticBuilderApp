@@ -74,7 +74,7 @@ export default {
 
                 this.configuration["additionalScope"] = {"mu_ini": 60};
                 this.taskQueueStore.getInitialPermeabilityEquations(this.data).then((handle) => {
-                    this.equation = handle.get("magneticFieldDcBiasFactor");
+                    this.equation = handle["magneticFieldDcBiasFactor"];
                 })
             }
 

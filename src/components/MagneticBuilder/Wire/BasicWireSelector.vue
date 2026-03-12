@@ -381,12 +381,9 @@ export default {
             }
         },
         adviseWire() {
-            console.log('[DEBUG_ADVISE_WIRE] adviseWire() START');
             if (this.masStore.mas.inputs.operatingPoints.length > 0) {
-                console.log('[DEBUG_ADVISE_WIRE] Calling taskQueueStore.adviseWire...');
                 this.taskQueueStore.adviseWire(this.masStore.mas, this.windingIndex)
                 .then((result) => {
-                    console.log('[DEBUG_ADVISE_WIRE] adviseWire returned:', result);
                     if (!result) {
                         this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
                         this.loading = false;
@@ -398,40 +395,30 @@ export default {
                     const winding = result.winding;
                     
                     // Always update UI (localData) regardless of block
-                    console.log('[DEBUG_ADVISE_WIRE] Updating localData...');
                     this.assignLocalData(winding.wire);
                     
                     // Only update coil and trigger actions if not blocked
-                    console.log('[DEBUG_ADVISE_WIRE] windingIndexChangeBlock:', this.taskQueueStore.windingIndexChangeBlock);
                     if (!this.taskQueueStore.windingIndexChangeBlock) {
-                        console.log('[DEBUG_ADVISE_WIRE] Updating coil...');
                         this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
-                        console.log('[DEBUG_ADVISE_WIRE] Cleaning coil...');
                         this.cleanCoil();
-                        console.log('[DEBUG_ADVISE_WIRE] Emitting wireUpdated...');
                         this.$emit("wireUpdated", this.windingIndex);
 
                         this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
 
                         // Trigger rewinding and resimulation
-                        console.log('[DEBUG_ADVISE_WIRE] Calling newWireCreated...');
                         this.taskQueueStore.newWireCreated(true, winding.wire);
-                        console.log('[DEBUG_ADVISE_WIRE] newWireCreated complete');
                     }
                     
                     setTimeout(() => this.loading = false, 100);
-                    console.log('[DEBUG_ADVISE_WIRE] adviseWire() COMPLETE');
 
                 })
                 .catch(error => {
                     this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
                     this.loading = false;
                     setTimeout(() => {this.errorMessage = ""}, 10000);
-                    console.error('[DEBUG_ADVISE_WIRE] Error:', error);
                 })
             }
             else {
-                console.error("[DEBUG_ADVISE_WIRE] No operating points found")
                 this.loading = false;
             }
         },

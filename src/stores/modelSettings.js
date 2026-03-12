@@ -24,7 +24,11 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
     
     // Toggle for manual winding losses selection
     const coilEnableUserWindingLossesModels = ref(false)
-    
+
+    // Painter resolution settings
+    const painterNumberPointsX = ref(25)
+    const painterNumberPointsY = ref(50)
+
     // Available options (dictionaries loaded from WASM)
     const availableMagneticFieldStrengthModels = ref({})
     const availableFringingEffectModels = ref({})
@@ -141,7 +145,15 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             if (settings.coilEnableUserWindingLossesModels !== undefined) {
                 coilEnableUserWindingLossesModels.value = settings.coilEnableUserWindingLossesModels
             }
-            
+
+            // Load painter resolution settings
+            if (settings.painterNumberPointsX !== undefined) {
+                painterNumberPointsX.value = settings.painterNumberPointsX
+            }
+            if (settings.painterNumberPointsY !== undefined) {
+                painterNumberPointsY.value = settings.painterNumberPointsY
+            }
+
             isInitialized.value = true
         } catch (error) {
             console.error('[ModelSettings] Failed to load from WASM:', error)
@@ -204,7 +216,11 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
                 if (index >= 0) settings.strayCapacitanceModel = index
             }
             settings.coilEnableUserWindingLossesModels = coilEnableUserWindingLossesModels.value
-            
+
+            // Sync painter resolution settings
+            settings.painterNumberPointsX = painterNumberPointsX.value
+            settings.painterNumberPointsY = painterNumberPointsY.value
+
             await mkf.set_settings(JSON.stringify(settings))
             
             // Verify the setting was applied
@@ -317,6 +333,8 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
         windingProximityEffectLossesModel,
         strayCapacitanceModel,
         coilEnableUserWindingLossesModels,
+        painterNumberPointsX,
+        painterNumberPointsY,
     ], (newValues, oldValues) => {
         if (isInitialized.value) {
             syncToWASM()
@@ -335,6 +353,8 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
         windingProximityEffectLossesModel,
         strayCapacitanceModel,
         coilEnableUserWindingLossesModels,
+        painterNumberPointsX,
+        painterNumberPointsY,
         // Available options
         availableMagneticFieldStrengthModels,
         availableFringingEffectModels,
