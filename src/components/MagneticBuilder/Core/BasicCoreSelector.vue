@@ -17,7 +17,7 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 <script>
 
 export default {
-    emits: ['customizeCore', 'gappingUpdated', 'coreProcessed'],
+    emits: ['customizeCore', 'gappingUpdated', 'coreProcessed', 'coreProcessingStarted'],
     props: {
         dataTestLabel: {
             type: String,
