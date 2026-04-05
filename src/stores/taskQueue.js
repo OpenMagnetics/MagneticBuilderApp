@@ -824,7 +824,18 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wire = coil.functionalDescription[windingIndex].wire;
+            let wire = coil.functionalDescription[windingIndex].wire;
+
+            // If the wire is still an unresolved string name, resolve it first
+            if (typeof wire === 'string' && wire !== '' && wire !== 'Dummy') {
+                const wireResult = await mkf.get_wire_data(JSON.stringify(coil.functionalDescription[windingIndex]));
+                if (wireResult.startsWith('Exception')) {
+                    this.wireDataCalculated(false, wireResult);
+                    throw new Error(wireResult);
+                }
+                wire = JSON.parse(wireResult);
+                coil.functionalDescription[windingIndex].wire = wire;
+            }
 
             const wireString = JSON.stringify(wire);
             const currentString = JSON.stringify(operatingPoints.excitationsPerWinding[windingIndex].current);
