@@ -65,6 +65,7 @@ export default {
             taskQueueStore.processWire(this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]).then((wire) => {
                 if (!taskQueueStore.windingIndexChangeBlock) {
                     this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
+                    this.assignLocalData(wire);
                 }
             })
         }
