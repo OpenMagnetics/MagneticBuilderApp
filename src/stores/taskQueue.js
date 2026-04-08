@@ -838,7 +838,22 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
 
             const wireString = JSON.stringify(wire);
-            const currentString = JSON.stringify(operatingPoints.excitationsPerWinding[windingIndex].current);
+            
+            // Check if we have valid operating point data with current that the WASM can process.
+            // A current object is only "usable" if it has:
+            //   - harmonics with at least one amplitude value, OR
+            //   - a waveform with time data (so WASM can compute harmonics), OR
+            //   - processed data that includes an rms value
+            const rawCurrent = operatingPoints?.excitationsPerWinding?.[windingIndex]?.current;
+            const hasUsableCurrent = rawCurrent && (
+                (rawCurrent.harmonics?.amplitudes?.length > 0) ||
+                (rawCurrent.waveform?.time?.length > 1) ||
+                (rawCurrent.processed?.rms != null)
+            );
+            const hasCurrentData = !!hasUsableCurrent;
+            
+            const currentString = hasCurrentData ? JSON.stringify(rawCurrent) : null;
+            
             let wireMaterial = wireMaterialDefault;
             if (wire.material != null) {
                 wireMaterial = wire.material;
@@ -847,15 +862,27 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const data = {};
 
             data.turnsRatio = coil.functionalDescription[0].numberTurns / coil.functionalDescription[windingIndex].numberTurns;
-            data.dcResistancePerMeter = await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints.conditions.ambientTemperature);
-            data.skinAcResistancePerMeter = await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-            data.skinAcFactor = await mkf.calculate_skin_ac_factor(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-            data.dcLossesPerMeter = await mkf.calculate_dc_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-            data.skinAcLossesPerMeter = await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+            data.dcResistancePerMeter = await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints?.conditions?.ambientTemperature || 25);
+            
+            if (hasCurrentData) {
+                data.skinAcResistancePerMeter = await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+                data.skinAcFactor = await mkf.calculate_skin_ac_factor(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+                data.dcLossesPerMeter = await mkf.calculate_dc_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+                data.skinAcLossesPerMeter = await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+                data.effectiveCurrentDensity = (await mkf.calculate_effective_current_density(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
+                data.effectiveSkinDepth = await mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);
+            } else {
+                // Set default values when no current data is available
+                data.skinAcResistancePerMeter = data.dcResistancePerMeter;
+                data.skinAcFactor = 1.0;
+                data.dcLossesPerMeter = 0;
+                data.skinAcLossesPerMeter = 0;
+                data.effectiveCurrentDensity = 0;
+                data.effectiveSkinDepth = 0;
+            }
+            
             const outerDimensionsArr = toArray(await mkf.get_outer_dimensions(wireString));
             data.outerDimensions = [outerDimensionsArr[0], outerDimensionsArr[1]];
-            data.effectiveCurrentDensity = (await mkf.calculate_effective_current_density(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
-            data.effectiveSkinDepth = await mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);        
 
             this.wireDataCalculated(true, data);
             return data;
@@ -900,8 +927,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const wire = await mkf.get_wire_data_by_name(JSON.stringify(wireName));
-            setTimeout(() => {this.wireDataByNameGotten(true, wire);}, this.task_standard_response_delay);
+            const wire = await mkf.get_wire_data_by_name(wireName);
+            setTimeout(() => {this.wireByNameGotten(true, wire);}, this.task_standard_response_delay);
             return wire;
         },
 

@@ -124,6 +124,7 @@ export default {
                     if (args[0]) {
                         if (!this.taskQueueStore.windingIndexChangeBlock) {
                             this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = args[1];
+                            this.assignLocalData(args[1]);
                         }
                     }
                     else {
@@ -185,15 +186,25 @@ export default {
                 }
                 else if (wire.type == "litz") {
                     if (typeof(wire.strand) == 'string') {
-                        this.taskQueueStore.getWireByName(wire.strand).then((wire) => {
+                        this.taskQueueStore.getWireByName(wire.strand).then((strandJson) => {
                             if (!this.taskQueueStore.windingIndexChangeBlock) {
-                                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = wire;
+                                if (typeof strandJson === 'string' && strandJson.startsWith('Exception')) {
+                                    console.error('Failed to resolve strand wire:', wire.strand, strandJson);
+                                    return;
+                                }
+                                const strandObj = typeof strandJson === 'string' ? JSON.parse(strandJson) : strandJson;
+                                this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = strandObj;
+                                this.localData["standard"] = strandObj.standard;
+                                this.localData["litzStrandConductingDiameter"] = strandObj.standardName;
+                                this.getWireDiameters();
+                                this.forceUpdate += 1;
                             }
                         });
                     }
-
-                    this.localData["standard"] =  wire.strand.standard;
-                    this.localData["litzStrandConductingDiameter"] = wire.strand.standardName;
+                    else {
+                        this.localData["standard"] = wire.strand.standard;
+                        this.localData["litzStrandConductingDiameter"] = wire.strand.standardName;
+                    }
                     this.localData["numberConductors"] = wire.numberConductors;
                 }
                 else if (wire.type == "rectangular") {
