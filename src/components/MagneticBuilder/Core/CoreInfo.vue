@@ -131,6 +131,40 @@ export default {
             });
         }))
 
+        // Listen for importedMas to trigger simulation after file load
+        this.subscriptions.push(this.masStore.$onAction((action) => {
+            action.after(() => {
+                if (action.name == "importedMas") {
+                    const effParams = this.masStore.mas.magnetic.core?.processedDescription?.effectiveParameters;
+                    if (effParams) {
+                        this.coreEffectiveParameters = effParams;
+                    }
+                    if (this.enableAutoSimulation) {
+                        this.calculateCoreLosses();
+                    }
+                }
+            });
+        }))
+
+        // Populate coreEffectiveParameters from existing processedDescription on mount
+        const existingEffParams = this.masStore.mas.magnetic.core?.processedDescription?.effectiveParameters;
+        if (existingEffParams) {
+            this.coreEffectiveParameters = existingEffParams;
+        }
+
+        // Auto-simulate on mount if valid data exists (e.g., after navigating back from file load)
+        if (this.enableAutoSimulation) {
+            const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
+            const material = this.masStore.mas.magnetic.core?.functionalDescription?.material;
+            const hasValidShape = shape && (
+                (typeof shape === 'string' && shape !== '') ||
+                (typeof shape === 'object' && shape.family)
+            );
+            if (hasValidShape && material && material !== '') {
+                this.calculateCoreLosses();
+            }
+        }
+
     },
     beforeUnmount () {
         this.subscriptions.forEach((subscription) => {subscription();})

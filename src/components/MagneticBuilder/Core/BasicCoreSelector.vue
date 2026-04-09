@@ -100,6 +100,7 @@ export default {
             subscriptions,
             pendingBobbinThickness,
             cachedMagnetic,
+            changeMadeByUser: false,
         }
     },
     computed: {
@@ -129,7 +130,7 @@ export default {
     },
     mounted () {
         this.getMaterialNames();
-        
+
         setTimeout(() => {this.assignLocalData(this.masStore.mas.magnetic.core);}, 1000);
         this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
@@ -147,7 +148,10 @@ export default {
                 if (name == "coreProcessed") {
                     if (args[0]) {
                         const core = args[1];
-                        if (this.changeMadeByUser) {
+                        // Don't run the bobbin-regenerate-and-clear branch during import:
+                        // loadingDesign means a file was just loaded and the imported coil
+                        // (layers/turns/sections/bobbin) must be preserved as-is.
+                        if (this.changeMadeByUser && !this.$stateStore.loadingDesign) {
                             this.masStore.mas.magnetic.core = core;
                             this.changeMadeByUser = false;
                             this.masStore.mas.magnetic.manufacturerInfo = null;
@@ -174,7 +178,7 @@ export default {
                                     this.masStore.mas.magnetic.coil.layersDescription = null;
                                     this.masStore.mas.magnetic.coil.sectionsDescription = null;
                                 }
-                                // Note: BasicCoilSelector listens for bobbinFromCoreShapeGenerated 
+                                // Note: BasicCoilSelector listens for bobbinFromCoreShapeGenerated
                                 // and will automatically trigger rewinding
                             });
                         }
@@ -197,7 +201,7 @@ export default {
                             if (coreHash != JSON.stringify(mas.magnetic.core)) {
                                 this.taskQueueStore.processCore(mas.magnetic.core);
                             }
-                            else if (this.changeMadeByUser) {
+                            else if (this.changeMadeByUser && !this.$stateStore.loadingDesign) {
                                 // Core hash is the same but user changed shape - still need to regenerate bobbin
                                 this.masStore.mas.magnetic.core = mas.magnetic.core;
                                 this.changeMadeByUser = false;

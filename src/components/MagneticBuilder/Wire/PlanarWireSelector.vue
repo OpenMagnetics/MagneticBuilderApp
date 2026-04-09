@@ -142,9 +142,16 @@ export default {
                 wire.numberConductors = 1;
                 wire.material = "copper";
 
+                // Check if the wire is actually different from the current one before cleaning
+                const currentWire = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire;
+                const wireUnchanged = currentWire && typeof currentWire === 'object' &&
+                    currentWire.standardName === wire.standardName &&
+                    currentWire.conductingWidth?.nominal === wire.conductingWidth.nominal &&
+                    currentWire.conductingHeight?.nominal === wire.conductingHeight.nominal;
+
                 this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
-                if (!this.taskQueueStore.windingIndexChangeBlock) {
+                if (!this.taskQueueStore.windingIndexChangeBlock && !wireUnchanged) {
                     this.cleanCoil();
                     this.$emit("wireUpdated", this.windingIndex);
                     // Trigger wire data calculation and coil winding
@@ -190,10 +197,6 @@ export default {
 
                     this.taskQueueStore.adviseAllWires(this.masStore.mas)
                     .then((coil) => {
-                        console.log('[mierdaFront] adviseAllWires returned coil:', JSON.stringify(coil, null, 2));
-                        console.log('[mierdaFront] coil.layersDescription:', coil?.layersDescription);
-                        console.log('[mierdaFront] coil.turnsDescription:', coil?.turnsDescription);
-                        console.log('[mierdaFront] coil.sectionsDescription:', coil?.sectionsDescription);
                         this.errorMessage = "";
                         if (!this.taskQueueStore.windingIndexChangeBlock) {
                             this.masStore.mas.magnetic.coil = coil;

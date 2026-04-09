@@ -134,9 +134,17 @@ export default {
                 if (name == "newWireCreated") {
                     if (args[0]) {
                         if (!this.$stateStore.loadingDesign && !this.taskQueueStore.windingIndexChangeBlock) {
-                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = args[1];
-                            this.cleanCoil();
-                            this.$emit("wireUpdated", this.windingIndex);
+                            const newWire = args[1];
+                            const currentWire = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire;
+                            const wireUnchanged = currentWire && typeof currentWire === 'object' && newWire && typeof newWire === 'object' &&
+                                currentWire.standardName === newWire.standardName &&
+                                currentWire.type === newWire.type &&
+                                currentWire.numberConductors === newWire.numberConductors;
+                            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = newWire;
+                            if (!wireUnchanged) {
+                                this.cleanCoil();
+                                this.$emit("wireUpdated", this.windingIndex);
+                            }
                         }
                     }
                     else {

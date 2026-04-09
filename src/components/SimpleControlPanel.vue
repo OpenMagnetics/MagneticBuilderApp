@@ -81,31 +81,74 @@ export default {
         readMASFile(event) {
             const fr = new FileReader();
 
-            fr.onload = e => {
+            fr.onload = async (e) => {
                 const newMas = JSON.parse(e.target.result);
-                if (newMas.magnetic != null) {
-                    this.taskQueueStore.checkAndFixMas(this.masStore.mas).then(response => {
-                        this.masStore.mas = response;
-                        this.masStore.importedMas();
-                        this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";
-                        this.$stateStore.operatingPoints.modePerPoint = []
-                        for (let i = 0; i < this.masStore.mas.inputs.operatingPoints.length; i++) {
-                            if (this.masStore.mas.inputs.operatingPoints[i].excitationsPerWinding[0].current.processed != null) {
-                                this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.Manual);
-                            }
-                            else {
-                                this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.HarmonicsList);
-                            }
-                        }
-                        this.historyStore.addToHistory(this.masStore.mas);
-                        this.historyStore.blockAdditions();
-                        this.$emit('toolSelected', "magneticBuilder");
-                    })
-                    .catch(error => {
-                        console.error(error)
-                    });
+                if (newMas.magnetic == null) {
+                    return;
                 }
-            }
+                try {
+                    // Pass `newMas` (the file just read), not `this.masStore.mas`
+                    const response = await this.taskQueueStore.checkAndFixMas(newMas);
+
+                    // Save coil processed data that masAutocomplete may strip
+                    const savedCoilData = {
+                        layersDescription: response.magnetic?.coil?.layersDescription,
+                        turnsDescription: response.magnetic?.coil?.turnsDescription,
+                        sectionsDescription: response.magnetic?.coil?.sectionsDescription,
+                    };
+
+                    // Always autocomplete the MAS to resolve wire/strand string names to
+                    // full objects and populate core processedDescription, bobbin, etc.
+                    let autocompletedMas = response;
+                    try {
+                        autocompletedMas = await this.taskQueueStore.masAutocomplete(response, false, {});
+                    } catch (autocompleteError) {
+                        console.warn('masAutocomplete failed, using checkAndFixMas result:', autocompleteError);
+                    }
+
+                    // Restore coil processed data if masAutocomplete stripped it
+                    if (autocompletedMas.magnetic?.coil) {
+                        if (!autocompletedMas.magnetic.coil.layersDescription && savedCoilData.layersDescription) {
+                            autocompletedMas.magnetic.coil.layersDescription = savedCoilData.layersDescription;
+                        }
+                        if (!autocompletedMas.magnetic.coil.turnsDescription && savedCoilData.turnsDescription) {
+                            autocompletedMas.magnetic.coil.turnsDescription = savedCoilData.turnsDescription;
+                        }
+                        if (!autocompletedMas.magnetic.coil.sectionsDescription && savedCoilData.sectionsDescription) {
+                            autocompletedMas.magnetic.coil.sectionsDescription = savedCoilData.sectionsDescription;
+                        }
+                    }
+
+                    this.masStore.mas = autocompletedMas;
+                    this.masStore.importedMas();
+                    this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";
+
+                    // Reset coil view to Basic mode when loading a new MAS file
+                    if (typeof this.$stateStore.closeCoilAdvancedInfo === 'function') {
+                        this.$stateStore.closeCoilAdvancedInfo();
+                    }
+
+                    this.$stateStore.operatingPoints.modePerPoint = [];
+                    for (let i = 0; i < this.masStore.mas.inputs.operatingPoints.length; i++) {
+                        const excitation = this.masStore.mas.inputs.operatingPoints[i].excitationsPerWinding[0];
+                        // Determine mode: HarmonicsList if any harmonic content beyond DC, else Manual
+                        const hasMultipleHarmonics = excitation?.current?.harmonics?.amplitudes?.length > 1;
+                        if (hasMultipleHarmonics) {
+                            this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.HarmonicsList);
+                        }
+                        else {
+                            this.$stateStore.operatingPoints.modePerPoint.push(this.$stateStore.OperatingPointsMode.Manual);
+                        }
+                    }
+
+                    this.historyStore.addToHistory(this.masStore.mas);
+                    this.historyStore.blockAdditions();
+                    this.$emit('toolSelected', "magneticBuilder");
+                }
+                catch (error) {
+                    console.error(error);
+                }
+            };
             fr.readAsText(this.$refs['masFileReader'].files.item(0), "ISO-8859-1");
         },
     }
