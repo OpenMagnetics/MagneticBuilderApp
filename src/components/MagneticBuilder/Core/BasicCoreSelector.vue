@@ -101,6 +101,7 @@ export default {
             pendingBobbinThickness,
             cachedMagnetic,
             changeMadeByUser: false,
+            updatingLocalData: false,
         }
     },
     computed: {
@@ -281,14 +282,26 @@ export default {
             }
 
             if (core.functionalDescription.shape != "" && core.functionalDescription.material != "") {
-                this.taskQueueStore.processCore(core).then((core) => {
+                if (core.processedDescription) {
+                    // Core already processed (e.g. loaded from file or undo/redo) — read directly
+                    // to avoid triggering processCore → forceUpdate → numberStacksUpdated cascade.
                     this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
                     this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                    this.updatingLocalData = true;
                     this.forceUpdate += 1;
-                })
-                .catch(error => {
-                    console.error(error);
-                });
+                    this.$nextTick(() => { this.updatingLocalData = false; });
+                } else {
+                    this.taskQueueStore.processCore(core).then((core) => {
+                        this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                        this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                        this.updatingLocalData = true;
+                        this.forceUpdate += 1;
+                        this.$nextTick(() => { this.updatingLocalData = false; });
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+                }
             }
         },
         getMaterialNames() {
@@ -354,7 +367,9 @@ export default {
                 this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
                     this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
                     this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                    this.updatingLocalData = true;
                     this.forceUpdate += 1;
+                    this.$nextTick(() => { this.updatingLocalData = false; });
                     // Note: Bobbin thickness will be restored in coreProcessed handler after bobbin regeneration
                 })
                 .catch(error => {
@@ -370,6 +385,7 @@ export default {
             }) 
         },
         numberStacksUpdated(value) {
+            if (this.updatingLocalData) return;
             this.changeMadeByUser = true;
             this.masStore.mas.magnetic.core.functionalDescription.numberStacks = value;
             // Set image as outdated immediately
