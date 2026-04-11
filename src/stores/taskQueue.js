@@ -32,7 +32,8 @@ function toArray(vectorOrArray) {
 export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
     state: () => ({
         task_standard_response_delay: 20,
-        windingIndexChangeBlock: false
+        windingIndexChangeBlock: false,
+        bobbinRegenerationPending: false,
     }),
     actions: {
         // Called when the magnetic builder mounts with an existing complete design

@@ -79,7 +79,9 @@ export default {
                 if (name == "coreProcessed") {
                     if (args[0]) {
                         const core = args[1];
-                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw && !this.taskQueueStore.windingIndexChangeBlock) {
+                        // Skip visualizer update if bobbin will be regenerated —
+                        // bobbinFromCoreShapeGenerated will trigger the final update.
+                        if (!this.taskQueueStore.bobbinRegenerationPending && this.$settingsStore.magneticBuilderSettings.autoRedraw && !this.taskQueueStore.windingIndexChangeBlock) {
                             this.forceUpdateCore3DVisualizer += 1;
                             this.imageUpToDate = true;
                         }

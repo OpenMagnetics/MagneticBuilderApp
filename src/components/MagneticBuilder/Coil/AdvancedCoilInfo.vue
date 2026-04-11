@@ -313,8 +313,10 @@ export default {
                     if (args[0]) {
                         this.dataUptoDate = false;
                         this.forceUpdate++;
-                        // Don't trigger full recalculation if we're in the middle of a resistance-only update
-                        if (!this.isUpdatingResistanceOnly) {
+                        // Skip calculation on coreProcessed if bobbin regen is pending —
+                        // wound action will trigger it after winding with the new bobbin.
+                        const skipCalc = name == "coreProcessed" && this.taskQueueStore.bobbinRegenerationPending;
+                        if (!skipCalc && !this.isUpdatingResistanceOnly) {
                             this.calculateMatrices();
                         }
                     }

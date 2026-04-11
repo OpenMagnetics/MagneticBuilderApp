@@ -110,10 +110,9 @@ export default {
                 }
                 if (name == "coreMaterialChanged") {
                     if (args[0]) {
+                        // Just mark as outdated — the subsequent coreProcessed action
+                        // will trigger calculateCoreLosses with the fully processed core.
                         this.dataUptoDate = false;
-                        if (this.enableAutoSimulation) {
-                            this.calculateCoreLosses();
-                        }
                     }
                     else {
                         console.error(args[1])

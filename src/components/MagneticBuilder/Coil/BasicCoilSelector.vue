@@ -269,15 +269,30 @@ export default {
                         console.error(args[1])
                     }
                 }
-                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated" || name == "coreProcessed") {
+                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated") {
                     if (args[0]) {
-                        // Bobbin was already assigned by BasicCoreSelector
-                        // First read bobbin data FROM masStore to update localData
-                        // Then apply current coil configuration settings to the new bobbin
+                        this.taskQueueStore.bobbinRegenerationPending = false;
                         this.assignLocalData(this.masStore.mas.magnetic);
                         this.assignCoilData();
                         this.recentChange = true;
                         this.tryToWind();
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreProcessed") {
+                    if (args[0]) {
+                        this.assignLocalData(this.masStore.mas.magnetic);
+                        this.assignCoilData();
+                        // Only trigger winding if no bobbin regeneration is pending.
+                        // When shape/material/stacks change, bobbin will be regenerated
+                        // and bobbinFromCoreShapeGenerated will trigger the wind instead.
+                        // For gapping-only changes, no bobbin regen happens so we wind here.
+                        if (!this.taskQueueStore.bobbinRegenerationPending) {
+                            this.recentChange = true;
+                            this.tryToWind();
+                        }
                     }
                     else {
                         console.error(args[1])

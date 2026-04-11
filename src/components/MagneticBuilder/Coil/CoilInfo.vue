@@ -96,7 +96,10 @@ export default {
                 if (name == "wound" || name == "planarWound" || name == "coreShapeProcessed" || name == "coreMaterialProcessed" || name == "coreProcessed") {
                     if (args[0]) {
                         this.dataUptoDate = false;
-                        if (this.enableAutoSimulation) {
+                        // Skip simulation on coreProcessed if bobbin is being regenerated —
+                        // wound action will trigger simulation after winding with the new bobbin.
+                        const skipSim = name == "coreProcessed" && this.taskQueueStore.bobbinRegenerationPending;
+                        if (!skipSim && this.enableAutoSimulation) {
                             this.simulate();
                         }
                     }

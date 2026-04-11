@@ -158,17 +158,22 @@ export default {
                             this.masStore.mas.magnetic.manufacturerInfo = null;
                             const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
                             // Use custom thickness if available, otherwise use default
-                            const hasCustomThickness = this.pendingBobbinThickness && 
+                            const hasCustomThickness = this.pendingBobbinThickness &&
                                 (this.pendingBobbinThickness.wallThickness !== undefined || this.pendingBobbinThickness.columnThickness !== undefined);
-                            
+
+                            // Signal that bobbin will be regenerated — prevents
+                            // BasicCoilSelector from starting a premature wind() on
+                            // coreProcessed with the old bobbin.
+                            this.taskQueueStore.bobbinRegenerationPending = true;
+
                             const generateBobbinPromise = hasCustomThickness
                                 ? this.taskQueueStore.generateBobbinDifferentThicknesses(
-                                    core, 
-                                    this.pendingBobbinThickness.wallThickness, 
+                                    core,
+                                    this.pendingBobbinThickness.wallThickness,
                                     this.pendingBobbinThickness.columnThickness
                                   )
                                 : this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
-                            
+
                             generateBobbinPromise.then((bobbin) => {
                                 // Only update if bobbin actually changed
                                 if (JSON.stringify(currentBobbin) !== JSON.stringify(bobbin)) {
@@ -208,6 +213,7 @@ export default {
                                 this.changeMadeByUser = false;
                                 // Only generate bobbin if material is set (backend requires it)
                                 if (mas.magnetic.core.functionalDescription?.material) {
+                                    this.taskQueueStore.bobbinRegenerationPending = true;
                                     const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
                                     this.taskQueueStore.generateBobbinFromCoreShape(
                                         mas.magnetic.core,
@@ -392,7 +398,8 @@ export default {
             this.$emit('coreProcessingStarted');
             this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
                 this.masStore.mas.magnetic.core = core;
-                this.historyStore.addToHistory(this.masStore.mas);
+                // Don't addToHistory here — the subsequent wind() completion
+                // will addToHistory with the fully wound coil state.
                 this.$emit('coreProcessed');
             })
             .catch(error => {
@@ -406,7 +413,8 @@ export default {
             this.$emit('coreProcessingStarted');
             this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
                 this.masStore.mas.magnetic.core = core;
-                this.historyStore.addToHistory(this.masStore.mas);
+                // Don't addToHistory here — the subsequent wind() completion
+                // will addToHistory with the fully wound coil state.
                 this.$emit('coreProcessed');
             })
             .catch(error => {
