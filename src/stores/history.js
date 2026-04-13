@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch, computed  } from 'vue'
+import { ref  } from 'vue'
 import { deepCopy  } from '/WebSharedComponents/assets/js/utils.js'
 
 export const useHistoryStore = defineStore("history", () => {
@@ -7,13 +7,26 @@ export const useHistoryStore = defineStore("history", () => {
     const historyPointer = ref(-1);
     let blockingRebounds = false;
     let blockingAdditions = false;
+    let reboundsTimer = null;
+    let additionsTimer = null;
 
-    function blockAdditions() {
+    function blockAdditions(durationMs) {
         blockingAdditions = true;
+        if (additionsTimer) clearTimeout(additionsTimer);
+        if (durationMs != null && durationMs > 0) {
+            additionsTimer = setTimeout(() => {
+                blockingAdditions = false;
+                additionsTimer = null;
+            }, durationMs);
+        }
     }
 
     function unblockAdditions() {
         blockingAdditions = false;
+        if (additionsTimer) {
+            clearTimeout(additionsTimer);
+            additionsTimer = null;
+        }
     }
 
     function addToHistory(mas) {
@@ -23,20 +36,29 @@ export const useHistoryStore = defineStore("history", () => {
         if (blockingAdditions) {
             return
         }
-        for (let i = this.masHistory.length - 1; i >= 0; i--) {
-            if (i > this.historyPointer) {
-                this.masHistory.pop();
-            }
+        // Discard any redo entries beyond the current pointer
+        if (this.historyPointer < this.masHistory.length - 1) {
+            this.masHistory.length = this.historyPointer + 1;
         }
         this.masHistory.push(deepCopy(mas));
         this.historyPointer = this.masHistory.length - 1;
         blockingRebounds = true;
-        setTimeout(() => blockingRebounds = false, 100);
+        if (reboundsTimer) clearTimeout(reboundsTimer);
+        reboundsTimer = setTimeout(() => {
+            blockingRebounds = false;
+            reboundsTimer = null;
+        }, 100);
     }
 
     function reset() {
         this.historyPointer = -1;
         this.masHistory = [];
+        blockingRebounds = false;
+        blockingAdditions = false;
+        if (reboundsTimer) clearTimeout(reboundsTimer);
+        if (additionsTimer) clearTimeout(additionsTimer);
+        reboundsTimer = null;
+        additionsTimer = null;
     }
 
     function back() {
@@ -44,7 +66,11 @@ export const useHistoryStore = defineStore("history", () => {
             this.historyPointer -= 1;
         }
         blockingRebounds = true;
-        setTimeout(() => blockingRebounds = false, 100);
+        if (reboundsTimer) clearTimeout(reboundsTimer);
+        reboundsTimer = setTimeout(() => {
+            blockingRebounds = false;
+            reboundsTimer = null;
+        }, 100);
         return deepCopy(this.masHistory[this.historyPointer]);
     }
 
@@ -53,7 +79,11 @@ export const useHistoryStore = defineStore("history", () => {
             this.historyPointer += 1;
         }
         blockingRebounds = true;
-        setTimeout(() => blockingRebounds = false, 100);
+        if (reboundsTimer) clearTimeout(reboundsTimer);
+        reboundsTimer = setTimeout(() => {
+            blockingRebounds = false;
+            reboundsTimer = null;
+        }, 100);
         return deepCopy(this.masHistory[this.historyPointer]);
     }
 

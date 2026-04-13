@@ -58,6 +58,8 @@ export default {
             tryingToSweep,
             errorMessage,
             subscriptions,
+            _sweepTimer: null,
+            _triggerTimer: null,
         }
     },
     computed: {
@@ -66,7 +68,8 @@ export default {
         '$stateStore.graphParameters': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.tryToSweep(); }, 10);
+                if (this._triggerTimer) clearTimeout(this._triggerTimer);
+                this._triggerTimer = setTimeout(() => {this.tryToSweep(); }, 10);
             },
           deep: true
         },
@@ -78,7 +81,8 @@ export default {
                     if (args[0]) {
                         this.loading = true;
                         this.recentChange = true;
-                        setTimeout(() => {this.tryToSweep(); }, 10);
+                        if (this._triggerTimer) clearTimeout(this._triggerTimer);
+                        this._triggerTimer = setTimeout(() => {this.tryToSweep(); }, 10);
                     }
                     else {
                         console.error(args[1])
@@ -88,9 +92,12 @@ export default {
         }))
         this.loading = true;
         this.recentChange = true;
-        setTimeout(() => {this.tryToSweep(); }, 10);
+        if (this._triggerTimer) clearTimeout(this._triggerTimer);
+        this._triggerTimer = setTimeout(() => {this.tryToSweep(); }, 10);
     },
     beforeUnmount () {
+        if (this._sweepTimer) clearTimeout(this._sweepTimer);
+        if (this._triggerTimer) clearTimeout(this._triggerTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -98,7 +105,8 @@ export default {
             if (!this.tryingToSweep) {
                 this.recentChange = false;
                 this.tryingToSweep = true;
-                setTimeout(() => {
+                if (this._sweepTimer) clearTimeout(this._sweepTimer);
+                this._sweepTimer = setTimeout(() => {
                     if (this.recentChange) {
                         this.tryingToSweep = false;
                         this.tryToSweep();

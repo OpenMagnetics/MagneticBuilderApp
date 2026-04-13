@@ -69,6 +69,7 @@ export default {
             inputsHash,
             forceUpdate,
             subscriptions,
+            _retryTimer: null,
         }
     },
     computed: {
@@ -162,6 +163,7 @@ export default {
         }))
     },
     beforeUnmount () {
+        if (this._retryTimer) clearTimeout(this._retryTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -191,7 +193,9 @@ export default {
             this.imageUpToDate = false;
 
             if (this.retries > 0) {
-                setTimeout(() => {
+                if (this._retryTimer) clearTimeout(this._retryTimer);
+                this._retryTimer = setTimeout(() => {
+                    this._retryTimer = null;
                     this.imageUpToDate = false;
                     this.tryPlot(true);
                     this.retries -= 1;

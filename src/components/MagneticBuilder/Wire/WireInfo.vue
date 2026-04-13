@@ -67,6 +67,7 @@ export default {
             tryingToSend,
             dataUptoDate,
             subscriptions,
+            _simTimer: null,
         }
     },
     computed: {
@@ -214,6 +215,7 @@ export default {
         this.taskQueueStore.checkAndFixMas(this.masStore.mas);
     },
     beforeUnmount () {
+        if (this._simTimer) clearTimeout(this._simTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -222,7 +224,9 @@ export default {
                 this.recentChange = false;
                 this.dataUptoDate = false;
                 this.tryingToSend = true;
-                setTimeout(() => {
+                if (this._simTimer) clearTimeout(this._simTimer);
+                this._simTimer = setTimeout(() => {
+                    this._simTimer = null;
                     if (this.recentChange) {
                         this.tryingToSend = false;
                         this.tryToSimulate();

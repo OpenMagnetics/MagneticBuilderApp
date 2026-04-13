@@ -130,6 +130,8 @@ export default {
             oldMagneticCoilHash,
             oldInputsCoilHash,
             subscriptions,
+            _windTimer: null,
+            _reboundsTimer: null,
         }
     },
     computed: {
@@ -193,7 +195,10 @@ export default {
     },
     mounted () {
         if (this.$stateStore.loadingDesign) {
-            setTimeout(() => {this.$stateStore.loadingDesign = false}, 2000);            
+            this._loadingTimer = setTimeout(() => {
+                this.$stateStore.loadingDesign = false;
+                this._loadingTimer = null;
+            }, 2000);
         }
         else {
             this.tryToWind();
@@ -302,6 +307,9 @@ export default {
         }))
     },
     beforeUnmount () {
+        if (this._windTimer) clearTimeout(this._windTimer);
+        if (this._reboundsTimer) clearTimeout(this._reboundsTimer);
+        if (this._loadingTimer) clearTimeout(this._loadingTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -442,9 +450,11 @@ export default {
                         this.masStore.mas.magnetic.coil = coil;
                         this.masStore.mas.magnetic.coil.bobbin = existingBobbin;
 
+                        // Unblock FIRST so addToHistory succeeds — during initial
+                        // mount and file import, history is blocked until this point.
+                        this.historyStore.unblockAdditions();
                         this.historyStore.addToHistory(this.masStore.mas);
                         this.tryingToSend = false;
-                        this.historyStore.unblockAdditions();
                     })
                     .catch(error => {
                         console.error(error);
@@ -458,7 +468,11 @@ export default {
                     this.blockingRebounds = true;
                     this.assignLocalData(this.masStore.mas.magnetic);
                     this.tryToWind();
-                    setTimeout(() => this.blockingRebounds = false, 100);
+                    if (this._reboundsTimer) clearTimeout(this._reboundsTimer);
+                    this._reboundsTimer = setTimeout(() => {
+                        this.blockingRebounds = false;
+                        this._reboundsTimer = null;
+                    }, 100);
                 }
             }
             else {
@@ -470,7 +484,9 @@ export default {
             if (!this.tryingToSend) {
                 this.recentChange = false
                 this.tryingToSend = true
-                setTimeout(() => {
+                if (this._windTimer) clearTimeout(this._windTimer);
+                this._windTimer = setTimeout(() => {
+                    this._windTimer = null;
                     if (this.recentChange) {
                         this.tryingToSend = false
                         this.tryToWind()

@@ -34,6 +34,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         task_standard_response_delay: 20,
         windingIndexChangeBlock: false,
         bobbinRegenerationPending: false,
+        _windingBlockTimer: null,
+        _windingChangedTimer: null,
     }),
     actions: {
         // Called when the magnetic builder mounts with an existing complete design
@@ -46,10 +48,17 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
         setWindingIndexChangeBlock() {
             this.windingIndexChangeBlock = true;
-            setTimeout(() => {
+            // Cancel any previous timers so rapid clicks don't leak
+            if (this._windingBlockTimer) clearTimeout(this._windingBlockTimer);
+            if (this._windingChangedTimer) clearTimeout(this._windingChangedTimer);
+            this._windingBlockTimer = setTimeout(() => {
                 this.windingIndexChangeBlock = false;
+                this._windingBlockTimer = null;
             }, 1000);
-            setTimeout(() => {this.windingIndexChanged(true);}, this.task_standard_response_delay);
+            this._windingChangedTimer = setTimeout(() => {
+                this.windingIndexChanged(true);
+                this._windingChangedTimer = null;
+            }, this.task_standard_response_delay);
         },
 
         masCheckedAndFixed(success = true, dataOrMessage = '') {

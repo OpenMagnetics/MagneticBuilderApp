@@ -78,6 +78,7 @@ export default {
             magneticBuilt,
             historyStore,
             subscriptions,
+            _insertMasTimer: null,
         }
     },
     computed: {
@@ -126,14 +127,22 @@ export default {
         }
 
         this.magneticBuilt = this.isMagneticBuilt();
-        this.historyStore.addToHistory(this.masStore.mas);
+        // Block history during initial mount — intermediate states (processCore,
+        // bobbin regen, winding) won't create entries. The first wind() completion
+        // will unblock and save the fully-built state as the first history entry.
         this.historyStore.blockAdditions();
         this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "addToHistory") {
                 this.magneticBuilt = this.isMagneticBuilt();
                 this.$emit("canContinue", this.magneticBuilt);
                 if (this.magneticBuilt && !this.isIsolatedApp && this.enableInsertIntermediateMas) {
-                    this.insertIntermediateMas();
+                    // Debounce to avoid firing multiple backend calls when
+                    // several addToHistory events arrive in quick succession.
+                    if (this._insertMasTimer) clearTimeout(this._insertMasTimer);
+                    this._insertMasTimer = setTimeout(() => {
+                        this._insertMasTimer = null;
+                        this.insertIntermediateMas();
+                    }, 500);
                 }
             }
         }));
@@ -148,6 +157,7 @@ export default {
 
     },
     beforeUnmount() {
+        if (this._insertMasTimer) clearTimeout(this._insertMasTimer);
         this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {

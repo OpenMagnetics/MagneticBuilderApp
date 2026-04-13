@@ -81,6 +81,7 @@ export default {
             tryingToSend,
             subscriptions,
             coilAlignments,
+            _windTimer: null,
         }
     },
     computed: {
@@ -159,6 +160,7 @@ export default {
         this.getCoilAlignments();
     },
     beforeUnmount () {
+        if (this._windTimer) clearTimeout(this._windTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -262,7 +264,9 @@ export default {
             if (!this.tryingToSend) {
                 this.recentChange = false
                 this.tryingToSend = true
-                setTimeout(() => {
+                if (this._windTimer) clearTimeout(this._windTimer);
+                this._windTimer = setTimeout(() => {
+                    this._windTimer = null;
                     if (this.recentChange) {
                         this.tryingToSend = false
                         this.tryToWind()

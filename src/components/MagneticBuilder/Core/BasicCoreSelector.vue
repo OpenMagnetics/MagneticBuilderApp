@@ -102,6 +102,7 @@ export default {
             cachedMagnetic,
             changeMadeByUser: false,
             updatingLocalData: false,
+            _mountTimer: null,
         }
     },
     computed: {
@@ -132,7 +133,10 @@ export default {
     mounted () {
         this.getMaterialNames();
 
-        setTimeout(() => {this.assignLocalData(this.masStore.mas.magnetic.core);}, 1000);
+        this._mountTimer = setTimeout(() => {
+            this._mountTimer = null;
+            this.assignLocalData(this.masStore.mas.magnetic.core);
+        }, 1000);
         this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
                 this.assignLocalData(this.masStore.mas.magnetic.core);
@@ -241,6 +245,7 @@ export default {
 
     },
     beforeUnmount () {
+        if (this._mountTimer) clearTimeout(this._mountTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -429,7 +434,17 @@ export default {
             if (this.masStore.mas.inputs.operatingPoints.length > 0) {
                 this.$settingsStore.adviserSettings.coreAdviseMode = "standard cores";
 
-                this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.$stateStore.hasCurrentApplicationMirroredWindings(), this.masStore.coreAdviserWeights, this.$settingsStore.adviserSettings).then(async (magnetic) => {
+                // Use magneticBuilderSettings (where the UI toggles write)
+                // instead of adviserSettings (which is never updated by the UI)
+                const settings = {
+                    ...this.$settingsStore.adviserSettings,
+                    allowToroidalCores: this.$settingsStore.magneticBuilderSettings.allowToroidalCores,
+                    allowDistributedGaps: this.$settingsStore.magneticBuilderSettings.allowDistributedGaps,
+                    allowStacks: this.$settingsStore.magneticBuilderSettings.allowStacks,
+                    useOnlyCoresInStock: this.$settingsStore.magneticBuilderSettings.useOnlyCoresInStock,
+                };
+
+                this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.$stateStore.hasCurrentApplicationMirroredWindings(), this.masStore.coreAdviserWeights, settings).then(async (magnetic) => {
                     this.masStore.mas.magnetic.core = magnetic.core;
                     
                     // Generate bobbin first

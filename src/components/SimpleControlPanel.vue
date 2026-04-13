@@ -31,12 +31,14 @@ export default {
         const historyStore = useHistoryStore();
         const masExported = false;
         const loading = false;
+        const undoRedoBlocked = false;
         return {
             taskQueueStore,
             masStore,
             historyStore,
             masExported,
             loading,
+            undoRedoBlocked,
         }
     },
     methods: {
@@ -46,18 +48,22 @@ export default {
             await this.$router.push('/engine_loader');
         },
         undo() {
+            if (this.undoRedoBlocked) return;
+            this.undoRedoBlocked = true;
+            setTimeout(() => { this.undoRedoBlocked = false; }, 300);
             const newMas = this.historyStore.back();
             this.masStore.mas = newMas;
             this.historyStore.historyPointerUpdated();
-            this.historyStore.blockAdditions();
-            setTimeout(() => {this.historyStore.unblockAdditions();}, 2000);
+            this.historyStore.blockAdditions(2000);
         },
         redo() {
+            if (this.undoRedoBlocked) return;
+            this.undoRedoBlocked = true;
+            setTimeout(() => { this.undoRedoBlocked = false; }, 300);
             const newMas = this.historyStore.forward();
             this.masStore.mas = newMas;
             this.historyStore.historyPointerUpdated();
-            this.historyStore.blockAdditions();
-            setTimeout(() => {this.historyStore.unblockAdditions();}, 2000);
+            this.historyStore.blockAdditions(2000);
         },
         load() {
             this.loading = true;
@@ -119,6 +125,12 @@ export default {
                         }
                     }
 
+                    // Block history BEFORE setting the MAS — all intermediate states
+                    // (processCore, bobbin regen, winding) are suppressed.
+                    // The wind() completion in BasicCoilSelector will unblock and
+                    // addToHistory with the final fully-wound state.
+                    this.historyStore.blockAdditions();
+
                     this.masStore.mas = autocompletedMas;
                     this.masStore.importedMas();
                     this.$stateStore.toolboxStates[this.$stateStore.selectedWorkflow].magneticBuilder.subsection = "magneticBuilder";
@@ -141,8 +153,6 @@ export default {
                         }
                     }
 
-                    this.historyStore.addToHistory(this.masStore.mas);
-                    this.historyStore.blockAdditions();
                     this.$emit('toolSelected', "magneticBuilder");
                 }
                 catch (error) {

@@ -57,6 +57,8 @@ export default {
             loading,
             recentChange,
             tryingToSend,
+            _sweepTimer: null,
+            _triggerTimer: null,
         }
     },
     computed: {
@@ -73,35 +75,44 @@ export default {
         'masStore.mas.magnetic.core': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
+                if (this._triggerTimer) clearTimeout(this._triggerTimer);
+                this._triggerTimer = setTimeout(() => {this.tryToSend(); }, 10);
             },
           deep: true
         },
         'masStore.mas.magnetic.coil.functionalDescription': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
+                if (this._triggerTimer) clearTimeout(this._triggerTimer);
+                this._triggerTimer = setTimeout(() => {this.tryToSend(); }, 10);
             },
           deep: true
         },
         '$stateStore.graphParameters': {
             handler(newValue, oldValue) {
                 this.loading = true;
-                setTimeout(() => {this.tryToSend(); }, 10);
+                if (this._triggerTimer) clearTimeout(this._triggerTimer);
+                this._triggerTimer = setTimeout(() => {this.tryToSend(); }, 10);
             },
           deep: true
         },
     },
     mounted () {
         this.loading = true;
-        setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
+        if (this._triggerTimer) clearTimeout(this._triggerTimer);
+        this._triggerTimer = setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
+    },
+    beforeUnmount () {
+        if (this._sweepTimer) clearTimeout(this._sweepTimer);
+        if (this._triggerTimer) clearTimeout(this._triggerTimer);
     },
     methods: {
         tryToSend() {
             if (!this.tryingToSend) {
                 this.recentChange = false;
                 this.tryingToSend = true;
-                setTimeout(() => {
+                if (this._sweepTimer) clearTimeout(this._sweepTimer);
+                this._sweepTimer = setTimeout(() => {
                     if (this.recentChange) {
                         this.tryingToSend = false;
                         this.tryToSend();
@@ -116,7 +127,8 @@ export default {
         },
         updatedNumberWindings() {
             this.loading = true;
-            setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
+            if (this._triggerTimer) clearTimeout(this._triggerTimer);
+            this._triggerTimer = setTimeout(() => {this.sweepResistancesOverFrequency(); }, 10);
         },
         sweepResistancesOverFrequency() {
             let ambientTemperature = defaultOperatingConditions.ambientTemperature;

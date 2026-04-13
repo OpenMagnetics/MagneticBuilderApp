@@ -59,6 +59,8 @@ export default {
             lastSimulatedModels,
             dataUptoDate,
             subscriptions,
+            _simTimer: null,
+            _waitTimer: null,
         }
     },
     computed: {
@@ -133,6 +135,8 @@ export default {
         this.waitForModelSettingsAndSimulate();
     },
     beforeUnmount () {
+        if (this._simTimer) clearTimeout(this._simTimer);
+        if (this._waitTimer) clearTimeout(this._waitTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -150,7 +154,10 @@ export default {
                 }
             } else {
                 // Check again in 100ms
-                setTimeout(() => this.waitForModelSettingsAndSimulate(), 100);
+                this._waitTimer = setTimeout(() => {
+                    this._waitTimer = null;
+                    this.waitForModelSettingsAndSimulate();
+                }, 100);
             }
         },
         tryToSimulate() {
@@ -158,7 +165,9 @@ export default {
                 this.recentChange = false
                 this.dataUptoDate = false
                 this.tryingToSend = true
-                setTimeout(() => {
+                if (this._simTimer) clearTimeout(this._simTimer);
+                this._simTimer = setTimeout(() => {
+                    this._simTimer = null;
                     if (this.recentChange) {
                         this.tryingToSend = false
                         this.tryToSimulate()
