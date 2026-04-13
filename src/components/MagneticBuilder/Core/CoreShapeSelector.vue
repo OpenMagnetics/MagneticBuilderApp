@@ -306,10 +306,9 @@ export default {
                 class="ms-3 col-1 p-0 pt-1"
                 v-tooltip="'Open core shape table'"
             >
-                <button 
-                    style="height: 35px;"
+                <button
                     :style="$styleStore.magneticBuilder.tableButton"
-                    class="btn ms-1"
+                    class="shape-table-btn"
                     data-bs-toggle="modal"
                     data-bs-target="#coreShapeTableModal"
                     >
@@ -319,3 +318,24 @@ export default {
         </div>
     </div>
 </template>
+
+<style scoped>
+.shape-table-btn {
+    height: 1.75rem;
+    padding: 0 0.6rem;
+    background-color: var(--p-surface-600);
+    color: var(--p-surface-50);
+    border: 1px solid var(--p-surface-400);
+    border-radius: var(--p-border-radius);
+    font-family: var(--p-font-family);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.shape-table-btn:hover {
+    background-color: var(--p-primary-color);
+    border-color: var(--p-primary-color);
+    color: var(--p-surface-800);
+}
+</style>
