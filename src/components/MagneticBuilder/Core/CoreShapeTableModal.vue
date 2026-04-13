@@ -57,12 +57,12 @@ export default {
 
 <template>
     <div class="modal fade" :id="'coreShapeTableModal'" tabindex="-1" :aria-labelledby="'coreShapeTableModal-settingsModalLabel'" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable table">
-            <div class="modal-content bg-dark border-0 shadow-lg">
-                <div class="modal-header border-bottom border-secondary px-4 py-3">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable shape-table-modal">
+            <div class="modal-content shape-modal-content">
+                <div class="modal-header shape-modal-header">
                     <div class="d-flex align-items-center">
-                        <i class="fa-solid fa-cubes text-primary me-2 fs-5"></i>
-                        <h5 :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title text-white mb-0" :id="'coreShapeTableModal-settingsModalLabel'">Select Core Shape</h5>
+                        <i class="fa-solid fa-cubes shape-header-icon me-3"></i>
+                        <h5 :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title mb-0 shape-modal-title" :id="'coreShapeTableModal-settingsModalLabel'">Select Core Shape</h5>
                     </div>
                     <button ref="closeSettingsModalRef" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="settingsModalClose"></button>
                 </div>
@@ -79,18 +79,18 @@ export default {
                             <tr>
                                 <th>Name</th>
                                 <th>Family</th>
-                                <th>Effective Length</th>
-                                <th>Effective Area</th>
-                                <th>Minimum Area</th>
-                                <th>Effective Volume</th>
-                                <th>Select</th>
+                                <th>Eff. Length</th>
+                                <th>Eff. Area</th>
+                                <th>Min. Area</th>
+                                <th>Eff. Volume</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <template #column-6="props">
                             <button
-                                class="btn btn-primary"
+                                class="btn shape-select-btn"
                                 @click="selectCoreShape(props.rowData)"
-                            ><i class="fa-solid fa-square-check"></i></button>
+                            ><i class="fa-solid fa-arrow-right"></i></button>
                         </template>
                     </DataTable>
                 </div>
@@ -100,61 +100,223 @@ export default {
 </template>
 
 <style>
-    .table {
+    .shape-table-modal {
         z-index: 9999;
     }
 
-    /* Make DataTable text light */
+    .shape-modal-content {
+        background-color: var(--p-surface-800);
+        border: 1px solid var(--p-surface-400);
+        border-radius: 0.75rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .shape-modal-header {
+        border-bottom: 1px solid var(--p-surface-500);
+        padding: 1rem 1.5rem;
+    }
+
+    .shape-modal-title {
+        color: var(--p-surface-50);
+        font-family: var(--p-font-family);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+    }
+
+    .shape-header-icon {
+        color: var(--p-primary-color);
+        font-size: 1.25rem;
+    }
+
+    .shape-select-btn {
+        background-color: var(--p-surface-600);
+        color: var(--p-surface-50);
+        border: 1px solid var(--p-surface-400);
+        border-radius: var(--p-border-radius);
+        padding: 0.3rem 0.75rem;
+        font-family: var(--p-font-family);
+        font-size: 0.8rem;
+        height: 1.75rem;
+        line-height: 1.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .shape-select-btn:hover {
+        background-color: var(--p-primary-color);
+        border-color: var(--p-primary-color);
+        color: var(--p-surface-800);
+    }
+
+    .shape-select-btn:focus {
+        box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--p-primary-color) 25%, transparent);
+    }
+
+    /* DataTable wrapper */
     #dataTables_wrapper {
-        color: #fff;
+        color: var(--p-surface-50);
+        font-family: var(--p-font-family);
     }
 
     #dataTables_wrapper table {
-        color: #fff;
+        color: var(--p-surface-50);
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     #dataTables_wrapper table thead th {
-        color: #fff;
-        background-color: #212529;
-        border-color: #6c757d;
+        color: var(--p-surface-200);
+        background-color: var(--p-surface-700);
+        border-bottom: 2px solid var(--p-primary-color);
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     #dataTables_wrapper table tbody td {
-        color: #fff;
-        background-color: #212529;
-        border-color: #6c757d;
+        color: var(--p-surface-50);
+        background-color: var(--p-surface-800);
+        border-bottom: 1px solid var(--p-surface-600);
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        transition: background-color 0.15s;
     }
 
     #dataTables_wrapper table tbody tr:hover td {
-        background-color: #2c3034;
+        background-color: var(--p-surface-600);
     }
 
+    #dataTables_wrapper table tbody tr.selected td {
+        background-color: color-mix(in srgb, var(--p-primary-color) 15%, var(--p-surface-800));
+    }
+
+    /* Search input */
     #dataTables_wrapper .dataTables_filter input,
-    #dataTables_wrapper .dataTables_length select {
-        background-color: #2c3034;
-        color: #fff;
-        border-color: #6c757d;
+    #dataTables_wrapper .dt-search input {
+        background-color: var(--p-surface-700) !important;
+        color: var(--p-surface-50) !important;
+        border: 1px solid var(--p-surface-400) !important;
+        border-radius: var(--p-border-radius) !important;
+        padding: 0.35rem 0.75rem !important;
+        font-family: var(--p-font-family) !important;
+        font-size: 0.85rem !important;
+        height: 1.75rem !important;
+        outline: none !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
     }
 
+    #dataTables_wrapper .dataTables_filter input:focus,
+    #dataTables_wrapper .dt-search input:focus {
+        border-color: var(--p-primary-color) !important;
+        box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--p-primary-color) 25%, transparent) !important;
+    }
+
+    /* Length select dropdown */
+    #dataTables_wrapper .dataTables_length select,
+    #dataTables_wrapper .dt-length select,
+    #dataTables_wrapper .dt-search input,
+    #dataTables_wrapper .dataTables_filter input {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+
+    #dataTables_wrapper .dataTables_length select,
+    #dataTables_wrapper .dt-length select {
+        background-color: var(--p-surface-700) !important;
+        color: var(--p-surface-50) !important;
+        border: 1px solid var(--p-surface-400) !important;
+        border-radius: var(--p-border-radius) !important;
+        padding: 0.25rem 0.5rem !important;
+        font-family: var(--p-font-family) !important;
+        font-size: 0.85rem !important;
+        height: 1.75rem !important;
+        outline: none !important;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+
+    #dataTables_wrapper .dataTables_length select:focus,
+    #dataTables_wrapper .dt-length select:focus {
+        border-color: var(--p-primary-color) !important;
+        box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--p-primary-color) 25%, transparent) !important;
+    }
+
+    #dataTables_wrapper .dataTables_length select option,
+    #dataTables_wrapper .dt-length select option {
+        background-color: var(--p-surface-700);
+        color: var(--p-surface-50);
+    }
+
+    /* Top controls - entries + search on same line */
+    #dataTables_wrapper .dt-layout-row:has(.dt-length),
+    #dataTables_wrapper .dt-layout-row:has(.dataTables_length) {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    #dataTables_wrapper .dt-layout-row:has(.dt-length) > div,
+    #dataTables_wrapper .dt-layout-row:has(.dataTables_length) > div {
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        width: auto !important;
+    }
+
+    /* Labels */
     #dataTables_wrapper .dataTables_info,
     #dataTables_wrapper .dataTables_length label,
-    #dataTables_wrapper .dataTables_filter label {
-        color: #adb5bd;
+    #dataTables_wrapper .dataTables_filter label,
+    #dataTables_wrapper .dt-info,
+    #dataTables_wrapper .dt-length label,
+    #dataTables_wrapper .dt-search label {
+        color: var(--p-surface-300) !important;
+        font-family: var(--p-font-family);
+        font-size: 0.8rem;
+        white-space: nowrap;
     }
 
-    #dataTables_wrapper .dataTables_paginate .paginate_button {
-        color: #fff !important;
+    /* Pagination */
+    #dataTables_wrapper .dataTables_paginate .paginate_button,
+    #dataTables_wrapper .dt-paging button {
+        background-color: var(--p-surface-700) !important;
+        color: var(--p-surface-200) !important;
+        border: 1px solid var(--p-surface-400) !important;
+        border-radius: var(--p-border-radius) !important;
+        margin: 0 2px !important;
+        padding: 0.3rem 0.65rem !important;
+        font-family: var(--p-font-family) !important;
+        font-size: 0.8rem !important;
+        cursor: pointer;
+        transition: all 0.15s !important;
     }
 
-    #dataTables_wrapper .dataTables_paginate .paginate_button.current {
-        background: #0d6efd !important;
-        border-color: #0d6efd !important;
-        color: #fff !important;
+    #dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    #dataTables_wrapper .dt-paging button.current {
+        background-color: var(--p-primary-color) !important;
+        border-color: var(--p-primary-color) !important;
+        color: var(--p-surface-800) !important;
+        font-weight: 600 !important;
     }
 
-    #dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-        background: #2c3034 !important;
-        border-color: #6c757d !important;
-        color: #fff !important;
+    #dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+    #dataTables_wrapper .dt-paging button:hover {
+        background-color: var(--p-surface-600) !important;
+        border-color: var(--p-primary-color) !important;
+        color: var(--p-surface-50) !important;
+    }
+
+    #dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+    #dataTables_wrapper .dt-paging button.disabled {
+        color: var(--p-surface-500) !important;
+        background-color: var(--p-surface-800) !important;
+        border-color: var(--p-surface-600) !important;
+        cursor: default !important;
+        opacity: 0.5;
     }
 </style>
