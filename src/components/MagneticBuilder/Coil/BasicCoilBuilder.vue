@@ -129,7 +129,10 @@ export default {
                                 this.masStore.mas.magnetic.core.functionalDescription.material = coreMaterial;
                             }
                         }
-                        if (this.$settingsStore.magneticBuilderSettings.autoRedraw && !this.taskQueueStore.windingIndexChangeBlock) {
+                        // Skip plot on coreProcessed if bobbin regen is pending —
+                        // wound action will trigger the final plot after winding completes.
+                        const skipPlot = name == "coreProcessed" && this.taskQueueStore.bobbinRegenerationPending;
+                        if (!skipPlot && this.$settingsStore.magneticBuilderSettings.autoRedraw && !this.taskQueueStore.windingIndexChangeBlock) {
                             this.imageUpToDate = false;
                             this.tryPlot(false);
                         }

@@ -43,7 +43,6 @@ export default {
             after(() => {
                 if (name == "newWireCreated") {
                     if (args[0]) {
-                        console.log('[PlanarInsulationSelector] newWireCreated triggered, updating forceUpdate');
                         this.forceUpdate += 1;
                     }
                 }

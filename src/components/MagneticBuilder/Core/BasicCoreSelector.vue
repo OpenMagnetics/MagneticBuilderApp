@@ -100,6 +100,8 @@ export default {
             subscriptions,
             pendingBobbinThickness,
             cachedMagnetic,
+            changeMadeByUser: false,
+            updatingLocalData: false,
         }
     },
     computed: {
@@ -129,7 +131,7 @@ export default {
     },
     mounted () {
         this.getMaterialNames();
-        
+
         setTimeout(() => {this.assignLocalData(this.masStore.mas.magnetic.core);}, 1000);
         this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "historyPointerUpdated") {
@@ -147,23 +149,31 @@ export default {
                 if (name == "coreProcessed") {
                     if (args[0]) {
                         const core = args[1];
-                        if (this.changeMadeByUser) {
+                        // Don't run the bobbin-regenerate-and-clear branch during import:
+                        // loadingDesign means a file was just loaded and the imported coil
+                        // (layers/turns/sections/bobbin) must be preserved as-is.
+                        if (this.changeMadeByUser && !this.$stateStore.loadingDesign) {
                             this.masStore.mas.magnetic.core = core;
                             this.changeMadeByUser = false;
                             this.masStore.mas.magnetic.manufacturerInfo = null;
                             const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
                             // Use custom thickness if available, otherwise use default
-                            const hasCustomThickness = this.pendingBobbinThickness && 
+                            const hasCustomThickness = this.pendingBobbinThickness &&
                                 (this.pendingBobbinThickness.wallThickness !== undefined || this.pendingBobbinThickness.columnThickness !== undefined);
-                            
+
+                            // Signal that bobbin will be regenerated — prevents
+                            // BasicCoilSelector from starting a premature wind() on
+                            // coreProcessed with the old bobbin.
+                            this.taskQueueStore.bobbinRegenerationPending = true;
+
                             const generateBobbinPromise = hasCustomThickness
                                 ? this.taskQueueStore.generateBobbinDifferentThicknesses(
-                                    core, 
-                                    this.pendingBobbinThickness.wallThickness, 
+                                    core,
+                                    this.pendingBobbinThickness.wallThickness,
                                     this.pendingBobbinThickness.columnThickness
                                   )
                                 : this.taskQueueStore.generateBobbinFromCoreShape(core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
-                            
+
                             generateBobbinPromise.then((bobbin) => {
                                 // Only update if bobbin actually changed
                                 if (JSON.stringify(currentBobbin) !== JSON.stringify(bobbin)) {
@@ -174,7 +184,7 @@ export default {
                                     this.masStore.mas.magnetic.coil.layersDescription = null;
                                     this.masStore.mas.magnetic.coil.sectionsDescription = null;
                                 }
-                                // Note: BasicCoilSelector listens for bobbinFromCoreShapeGenerated 
+                                // Note: BasicCoilSelector listens for bobbinFromCoreShapeGenerated
                                 // and will automatically trigger rewinding
                             });
                         }
@@ -197,12 +207,13 @@ export default {
                             if (coreHash != JSON.stringify(mas.magnetic.core)) {
                                 this.taskQueueStore.processCore(mas.magnetic.core);
                             }
-                            else if (this.changeMadeByUser) {
+                            else if (this.changeMadeByUser && !this.$stateStore.loadingDesign) {
                                 // Core hash is the same but user changed shape - still need to regenerate bobbin
                                 this.masStore.mas.magnetic.core = mas.magnetic.core;
                                 this.changeMadeByUser = false;
                                 // Only generate bobbin if material is set (backend requires it)
                                 if (mas.magnetic.core.functionalDescription?.material) {
+                                    this.taskQueueStore.bobbinRegenerationPending = true;
                                     const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
                                     this.taskQueueStore.generateBobbinFromCoreShape(
                                         mas.magnetic.core,
@@ -277,14 +288,26 @@ export default {
             }
 
             if (core.functionalDescription.shape != "" && core.functionalDescription.material != "") {
-                this.taskQueueStore.processCore(core).then((core) => {
+                if (core.processedDescription) {
+                    // Core already processed (e.g. loaded from file or undo/redo) — read directly
+                    // to avoid triggering processCore → forceUpdate → numberStacksUpdated cascade.
                     this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
                     this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                    this.updatingLocalData = true;
                     this.forceUpdate += 1;
-                })
-                .catch(error => {
-                    console.error(error);
-                });
+                    this.$nextTick(() => { this.updatingLocalData = false; });
+                } else {
+                    this.taskQueueStore.processCore(core).then((core) => {
+                        this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
+                        this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                        this.updatingLocalData = true;
+                        this.forceUpdate += 1;
+                        this.$nextTick(() => { this.updatingLocalData = false; });
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+                }
             }
         },
         getMaterialNames() {
@@ -350,7 +373,9 @@ export default {
                 this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
                     this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
                     this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
+                    this.updatingLocalData = true;
                     this.forceUpdate += 1;
+                    this.$nextTick(() => { this.updatingLocalData = false; });
                     // Note: Bobbin thickness will be restored in coreProcessed handler after bobbin regeneration
                 })
                 .catch(error => {
@@ -366,13 +391,15 @@ export default {
             }) 
         },
         numberStacksUpdated(value) {
+            if (this.updatingLocalData) return;
             this.changeMadeByUser = true;
             this.masStore.mas.magnetic.core.functionalDescription.numberStacks = value;
             // Set image as outdated immediately
             this.$emit('coreProcessingStarted');
             this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
                 this.masStore.mas.magnetic.core = core;
-                this.historyStore.addToHistory(this.masStore.mas);
+                // Don't addToHistory here — the subsequent wind() completion
+                // will addToHistory with the fully wound coil state.
                 this.$emit('coreProcessed');
             })
             .catch(error => {
@@ -386,7 +413,8 @@ export default {
             this.$emit('coreProcessingStarted');
             this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
                 this.masStore.mas.magnetic.core = core;
-                this.historyStore.addToHistory(this.masStore.mas);
+                // Don't addToHistory here — the subsequent wind() completion
+                // will addToHistory with the fully wound coil state.
                 this.$emit('coreProcessed');
             })
             .catch(error => {

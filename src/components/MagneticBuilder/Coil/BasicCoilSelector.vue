@@ -261,9 +261,7 @@ export default {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "numberTurnsUpdated" || name == "newWireCreated") {
-                    console.log('[DEBUG_COIL] Received action:', name, 'args[0]:', args[0], 'windingIndexChangeBlock:', this.taskQueueStore.windingIndexChangeBlock);
                     if (args[0] && !this.taskQueueStore.windingIndexChangeBlock) {
-                        console.log('[DEBUG_COIL] Setting recentChange=true and calling tryToWind()');
                         this.recentChange = true;
                         this.tryToWind();
                     }
@@ -271,16 +269,30 @@ export default {
                         console.error(args[1])
                     }
                 }
-                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated" || name == "coreProcessed") {
-                    console.log('[DEBUG_COIL] Received action:', name, 'args[0]:', args[0]);
+                if (name == "bobbinFromCoreShapeGenerated" || name == "bobbinDifferentThicknessesGenerated") {
                     if (args[0]) {
-                        // Bobbin was already assigned by BasicCoreSelector
-                        // First read bobbin data FROM masStore to update localData
-                        // Then apply current coil configuration settings to the new bobbin
+                        this.taskQueueStore.bobbinRegenerationPending = false;
                         this.assignLocalData(this.masStore.mas.magnetic);
                         this.assignCoilData();
                         this.recentChange = true;
                         this.tryToWind();
+                    }
+                    else {
+                        console.error(args[1])
+                    }
+                }
+                if (name == "coreProcessed") {
+                    if (args[0]) {
+                        this.assignLocalData(this.masStore.mas.magnetic);
+                        this.assignCoilData();
+                        // Only trigger winding if no bobbin regeneration is pending.
+                        // When shape/material/stacks change, bobbin will be regenerated
+                        // and bobbinFromCoreShapeGenerated will trigger the wind instead.
+                        // For gapping-only changes, no bobbin regen happens so we wind here.
+                        if (!this.taskQueueStore.bobbinRegenerationPending) {
+                            this.recentChange = true;
+                            this.tryToWind();
+                        }
                     }
                     else {
                         console.error(args[1])
@@ -415,10 +427,7 @@ export default {
                         pattern.push(Number(char) - 1);
                     });
 
-                    console.log('[DEBUG_WIND] About to call wind()...');
                     this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins).then((coil) => {
-                        console.log('[DEBUG_WIND] wind() returned successfully');
-                        
                         this.taskQueueStore.calculateFillingFactors(coil).then((fillingFactors) => {
                             this.localData.fillingFactors = fillingFactors;
                         })
@@ -430,23 +439,20 @@ export default {
                         // Preserve the bobbin from the existing coil before assigning the new coil
                         // The wind() function returns a coil without bobbin data
                         const existingBobbin = this.masStore.mas.magnetic.coil.bobbin;
-                        console.log('[DEBUG_WIND] Preserving bobbin:', existingBobbin);
                         this.masStore.mas.magnetic.coil = coil;
                         this.masStore.mas.magnetic.coil.bobbin = existingBobbin;
-                        console.log('[DEBUG_WIND] Bobbin restored');
 
                         this.historyStore.addToHistory(this.masStore.mas);
                         this.tryingToSend = false;
                         this.historyStore.unblockAdditions();
-                        console.log('[DEBUG_WIND] Wind complete');
                     })
                     .catch(error => {
-                        console.error('[DEBUG_WIND] Error in wind():', error);
+                        console.error(error);
                         this.tryingToSend = false;
                     });
                 }
                 catch (e) {
-                    console.error('[DEBUG_WIND] Exception in wind try block:', e);
+                    console.error(e);
                     this.tryingToSend = false;
                     this.recentChange = true;
                     this.blockingRebounds = true;
@@ -456,13 +462,11 @@ export default {
                 }
             }
             else {
-                console.log('[DEBUG_WIND] Hashes unchanged, skipping wind');
                 this.tryingToSend = false;
             }
 
         },
         tryToWind() {
-
             if (!this.tryingToSend) {
                 this.recentChange = false
                 this.tryingToSend = true
@@ -476,29 +480,6 @@ export default {
                     }
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
-            }
-        },
-        tryToWind() {
-            console.log('[DEBUG_COIL] tryToWind() called, tryingToSend:', this.tryingToSend);
-            if (!this.tryingToSend) {
-                this.recentChange = false
-                this.tryingToSend = true
-                console.log('[DEBUG_COIL] Starting timeout for wind...');
-                setTimeout(() => {
-                    console.log('[DEBUG_COIL] Timeout fired, recentChange:', this.recentChange);
-                    if (this.recentChange) {
-                        this.tryingToSend = false
-                        this.tryToWind()
-                    }
-                    else {
-                        console.log('[DEBUG_COIL] Calling wind()...');
-                        this.wind();
-                    }
-                }
-                , this.$settingsStore.waitingTimeAfterChange);
-            }
-            else {
-                console.log('[DEBUG_COIL] Already trying to send, skipping');
             }
         },
         assignLocalData(magnetic) {
