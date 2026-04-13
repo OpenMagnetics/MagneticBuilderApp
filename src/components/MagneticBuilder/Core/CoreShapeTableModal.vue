@@ -105,36 +105,34 @@ export default {
     }
 
     .shape-modal-content {
-        background-color: var(--p-surface-800);
-        border: 1px solid var(--p-surface-400);
+        background-color: #1e2128;
+        border: 1px solid #6c757d;
         border-radius: 0.75rem;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
 
     .shape-modal-header {
-        border-bottom: 1px solid var(--p-surface-500);
+        border-bottom: 1px solid #495057;
         padding: 1rem 1.5rem;
     }
 
     .shape-modal-title {
-        color: var(--p-surface-50);
-        font-family: var(--p-font-family);
+        color: #f8f9fa;
         font-weight: 600;
         letter-spacing: 0.01em;
     }
 
     .shape-header-icon {
-        color: var(--p-primary-color);
+        color: var(--bs-primary);
         font-size: 1.25rem;
     }
 
     .shape-select-btn {
-        background-color: var(--p-surface-600);
-        color: var(--p-surface-50);
-        border: 1px solid var(--p-surface-400);
-        border-radius: var(--p-border-radius);
+        background-color: #343a40;
+        color: #f8f9fa;
+        border: 1px solid #6c757d;
+        border-radius: var(--bs-border-radius);
         padding: 0.3rem 0.75rem;
-        font-family: var(--p-font-family);
         font-size: 0.8rem;
         height: 1.75rem;
         line-height: 1.25rem;
@@ -143,31 +141,30 @@ export default {
     }
 
     .shape-select-btn:hover {
-        background-color: var(--p-primary-color);
-        border-color: var(--p-primary-color);
-        color: var(--p-surface-800);
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: #fff;
     }
 
     .shape-select-btn:focus {
-        box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--p-primary-color) 25%, transparent);
+        box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb), 0.25);
     }
 
     /* DataTable wrapper */
     #dataTables_wrapper {
-        color: var(--p-surface-50);
-        font-family: var(--p-font-family);
+        color: #f8f9fa;
     }
 
     #dataTables_wrapper table {
-        color: var(--p-surface-50);
+        color: #f8f9fa;
         border-collapse: separate;
         border-spacing: 0;
     }
 
     #dataTables_wrapper table thead th {
-        color: var(--p-surface-200);
-        background-color: var(--p-surface-700);
-        border-bottom: 2px solid var(--p-primary-color);
+        color: #dee2e6;
+        background-color: #2c2f36;
+        border-bottom: 2px solid var(--bs-primary);
         padding: 0.75rem 1rem;
         font-size: 0.8rem;
         font-weight: 600;
@@ -176,31 +173,30 @@ export default {
     }
 
     #dataTables_wrapper table tbody td {
-        color: var(--p-surface-50);
-        background-color: var(--p-surface-800);
-        border-bottom: 1px solid var(--p-surface-600);
+        color: #f8f9fa;
+        background-color: #1e2128;
+        border-bottom: 1px solid #343a40;
         padding: 0.6rem 1rem;
         font-size: 0.85rem;
         transition: background-color 0.15s;
     }
 
     #dataTables_wrapper table tbody tr:hover td {
-        background-color: var(--p-surface-600);
+        background-color: #343a40;
     }
 
     #dataTables_wrapper table tbody tr.selected td {
-        background-color: color-mix(in srgb, var(--p-primary-color) 15%, var(--p-surface-800));
+        background-color: rgba(var(--bs-primary-rgb), 0.15);
     }
 
     /* Search input */
     #dataTables_wrapper .dataTables_filter input,
     #dataTables_wrapper .dt-search input {
-        background-color: var(--p-surface-700) !important;
-        color: var(--p-surface-50) !important;
-        border: 1px solid var(--p-surface-400) !important;
-        border-radius: var(--p-border-radius) !important;
+        background-color: #2c2f36 !important;
+        color: #f8f9fa !important;
+        border: 1px solid #6c757d !important;
+        border-radius: var(--bs-border-radius) !important;
         padding: 0.35rem 0.75rem !important;
-        font-family: var(--p-font-family) !important;
         font-size: 0.85rem !important;
         height: 1.75rem !important;
         outline: none !important;
@@ -209,8 +205,8 @@ export default {
 
     #dataTables_wrapper .dataTables_filter input:focus,
     #dataTables_wrapper .dt-search input:focus {
-        border-color: var(--p-primary-color) !important;
-        box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--p-primary-color) 25%, transparent) !important;
+        border-color: var(--bs-primary) !important;
+        box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb), 0.25) !important;
     }
 
     /* Length select dropdown */
@@ -224,12 +220,11 @@ export default {
 
     #dataTables_wrapper .dataTables_length select,
     #dataTables_wrapper .dt-length select {
-        background-color: var(--p-surface-700) !important;
-        color: var(--p-surface-50) !important;
-        border: 1px solid var(--p-surface-400) !important;
-        border-radius: var(--p-border-radius) !important;
+        background-color: #2c2f36 !important;
+        color: #f8f9fa !important;
+        border: 1px solid #6c757d !important;
+        border-radius: var(--bs-border-radius) !important;
         padding: 0.25rem 0.5rem !important;
-        font-family: var(--p-font-family) !important;
         font-size: 0.85rem !important;
         height: 1.75rem !important;
         outline: none !important;
@@ -239,14 +234,14 @@ export default {
 
     #dataTables_wrapper .dataTables_length select:focus,
     #dataTables_wrapper .dt-length select:focus {
-        border-color: var(--p-primary-color) !important;
-        box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--p-primary-color) 25%, transparent) !important;
+        border-color: var(--bs-primary) !important;
+        box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb), 0.25) !important;
     }
 
     #dataTables_wrapper .dataTables_length select option,
     #dataTables_wrapper .dt-length select option {
-        background-color: var(--p-surface-700);
-        color: var(--p-surface-50);
+        background-color: #2c2f36;
+        color: #f8f9fa;
     }
 
     /* Top controls - entries + search on same line */
@@ -275,8 +270,7 @@ export default {
     #dataTables_wrapper .dt-info,
     #dataTables_wrapper .dt-length label,
     #dataTables_wrapper .dt-search label {
-        color: var(--p-surface-300) !important;
-        font-family: var(--p-font-family);
+        color: #adb5bd !important;
         font-size: 0.8rem;
         white-space: nowrap;
     }
@@ -284,13 +278,12 @@ export default {
     /* Pagination */
     #dataTables_wrapper .dataTables_paginate .paginate_button,
     #dataTables_wrapper .dt-paging button {
-        background-color: var(--p-surface-700) !important;
-        color: var(--p-surface-200) !important;
-        border: 1px solid var(--p-surface-400) !important;
-        border-radius: var(--p-border-radius) !important;
+        background-color: #2c2f36 !important;
+        color: #dee2e6 !important;
+        border: 1px solid #6c757d !important;
+        border-radius: var(--bs-border-radius) !important;
         margin: 0 2px !important;
         padding: 0.3rem 0.65rem !important;
-        font-family: var(--p-font-family) !important;
         font-size: 0.8rem !important;
         cursor: pointer;
         transition: all 0.15s !important;
@@ -298,24 +291,24 @@ export default {
 
     #dataTables_wrapper .dataTables_paginate .paginate_button.current,
     #dataTables_wrapper .dt-paging button.current {
-        background-color: var(--p-primary-color) !important;
-        border-color: var(--p-primary-color) !important;
-        color: var(--p-surface-800) !important;
+        background-color: var(--bs-primary) !important;
+        border-color: var(--bs-primary) !important;
+        color: #fff !important;
         font-weight: 600 !important;
     }
 
     #dataTables_wrapper .dataTables_paginate .paginate_button:hover,
     #dataTables_wrapper .dt-paging button:hover {
-        background-color: var(--p-surface-600) !important;
-        border-color: var(--p-primary-color) !important;
-        color: var(--p-surface-50) !important;
+        background-color: #343a40 !important;
+        border-color: var(--bs-primary) !important;
+        color: #f8f9fa !important;
     }
 
     #dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
     #dataTables_wrapper .dt-paging button.disabled {
-        color: var(--p-surface-500) !important;
-        background-color: var(--p-surface-800) !important;
-        border-color: var(--p-surface-600) !important;
+        color: #6c757d !important;
+        background-color: #1e2128 !important;
+        border-color: #343a40 !important;
         cursor: default !important;
         opacity: 0.5;
     }

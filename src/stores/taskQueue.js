@@ -617,7 +617,23 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 });
             }
 
-            const result = await mkf.calculate_advised_cores(JSON.stringify(inputs), JSON.stringify(coreAdviserWeights), 1, coreAdviseMode);
+            // Deep-clone inputs (strips Vue reactivity) and filter nulls from harmonics
+            const inputsClean = JSON.parse(JSON.stringify(inputs));
+            if (inputsClean.operatingPoints) {
+                for (const op of inputsClean.operatingPoints) {
+                    if (op.excitationsPerWinding == null) continue;
+                    for (const exc of op.excitationsPerWinding) {
+                        for (const signal of ['current', 'voltage']) {
+                            const harmonics = exc[signal]?.harmonics;
+                            if (harmonics == null) continue;
+                            if (harmonics.amplitudes != null) harmonics.amplitudes = harmonics.amplitudes.filter(v => v !== null);
+                            if (harmonics.frequencies != null) harmonics.frequencies = harmonics.frequencies.filter(v => v !== null);
+                        }
+                    }
+                }
+            }
+
+            const result = await mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), 1, coreAdviseMode);
             console.log('[DEBUG adviseCore] Result received, length:', result.length);
             console.log('[DEBUG adviseCore] Result preview:', result.substring(0, 500));
             
