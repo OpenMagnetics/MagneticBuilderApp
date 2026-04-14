@@ -385,7 +385,10 @@ export default {
             const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 
             const margins = [];
-            if (this.conductiveSections.length > 0) {
+            // Use object format only when there are existing sections AND no new sections were added.
+            // When new sections are added (e.g. interleaving pattern changed), we must use the array
+            // format so the backend applies alignments by index to ALL sections, including new ones.
+            if (this.conductiveSections.length > 0 && this.conductiveSections.length === this.localData.dataPerSection.length) {
                 inputCoil["_turnsAlignment"] = {};
                 inputCoil["_layersOrientation"] = {};
                 this.localData.dataPerSection.forEach((datum, sectionIndex) => {
@@ -522,9 +525,24 @@ export default {
                         magnetic.coil.sectionsDescription.forEach((section) => {
                             if (section.type == "conduction") {
                                 if (this.localData.dataPerSection.length <= conductionSectionIndex) {
+                                    const previousSection = conductionSectionIndex > 0
+                                        ? this.localData.dataPerSection[conductionSectionIndex - 1]
+                                        : null;
+                                    // Try to inherit from the last section of the same winding
+                                    const currentWindingChar = this.localData.pattern[conductionSectionIndex];
+                                    let sameWindingSection = null;
+                                    for (let i = conductionSectionIndex - 1; i >= 0; i--) {
+                                        if (this.localData.pattern[i] == currentWindingChar) {
+                                            sameWindingSection = this.localData.dataPerSection[i];
+                                            break;
+                                        }
+                                    }
+                                    const template = sameWindingSection || previousSection;
                                     this.localData.dataPerSection.push({
-                                        layersOrientation: "overlapping",
-                                        turnsAlignment: "spread",
+                                        layersOrientation: template ? template.layersOrientation : "overlapping",
+                                        turnsAlignment: template ? template.turnsAlignment : "spread",
+                                        topOrLeftMargin: template ? template.topOrLeftMargin : 0,
+                                        bottomOrRightMargin: template ? template.bottomOrRightMargin : 0,
                                     });
                                 }
                                 this.localData.dataPerSection[conductionSectionIndex].layersOrientation = section.layersOrientation;
@@ -638,11 +656,26 @@ export default {
             this.localData.pattern.split('').forEach((windingIndexPlusOne, newSectionIndex) => {
                 if (newSectionIndex >= this.localData.dataPerSection.length) {
                     let newSection = null;
-                    this.localData.dataPerSection.forEach((section, sectionIndex) => {
-                        if (this.localData.pattern.split('')[sectionIndex] == windingIndexPlusOne) {
-                            newSection = deepCopy(section);
+                    // Inherit from the last section of the same winding
+                    for (let i = newSectionIndex - 1; i >= 0; i--) {
+                        if (this.localData.pattern[i] == windingIndexPlusOne) {
+                            newSection = deepCopy(this.localData.dataPerSection[i]);
+                            break;
                         }
-                    })
+                    }
+                    // Fallback to the immediately previous section
+                    if (!newSection && newSectionIndex > 0) {
+                        newSection = deepCopy(this.localData.dataPerSection[newSectionIndex - 1]);
+                    }
+                    // Final fallback to defaults
+                    if (!newSection) {
+                        newSection = {
+                            layersOrientation: "overlapping",
+                            turnsAlignment: "spread",
+                            topOrLeftMargin: 0,
+                            bottomOrRightMargin: 0,
+                        };
+                    }
                     this.localData.dataPerSection.push(newSection);
                 }
             })
