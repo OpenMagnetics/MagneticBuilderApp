@@ -7,7 +7,7 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 <script>
 export default {
-    emits: ['customizeCore'],
+    emits: ['customizeCore', 'gappingUpdated'],
     props: {
         dataTestLabel: {
             type: String,
