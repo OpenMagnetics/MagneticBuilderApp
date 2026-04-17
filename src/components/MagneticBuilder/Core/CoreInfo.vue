@@ -63,6 +63,12 @@ export default {
         closeOrOverSaturation() {
             return (this.coreLossesData.magneticFluxDensityPeak / this.coreTemperatureDependantParametersData.magneticFluxDensitySaturation) > 0.85;
         },
+        hasCalculableData() {
+            const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
+            const material = this.masStore.mas.magnetic.core?.functionalDescription?.material;
+            const hasShape = shape && ((typeof shape === 'string' && shape !== '') || (typeof shape === 'object' && shape.family));
+            return hasShape && material && material !== '';
+        },
     },
     watch: {
         'enableAutoSimulation': {
@@ -219,322 +225,429 @@ export default {
 </script>
 
 <template>
-    <div v-if="advancedMode" class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
-        <div
-            v-if="coreEffectiveParameters.effectiveLength != null"
-            class="row ps-2"
-            :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
-        >
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectiveLength"
-                class="col-6 pe-4 ps-3"
-                :name="'L'"
-                :subscriptName="'eff'"
-                :unit="'m'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-EffectiveLength'"
-                :numberDecimals="2"
-                :value="coreEffectiveParameters.effectiveLength"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectiveArea"
-                :class="'border-start'"
-                class="col-6 pe-4 ps-3"
-                :name="'A'"
-                :subscriptName="'eff'"
-                :unit="'m²'"
-                :power="2"
-                :dataTestLabel="dataTestLabel + '-EffectiveArea'"
-                :numberDecimals="1"
-                :value="coreEffectiveParameters.effectiveArea"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectiveVolume"
-                class="col-6 pe-4 ps-3"
-                :name="'V'"
-                :subscriptName="'eff'"
-                :unit="'m³'"
-                :power="3"
-                :dataTestLabel="dataTestLabel + '-EffectiveVolume'"
-                :numberDecimals="1"
-                :value="coreEffectiveParameters.effectiveVolume"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.minimumArea"
-                :class="'border-start'"
-                class="col-6 pe-4 ps-3"
-                :name="'A'"
-                :subscriptName="'min'"
-                :unit="'m²'"
-                :power="2"
-                :dataTestLabel="dataTestLabel + '-MinimumArea'"
-                :numberDecimals="1"
-                :value="coreEffectiveParameters.minimumArea"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.initialPermeability"
-                class="col-6 pe-4 ps-3"
-                :name="'μ'"
-                :subscriptName="'ini'"
-                :unit="null"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-InitialPermeability'"
-                :numberDecimals="0"
-                :value="coreTemperatureDependantParametersData.initialPermeability"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectivePermeability"
-                :class="'border-start'"
-                class="col-6 pe-4 ps-3"
-                :name="'μ'"
-                :subscriptName="'eff'"
-                :unit="null"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-EffectivePermeability'"
-                :numberDecimals="0"
-                :value="coreTemperatureDependantParametersData.effectivePermeability"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.permeance"
-                class="col-6 pe-4 ps-3"
-                :name="'A'"
-                :subscriptName="'L'"
-                :unit="'H/tu²'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-Permeance'"
-                :numberDecimals="0"
-                :value="coreTemperatureDependantParametersData.permeance"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.saturatingMagneticFluxDensity"
-                :class="'border-start'"
-                class="col-6 pe-4 ps-3"
-                :name="'B'"
-                :subscriptName="'sat'"
-                :unit="'T'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-MagneticFluxDensitySaturation'"
-                :numberDecimals="3"
-                :value="coreTemperatureDependantParametersData.magneticFluxDensitySaturation"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
-                class="col-6 pe-4 ps-3"
-                :name="'B'"
-                :subscriptName="'peak'"
-                :unit="'T'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-MagneticFluxDensityPeak'"
-                :numberDecimals="3"
-                :value="coreLossesData.magneticFluxDensityPeak"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
-                :class="'border-start'"
-                class="col-6 pe-4 ps-3"
-                :name="'B'"
-                :subscriptName="'ACpeak'"
-                :unit="'T'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-MagneticFluxDensityAcPeak'"
-                :numberDecimals="3"
-                :value="coreLossesData.magneticFluxDensityAcPeak"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
-                class="col-6 pe-4 ps-3"
-                :name="'L'"
-                :unit="'H'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-MagnetizingInductance'"
-                :numberDecimals="2"
-                :value="magnetizingInductance"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.coreLosses"
-                :class="'border-start'"
-                class="col-6 pe-4 ps-3"
-                :name="'P'"
-                :subscriptName="'core'"
-                :unit="'W'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-CoreLosses'"
-                :numberDecimals="2"
-                :value="coreLossesData.coreLosses"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
+    <div class="coreinfo-panel">
+        <div class="coreinfo-header">
+            <div class="coreinfo-header-left">
+                <i class="fa-solid fa-cube"></i>
+                <span>Core Info</span>
+            </div>
+            <div v-if="!dataUptoDate && hasCalculableData" class="coreinfo-outdated-badge">Outdated</div>
         </div>
-    </div>
-    <div v-else class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
-        <div
-            v-if="coreEffectiveParameters.effectiveLength != null"
-            class="row"
-            :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
-        >
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
-                class="col-12 pe-4 ps-4"
-                :name="'L'"
-                :replaceTitle="'Magnetizing Inductance'"
-                :unit="'H'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-MagnetizingInductance'"
-                :numberDecimals="2"
-                :value="magnetizingInductance"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.coreLosses"
-                class="col-12 pe-4 ps-4"
-                :replaceTitle="'Core Losses'"
-                :name="'P'"
-                :unit="'W'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-CoreLosses'"
-                :numberDecimals="2"
-                :value="coreLossesData.coreLosses"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.saturationProportion"
-                class="col-12 pe-4 ps-4"
-                :name="'Saturation Proportion'"
-                :unit="'%'"
-                :power="1"
-                :dataTestLabel="dataTestLabel + '-SaturationProportion'"
-                :numberDecimals="2"
-                :value="coreTemperatureDependantParametersData.saturationProportion"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
-            />
-
+        <div class="coreinfo-body">
+            <template v-if="advancedMode">
+                <div class="coreinfo-grid" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.effectiveLength"
+                            class="text-start"
+                            :name="'L'"
+                            :subscriptName="'eff'"
+                            :unit="'m'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-EffectiveLength'"
+                            :numberDecimals="2"
+                            :value="coreEffectiveParameters.effectiveLength"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.effectiveArea"
+                            class="text-start"
+                            :name="'A'"
+                            :subscriptName="'eff'"
+                            :unit="'m²'"
+                            :power="2"
+                            :dataTestLabel="dataTestLabel + '-EffectiveArea'"
+                            :numberDecimals="1"
+                            :value="coreEffectiveParameters.effectiveArea"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.effectiveVolume"
+                            class="text-start"
+                            :name="'V'"
+                            :subscriptName="'eff'"
+                            :unit="'m³'"
+                            :power="3"
+                            :dataTestLabel="dataTestLabel + '-EffectiveVolume'"
+                            :numberDecimals="1"
+                            :value="coreEffectiveParameters.effectiveVolume"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.minimumArea"
+                            class="text-start"
+                            :name="'A'"
+                            :subscriptName="'min'"
+                            :unit="'m²'"
+                            :power="2"
+                            :dataTestLabel="dataTestLabel + '-MinimumArea'"
+                            :numberDecimals="1"
+                            :value="coreEffectiveParameters.minimumArea"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.initialPermeability"
+                            class="text-start"
+                            :name="'μ'"
+                            :subscriptName="'ini'"
+                            :unit="null"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-InitialPermeability'"
+                            :numberDecimals="0"
+                            :value="coreTemperatureDependantParametersData.initialPermeability"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.effectivePermeability"
+                            class="text-start"
+                            :name="'μ'"
+                            :subscriptName="'eff'"
+                            :unit="null"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-EffectivePermeability'"
+                            :numberDecimals="0"
+                            :value="coreTemperatureDependantParametersData.effectivePermeability"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.permeance"
+                            class="text-start"
+                            :name="'A'"
+                            :subscriptName="'L'"
+                            :unit="'H/tu²'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-Permeance'"
+                            :numberDecimals="0"
+                            :value="coreTemperatureDependantParametersData.permeance"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.saturatingMagneticFluxDensity"
+                            class="text-start"
+                            :name="'B'"
+                            :subscriptName="'sat'"
+                            :unit="'T'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-MagneticFluxDensitySaturation'"
+                            :numberDecimals="3"
+                            :value="coreTemperatureDependantParametersData.magneticFluxDensitySaturation"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
+                            class="text-start"
+                            :name="'B'"
+                            :subscriptName="'peak'"
+                            :unit="'T'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-MagneticFluxDensityPeak'"
+                            :numberDecimals="3"
+                            :value="coreLossesData.magneticFluxDensityPeak"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
+                            class="text-start"
+                            :name="'B'"
+                            :subscriptName="'ACpeak'"
+                            :unit="'T'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-MagneticFluxDensityAcPeak'"
+                            :numberDecimals="3"
+                            :value="coreLossesData.magneticFluxDensityAcPeak"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
+                            class="text-start"
+                            :name="'L'"
+                            :unit="'H'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-MagnetizingInductance'"
+                            :numberDecimals="2"
+                            :value="magnetizingInductance"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                        />
+                    </div>
+                    <div class="coreinfo-cell">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.coreLosses"
+                            class="text-start"
+                            :name="'P'"
+                            :subscriptName="'core'"
+                            :unit="'W'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-CoreLosses'"
+                            :numberDecimals="2"
+                            :value="coreLossesData.coreLosses"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                </div>
+            </template>
+            <template v-else>
+                <div class="coreinfo-simple" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
+                    <DimensionReadOnly 
+                        v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
+                        class="text-start ps-4 pe-4"
+                        :name="'L'"
+                        :replaceTitle="'Magnetizing Inductance'"
+                        :unit="'H'"
+                        :power="1"
+                        :dataTestLabel="dataTestLabel + '-MagnetizingInductance'"
+                        :numberDecimals="2"
+                        :value="magnetizingInductance"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                    />
+                    <DimensionReadOnly 
+                        v-tooltip="tooltipsMagneticBuilder.coreLosses"
+                        class="text-start ps-4 pe-4"
+                        :replaceTitle="'Core Losses'"
+                        :name="'P'"
+                        :unit="'W'"
+                        :power="1"
+                        :dataTestLabel="dataTestLabel + '-CoreLosses'"
+                        :numberDecimals="2"
+                        :value="coreLossesData.coreLosses"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                    />
+                    <DimensionReadOnly 
+                        v-tooltip="tooltipsMagneticBuilder.saturationProportion"
+                        class="text-start ps-4 pe-4"
+                        :name="'Saturation Proportion'"
+                        :unit="'%'"
+                        :power="1"
+                        :dataTestLabel="dataTestLabel + '-SaturationProportion'"
+                        :numberDecimals="2"
+                        :value="coreTemperatureDependantParametersData.saturationProportion"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                    />
+                </div>
+            </template>
         </div>
     </div>
 </template>
+
+<style scoped>
+.coreinfo-panel {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    border-radius: 14px;
+    padding: 0;
+    margin: 0.05rem 0 0.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    overflow: hidden;
+}
+
+.coreinfo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.coreinfo-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.coreinfo-header-left i {
+    font-size: 0.95rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+}
+
+.coreinfo-outdated-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(var(--bs-warning-rgb), 0.2);
+    color: var(--bs-warning);
+    border: 1px solid rgba(var(--bs-warning-rgb), 0.35);
+}
+
+.coreinfo-body {
+    padding: 0.5rem 0.4rem;
+}
+
+.coreinfo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.1rem 0.5rem;
+}
+
+@media (max-width: 576px) {
+    .coreinfo-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.coreinfo-cell {
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 0.1rem 0.4rem 0.1rem 0.4rem;
+    transition: opacity 0.3s ease;
+}
+
+.coreinfo-cell :deep(.form-label),
+.coreinfo-cell :deep(label) {
+    padding-left: 0.35rem !important;
+}
+
+.coreinfo-simple {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.coreinfo-dimmed {
+    opacity: 0.35;
+    transition: opacity 0.3s ease;
+}
+</style>

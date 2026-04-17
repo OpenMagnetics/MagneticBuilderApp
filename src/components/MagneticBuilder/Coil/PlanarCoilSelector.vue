@@ -7,6 +7,7 @@ import CoilInfo from './CoilInfo.vue'
 import BasicCoilFillingFactors from './BasicCoilFillingFactors.vue'
 import PlanarInsulationSelector from './PlanarInsulationSelector.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
+import Magnetic2DVisualizer from '/WebSharedComponents/Common/Magnetic2DVisualizer.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
@@ -17,6 +18,7 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 <script>
 
 export default {
+    emits: ['fits', 'plotModeChange', 'swapIncludeFringing', 'errorInImage'],
     props: {
         dataTestLabel: {
             type: String,
@@ -43,6 +45,18 @@ export default {
             default: false,
         },
         operatingPointIndex: {
+            type: Number,
+            default: 0,
+        },
+        useVisualizers: {
+            type: Boolean,
+            default: true,
+        },
+        imageUpToDate: {
+            type: Boolean,
+            default: true,
+        },
+        forceUpdateVisualizer: {
             type: Number,
             default: 0,
         },
@@ -444,10 +458,25 @@ export default {
         marginUpdated(sectionIndex) {
             this.coilUpdated();
         },
-        swapShowInsulationOptions() {
-            this.showInsulationOptions = !this.showInsulationOptions;
+        swapShowInsulationOptions(showInsulationOptions) {
+            if (typeof showInsulationOptions === 'boolean') {
+                this.showInsulationOptions = showInsulationOptions;
+            } else {
+                this.showInsulationOptions = !this.showInsulationOptions;
+            }
         },
         customizeCoil() {
+        },
+        showParasiticsView() {
+            this.$stateStore.magneticBuilder.mode.coil = this.$stateStore.MagneticBuilderModes.Advanced;
+        },
+        toggleTemperaturePlot() {
+            const currentMode = this.$stateStore.magnetic2DVisualizerState.plotMode;
+            if (currentMode === 'temperature_field') {
+                this.$emit('plotModeChange', 'basic');
+            } else {
+                this.$emit('plotModeChange', 'temperature_field');
+            }
         },
     }
 }
@@ -455,80 +484,329 @@ export default {
 
 <template>
     <div class="container">
-        <div class="row"  ref="coilSelectorContainer">
-            <img :data-cy="dataTestLabel + '-BasicCoilSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
-            <ListOfCharacters
-                v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"
-                v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 0"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-SectionsInterleaving'"
-                :modelValue="localData.stackUp" 
-                @updateModelValue="localData.stackUp = $event"
-                :name="'stackUp'"
-                :replaceTitle="'Stack Up'"
-                :allowConsecutive="true"
-                :allowedCharacters="windingIndexesCharacters"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="stackUpUpdated"
-            />
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
-                v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 0"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start ps-4"
-                :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
-                :name="'sectionsAlignment'"
-                :replaceTitle="'PCB Alignment'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :options="coilAlignments"
-                :labelWidthProportionClass="'col-5'"
-                :selectStyleClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="sectionsAlignmentUpdated"
-            />
+        <div class="coil-config-panel">
+            <div class="coil-config-header">
+                <div class="coil-config-header-left">
+                    <i class="fa-solid fa-gears"></i>
+                    <span>Coil Configuration</span>
+                </div>
+                <div class="coil-config-header-right">
+                    <button
+                        type="button"
+                        :class="['coil-config-header-btn', showInsulationOptions ? 'coil-config-header-btn-primary' : 'coil-config-header-btn-outline']"
+                        :data-cy="dataTestLabel + '-Coil-ShowInsulationOptions-button'"
+                        @click="swapShowInsulationOptions(!showInsulationOptions)"
+                    >
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Insulation</span>
+                    </button>
+                </div>
+            </div>
+            <div class="coil-config-body">
+                <div
+                    v-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
+                    class="row mb-3"
+                    :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ' max-height: 40vh;'"
+                >
+                    <Magnetic2DVisualizer
+                        :modelValue="masStore.mas"
+                        :forceUpdate="forceUpdateVisualizer"
+                        :operatingPointIndex="operatingPointIndex"
+                        :enableZoom="false"
+                        :enableOptions="false"
+                        :enableHideOnFitting="enableSimulation"
+                        :coilFits="true"
+                        :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
+                        :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor?.color || 'var(--bs-white)'"
+                        :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
+                        @plotModeChange="$emit('plotModeChange', $event)"
+                        @swapIncludeFringing="$emit('swapIncludeFringing', $event)"
+                        @errorInImage="$emit('errorInImage')"
+                        :loadingGif="$settingsStore.loadingGif"
+                    />
+                </div>
+
+                <div class="builder-actions">
+                    <button
+                        v-if="enableSimulation"
+                        :disabled="masStore.mas.magnetic == null || masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''"
+                        :data-cy="dataTestLabel + '-Coil-ShowParasiticsView-button'"
+                        class="builder-action-btn builder-action-btn-outline"
+                        @click="showParasiticsView"
+                    >
+                        <i class="fa-solid fa-wave-square me-2"></i>Advanced Parasitics
+                    </button>
+
+                    <button
+                        v-if="enableSimulation"
+                        :disabled="masStore.mas.magnetic == null || masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''"
+                        :data-cy="dataTestLabel + '-Coil-ToggleTemperaturePlot-button'"
+                        :class="['builder-action-btn', $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'builder-action-btn-primary' : 'builder-action-btn-ghost']"
+                        @click="toggleTemperaturePlot"
+                    >
+                        <i class="fa-solid fa-temperature-half me-2 temp-icon"></i>{{ $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'Hide Temperature' : 'Show Temperature' }}
+                    </button>
+                </div>
+
+                <div class="coil-config-grid">
+                    <div v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 0" class="coil-config-cell coil-config-cell-wide">
+                        <ListOfCharacters
+                            v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"
+                            :disabled="readOnly"
+                            class="text-start"
+                            :dataTestLabel="dataTestLabel + '-SectionsInterleaving'"
+                            :modelValue="localData.stackUp"
+                            @updateModelValue="localData.stackUp = $event"
+                            :name="'stackUp'"
+                            :replaceTitle="'Stack Up'"
+                            :allowConsecutive="true"
+                            :allowedCharacters="windingIndexesCharacters"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                            @update="stackUpUpdated"
+                        />
+                    </div>
+                    <div v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 0" class="coil-config-cell coil-config-cell-wide">
+                        <ElementFromList
+                            v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
+                            :disabled="readOnly"
+                            class="text-start"
+                            :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
+                            :name="'sectionsAlignment'"
+                            :replaceTitle="'PCB Alignment'"
+                            :titleSameRow="true"
+                            :justifyContent="true"
+                            v-model="localData"
+                            :options="coilAlignments"
+                            :labelWidthProportionClass="'col-5'"
+                            :selectStyleClass="'col-5'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                            @update="sectionsAlignmentUpdated"
+                        />
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <CoilInfo
+                        v-if="!loading && enableSimulation"
+                        ref="coilInfo"
+                        :dataTestLabel="dataTestLabel + '-CoilInfo'"
+                        :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
+                        :masStore="masStore"
+                        :operatingPointIndex="operatingPointIndex"
+                        :enableAutoSimulation="enableAutoSimulation"
+                    />
+                </div>
+            </div>
         </div>
 
         <PlanarInsulationSelector
-            class="col-12 ps-2 ms-1 mb-1 text-start border-top pt-2"
+            class="col-12"
             v-if="!loading && showInsulationOptions"
             :dataTestLabel="dataTestLabel + '-PlanarInsulationSelector'"
             :loading="loading"
             :readOnly="readOnly"
             :data="localData"
             @update="insulationUpdated"
+            @closeInsulation="swapShowInsulationOptions(false)"
         />
-
-        <div class="col-12">
-            <CoilInfo
-                v-if="!loading && enableSimulation"
-                ref="coilInfo"
-                :dataTestLabel="dataTestLabel + '-CoilInfo'"
-                :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
-                :masStore="masStore"
-                :operatingPointIndex="operatingPointIndex"
-                :enableAutoSimulation="enableAutoSimulation"
-            />
-        </div>
-        <button
-            :style="showInsulationOptions? $styleStore.magneticBuilder.hideInsulationOptionsButton: $styleStore.magneticBuilder.showInsulationOptionsButton"
-            :data-cy="dataTestLabel + '-Coil-ShowInsulationOptions-button'"
-            :class="'col-12'"
-            class="btn mx-auto d-block mt-1"
-            @click="swapShowInsulationOptions"
-        >
-            {{showInsulationOptions? 'Hide Insulation options' : 'Show Insulation options'}}
-        </button>
-
     </div>
 </template>
+
+<style scoped>
+.coil-config-panel {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    border-radius: 14px;
+    padding: 0;
+    margin: 0.15rem 0 0.25rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    overflow: hidden;
+}
+
+.coil-config-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.coil-config-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.coil-config-header-left i {
+    font-size: 0.95rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+}
+
+.coil-config-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.coil-config-header-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.15s, box-shadow 0.2s, transform 0.1s, background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.coil-config-header-btn:hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+}
+
+.coil-config-header-btn-primary {
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
+        var(--bs-primary) 55%,
+        rgb(var(--bs-primary-rgb) / 0.85) 100%);
+    color: var(--bs-white);
+    border: 1px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
+    box-shadow:
+        0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
+        0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.coil-config-header-btn-outline {
+    background: rgb(var(--bs-primary-rgb) / 0.2);
+    border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
+    color: var(--bs-primary);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.coil-config-header-btn-outline:hover {
+    background: rgb(var(--bs-primary-rgb) / 0.3);
+    border-color: rgb(var(--bs-primary-rgb) / 0.75);
+    box-shadow: 0 2px 6px rgb(var(--bs-primary-rgb) / 0.25);
+}
+
+.coil-config-body {
+    padding: 0.5rem 0.6rem;
+}
+
+.coil-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.15rem;
+    background: var(--bs-dark);
+    border-radius: 10px;
+    padding: 0.35rem;
+}
+
+@media (max-width: 576px) {
+    .coil-config-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.coil-config-cell {
+    border-radius: 10px;
+    padding: 0.1rem 0.35rem 0.1rem 0.35rem;
+}
+
+.coil-config-cell-wide {
+    grid-column: 1 / -1;
+}
+
+.coil-config-cell :deep(.form-label),
+.coil-config-cell :deep(label) {
+    padding-left: 0.35rem !important;
+}
+
+.builder-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 0 4px 12px;
+}
+
+.builder-action-btn {
+    flex: 1 1 auto;
+    min-width: fit-content;
+    max-width: 260px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.15s, box-shadow 0.2s, transform 0.1s, background 0.15s, color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.builder-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.builder-action-btn:not(:disabled):hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+}
+
+.builder-action-btn-primary {
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--bs-success) 115%, transparent 0%) 0%,
+        var(--bs-success) 55%,
+        rgb(var(--bs-success-rgb) / 0.85) 100%);
+    color: var(--bs-white);
+    border: 2px solid color-mix(in srgb, var(--bs-success) 70%, var(--bs-white) 30%);
+    box-shadow:
+        0 0 0 2px rgb(var(--bs-success-rgb) / 0.35),
+        0 4px 14px rgb(var(--bs-success-rgb) / 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.builder-action-btn-outline {
+    background: rgb(var(--bs-primary-rgb) / 0.2);
+    border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
+    color: var(--bs-primary);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.builder-action-btn-ghost {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.temp-icon {
+    color: var(--bs-danger);
+}
+</style>

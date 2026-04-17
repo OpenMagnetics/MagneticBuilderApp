@@ -634,23 +634,16 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
 
             const result = await mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), 1, coreAdviseMode);
-            console.log('[DEBUG adviseCore] Result received, length:', result.length);
-            console.log('[DEBUG adviseCore] Result preview:', result.substring(0, 500));
-            
+
             if (result.startsWith("Exception")) {
-                console.error('[DEBUG adviseCore] Exception:', result);
                 setTimeout(() => {this.coreAdvised(false, result);}, this.task_standard_response_delay);
                 throw new Error(result);
             }
 
             const aux = JSON.parse(result);
-            console.log('[DEBUG adviseCore] Parsed result:', aux);
-
             const log = aux["log"];
             const data = aux["data"];
-            console.log('[DEBUG adviseCore] Data length:', data.length);
-            console.log('[DEBUG adviseCore] Log:', log);
-            
+
             if (data.length > 0) {
                 const magnetic = data[0].mas.magnetic;
                 setTimeout(() => {this.coreAdvised(true, magnetic);}, this.task_standard_response_delay);

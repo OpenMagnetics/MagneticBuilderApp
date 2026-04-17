@@ -16,6 +16,10 @@ export default {
             type: Object,
             required: true,
         },
+        selectedWindingIndex: {
+            type: Number,
+            default: 0,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -23,11 +27,9 @@ export default {
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
-        const selectedWindingIndex = 0;
         const subscriptions = [];
         return {
             taskQueueStore,
-            selectedWindingIndex,
             subscriptions,
         }
     },
@@ -38,8 +40,8 @@ export default {
     mounted () {
         this.subscriptions.push(this.masStore.$onAction((action) => {
             if (action.name == "updatedTurnsRatios") {
-                this.selectedWindingIndex = Math.min(this.selectedWindingIndex, this.masStore.mas.inputs.designRequirements.turnsRatios.length);
-                this.$emit("windingIndexChanged", this.selectedWindingIndex);
+                const newIndex = Math.min(this.selectedWindingIndex, this.masStore.mas.inputs.designRequirements.turnsRatios.length);
+                this.$emit("windingIndexChanged", newIndex);
                 this.taskQueueStore.windingIndexChanged(true);
             }
         }));
@@ -49,32 +51,9 @@ export default {
     },
     methods: {
         getWindingLabel(key) {
-            const refKey = 'select-winding-' + key;
-            let clientWidth;
-
-            try {
-                Object.entries(this.$refs).forEach((value) => {
-                    if (value[0] == refKey) {
-                        clientWidth = value[1][0].clientWidth;
-                    }
-                })
-            }
-            catch (error) {
-                setTimeout(() => this.getWindingLabel(key), 100);
-            }
-
-            if (clientWidth > 134) {
-                return 'Winding ' + key;
-            }
-            else if (clientWidth > 114) {
-                return 'Wind ' + key;
-            }
-            else {
-                return 'W' + key;
-            }
+            return 'Winding ' + key;
         },
         windingIndexChanged(windingIndex) {
-            this.selectedWindingIndex = windingIndex;
             this.$emit("windingIndexChanged", windingIndex);
         },
         isWireMissing(windingIndex) {
@@ -94,26 +73,65 @@ export default {
 </script>
 
 <template>
-    <div v-if="coil.functionalDescription.length > 1">
-        <div class="accordion row m-0 p-0" id="wireBuilderAccordion bg-dark" v-tooltip="tooltipsMagneticBuilder.windingSelector">
-            <div :class="'col-lg-' + Number(12 / coil.functionalDescription.length)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="value, key in coil.functionalDescription" :key="key">
-                <h2 class="accordion-header" :id="'wireBuilderAccordionHeading-' + key">
-                    <button
-                        :style="combinedStyle([selectedWindingIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : isWireMissing(key)? $styleStore.magneticBuilder.inputErrorTextColor : $styleStore.magneticBuilder.inputTextColor, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
-
-                        :class="selectedWindingIndex == key? 'collapsed' : ''"
-                        class="accordion-button p-2"
-                        :ref="'select-winding-' + (key + 1)"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        aria-expanded="false"
-                        :aria-controls="'wireBuilderAccordioncollapse_' + key"
-                        @click="windingIndexChanged(key)">
-                        {{getWindingLabel(key + 1)}}
-                    </button>
-                </h2>
-            </div>
+    <div v-if="coil.functionalDescription.length > 1" class="winding-selector" v-tooltip="tooltipsMagneticBuilder.windingSelector">
+        <div class="winding-pills">
+            <button
+                v-for="value, key in coil.functionalDescription"
+                :key="key"
+                :class="['winding-pill', {
+                    active: selectedWindingIndex === key,
+                    missing: isWireMissing(key) && selectedWindingIndex !== key
+                }]"
+                :ref="'select-winding-' + (key + 1)"
+                @click="windingIndexChanged(key)">
+                {{ getWindingLabel(key + 1) }}
+            </button>
         </div>
     </div>
-
 </template>
+
+<style scoped>
+.winding-selector {
+    padding: 0;
+}
+
+.winding-pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-start;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.25rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.winding-pill {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.winding-pill:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.winding-pill.active {
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.9) 0%, rgba(var(--bs-primary-rgb), 0.7) 100%);
+    color: var(--bs-white);
+    box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.35);
+}
+
+.winding-pill.missing {
+    color: var(--bs-danger);
+}
+</style>

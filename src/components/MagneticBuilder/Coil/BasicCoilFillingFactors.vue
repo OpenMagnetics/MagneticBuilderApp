@@ -59,73 +59,144 @@ export default {
 </script>
 
 <template>
-    <div class="container p-0">
-        <div class="row text-start"  ref="coilSelectorContainer">
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.areaFillingFactor"
-                class="col-6 pe-4 ps-4 mt-1"
-                :name="'Fill. F'"
-                :subscriptName="'area'"
-                :unit="'%'"
-                :power="1"
-                :visualScale="100"
-                :dataTestLabel="dataTestLabel + '-FillingFactor'"
-                :numberDecimals="2"
-                :value="data.fillingFactors.areaFillingFactor"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-6'"
-                :valueWidthProportionClass="'col-6'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="data.fillingFactors.areaFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />  
-            <DimensionReadOnly 
-                v-if="data.sectionsOrientation == 'contiguous'" 
-                v-tooltip="tooltipsMagneticBuilder.contiguousFillingFactor"
-                class="col-6 pe-4 ps-4 mt-1"
-                :name="'Fill. F'"
-                :subscriptName="contiguousLabel"
-                :unit="'%'"
-                :power="1"
-                :visualScale="100"
-                :dataTestLabel="dataTestLabel + '-FillingFactor'"
-                :numberDecimals="2"
-                :value="data.fillingFactors.contiguousFillingFactor"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="data.fillingFactors.contiguousFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />  
-            <DimensionReadOnly 
-                v-if="data.sectionsOrientation == 'overlapping'" 
-                v-tooltip="tooltipsMagneticBuilder.overlappingFillingFactor"
-                class="col-6 pe-4 ps-4 mt-1"
-                :name="'Fill. F'"
-                :subscriptName="overlappingLabel"
-                :unit="'%'"
-                :power="1"
-                :visualScale="100"
-                :dataTestLabel="dataTestLabel + '-FillingFactor'"
-                :numberDecimals="2"
-                :value="data.fillingFactors.overlappingFillingFactor"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="data.fillingFactors.overlappingFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />        
+    <div class="filling-panel">
+        <div class="filling-header">
+            <div class="filling-header-left">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span>Filling Factors</span>
+            </div>
+        </div>
+        <div class="filling-body">
+            <div class="filling-grid">
+                <div class="filling-cell">
+                    <DimensionReadOnly 
+                        v-tooltip="tooltipsMagneticBuilder.areaFillingFactor"
+                        class="text-start"
+                        :name="'Fill. F'"
+                        :subscriptName="'area'"
+                        :unit="'%'"
+                        :power="1"
+                        :visualScale="100"
+                        :dataTestLabel="dataTestLabel + '-FillingFactor'"
+                        :numberDecimals="2"
+                        :value="data.fillingFactors.areaFillingFactor"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-6'"
+                        :valueWidthProportionClass="'col-6'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="data.fillingFactors.areaFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                    />
+                </div>
+                <div v-if="data.sectionsOrientation == 'contiguous'" class="filling-cell">
+                    <DimensionReadOnly 
+                        v-tooltip="tooltipsMagneticBuilder.contiguousFillingFactor"
+                        class="text-start"
+                        :name="'Fill. F'"
+                        :subscriptName="contiguousLabel"
+                        :unit="'%'"
+                        :power="1"
+                        :visualScale="100"
+                        :dataTestLabel="dataTestLabel + '-FillingFactor'"
+                        :numberDecimals="2"
+                        :value="data.fillingFactors.contiguousFillingFactor"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="data.fillingFactors.contiguousFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                    />
+                </div>
+                <div v-if="data.sectionsOrientation == 'overlapping'" class="filling-cell">
+                    <DimensionReadOnly 
+                        v-tooltip="tooltipsMagneticBuilder.overlappingFillingFactor"
+                        class="text-start"
+                        :name="'Fill. F'"
+                        :subscriptName="overlappingLabel"
+                        :unit="'%'"
+                        :power="1"
+                        :visualScale="100"
+                        :dataTestLabel="dataTestLabel + '-FillingFactor'"
+                        :numberDecimals="2"
+                        :value="data.fillingFactors.overlappingFillingFactor"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="data.fillingFactors.overlappingFillingFactor < 0.8? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                    />
+                </div>
+            </div>
         </div>
     </div>
 </template>
+
+<style scoped>
+.filling-panel {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    border-radius: 14px;
+    padding: 0;
+    margin: 0.5rem 0 1rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    overflow: hidden;
+}
+
+.filling-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.filling-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.filling-header-left i {
+    font-size: 1rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+}
+
+.filling-body {
+    padding: 0.75rem;
+}
+
+.filling-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+@media (max-width: 576px) {
+    .filling-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.filling-cell {
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 0.5rem 0.6rem;
+}
+</style>

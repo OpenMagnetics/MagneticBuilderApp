@@ -130,6 +130,7 @@ export default {
                 if (name == "allCoresFromShapesProcessed") {
                     if (args[0]) {
                         const cores = args[1];
+                        const rows = [];
                         for (const core of cores) {
                             const auxEffectiveLength = core.processedDescription.effectiveParameters.effectiveLength * 1000;
                             const effectiveLength = `${removeTrailingZeroes(auxEffectiveLength, 2)} mm`;
@@ -139,7 +140,7 @@ export default {
                             const minimumArea = `${removeTrailingZeroes(auxMinimumArea, 2)} mm²`;
                             const auxEffectiveVolume = core.processedDescription.effectiveParameters.effectiveVolume * 1000000000;
                             const effectiveVolume = `${removeTrailingZeroes(auxEffectiveVolume, 2)} mm³`;
-                            this.coreShapeData.push({
+                            rows.push({
                                 name: core.functionalDescription.shape.name,
                                 family: core.functionalDescription.shape.family,
                                 effectiveLength: effectiveLength,
@@ -149,6 +150,7 @@ export default {
                                 www: "www",
                             });
                         }
+                        this.coreShapeData = rows;
                     }
                     else {
                         console.error(args[1]);
@@ -166,7 +168,7 @@ export default {
                         const minimumArea = `${removeTrailingZeroes(auxMinimumArea, 2)} mm²`;
                         const auxEffectiveVolume = core.processedDescription.effectiveParameters.effectiveVolume  * 1000000000;
                         const effectiveVolume = `${removeTrailingZeroes(auxEffectiveVolume, 2)} mm³`;
-                        this.coreShapeData.push({
+                        this.coreShapeData = [...this.coreShapeData, {
                             name: core.functionalDescription.shape.name,
                             family: core.functionalDescription.shape.family,
                             effectiveLength: effectiveLength,
@@ -174,7 +176,7 @@ export default {
                             minimumArea: minimumArea,
                             effectiveVolume: effectiveVolume,
                             www: "www",
-                        })
+                        }]
 
                     }
                     else {
@@ -257,10 +259,9 @@ export default {
         @coreShapeSelected="coreShapeSelected"
     />
 
-    <div class="container">
-        <div class="row">
-            <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
-            <ElementFromList
+    <div class="row g-0">
+        <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
+        <ElementFromList
                 v-tooltip="tooltipsMagneticBuilder.coreShapeFamily"
                 v-if="!loading"
                 :disabled="readOnly"
@@ -315,7 +316,6 @@ export default {
                     <i class="fa-solid fa-table-list"></i>
                 </button>
             </div>
-        </div>
     </div>
 </template>
 

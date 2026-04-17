@@ -53,16 +53,17 @@ export default {
 </script>
 
 <template>
+    <div class="gcp-grid">
     <ElementFromList
-        class="col-12 mb-1 text-start"
+        class="gcp-cell"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
         :name="'graph'"
-        :titleSameRow="true"
-        :justifyContent="true"
+        :titleSameRow="false"
+        :justifyContent="false"
         v-model="$stateStore.graphParameters"
         :options="availableGraphs"
-        :labelWidthProportionClass="'col-6'"
-        :selectStyleClass="'col-6'"
+        :labelWidthProportionClass="'col-12'"
+        :selectStyleClass="'col-12'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -70,15 +71,15 @@ export default {
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
     <ElementFromList
-        class="col-12 mb-1 text-start"
+        class="gcp-cell"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
         :name="'xAxisMode'"
-        :titleSameRow="true"
-        :justifyContent="true"
+        :titleSameRow="false"
+        :justifyContent="false"
         v-model="$stateStore.graphParameters"
         :options="availableModes"
-        :labelWidthProportionClass="'col-6'"
-        :selectStyleClass="'col-6'"
+        :labelWidthProportionClass="'col-12'"
+        :selectStyleClass="'col-12'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -86,28 +87,29 @@ export default {
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
     <ElementFromList
-        class="col-12 mb-1 text-start"
+        class="gcp-cell"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
         :name="'yAxisMode'"
-        :titleSameRow="true"
-        :justifyContent="true"
+        :titleSameRow="false"
+        :justifyContent="false"
         v-model="$stateStore.graphParameters"
         :options="availableModes"
-        :labelWidthProportionClass="'col-6'"
-        :selectStyleClass="'col-6'"
+        :labelWidthProportionClass="'col-12'"
+        :selectStyleClass="'col-12'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
-    <Dimension class="col-12 mb-1 text-start"
+    <Dimension class="gcp-cell"
         v-if="frequencyDependent"
         :name="'minimumFrequency'"
+        :replaceTitle="'Minimum Frequency'"
         :unit="'Hz'"
         :dataTestLabel="dataTestLabel + '-MinimumFrequency'"
         :min="1"
-        :justifyContent="true"
+        :justifyContent="false"
         :defaultValue="1"
         :allowNegative="false"
         :allowZero="false"
@@ -118,13 +120,14 @@ export default {
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
-    <Dimension class="col-12 mb-1 text-start"
+    <Dimension class="gcp-cell"
         v-if="frequencyDependent"
         :name="'maximumFrequency'"
+        :replaceTitle="'Maximum Frequency'"
         :unit="'Hz'"
         :dataTestLabel="dataTestLabel + '-MaximumFrequency'"
         :min="1"
-        :justifyContent="true"
+        :justifyContent="false"
         :defaultValue="1"
         :allowNegative="false"
         :allowZero="false"
@@ -135,14 +138,15 @@ export default {
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
-    <Dimension class="col-12 mb-1 text-start"
+    <Dimension class="gcp-cell"
         v-if="temperatureDependent"
         :name="'minimumTemperature'"
+        :replaceTitle="'Minimum Temperature'"
         :unit="'°C'"
         :dataTestLabel="dataTestLabel + '-MinimumTemperature'"
         :min="0.0001"
         :max="1000"
-        :justifyContent="true"
+        :justifyContent="false"
         :defaultValue="1"
         :allowNegative="true"
         :allowZero="true"
@@ -153,14 +157,15 @@ export default {
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
-    <Dimension class="col-12 mb-1 text-start"
+    <Dimension class="gcp-cell"
         v-if="temperatureDependent"
         :name="'maximumTemperature'"
+        :replaceTitle="'Maximum Temperature'"
         :unit="'°C'"
         :dataTestLabel="dataTestLabel + '-MaximumTemperature'"
         :min="0.0001"
         :max="1000"
-        :justifyContent="true"
+        :justifyContent="false"
         :defaultValue="1"
         :allowNegative="true"
         :allowZero="true"
@@ -171,14 +176,15 @@ export default {
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
-    <Dimension class="col-12 mb-1 text-start"
+    <Dimension class="gcp-cell"
         v-if="dcBiasDependent"
         :name="'minimumDcBias'"
+        :replaceTitle="'Minimum DC Bias'"
         :unit="'A'"
         :dataTestLabel="dataTestLabel + '-MinimumDcBias'"
         :min="0"
         :max="1000"
-        :justifyContent="true"
+        :justifyContent="false"
         :defaultValue="1"
         :allowNegative="false"
         :allowZero="true"
@@ -189,14 +195,15 @@ export default {
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
-    <Dimension class="col-12 mb-1 text-start"
+    <Dimension class="gcp-cell"
         v-if="dcBiasDependent"
         :name="'maximumDcBias'"
+        :replaceTitle="'Maximum DC Bias'"
         :unit="'A'"
         :dataTestLabel="dataTestLabel + '-MaximumDcBias'"
         :min="0"
         :max="1000"
-        :justifyContent="true"
+        :justifyContent="false"
         :defaultValue="1"
         :allowNegative="false"
         :allowZero="true"
@@ -207,23 +214,74 @@ export default {
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
-    <Dimension class="col-12 mb-1 text-start"
+    <Dimension class="gcp-cell"
         :name="'numberPoints'"
         :replaceTitle="'No. Points'"
         :unit="null"
         :dataTestLabel="dataTestLabel + '-NumberPoints'"
         :min="0"
-        :justifyContent="true"
+        :justifyContent="false"
         :defaultValue="1"
         :allowNegative="false"
         :allowZero="false"
         :modelValue="$stateStore.graphParameters"
-        :labelWidthProportionClass="'col-6'"
-        :valueWidthProportionClass="'col-6'"
+        :labelWidthProportionClass="'col-12'"
+        :valueWidthProportionClass="'col-12'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
         :textColor="$styleStore.magneticBuilder.inputTextColor"
     />
+    </div>
 </template>
+
+<style scoped>
+.gcp-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.1rem;
+}
+
+.gcp-cell {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 9px;
+    padding: 0.4rem 0.55rem 0.5rem 0.55rem;
+    transition: background 0.15s, border-color 0.15s;
+    text-align: start;
+}
+
+.gcp-cell:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.gcp-cell :deep(.row) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Uppercase pill caption above each input */
+.gcp-cell :deep(.dim-label),
+.gcp-cell :deep(.efl-label),
+.gcp-cell :deep(label) {
+    color: rgba(242, 242, 242, 0.65) !important;
+    font-size: 0.66rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+    line-height: 1.1;
+    background: transparent !important;
+}
+
+.gcp-cell :deep(input[type="number"]),
+.gcp-cell :deep(.dim-input),
+.gcp-cell :deep(.efl-select) {
+    font-size: 0.88rem !important;
+    font-weight: 600;
+    height: 1.8rem !important;
+}
+</style>

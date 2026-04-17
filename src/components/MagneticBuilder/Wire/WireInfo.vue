@@ -119,6 +119,10 @@ export default {
             }
             return true;
         },
+        hasCalculableData() {
+            const wire = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex]?.wire;
+            return wire != null && wire !== 'Dummy' && wire !== '' && wire.type != null;
+        },
     },
     watch: {
         'operatingPointIndex': {
@@ -263,311 +267,400 @@ export default {
 </script>
 
 <template>
-    <div v-if="advancedMode" class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
-        <div
-            class="row ps-2"
-            :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
-        >
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.dcResistancePerMeter"
-                class="col-6 ps-3 pe-3"
-                :name="'R'"
-                :subscriptName="'DC'"
-                :unit="'Ω/m'"
-                :dataTestLabel="dataTestLabel + '-Rdc'"
-                :numberDecimals="2"
-                :value="dcResistancePerMeter"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.skinResistancePerMeter"
-                :class="'border-start'"
-                class="col-6 ps-3 pe-3"
-                :name="'R'"
-                :subscriptName="'sk.AC'"
-                :unit="'Ω/m'"
-                :dataTestLabel="dataTestLabel + '-Rac'"
-                :numberDecimals="2"
-                :value="skinAcResistancePerMeter"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.ohmicLossesPerMeter"
-                class="col-6 ps-3 pe-3"
-                :name="'P'"
-                :subscriptName="'DC'"
-                :unit="'W/m'"
-                :dataTestLabel="dataTestLabel + '-Pdc'"
-                :numberDecimals="2"
-                :value="dcLossesPerMeter"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.skinLossesPermeter"
-                :class="'border-start'"
-                class="col-6 ps-3 pe-3"
-                :name="'P'"
-                :subscriptName="'sk.AC'"
-                :unit="'W/m'"
-                :dataTestLabel="dataTestLabel + '-Pac'"
-                :numberDecimals="2"
-                :value="skinAcLossesPerMeter"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
-                class="col-6 ps-3 pe-3"
-                :name="'J'"
-                :subscriptName="'eff'"
-                :unit="'A/mm²'"
-                :dataTestLabel="dataTestLabel + '-Jeff'"
-                :numberDecimals="2"
-                :value="effectiveCurrentDensity"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="tooMuchCurrentDensity? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
-                :class="'border-start'"
-                class="col-6 ps-3 pe-3"
-                :name="'δ'"
-                :subscriptName="'eff'"
-                :unit="'m'"
-                :dataTestLabel="dataTestLabel + '-EffectiveSkinDepth'"
-                :numberDecimals="2"
-                :value="effectiveSkinDepth"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.wireWidth"
-                class="col-6 ps-3 pe-3"
-                :name="'Width'"
-                :unit="'m'"
-                :dataTestLabel="dataTestLabel + '-OuterWidth'"
-                :numberDecimals="2"
-                :value="outerDimensions[0]"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="fitsOuterDimensionsWidth? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.skinFactor"
-                :class="'border-start'"
-                class="col-6 ps-3 pe-3"
-                :name="'F'"
-                :subscriptName="'skin'"
-                :unit="null"
-                :dataTestLabel="dataTestLabel + '-EffectiveSkinAcFactor'"
-                :numberDecimals="2"
-                :value="skinAcFactor"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="tooMuchSkinAcFactor? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.wireHeight"
-                class="col-6 ps-3 pe-3"
-                :name="'Height'"
-                :unit="'m'"
-                :dataTestLabel="dataTestLabel + '-OuterHeight'"
-                :numberDecimals="2"
-                :value="outerDimensions[1]"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="fitsOuterDimensionsHeight? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.turnsRatio"
-                :class="'border-start'"
-                class="col-6 ps-3 pe-3"
-                v-if="windingIndex > 0"
-                :name="'T'"
-                :subscriptName="'ratio'"
-                :unit="null"
-                :dataTestLabel="dataTestLabel + '-TurnsRatio'"
-                :numberDecimals="2"
-                :value="turnsRatio"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-3'"
-                :valueWidthProportionClass="'col-9'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="compliesWithTurnsRatio? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-
-
+    <div class="wireinfo-panel">
+        <div class="wireinfo-header">
+            <div class="wireinfo-header-left">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Wire Info</span>
+            </div>
+            <div v-if="!dataUptoDate && hasCalculableData" class="wireinfo-outdated-badge">Outdated</div>
         </div>
-    </div>
-    <div v-else class="container-flex mt-2 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
-        <div
-            class="row"
-            :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
-        >
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
-                class="col-12 ps-4 pe-4"
-                :name="'Eff. Current Density'"
-                :unit="'A/mm²'"
-                :dataTestLabel="dataTestLabel + '-Jeff'"
-                :numberDecimals="2"
-                :value="effectiveCurrentDensity"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="tooMuchCurrentDensity? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
-                class="col-12 ps-4 pe-4"
-                :name="'Eff. Skin Depth'"
-                :unit="'m'"
-                :dataTestLabel="dataTestLabel + '-EffectiveSkinDepth'"
-                :numberDecimals="2"
-                :value="effectiveSkinDepth"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.wireWidth"
-                class="col-12 ps-4 pe-4"
-                :name="'Outer Width'"
-                :unit="'m'"
-                :dataTestLabel="dataTestLabel + '-OuterWidth'"
-                :numberDecimals="2"
-                :value="outerDimensions[0]"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="fitsOuterDimensionsWidth? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.wireHeight"
-                class="col-12 ps-4 pe-4"
-                :name="'Outer Height'"
-                :unit="'m'"
-                :dataTestLabel="dataTestLabel + '-OuterHeight'"
-                :numberDecimals="2"
-                :value="outerDimensions[1]"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="fitsOuterDimensionsHeight? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-
-            <DimensionReadOnly 
-                v-tooltip="tooltipsMagneticBuilder.turnsRatio"
-                class="col-12 ps-4 pe-4"
-                v-if="windingIndex > 0"
-                :name="'Turns Ratio'"
-                :unit="null"
-                :dataTestLabel="dataTestLabel + '-TurnsRatio'"
-                :numberDecimals="2"
-                :value="turnsRatio"
-                :useTitleCase="false"
-                :disableShortenLabels="true"
-                :labelWidthProportionClass="'col-7'"
-                :valueWidthProportionClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="compliesWithTurnsRatio? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
-            />
-
-
+        <div class="wireinfo-body">
+            <template v-if="advancedMode">
+                <div class="wireinfo-grid" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.dcResistancePerMeter"
+                            class="text-start"
+                            :name="'R'"
+                            :subscriptName="'DC'"
+                            :unit="'Ω/m'"
+                            :dataTestLabel="dataTestLabel + '-Rdc'"
+                            :numberDecimals="2"
+                            :value="dcResistancePerMeter"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.skinResistancePerMeter"
+                            class="text-start"
+                            :name="'R'"
+                            :subscriptName="'sk.AC'"
+                            :unit="'Ω/m'"
+                            :dataTestLabel="dataTestLabel + '-Rac'"
+                            :numberDecimals="2"
+                            :value="skinAcResistancePerMeter"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.ohmicLossesPerMeter"
+                            class="text-start"
+                            :name="'P'"
+                            :subscriptName="'DC'"
+                            :unit="'W/m'"
+                            :dataTestLabel="dataTestLabel + '-Pdc'"
+                            :numberDecimals="2"
+                            :value="dcLossesPerMeter"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.skinLossesPermeter"
+                            class="text-start"
+                            :name="'P'"
+                            :subscriptName="'sk.AC'"
+                            :unit="'W/m'"
+                            :dataTestLabel="dataTestLabel + '-Pac'"
+                            :numberDecimals="2"
+                            :value="skinAcLossesPerMeter"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
+                            class="text-start"
+                            :name="'J'"
+                            :subscriptName="'eff'"
+                            :unit="'A/mm²'"
+                            :dataTestLabel="dataTestLabel + '-Jeff'"
+                            :numberDecimals="2"
+                            :value="effectiveCurrentDensity"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="tooMuchCurrentDensity? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
+                            class="text-start"
+                            :name="'δ'"
+                            :subscriptName="'eff'"
+                            :unit="'m'"
+                            :dataTestLabel="dataTestLabel + '-EffectiveSkinDepth'"
+                            :numberDecimals="2"
+                            :value="effectiveSkinDepth"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.wireWidth"
+                            class="text-start"
+                            :name="'Width'"
+                            :unit="'m'"
+                            :dataTestLabel="dataTestLabel + '-OuterWidth'"
+                            :numberDecimals="2"
+                            :value="outerDimensions[0]"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="fitsOuterDimensionsWidth? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.skinFactor"
+                            class="text-start"
+                            :name="'F'"
+                            :subscriptName="'skin'"
+                            :unit="null"
+                            :dataTestLabel="dataTestLabel + '-EffectiveSkinAcFactor'"
+                            :numberDecimals="2"
+                            :value="skinAcFactor"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="tooMuchSkinAcFactor? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.wireHeight"
+                            class="text-start"
+                            :name="'Height'"
+                            :unit="'m'"
+                            :dataTestLabel="dataTestLabel + '-OuterHeight'"
+                            :numberDecimals="2"
+                            :value="outerDimensions[1]"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="fitsOuterDimensionsHeight? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                        />
+                    </div>
+                    <div v-if="windingIndex > 0" class="wireinfo-cell">
+                        <DimensionReadOnly
+                            v-tooltip="tooltipsMagneticBuilder.turnsRatio"
+                            class="text-start"
+                            :name="'T'"
+                            :subscriptName="'ratio'"
+                            :unit="null"
+                            :dataTestLabel="dataTestLabel + '-TurnsRatio'"
+                            :numberDecimals="2"
+                            :value="turnsRatio"
+                            :useTitleCase="false"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="compliesWithTurnsRatio? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                        />
+                    </div>
+                </div>
+            </template>
+            <template v-else>
+                <div class="wireinfo-simple" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
+                    <DimensionReadOnly
+                        v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
+                        class="text-start ps-4 pe-4"
+                        :name="'Eff. Current Density'"
+                        :unit="'A/mm²'"
+                        :dataTestLabel="dataTestLabel + '-Jeff'"
+                        :numberDecimals="2"
+                        :value="effectiveCurrentDensity"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="tooMuchCurrentDensity? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                    />
+                    <DimensionReadOnly
+                        v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
+                        class="text-start ps-4 pe-4"
+                        :name="'Eff. Skin Depth'"
+                        :unit="'m'"
+                        :dataTestLabel="dataTestLabel + '-EffectiveSkinDepth'"
+                        :numberDecimals="2"
+                        :value="effectiveSkinDepth"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                    />
+                    <DimensionReadOnly
+                        v-tooltip="tooltipsMagneticBuilder.wireWidth"
+                        class="text-start ps-4 pe-4"
+                        :name="'Outer Width'"
+                        :unit="'m'"
+                        :dataTestLabel="dataTestLabel + '-OuterWidth'"
+                        :numberDecimals="2"
+                        :value="outerDimensions[0]"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="fitsOuterDimensionsWidth? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                    />
+                    <DimensionReadOnly
+                        v-tooltip="tooltipsMagneticBuilder.wireHeight"
+                        class="text-start ps-4 pe-4"
+                        :name="'Outer Height'"
+                        :unit="'m'"
+                        :dataTestLabel="dataTestLabel + '-OuterHeight'"
+                        :numberDecimals="2"
+                        :value="outerDimensions[1]"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="fitsOuterDimensionsHeight? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                    />
+                    <DimensionReadOnly
+                        v-tooltip="tooltipsMagneticBuilder.turnsRatio"
+                        class="text-start ps-4 pe-4"
+                        v-if="windingIndex > 0"
+                        :name="'Turns Ratio'"
+                        :unit="null"
+                        :dataTestLabel="dataTestLabel + '-TurnsRatio'"
+                        :numberDecimals="2"
+                        :value="turnsRatio"
+                        :useTitleCase="false"
+                        :disableShortenLabels="true"
+                        :labelWidthProportionClass="'col-7'"
+                        :valueWidthProportionClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="compliesWithTurnsRatio? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                    />
+                </div>
+            </template>
         </div>
     </div>
 </template>
+
+<style scoped>
+.wireinfo-panel {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    border-radius: 14px;
+    padding: 0;
+    margin: 0.05rem 0 0.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    overflow: hidden;
+}
+
+.wireinfo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.wireinfo-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.wireinfo-header-left i {
+    font-size: 0.95rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+}
+
+.wireinfo-outdated-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(var(--bs-warning-rgb), 0.2);
+    color: var(--bs-warning);
+    border: 1px solid rgba(var(--bs-warning-rgb), 0.35);
+}
+
+.wireinfo-body {
+    padding: 0.5rem 0.4rem;
+}
+
+.wireinfo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.1rem 0.5rem;
+}
+
+@media (max-width: 576px) {
+    .wireinfo-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.wireinfo-cell {
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 0.1rem 0.4rem 0.1rem 0.4rem;
+    transition: opacity 0.3s ease;
+}
+
+.wireinfo-cell :deep(.form-label),
+.wireinfo-cell :deep(label) {
+    padding-left: 0.35rem !important;
+}
+
+.wireinfo-simple {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.wireinfo-dimmed {
+    opacity: 0.35;
+    transition: opacity 0.3s ease;
+}
+</style>

@@ -166,60 +166,55 @@ export default {
 </script>
 
 <template>
-    <Settings 
+    <Settings
         :modalName="'MagneticBuilderConfigurationModal'"
         @onSettingsUpdated="onSettingsUpdated"
     />
-    <div class="container" :style="$styleStore.controlPanel.main">
-        <div class="row ">
+    <div class="scp-panel">
+        <div class="scp-group scp-group-left">
             <button
-                :style="$styleStore.controlPanel.button"
                 :disabled="!historyStore.isBackPossible()"
-                class="btn offset-sm-0 offset-lg-1 col-2 col-lg-1"
+                class="scp-btn scp-btn-icon"
                 @click="undo"
                 aria-label="Undo"
-                title="Undo" 
+                title="Undo"
             >
                 <i class="fa-solid fa-arrow-rotate-left"></i>
             </button>
             <button
-                :style="$styleStore.controlPanel.button"
                 :disabled="!historyStore.isForwardPossible()"
-                class="btn col-2 col-lg-1"
+                class="scp-btn scp-btn-icon"
                 @click="redo"
                 aria-label="Redo"
                 title="Redo"
             >
                 <i class="fa-solid fa-arrow-rotate-right"></i>
             </button>
-            <input data-cy="CoreImport-MAS-file-button" type="file" ref="masFileReader" @change="readMASFile()" class="btn mt-1 rounded-3" hidden />
+        </div>
+
+        <input data-cy="CoreImport-MAS-file-button" type="file" ref="masFileReader" @change="readMASFile()" hidden />
+
+        <div class="scp-group scp-group-main">
             <button
-                :style="$styleStore.controlPanel.button"
-                v-if="!loading"
-                class="btn offset-1 col-3"
+                class="scp-btn scp-btn-primary"
                 @click="load"
             >
-                {{'Load MAS'}}
+                <i class="fa-solid fa-folder-open"></i>
+                <span>{{loading ? 'Loading…' : 'Load MAS'}}</span>
             </button>
             <button
-                v-else
-                :style="$styleStore.controlPanel.button"
-                class="btn offset-1 col-3"
-                @click="load"
-            >
-                {{'Loading'}}
-            </button>
-            <button
-                :style="$styleStore.controlPanel.button"
-                class="btn col-3"
+                class="scp-btn scp-btn-primary"
                 @click="exportMAS"
             >
-                {{'Export MAS'}}
+                <i class="fa-solid fa-file-export"></i>
+                <span>Export MAS</span>
             </button>
-            <button 
+        </div>
+
+        <div class="scp-group scp-group-right">
+            <button
                 v-if="showConfigurationButton"
-                :style="$styleStore.controlPanel.button"
-                class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
+                class="scp-btn scp-btn-icon"
                 data-bs-toggle="modal"
                 data-bs-target="#MagneticBuilderConfigurationModal"
                 @click="openSettings"
@@ -228,18 +223,116 @@ export default {
                 >
                 <i class="fa-solid fa-gear"></i>
             </button>
-            <button 
+            <button
                 v-if="showResetButton"
-                :style="$styleStore.controlPanel.button"
-                class="btn offset-md-0 offset-lg-1 col-1 px-md-0"
+                class="scp-btn scp-btn-danger"
                 @click="reset"
                 aria-label="Reset"
                 title="Reset"
                 >
                 <i class="fa-solid fa-power-off"></i>
             </button>
-
-
         </div>
     </div>
 </template>
+
+<style scoped>
+.scp-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin: 0.15rem 0 0.5rem 0;
+    background: linear-gradient(180deg,
+        rgba(var(--bs-dark-rgb), 0.75) 0%,
+        rgba(var(--bs-dark-rgb), 0.55) 100%);
+    border: 1px solid rgba(var(--bs-light-rgb), 0.08);
+    border-top: 3px solid rgba(var(--bs-primary-rgb), 0.8);
+    border-radius: 14px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
+    flex-wrap: wrap;
+}
+
+.scp-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.scp-group-main {
+    flex: 1;
+    justify-content: center;
+}
+
+.scp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.15s, box-shadow 0.2s, transform 0.1s, background 0.15s, color 0.15s;
+    white-space: nowrap;
+    min-height: 2.1rem;
+}
+
+.scp-btn:hover:not(:disabled) {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+}
+
+.scp-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.scp-btn-primary {
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
+        var(--bs-primary) 55%,
+        rgb(var(--bs-primary-rgb) / 0.85) 100%);
+    color: var(--bs-white);
+    border: 1px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
+    box-shadow:
+        0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
+        0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.scp-btn-icon {
+    background: rgba(var(--bs-light-rgb), 0.08);
+    border: 1px solid rgba(var(--bs-light-rgb), 0.22);
+    color: rgba(var(--bs-light-rgb), 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    min-width: 2.1rem;
+    padding: 0.4rem 0.55rem;
+}
+
+.scp-btn-icon:hover:not(:disabled) {
+    background: rgba(var(--bs-primary-rgb), 0.2);
+    border-color: rgba(var(--bs-primary-rgb), 0.55);
+    color: var(--bs-white);
+}
+
+.scp-btn-danger {
+    background: rgb(var(--bs-danger-rgb) / 0.2);
+    border: 1px solid rgb(var(--bs-danger-rgb) / 0.55);
+    color: var(--bs-danger);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    min-width: 2.1rem;
+    padding: 0.4rem 0.55rem;
+}
+
+.scp-btn-danger:hover:not(:disabled) {
+    background: rgb(var(--bs-danger-rgb) / 0.3);
+    border-color: rgb(var(--bs-danger-rgb) / 0.75);
+}
+</style>

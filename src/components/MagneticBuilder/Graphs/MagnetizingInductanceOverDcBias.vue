@@ -152,15 +152,15 @@ export default {
 </script>
 
 <template>
-    <div>
-        <div class="row">
-            <div class="col-3">
-                <div class="row">
+    <div class="graph-wrapper">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <div class="graph-params">
                     <slot/>
                 </div>
             </div>
-            <div class="col-9">
-                <img :data-cy="dataTestLabel + '-MagnetizingInductancesOverDcBias-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
+            <div class="col-12 col-md-9 graph-viz-col">
+                <img :data-cy="dataTestLabel + '-MagnetizingInductancesOverDcBias-loading'" v-if="loading" class="mx-auto d-block graph-loading" alt="loading" :src="$settingsStore.loadingGif">
                 <LineVisualizer 
                     v-show="!loading"
                     :data="magnetizingInductanceOverDcBiasData"
@@ -176,3 +176,29 @@ export default {
         </div>
     </div>
 </template>
+
+<style scoped>
+.graph-wrapper {
+    width: 100%;
+}
+
+.graph-params {
+    background: rgba(var(--bs-light-rgb), 0.04);
+    border: 1px solid rgba(var(--bs-light-rgb), 0.1);
+    border-radius: 12px;
+    padding: 0.6rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.graph-viz-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.graph-loading {
+    max-width: 60%;
+    height: auto;
+}
+</style>

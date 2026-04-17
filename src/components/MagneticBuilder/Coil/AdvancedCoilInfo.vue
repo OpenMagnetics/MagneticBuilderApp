@@ -964,259 +964,255 @@ export default {
 </script>
 
 <template>
-    <div class="container-fluid" :style="$styleStore.magneticBuilder.main">
-        <div
-            class="row"
-            :style="dataUptoDate ? 'opacity: 100%;' : 'opacity: 60%;'"
-        >
+    <div class="advancedcoil-wrapper">
+        <div class="advancedcoil-grid" :class="{ 'advancedcoil-dimmed': !dataUptoDate }">
             <!-- Left Column: Resistance -->
-            <div class="col-4">
-                <h5 class="text-center mb-2">Resistance</h5>
-                <!-- Wire Losses Plot -->
-                <div>
-                    <Magnetic2DVisualizer 
-                        v-if="masStore.mas?.magnetic?.coil?.turnsDescription"
-                        :modelValue="masStore.mas"
-                        :forceUpdate="forceUpdate"
-                        :operatingPointIndex="operatingPointIndex"
-                        :enableZoom="true"
-                        :enableOptions="false"
-                        :plotModeInit="PLOT_MODES.WIRES_LOSSES"
-                        :availablePlotModes="[PLOT_MODES.WIRES_LOSSES]"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
-                        :textColor="$styleStore.magneticBuilder.main['color']"
-                    />
-                    <div v-else class="d-flex align-items-center justify-content-center h-100 text-muted">
-                        No coil data available
+            <div class="advancedcoil-card">
+                <div class="advancedcoil-card-header">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Resistance</span>
+                </div>
+                <div class="advancedcoil-card-body">
+                    <div class="advancedcoil-plot">
+                        <Magnetic2DVisualizer 
+                            v-if="masStore.mas?.magnetic?.coil?.turnsDescription"
+                            :modelValue="masStore.mas"
+                            :forceUpdate="forceUpdate"
+                            :operatingPointIndex="operatingPointIndex"
+                            :enableZoom="true"
+                            :enableOptions="false"
+                            :plotModeInit="PLOT_MODES.WIRES_LOSSES"
+                            :availablePlotModes="[PLOT_MODES.WIRES_LOSSES]"
+                            :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                            :textColor="$styleStore.magneticBuilder.main['color']"
+                        />
+                        <div v-else class="advancedcoil-placeholder">
+                            No coil data available
+                        </div>
                     </div>
-                </div>
-                <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="text-center">
-                    <small class="text-muted d-block"><i class="fas fa-info-circle"></i> Hover over the image to see values</small>
-                </div>
-                <!-- Frequency Input for Resistance Calculation -->
-                <div class="mt-2 mb-2">
-                    <Dimension
-                        :name="'frequency'"
-                        :replaceTitle="'Frequency'"
-                        unit="Hz"
-                        :min="1000"
-                        :max="10000000"
-                        v-model="frequencyData"
-                        @update="onFrequencyUpdate"
-                        :labelWidthProportionClass="'col-5'"
-                        :valueWidthProportionClass="'col-7'"
-                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize || '14px'"
-                        :labelFontSize="$styleStore.magneticBuilder.inputLabelFontSize || '14px'"
-                        :labelBgColor="'transparent'"
-                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor || '#3a3a3a'"
-                        :textColor="$styleStore.magneticBuilder.inputTextColor || '#fff'"
-                    />
-                </div>
-                <!-- Resistance Matrix -->
-                <div class="text-center mt-2">
-                    <div v-if="calculatingMatrices" class="text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Calculating...
+                    <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="advancedcoil-hint">
+                        <i class="fas fa-info-circle"></i> Hover over the image to see values
                     </div>
-                    <vue-latex
-                        v-else-if="resistanceMatrixLatex && resistanceMatrix"
-                        :expression="resistanceMatrixLatex"
-                        :display-mode="true"
-                        :fontsize="16"
-                    />
-                    <div v-else class="text-muted small">
-                        <em>No resistance data available</em>
+                    
+                    <div class="advancedcoil-freq">
+                        <Dimension
+                            :name="'frequency'"
+                            :replaceTitle="'Frequency'"
+                            unit="Hz"
+                            :min="1000"
+                            :max="10000000"
+                            v-model="frequencyData"
+                            @update="onFrequencyUpdate"
+                            :labelWidthProportionClass="'col-5'"
+                            :valueWidthProportionClass="'col-7'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize || '14px'"
+                            :labelFontSize="$styleStore.magneticBuilder.inputLabelFontSize || '14px'"
+                            :labelBgColor="'transparent'"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor || '#3a3a3a'"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor || '#fff'"
+                        />
+                    </div>
+                    
+                    <div class="advancedcoil-matrix">
+                        <div v-if="calculatingMatrices" class="advancedcoil-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                        </div>
+                        <vue-latex
+                            v-else-if="resistanceMatrixLatex && resistanceMatrix"
+                            :expression="resistanceMatrixLatex"
+                            :display-mode="true"
+                            :fontsize="16"
+                        />
+                        <div v-else class="advancedcoil-empty">
+                            No resistance data available
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Middle Column: Leakage Inductance -->
-            <div class="col-4">
-                <h5 class="text-center mb-2">Leakage Inductance</h5>
-                <!-- Magnetic Field Plot -->
-                <div>
-                    <Magnetic2DVisualizer 
-                        v-if="masStore.mas?.magnetic?.coil?.turnsDescription"
-                        :modelValue="masStore.mas"
-                        :forceUpdate="forceUpdate"
-                        :operatingPointIndex="operatingPointIndex"
-                        :enableZoom="true"
-                        :enableOptions="false"
-                        :enableFringingOption="true"
-                        :plotModeInit="PLOT_MODES.MAGNETIC_FIELD"
-                        :availablePlotModes="[PLOT_MODES.MAGNETIC_FIELD]"
-                        :includeFringingInit="includeFringing"
-                        @swapIncludeFringing="swapIncludeFringing"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
-                        :textColor="$styleStore.magneticBuilder.main['color']"
-                    />
-                    <div v-else class="d-flex align-items-center justify-content-center h-100 text-muted">
-                        No coil data available
-                    </div>
+            <div class="advancedcoil-card">
+                <div class="advancedcoil-card-header">
+                    <i class="fa-solid fa-magnet"></i>
+                    <span>Leakage Inductance</span>
                 </div>
-                <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="text-center">
-                    <small class="text-muted d-block"><i class="fas fa-info-circle"></i> Hover over the image to see values</small>
-                </div>
-                <!-- Inductance Matrix -->
-                <div class="text-center mt-2">
-                    <span class="text-muted d-block">Inductance Matrix</span>
-                    <div v-if="calculatingMatrices" class="text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Calculating...
+                <div class="advancedcoil-card-body">
+                    <div class="advancedcoil-plot">
+                        <Magnetic2DVisualizer 
+                            v-if="masStore.mas?.magnetic?.coil?.turnsDescription"
+                            :modelValue="masStore.mas"
+                            :forceUpdate="forceUpdate"
+                            :operatingPointIndex="operatingPointIndex"
+                            :enableZoom="true"
+                            :enableOptions="false"
+                            :enableFringingOption="true"
+                            :plotModeInit="PLOT_MODES.MAGNETIC_FIELD"
+                            :availablePlotModes="[PLOT_MODES.MAGNETIC_FIELD]"
+                            :includeFringingInit="includeFringing"
+                            @swapIncludeFringing="swapIncludeFringing"
+                            :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                            :textColor="$styleStore.magneticBuilder.main['color']"
+                        />
+                        <div v-else class="advancedcoil-placeholder">
+                            No coil data available
+                        </div>
                     </div>
-                    <vue-latex
-                        v-else-if="inductanceMatrixLatex"
-                        :expression="inductanceMatrixLatex"
-                        :display-mode="true"
-                        :fontsize="16"
-                    />
-                    <div v-else class="text-muted small">
-                        <em>No inductance data</em>
+                    <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="advancedcoil-hint">
+                        <i class="fas fa-info-circle"></i> Hover over the image to see values
                     </div>
-                </div>
-                <!-- Leakage Inductance Matrix -->
-                <div class="text-center mt-2">
-                    <span class="text-muted d-block">Leakage Inductance Matrix</span>
-                    <div v-if="calculatingMatrices" class="text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Calculating...
+                    
+                    <div class="advancedcoil-matrix">
+                        <span class="advancedcoil-matrix-title">Inductance Matrix</span>
+                        <div v-if="calculatingMatrices" class="advancedcoil-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                        </div>
+                        <vue-latex
+                            v-else-if="inductanceMatrixLatex"
+                            :expression="inductanceMatrixLatex"
+                            :display-mode="true"
+                            :fontsize="16"
+                        />
+                        <div v-else class="advancedcoil-empty">
+                            No inductance data
+                        </div>
                     </div>
-                    <vue-latex
-                        v-else-if="leakageInductanceMatrixLatex"
-                        :expression="leakageInductanceMatrixLatex"
-                        :display-mode="true"
-                        :fontsize="16"
-                    />
-                    <div v-else class="text-muted small">
-                        <em>No leakage inductance data</em>
+                    
+                    <div class="advancedcoil-matrix">
+                        <span class="advancedcoil-matrix-title">Leakage Inductance Matrix</span>
+                        <div v-if="calculatingMatrices" class="advancedcoil-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                        </div>
+                        <vue-latex
+                            v-else-if="leakageInductanceMatrixLatex"
+                            :expression="leakageInductanceMatrixLatex"
+                            :display-mode="true"
+                            :fontsize="16"
+                        />
+                        <div v-else class="advancedcoil-empty">
+                            No leakage inductance data
+                        </div>
                     </div>
-                </div>
-                <!-- Coupling Coefficient Matrix -->
-                <div class="text-center mt-2">
-                    <span class="text-muted d-block">Coupling Coefficient</span>
-                    <div v-if="calculatingMatrices" class="text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Calculating...
-                    </div>
-                    <vue-latex
-                        v-else-if="couplingCoefficientMatrixLatex"
-                        :expression="couplingCoefficientMatrixLatex"
-                        :display-mode="true"
-                        :fontsize="16"
-                    />
-                    <div v-else class="text-muted small">
-                        <em>No coupling data</em>
+                    
+                    <div class="advancedcoil-matrix">
+                        <span class="advancedcoil-matrix-title">Coupling Coefficient</span>
+                        <div v-if="calculatingMatrices" class="advancedcoil-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                        </div>
+                        <vue-latex
+                            v-else-if="couplingCoefficientMatrixLatex"
+                            :expression="couplingCoefficientMatrixLatex"
+                            :display-mode="true"
+                            :fontsize="16"
+                        />
+                        <div v-else class="advancedcoil-empty">
+                            No coupling data
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Right Column: Stray Capacitance -->
-            <div class="col-4">
-                <h5 class="text-center mb-2">Stray Capacitance</h5>
-                <!-- Electric Field Plot -->
-                <div>
-                    <Magnetic2DVisualizer 
-                        v-if="masStore.mas?.magnetic?.coil?.turnsDescription"
-                        :modelValue="masStore.mas"
-                        :forceUpdate="forceUpdate"
-                        :operatingPointIndex="operatingPointIndex"
-                        :enableZoom="true"
-                        :enableOptions="false"
-                        :plotModeInit="PLOT_MODES.ELECTRIC_FIELD"
-                        :availablePlotModes="[PLOT_MODES.ELECTRIC_FIELD]"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
-                        :textColor="$styleStore.magneticBuilder.main['color']"
-                    />
-                    <div v-else class="d-flex align-items-center justify-content-center h-100 text-muted">
-                        No coil data available
-                    </div>
+            <div class="advancedcoil-card">
+                <div class="advancedcoil-card-header">
+                    <i class="fa-solid fa-broadcast-tower"></i>
+                    <span>Stray Capacitance</span>
                 </div>
-                <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="text-center">
-                    <small class="text-muted d-block"><i class="fas fa-info-circle"></i> Hover over the image to see values</small>
-                </div>
-                
-                <!-- Section 1: Capacitance Matrix (All Windings) -->
-                <div class="text-center mt-2">
-                    <span class="text-muted d-block"><strong>Capacitance Matrix (All Windings)</strong></span>
-                    <div v-if="calculatingMatrices" class="text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Calculating...
+                <div class="advancedcoil-card-body">
+                    <div class="advancedcoil-plot">
+                        <Magnetic2DVisualizer 
+                            v-if="masStore.mas?.magnetic?.coil?.turnsDescription"
+                            :modelValue="masStore.mas"
+                            :forceUpdate="forceUpdate"
+                            :operatingPointIndex="operatingPointIndex"
+                            :enableZoom="true"
+                            :enableOptions="false"
+                            :plotModeInit="PLOT_MODES.ELECTRIC_FIELD"
+                            :availablePlotModes="[PLOT_MODES.ELECTRIC_FIELD]"
+                            :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                            :textColor="$styleStore.magneticBuilder.main['color']"
+                        />
+                        <div v-else class="advancedcoil-placeholder">
+                            No coil data available
+                        </div>
                     </div>
-                    <vue-latex
-                        v-else-if="capacitanceMatrixAllWindingsLatex"
-                        :expression="capacitanceMatrixAllWindingsLatex"
-                        :display-mode="true"
-                        :fontsize="16"
-                    />
-                    <div v-else-if="capacitanceError" class="text-danger small">
-                        <em>Error: {{ capacitanceError }}</em>
+                    <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="advancedcoil-hint">
+                        <i class="fas fa-info-circle"></i> Hover over the image to see values
                     </div>
-                    <div v-else class="text-muted small">
-                        <em>No capacitance data available</em>
-                    </div>
-                </div>
-                
-                <!-- Section 2: Winding Pair Selection -->
-                <div v-if="hasMultipleWindings" class="mt-3 p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
-                    <small class="d-block mb-2 text-white"><strong>Select Winding Pair</strong></small>
                     
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label class="form-label text-white small mb-1">Primary</label>
-                            <select 
-                                class="form-select form-select-sm" 
-                                v-model="selectedWindingPair.primary"
-                                @change="onPrimaryWindingChange($event.target.value)"
-                                style="background-color: #3a3a3a; color: #fff; border-color: #555;"
-                            >
-                                <option v-for="(displayName, realName) in windingOptions" :key="realName" :value="realName">
-                                    {{ displayName }}
-                                </option>
-                            </select>
+                    <div class="advancedcoil-matrix">
+                        <span class="advancedcoil-matrix-title">Capacitance Matrix (All Windings)</span>
+                        <div v-if="calculatingMatrices" class="advancedcoil-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Calculating...
                         </div>
-                        <div class="col-6">
-                            <label class="form-label text-white small mb-1">Secondary</label>
-                            <select 
-                                class="form-select form-select-sm" 
-                                v-model="selectedWindingPair.secondary"
-                                @change="onSecondaryWindingChange($event.target.value)"
-                                style="background-color: #3a3a3a; color: #fff; border-color: #555;"
-                            >
-                                <option v-for="(displayName, realName) in windingOptions" :key="realName" :value="realName">
-                                    {{ displayName }}
-                                </option>
-                            </select>
+                        <vue-latex
+                            v-else-if="capacitanceMatrixAllWindingsLatex"
+                            :expression="capacitanceMatrixAllWindingsLatex"
+                            :display-mode="true"
+                            :fontsize="16"
+                        />
+                        <div v-else-if="capacitanceError" class="advancedcoil-error">
+                            Error: {{ capacitanceError }}
+                        </div>
+                        <div v-else class="advancedcoil-empty">
+                            No capacitance data available
                         </div>
                     </div>
-                </div>
-                
-                <!-- Message for single winding -->
-                <div v-else-if="!calculatingMatrices" class="mt-3 p-2 border rounded text-center" style="background-color: #2a2a2a; border-color: #444;">
-                    <small class="text-muted">Single winding: No inter-winding capacitance models available</small>
-                </div>
-                
-                <!-- Section 3: Maxwell Capacitance Matrix (for selected pair) -->
-                <div v-if="selectedWindingPair.primary && selectedWindingPair.secondary" class="text-center mt-3">
-                    <span class="text-muted d-block"><strong>Maxwell Capacitance Matrix</strong></span>
-                    <small class="text-muted d-block mb-1">{{ selectedWindingPair.primary }} - {{ selectedWindingPair.secondary }}</small>
-                    <div v-if="calculatingMatrices" class="text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Calculating...
-                    </div>
-                    <vue-latex
-                        v-else-if="maxwellCapacitanceMatrixForSelectedPairLatex"
-                        :expression="maxwellCapacitanceMatrixForSelectedPairLatex"
-                        :display-mode="true"
-                        :fontsize="16"
-                    />
-                    <div v-else class="text-muted small">
-                        <em>No Maxwell matrix for selected pair</em>
-                    </div>
-                </div>
-                
-                <!-- Section 4: Tripole Capacitance (for selected pair) -->
-                <div v-if="threeCapacitorModel" class="mt-3">
-                    <div class="p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
-                        <small class="d-block mb-2 text-white"><strong>Tripole Capacitance</strong></small>
-                        <small class="d-block mb-2 text-muted">{{ threeCapacitorModel.windingNames[0] }} - {{ threeCapacitorModel.windingNames[1] }}</small>
+                    
+                    <div v-if="hasMultipleWindings" class="advancedcoil-pairbox">
+                        <div class="advancedcoil-pairbox-title">Select Winding Pair</div>
                         
-                        <!-- 3-Capacitor Equivalent Circuit Diagram -->
-                        <svg viewBox="0 0 320 230" class="w-100" style="max-width: 300px; height: auto; display: block; margin: 0 auto;">
-                            <!-- Left Port (Primary) - Terminals A and B -->
+                        <div class="advancedcoil-pairbox-grid">
+                            <div class="advancedcoil-pairbox-field">
+                                <label>Primary</label>
+                                <select 
+                                    v-model="selectedWindingPair.primary"
+                                    @change="onPrimaryWindingChange($event.target.value)"
+                                >
+                                    <option v-for="(displayName, realName) in windingOptions" :key="realName" :value="realName">
+                                        {{ displayName }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="advancedcoil-pairbox-field">
+                                <label>Secondary</label>
+                                <select 
+                                    v-model="selectedWindingPair.secondary"
+                                    @change="onSecondaryWindingChange($event.target.value)"
+                                >
+                                    <option v-for="(displayName, realName) in windingOptions" :key="realName" :value="realName">
+                                        {{ displayName }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-else-if="!calculatingMatrices" class="advancedcoil-pairbox advancedcoil-pairbox-empty">
+                        Single winding: No inter-winding capacitance models available
+                    </div>
+                    
+                    <div v-if="selectedWindingPair.primary && selectedWindingPair.secondary" class="advancedcoil-matrix">
+                        <span class="advancedcoil-matrix-title">Maxwell Capacitance Matrix</span>
+                        <span class="advancedcoil-matrix-subtitle">{{ selectedWindingPair.primary }} - {{ selectedWindingPair.secondary }}</span>
+                        <div v-if="calculatingMatrices" class="advancedcoil-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                        </div>
+                        <vue-latex
+                            v-else-if="maxwellCapacitanceMatrixForSelectedPairLatex"
+                            :expression="maxwellCapacitanceMatrixForSelectedPairLatex"
+                            :display-mode="true"
+                            :fontsize="16"
+                        />
+                        <div v-else class="advancedcoil-empty">
+                            No Maxwell matrix for selected pair
+                        </div>
+                    </div>
+                    
+                    <div v-if="threeCapacitorModel" class="advancedcoil-circuit">
+                        <div class="advancedcoil-circuit-header">Tripole Capacitance</div>
+                        <div class="advancedcoil-circuit-subtitle">{{ threeCapacitorModel.windingNames[0] }} - {{ threeCapacitorModel.windingNames[1] }}</div>
+                        
+                        <svg viewBox="0 0 320 230" class="advancedcoil-circuit-svg">
                             <circle cx="60" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
                             <text x="48" y="35" font-size="14" fill="#fff" font-weight="bold">A</text>
                             
@@ -1271,28 +1267,24 @@ export default {
                             <text x="172" y="168" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₃</text>
                         </svg>
                         
-                        <div class="mt-2 small text-center" style="color: #fff;">
-                            <div class="d-inline-block mx-2">
+                        <div class="advancedcoil-circuit-values">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_1 = ${formatCapacitance(threeCapacitorModel.C1)}`" :fontsize="13" />
                             </div>
-                            <div class="d-inline-block mx-2">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_2 = ${formatCapacitance(threeCapacitorModel.C2)}`" :fontsize="13" />
                             </div>
-                            <div class="d-inline-block mx-2">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_3 = ${formatCapacitance(threeCapacitorModel.C3)}`" :fontsize="13" />
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Section 5: 6 Capacitor Network (for selected pair) -->
-                <div v-if="sixCapacitorModel && sixCapacitorModel.isComplete" class="mt-3">
-                    <div class="p-2 border rounded" style="background-color: #2a2a2a; border-color: #444;">
-                        <small class="d-block mb-2 text-white"><strong>6 Capacitor Network</strong></small>
-                        <small class="d-block mb-2 text-muted">{{ sixCapacitorModel.windingNames[0] }} - {{ sixCapacitorModel.windingNames[1] }}</small>
+                    
+                    <div v-if="sixCapacitorModel && sixCapacitorModel.isComplete" class="advancedcoil-circuit">
+                        <div class="advancedcoil-circuit-header">6 Capacitor Network</div>
+                        <div class="advancedcoil-circuit-subtitle">{{ sixCapacitorModel.windingNames[0] }} - {{ sixCapacitorModel.windingNames[1] }}</div>
                         
-                        <!-- 6-Capacitor Equivalent Circuit Diagram -->
-                        <svg viewBox="0 0 320 240" class="w-100" style="max-width: 300px; height: auto; display: block; margin: 0 auto;">
+                        <svg viewBox="0 0 320 240" class="advancedcoil-circuit-svg">
                             <circle cx="60" cy="40" r="4" fill="#fff" stroke="#fff" stroke-width="2"/>
                             <text x="48" y="35" font-size="14" fill="#fff" font-weight="bold">A</text>
                             
@@ -1369,25 +1361,25 @@ export default {
                             <text x="208" y="95" font-size="14" fill="#fff" font-style="italic" font-weight="bold">C₆</text>
                         </svg>
                         
-                        <div class="mt-2 small text-center" style="color: #fff;">
-                            <div class="d-inline-block mx-2">
+                        <div class="advancedcoil-circuit-values">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_1 = ${formatCapacitance(sixCapacitorModel.C1)}`" :fontsize="13" />
                             </div>
-                            <div class="d-inline-block mx-2">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_2 = ${formatCapacitance(sixCapacitorModel.C2)}`" :fontsize="13" />
                             </div>
-                            <div class="d-inline-block mx-2">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_3 = ${formatCapacitance(sixCapacitorModel.C3)}`" :fontsize="13" />
                             </div>
                         </div>
-                        <div class="mt-1 small text-center" style="color: #fff;">
-                            <div class="d-inline-block mx-2">
+                        <div class="advancedcoil-circuit-values">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_4 = ${formatCapacitance(sixCapacitorModel.C4)}`" :fontsize="13" />
                             </div>
-                            <div class="d-inline-block mx-2">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_5 = ${formatCapacitance(sixCapacitorModel.C5)}`" :fontsize="13" />
                             </div>
-                            <div class="d-inline-block mx-2">
+                            <div class="advancedcoil-circuit-value">
                                 <vue-latex :expression="`C_6 = ${formatCapacitance(sixCapacitorModel.C6)}`" :fontsize="13" />
                             </div>
                         </div>
@@ -1399,4 +1391,211 @@ export default {
 </template>
 
 <style scoped>
+.advancedcoil-wrapper {
+    padding: 0.5rem 0;
+}
+
+.advancedcoil-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    transition: opacity 0.3s ease;
+}
+
+@media (max-width: 1200px) {
+    .advancedcoil-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.advancedcoil-dimmed {
+    opacity: 0.55;
+}
+
+.advancedcoil-card {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.05) 0%, rgba(var(--bs-primary-rgb), 0.01) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.advancedcoil-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.advancedcoil-card-header i {
+    font-size: 1rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+}
+
+.advancedcoil-card-body {
+    padding: 0.75rem;
+}
+
+.advancedcoil-plot {
+    min-height: 180px;
+}
+
+.advancedcoil-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 180px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+}
+
+.advancedcoil-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0.4rem 0 0.6rem;
+}
+
+.advancedcoil-freq {
+    margin-bottom: 0.5rem;
+}
+
+.advancedcoil-matrix {
+    text-align: center;
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+}
+
+.advancedcoil-matrix-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 0.3rem;
+}
+
+.advancedcoil-matrix-subtitle {
+    display: block;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 0.3rem;
+}
+
+.advancedcoil-loading {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.85rem;
+}
+
+.advancedcoil-empty {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.advancedcoil-error {
+    color: var(--bs-danger);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.advancedcoil-pairbox {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+}
+
+.advancedcoil-pairbox-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.5rem;
+}
+
+.advancedcoil-pairbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.advancedcoil-pairbox-field label {
+    display: block;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.65);
+    margin-bottom: 0.2rem;
+}
+
+.advancedcoil-pairbox-field select {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    outline: none;
+}
+
+.advancedcoil-pairbox-empty {
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.advancedcoil-circuit {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+}
+
+.advancedcoil-circuit-header {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.2rem;
+}
+
+.advancedcoil-circuit-subtitle {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 0.5rem;
+}
+
+.advancedcoil-circuit-svg {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.advancedcoil-circuit-values {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 0.8rem;
+    margin-top: 0.5rem;
+    color: #fff;
+    font-size: 0.8rem;
+}
+
+.advancedcoil-circuit-value {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+}
 </style>

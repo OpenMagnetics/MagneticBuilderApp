@@ -110,6 +110,7 @@ export default {
         this.getWindingOrientations();
         this.getCoilAlignments();
     },
+    emits: ['coilUpdated', 'closeAlignment'],
     methods: {
         getSectionOrientations() {
             this.taskQueueStore.getAvailableWindingOrientations().then((windingOrientations) => {
@@ -150,124 +151,193 @@ export default {
 </script>
 
 <template>
-    <div class="container p-0">
-        <div class="row"  ref="coilSelectorContainer">
+    <div v-show="showAlignmentOptions && masStore.mas.magnetic.coil.sectionsDescription != null" class="alignment-panel">
+                <div class="alignment-header">
+                    <div class="alignment-header-left">
+                        <i class="fa-solid fa-align-center"></i>
+                        <span>Alignment Settings</span>
+                    </div>
+                    <button
+                        type="button"
+                        class="alignment-close-btn"
+                        aria-label="Close alignment settings"
+                        @click="$emit('closeAlignment')"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
 
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.windingsOrientation"
-                v-if="showAlignmentOptions"
-                :disabled="readOnly"
-                class="col-12 mb-2 text-start ps-4"
-                :dataTestLabel="dataTestLabel + '-sectionsOrientation'"
-                :name="'sectionsOrientation'"
-                :replaceTitle="'Windings Orientation'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                :modelValue="data"
-                :options="sectionsOrientations"
-                :labelWidthProportionClass="'col-7'"
-                :selectStyleClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="coilUpdated"
-                @update:modelValue="data = $event"
-            />
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
-                v-if="showAlignmentOptions"
-                :disabled="readOnly"
-                class="col-12 mb-2 text-start ps-4"
-                :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
-                :name="'sectionsAlignment'"
-                :replaceTitle="'Section Alignment'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                :modelValue="data"
-                :options="coilAlignments"
-                :labelWidthProportionClass="'col-6'"
-                :selectStyleClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="coilUpdated"
-                @update:modelValue="data = $event"
-            />
+                <div class="alignment-body">
+                    <ElementFromList
+                        v-tooltip="tooltipsMagneticBuilder.windingsOrientation"
+                        :disabled="readOnly"
+                        class="col-12 mb-2 text-start"
+                        :dataTestLabel="dataTestLabel + '-sectionsOrientation'"
+                        :name="'sectionsOrientation'"
+                        :replaceTitle="'Windings Orientation'"
+                        :titleSameRow="true"
+                        :justifyContent="true"
+                        :modelValue="data"
+                        :options="sectionsOrientations"
+                        :labelWidthProportionClass="'col-7'"
+                        :selectStyleClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        @update="coilUpdated"
+                        @update:modelValue="data = $event"
+                    />
 
-            <SectionSelector
-                v-show="showAlignmentOptions" 
-                :sectionIndex="selectedSectionIndex"
-                :masStore="masStore"
-                @sectionIndexChanged="sectionIndexChanged"
-            />
+                    <ElementFromList
+                        v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
+                        :disabled="readOnly"
+                        class="col-12 mb-2 text-start"
+                        :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
+                        :name="'sectionsAlignment'"
+                        :replaceTitle="'Section Alignment'"
+                        :titleSameRow="true"
+                        :justifyContent="true"
+                        :modelValue="data"
+                        :options="coilAlignments"
+                        :labelWidthProportionClass="'col-6'"
+                        :selectStyleClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        @update="coilUpdated"
+                        @update:modelValue="data = $event"
+                    />
 
+                    <SectionSelector
+                        :sectionIndex="selectedSectionIndex"
+                        :masStore="masStore"
+                        @sectionIndexChanged="sectionIndexChanged"
+                    />
 
-<!--             <ElementFromList
-                class="col-12 mb-1 text-start ps-4"
-                :dataTestLabel="dataTestLabel + '-LayersOrientation'"
-                :name="'layersOrientation'"
-                :replaceTitle="'Layers Orientation'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="data.dataPerSection[selectedSectionIndex]"
-                :options="windingOrientations"
-                :labelWidthProportionClass="'col-7'"
-                :selectStyleClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="coilUpdated"
-            /> -->
+                    <ElementFromList
+                        v-tooltip="tooltipsMagneticBuilder.turnsAlignment"
+                        :disabled="readOnly"
+                        class="col-12 mb-2 text-start"
+                        :dataTestLabel="dataTestLabel + '-TurnsAlignment'"
+                        :name="'turnsAlignment'"
+                        :titleSameRow="true"
+                        :justifyContent="true"
+                        v-model="data.dataPerSection[selectedSectionIndex]"
+                        :options="coilAlignments"
+                        :labelWidthProportionClass="'col-6'"
+                        :selectStyleClass="'col-5'"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        @update="coilUpdated"
+                    />
 
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.turnsAlignment"
-                v-if="showAlignmentOptions"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start ps-4"
-                :dataTestLabel="dataTestLabel + '-TurnsAlignment'"
-                :name="'turnsAlignment'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="data.dataPerSection[selectedSectionIndex]"
-                :options="coilAlignments"
-                :labelWidthProportionClass="'col-6'"
-                :selectStyleClass="'col-5'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="coilUpdated"
-            />
-
-            <ArrayProportions
-                v-tooltip="tooltipsMagneticBuilder.proportions"
-                v-if="showAlignmentOptions && masStore.mas.magnetic.coil.functionalDescription.length > 1"
-                :disabled="readOnly"
-                class="col-12 my-1 text-start"
-                :dataTestLabel="dataTestLabel + '-ProportionPerWinding'"
-                :modelValue="data.proportionPerWinding"
-                :name="'proportionPerWinding'"
-                :replaceTitle="'Proportions'"
-                :suffix="'W'"
-                :unit="'%'"
-                :max="100"
-                :min="1"
-                :disabledScaling="true"
-                :maximumNumberElements="12"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="coilUpdated"
-            />
-        </div>
+                    <ArrayProportions
+                        v-tooltip="tooltipsMagneticBuilder.proportions"
+                        v-if="masStore.mas.magnetic.coil.functionalDescription.length > 1"
+                        :disabled="readOnly"
+                        class="col-12 mt-1 text-start"
+                        :dataTestLabel="dataTestLabel + '-ProportionPerWinding'"
+                        :modelValue="data.proportionPerWinding"
+                        :name="'proportionPerWinding'"
+                        :replaceTitle="'Proportions'"
+                        :suffix="'W'"
+                        :unit="'%'"
+                        :max="100"
+                        :min="1"
+                        :disabledScaling="true"
+                        :maximumNumberElements="12"
+                        :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                        :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                        :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                        :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        @update="coilUpdated"
+                    />
+                </div>
     </div>
 </template>
+
+<style scoped>
+.alignment-panel {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.08) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+    border-radius: 14px;
+    padding: 0;
+    margin: 0.15rem 0 0.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alignment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(var(--bs-primary-rgb), 0.12);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.alignment-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.alignment-header-left i {
+    font-size: 1rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.4));
+}
+
+.alignment-close-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--bs-primary);
+    font-size: 1rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.alignment-close-btn:hover {
+    background: rgba(var(--bs-primary-rgb), 0.15);
+    color: var(--bs-white);
+}
+
+.alignment-body {
+    padding: 0.5rem 0.6rem 0.5rem 1.15rem;
+}
+
+.alignment-body :deep(.form-label),
+.alignment-body :deep(label) {
+    padding-left: 0.35rem !important;
+}
+</style>

@@ -1,18 +1,10 @@
 <script>
 export default {
-    emits: ["showAlignmentOptions", "customizeCoil", "showInsulationOptions"],
+    emits: ["customizeCoil"],
     props: {
         dataTestLabel: {
             type: String,
             default: '',
-        },
-        enableAlignmentOptions: {
-            type: Boolean,
-            default: true,
-        },
-        enableInsulationOptions: {
-            type: Boolean,
-            default: true,
         },
         enableCustomize: {
             type: Boolean,
@@ -23,52 +15,11 @@ export default {
             default: false,
         },
     },
-    data() {
-        const showAlignmentOptions = false;
-        const showInsulationOptions = false;
-        return {
-            showAlignmentOptions,
-            showInsulationOptions,
-        }
-    },
-    computed: {
-    },
-    watch: { 
-    },
-    mounted () {
-    },
-    methods: {
-        swapShowAlignmentOptions() {
-            this.showAlignmentOptions = !this.showAlignmentOptions;
-            this.$emit('showAlignmentOptions', this.showAlignmentOptions);
-        },
-        swapShowInsulationOptions() {
-            this.showInsulationOptions = !this.showInsulationOptions;
-            this.$emit('showInsulationOptions', this.showInsulationOptions);
-        },
-    }
 }
 </script>
 
 <template>
     <div class="mb-submenu">
-        <button
-            v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
-            :disabled="!enableAlignmentOptions"
-            :data-cy="dataTestLabel + '-Coil-ShowAlignmentOptions-button'"
-            :class="['mb-btn', showAlignmentOptions ? 'mb-btn-primary' : 'mb-btn-outline']"
-            @click="swapShowAlignmentOptions"
-        >
-            <i class="fa-solid fa-align-center me-2"></i>{{ showAlignmentOptions ? 'Hide alignment' : 'Alignment' }}
-        </button>
-        <button
-            :disabled="!enableInsulationOptions"
-            :data-cy="dataTestLabel + '-Coil-ShowInsulationOptions-button'"
-            :class="['mb-btn', showInsulationOptions ? 'mb-btn-primary' : 'mb-btn-outline']"
-            @click="swapShowInsulationOptions"
-        >
-            <i class="fa-solid fa-shield-halved me-2"></i>{{ showInsulationOptions ? 'Hide insulation' : 'Insulation' }}
-        </button>
         <button
             v-if="!readOnly"
             :disabled="!enableCustomize"
@@ -90,8 +41,8 @@ export default {
 }
 
 .mb-btn {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 1 1 auto;
+    min-width: fit-content;
     padding: 10px 14px;
     border-radius: 8px;
     font-size: 0.88rem;
@@ -117,11 +68,11 @@ export default {
 
 .mb-btn-primary {
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--bs-primary) 115%, white 0%) 0%,
+        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
         var(--bs-primary) 55%,
         rgb(var(--bs-primary-rgb) / 0.85) 100%);
-    color: #fff;
-    border: 2px solid color-mix(in srgb, var(--bs-primary) 70%, white 30%);
+    color: var(--bs-white);
+    border: 2px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
     box-shadow:
         0 0 0 2px rgb(var(--bs-primary-rgb) / 0.35),
         0 4px 14px rgb(var(--bs-primary-rgb) / 0.5),
@@ -152,7 +103,7 @@ export default {
 .mb-btn-ghost {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.28);
-    color: #e9ecef;
+    color: var(--bs-light);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 

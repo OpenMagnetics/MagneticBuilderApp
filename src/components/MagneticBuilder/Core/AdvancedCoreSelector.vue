@@ -116,9 +116,13 @@ export default {
 </script>
 
 <template>
-    <div class="container">
-        <div class="row">
-            <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
+    <div class="advcore-panel">
+        <div class="advcore-header">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+            <span>Custom magnetic core</span>
+        </div>
+        <div class="advcore-body">
+            <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block advcore-loading" alt="loading" :src="$settingsStore.loadingGif">
             <AdvancedCoreSelectorShape
                 v-if="$stateStore.magneticBuilder.submode.core == $stateStore.MagneticBuilderCoreSubmodes.Shape"
                 :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorShape'"
@@ -139,7 +143,52 @@ export default {
                 :core="localCore"
                 :enableSimulation="true"
             />
+            <label class="text-danger col-12 pt-1 advcore-error">{{errorMessage}}</label>
         </div>
-        <label class="text-danger col-12 pt-1" style="font-size: 1em">{{errorMessage}}</label>
     </div>
 </template>
+
+<style scoped>
+.advcore-panel {
+    background: linear-gradient(180deg,
+        rgba(var(--bs-dark-rgb), 0.75) 0%,
+        rgba(var(--bs-dark-rgb), 0.55) 100%);
+    border: 1px solid rgba(var(--bs-light-rgb), 0.08);
+    border-left: 3px solid rgba(var(--bs-primary-rgb), 0.8);
+    border-radius: 14px;
+    margin: 0.5rem 0 1rem 0;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
+    overflow: hidden;
+}
+
+.advcore-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    background: rgba(var(--bs-light-rgb), 0.04);
+    border-bottom: 1px solid rgba(var(--bs-light-rgb), 0.08);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.advcore-header i {
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.45));
+}
+
+.advcore-body {
+    padding: 0.8rem 0.75rem;
+}
+
+.advcore-loading {
+    max-width: 60%;
+    height: auto;
+}
+
+.advcore-error {
+    font-size: 0.85em;
+    margin-top: 0.5rem;
+}
+</style>

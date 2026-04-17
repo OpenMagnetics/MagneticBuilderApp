@@ -1,76 +1,21 @@
 <script>
 export default {
+    emits: ['customizeCore'],
     props: {
         dataTestLabel: {
             type: String,
             default: '',
         },
-        enableAdvise: {
-            type: Boolean,
-            default: true,
-        },
         enableCustomize: {
             type: Boolean,
             default: true,
         },
-        severalWires: {
-            type: Boolean,
-            default: false,
-        },
-        enableLoad: {
-            type: Boolean,
-            default: false,
-        },
-        allowAdvise: {
-            type: Boolean,
-            default: true,
-        },
     },
-    data() {
-        return {
-        }
-    },
-    computed: {
-    },
-    watch: { 
-    },
-    mounted () {
-    },
-    methods: {
-
-    }
 }
 </script>
 
 <template>
     <div class="mb-submenu">
-        <template v-if="severalWires && allowAdvise">
-            <button
-                :disabled="!enableAdvise"
-                :data-cy="dataTestLabel + 'Wire-Advise-button'"
-                class="mb-btn mb-btn-primary"
-                @click="$emit('adviseWire')"
-            >
-                <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Advise wire
-            </button>
-            <button
-                :disabled="!enableAdvise"
-                :data-cy="dataTestLabel + 'Wire-Advise-All-button'"
-                class="mb-btn mb-btn-primary"
-                @click="$emit('adviseAllWires')"
-            >
-                <i class="fa-solid fa-wand-sparkles me-2"></i>Advise all
-            </button>
-        </template>
-        <button
-            v-if="!severalWires && allowAdvise"
-            :disabled="!enableAdvise"
-            :data-cy="dataTestLabel + 'Wire-Advise-button'"
-            class="mb-btn mb-btn-primary"
-            @click="$emit('adviseWire')"
-        >
-            <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Advise wire
-        </button>
         <button
             :disabled="!enableCustomize"
             :data-cy="dataTestLabel + 'wire-Customize-button'"
@@ -78,14 +23,6 @@ export default {
             @click="$emit('customizeCore')"
         >
             <i class="fa-solid fa-sliders me-2"></i>Customize
-        </button>
-        <button
-            :disabled="!enableLoad"
-            :data-cy="dataTestLabel + 'wire-Load-button'"
-            class="mb-btn mb-btn-ghost"
-            @click="$emit('loadCore')"
-        >
-            <i class="fa-solid fa-folder-open me-2"></i>Load from library
         </button>
     </div>
 </template>
@@ -99,8 +36,8 @@ export default {
 }
 
 .mb-btn {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 1 1 auto;
+    min-width: fit-content;
     padding: 10px 14px;
     border-radius: 8px;
     font-size: 0.88rem;
@@ -126,11 +63,11 @@ export default {
 
 .mb-btn-primary {
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--bs-primary) 115%, white 0%) 0%,
+        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
         var(--bs-primary) 55%,
         rgb(var(--bs-primary-rgb) / 0.85) 100%);
-    color: #fff;
-    border: 2px solid color-mix(in srgb, var(--bs-primary) 70%, white 30%);
+    color: var(--bs-white);
+    border: 2px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
     box-shadow:
         0 0 0 2px rgb(var(--bs-primary-rgb) / 0.35),
         0 4px 14px rgb(var(--bs-primary-rgb) / 0.5),
@@ -161,7 +98,7 @@ export default {
 .mb-btn-ghost {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.28);
-    color: #e9ecef;
+    color: var(--bs-light);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 

@@ -43,8 +43,12 @@ export default {
 </script>
 
 <template>
-    <div class="container-flex mt-2 mb-3 pb-3 border-top pt-2">
-        <div class="row">
+    <div class="graph-panel">
+        <div class="graph-header">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Graphs</span>
+        </div>
+        <div class="graph-body">
             <ImpedanceOverFrequency 
                 v-if="errorMessage == '' && $stateStore.graphParameters.graph == 'impedanceOverFrequency'" 
                 :dataTestLabel="dataTestLabel"
@@ -155,3 +159,38 @@ export default {
         </div>
     </div>
 </template>
+
+<style scoped>
+.graph-panel {
+    background: linear-gradient(180deg,
+        rgba(var(--bs-dark-rgb), 0.75) 0%,
+        rgba(var(--bs-dark-rgb), 0.55) 100%);
+    border: 1px solid rgba(var(--bs-light-rgb), 0.08);
+    border-left: 3px solid rgba(var(--bs-primary-rgb), 0.8);
+    border-radius: 14px;
+    margin: 0.5rem 0 1rem 0;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
+    overflow: hidden;
+}
+
+.graph-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    background: rgba(var(--bs-light-rgb), 0.04);
+    border-bottom: 1px solid rgba(var(--bs-light-rgb), 0.08);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.graph-header i {
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.45));
+}
+
+.graph-body {
+    padding: 0.8rem 0.75rem 1rem 0.75rem;
+}
+</style>

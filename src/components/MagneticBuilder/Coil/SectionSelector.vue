@@ -78,29 +78,67 @@ export default {
 </script>
 
 <template>
-    <div class="container"  ref="coilSelectorContainer">
-        <div v-if="numberSections > 1" class="row mb-2">
-            <img :data-cy="dataTestLabel + '-BasicCoilBuilder-loading'" v-if="masStore.mas.magnetic.coil.sectionsDescription == null" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
-            <div v-else class="accordion row m-0 p-0" id="coilBuilderAccordion bg-dark">
-                <div :class="'col-lg-' + Number(12 / numberSections)" class="accordion-item border-0 m-0 p-0 bg-dark" v-for="key in range(0, numberSections)" :key="key">
-                    <h2 class="accordion-header" :id="'coreCalculatorheading-' + key">
-                        <button
-                        :style="combinedStyle([sectionIndex == key? $styleStore.magneticBuilder.inputSelectedTextColor : $styleStore.magneticBuilder.inputTextColor, $styleStore.magneticBuilder.inputFontSize, $styleStore.magneticBuilder.inputValueBgColor])"
-
-
-                            :class="sectionIndex == key? 'collapsed' : ''"
-                            class="accordion-button p-1"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            aria-expanded="false"
-                            :aria-controls="'coilBuilderAccordionHeading' + key"
-                            @click="$emit('sectionIndexChanged', key)">
-                            {{shortenedNames[key]}}
-                        </button>
-                    </h2>
-                </div>
+    <div class="section-selector" ref="coilSelectorContainer">
+        <div v-if="numberSections > 1" class="section-selector-row">
+            <img :data-cy="dataTestLabel + '-BasicCoilBuilder-loading'" v-if="masStore.mas.magnetic.coil.sectionsDescription == null" class="mx-auto d-block" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
+            <div v-else class="section-pills">
+                <button
+                    v-for="key in range(0, numberSections)"
+                    :key="key"
+                    :class="['section-pill', { active: sectionIndex === key }]"
+                    @click="$emit('sectionIndexChanged', key)">
+                    {{ shortenedNames[key] }}
+                </button>
             </div>
-
         </div>
     </div>
 </template>
+
+<style scoped>
+.section-selector {
+    width: 100%;
+    padding: 0;
+    margin-bottom: 0.75rem;
+}
+
+.section-selector-row {
+    display: flex;
+    justify-content: center;
+}
+
+.section-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.section-pill {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.section-pill:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.section-pill.active {
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.9) 0%, rgba(var(--bs-primary-rgb), 0.7) 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.35);
+}
+</style>

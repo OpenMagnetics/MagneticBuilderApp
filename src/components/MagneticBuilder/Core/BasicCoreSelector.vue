@@ -106,6 +106,22 @@ export default {
         }
     },
     computed: {
+        isCoreIncomplete() {
+            // Returns true while shape OR material is missing — used to highlight
+            // the "Advise" button in danger color so the user knows it's the
+            // shortcut to get a starting selection.
+            const fd = this.masStore?.mas?.magnetic?.core?.functionalDescription;
+            if (fd == null) return true;
+            const shape = fd.shape;
+            const shapeMissing = shape == null
+                || (typeof shape === 'string' && shape === '')
+                || (typeof shape === 'object' && (shape.name == null || shape.name === ''));
+            const material = fd.material;
+            const materialMissing = material == null
+                || (typeof material === 'string' && material === '')
+                || (typeof material === 'object' && (material.name == null || material.name === ''));
+            return shapeMissing || materialMissing;
+        },
         magneticForVisualizer() {
             // Force re-evaluation when visualizer update is triggered
             const forceUpdate = this.forceUpdateVisualizer;
@@ -471,10 +487,12 @@ export default {
                     this.errorMessage = "";
                     this.assignLocalData(magnetic.core);
                     this.loading = false;
+                    this.$emit('coreProcessed', true, magnetic.core);
                 })
                 .catch(error => {
                     this.errorMessage = "No core can be advised. You are on your own."
                     this.loading = false;
+                    this.$emit('coreProcessed', false, error);
                     setTimeout(() => {this.errorMessage = ""}, 10000);
                 });
             }
@@ -490,17 +508,30 @@ export default {
 
 <template>
     <div class="container">
-        <div class="card border-0 shadow-lg" :style="{ background: $styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a' }">
-            <div class="card-header border-bottom px-3 py-2" :style="{ borderColor: $styleStore.magneticBuilder.main['border-color'] || 'var(--bs-border-color)' }">
-                <div class="d-flex align-items-center">
-                    <i class="fa-solid fa-cube text-primary me-2"></i>
-                    <h6 class="card-title mb-0" :style="{ color: $styleStore.magneticBuilder.main['color'] }">Core Configuration</h6>
+        <div class="core-config-panel">
+            <div class="core-config-header">
+                <div class="core-config-header-left">
+                    <i class="fa-solid fa-cube"></i>
+                    <span>Core Configuration</span>
+                </div>
+                <div v-if="enableAdvise && enableSubmenu && !readOnly" class="core-config-header-right">
+                    <button
+                        type="button"
+                        :disabled="loading"
+                        :data-cy="dataTestLabel + '-Core-Advise-button'"
+                        :class="['core-config-header-btn', 'core-config-header-btn-primary', { 'core-config-header-btn-needs-attention': isCoreIncomplete }]"
+                        v-tooltip="isCoreIncomplete ? 'Core not fully configured — click to get a recommended starting core' : 'Get a recommended core for these requirements'"
+                        @click="adviseCoreRequested"
+                    >
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Advise</span>
+                    </button>
                 </div>
             </div>
-            <div class="card-body px-3 py-2">
+            <div class="core-config-body">
                 <div
                     v-if="useVisualizers && masStore.mas.magnetic.core.functionalDescription != null"
-                    class="row mb-4"
+                    class="row mb-2"
                     style="height: 25vh"
                     :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
                 >
@@ -516,97 +547,101 @@ export default {
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
                     />
                 </div>
-                <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
-                <CoreShapeSelector
-                    :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
-                    :readOnly="readOnly"
-                    :masStore="masStore"
-                    @update="coreShapeUpdated"
-                />
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.coreMaterialManufacturer"
-                v-if="localData.shape != '' && localData.shapeFamily != null && !loading"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start ms-2"
-                :dataTestLabel="dataTestLabel + '-MaterialManufacturers'"
-                :name="'materialManufacturer'"
-                :replaceTitle="'Manufacturer'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :options="coreMaterialManufacturers"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
+                <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block" alt="loading" style="width: 60%; max-width: 100%; height: auto;" :src="$settingsStore.loadingGif">
+                <div class="core-config-grid">
+                    <div class="core-config-cell core-config-cell-wide">
+                        <CoreShapeSelector
+                            :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
+                            :readOnly="readOnly"
+                            :masStore="masStore"
+                            @update="coreShapeUpdated"
+                        />
+                    </div>
+                    <div v-if="localData.shape != '' && localData.shapeFamily != null && !loading" class="core-config-cell core-config-cell-wide">
+                        <ElementFromList
+                            v-tooltip="tooltipsMagneticBuilder.coreMaterialManufacturer"
+                            :disabled="readOnly"
+                            class="text-start"
+                            :dataTestLabel="dataTestLabel + '-MaterialManufacturers'"
+                            :name="'materialManufacturer'"
+                            :replaceTitle="'Manufacturer'"
+                            :titleSameRow="true"
+                            :justifyContent="true"
+                            v-model="localData"
+                            :options="coreMaterialManufacturers"
+                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
+                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
 
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.coreMaterial"
-                v-if="localData.shape != '' && !loading && localData.materialManufacturer != null && coreMaterialNames[localData.materialManufacturer] != null && coreMaterialNames[localData.materialManufacturer].length > 0"
-                :disabled="readOnly"
-                class="col-12 mb-1 text-start ms-2"
-                :dataTestLabel="dataTestLabel + '-MaterialNames'"
-                :name="'material'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :optionsToDisable="coreMaterialManufacturers"
-                :options="coreMaterialNames[localData.materialManufacturer]"
-                @update="materialUpdated"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2">Select a family and a shape for the core</h5>
+                    <div v-if="localData.shape != '' && !loading && localData.materialManufacturer != null && coreMaterialNames[localData.materialManufacturer] != null && coreMaterialNames[localData.materialManufacturer].length > 0" class="core-config-cell core-config-cell-wide">
+                        <ElementFromList
+                            v-tooltip="tooltipsMagneticBuilder.coreMaterial"
+                            :disabled="readOnly"
+                            class="text-start"
+                            :dataTestLabel="dataTestLabel + '-MaterialNames'"
+                            :name="'material'"
+                            :titleSameRow="true"
+                            :justifyContent="true"
+                            v-model="localData"
+                            :optionsToDisable="coreMaterialManufacturers"
+                            :options="coreMaterialNames[localData.materialManufacturer]"
+                            @update="materialUpdated"
+                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
+                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2 col-12">Select a family and a shape for the core</h5>
 
-            <Dimension class="col-12 mb-1 text-start"
-                v-tooltip="tooltipsMagneticBuilder.coreNumberStacks"
-                v-if="isStackable() && localData.shape != '' && !loading"
-                :disabled="readOnly"
-                :name="'numberStacks'"
-                :replaceTitle="'Number of Stacks'"
-                :unit="null"
-                :forceUpdate="forceUpdate"
-                :dataTestLabel="dataTestLabel + '-NumberStacks'"
-                :min="1"
-                :justifyContent="true"
-                :defaultValue="1"
-                :allowNegative="false"
-                :modelValue="localData"
-                @update="numberStacksUpdated"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-            <CoreGappingSelector class="col-12 mb-1 text-start"
-                v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set' && masStore.mas.magnetic.core.processedDescription != null"
-                :disabled="readOnly"
-                :title="'Gap Info: '"
-                :dataTestLabel="dataTestLabel + '-Gap'"
-                :forceUpdate="forceUpdate"
-                :autoupdate="false"
-                :core="masStore.mas.magnetic.core"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-                @update="gappingUpdated"
-            />
-
-            <div
-                class="col-12 p-0"
-                >
+                    <div v-if="isStackable() && localData.shape != '' && !loading" class="core-config-cell core-config-cell-wide">
+                        <Dimension class="text-start"
+                            v-tooltip="tooltipsMagneticBuilder.coreNumberStacks"
+                            :disabled="readOnly"
+                            :name="'numberStacks'"
+                            :replaceTitle="'Number of Stacks'"
+                            :unit="null"
+                            :forceUpdate="forceUpdate"
+                            :dataTestLabel="dataTestLabel + '-NumberStacks'"
+                            :min="1"
+                            :justifyContent="true"
+                            :defaultValue="1"
+                            :allowNegative="false"
+                            :modelValue="localData"
+                            @update="numberStacksUpdated"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
+                    <div v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set' && masStore.mas.magnetic.core.processedDescription != null" class="core-config-cell core-config-cell-wide core-config-gap-cell">
+                        <CoreGappingSelector class="text-start"
+                            :disabled="readOnly"
+                            :title="'Gap Info: '"
+                            :dataTestLabel="dataTestLabel + '-Gap'"
+                            :forceUpdate="forceUpdate"
+                            :autoupdate="false"
+                            :core="masStore.mas.magnetic.core"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                            @update="gappingUpdated"
+                        />
+                    </div>
+                </div>
 
                 <CoreInfo 
                     v-if="!loading && enableSimulation"
@@ -617,17 +652,13 @@ export default {
                     :operatingPointIndex="operatingPointIndex"
                     :enableAutoSimulation="enableAutoSimulation"
                 />
-            </div>
 
                 <BasicCoreSubmenu 
                     v-if="enableSubmenu && !readOnly"
                     class="col-12 mb-1 text-start"
                     :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                     :masStore="masStore"
-                    :enableAdvise="!loading"
                     :enableCustomize="enableCustomize"
-                    :allowAdvise="enableAdvise"
-                    @adviseCore="adviseCoreRequested"
                     @customizeCore="$emit('customizeCore')"
                     @loadCore="loadCore"
                 />
@@ -636,3 +667,141 @@ export default {
         </div>
     </div>
 </template>
+
+<style scoped>
+.core-config-panel {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    border-radius: 14px;
+    padding: 0;
+    margin: 0.15rem 0 0.25rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    overflow: hidden;
+}
+
+.core-config-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.core-config-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.core-config-header-left i {
+    font-size: 0.95rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+}
+
+.core-config-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.core-config-header-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.15s, box-shadow 0.2s, transform 0.1s, background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.core-config-header-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.core-config-header-btn:not(:disabled):hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+}
+
+.core-config-header-btn-primary {
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
+        var(--bs-primary) 55%,
+        rgb(var(--bs-primary-rgb) / 0.85) 100%);
+    color: var(--bs-white);
+    border: 1px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
+    box-shadow:
+        0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
+        0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+/* Highlight the Advise button in danger color while the core is incomplete,
+   so the user is reminded they can use it to get a starting selection. */
+.core-config-header-btn.core-config-header-btn-needs-attention {
+    color: var(--bs-danger) !important;
+    border-color: rgb(var(--bs-danger-rgb) / 0.6) !important;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+    box-shadow:
+        0 0 0 1px rgb(var(--bs-danger-rgb) / 0.4),
+        0 2px 10px rgb(var(--bs-danger-rgb) / 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    animation: core-advise-pulse 1.8s ease-in-out infinite;
+}
+
+.core-config-header-btn.core-config-header-btn-needs-attention i {
+    color: var(--bs-danger);
+}
+
+@keyframes core-advise-pulse {
+    0%, 100% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.18);
+    }
+}
+
+.core-config-body {
+    padding: 0.5rem 0.6rem;
+}
+
+.core-config-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+    background: var(--bs-dark);
+    border-radius: 10px;
+    padding: 0.35rem;
+}
+
+.core-config-cell {
+    border-radius: 10px;
+    padding: 0.1rem 0.35rem 0.1rem 0.35rem;
+}
+
+.core-config-cell-wide {
+    grid-column: 1 / -1;
+}
+
+.core-config-gap-cell {
+    margin-bottom: 0.5rem;
+}
+
+.core-config-cell :deep(.form-label),
+.core-config-cell :deep(label) {
+    padding-left: 0.35rem !important;
+}
+</style>

@@ -9,6 +9,7 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
 <script>
 
 export default {
+    emits: ['marginUpdated', 'closeInsulation'],
     props: {
         dataTestLabel: {
             type: String,
@@ -127,12 +128,26 @@ export default {
 </script>
 
 <template>
-    <div class="container">
-        <div class="row ms-1">
-            <Dimension 
-                v-if="showInsulationOptions"
+    <div v-show="showInsulationOptions && masStore.mas.magnetic.coil.sectionsDescription != null" class="insulation-panel">
+        <div class="insulation-header">
+            <div class="insulation-header-left">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Insulation Settings</span>
+            </div>
+            <button
+                type="button"
+                class="insulation-close-btn"
+                aria-label="Close insulation settings"
+                @click="$emit('closeInsulation')"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="insulation-body">
+            <Dimension
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-2 text-start"
                 :name="'interlayerThickness'"
                 :replaceTitle="'Inter-layer ins. thickness'"
                 :unit="'m'"
@@ -153,10 +168,9 @@ export default {
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="interlayerThicknessUpdated"
             />
-            <Dimension 
-                v-if="showInsulationOptions"
+            <Dimension
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-2 text-start"
                 :name="'intersectionThickness'"
                 :replaceTitle="'Inter-section ins. thickness'"
                 :unit="'m'"
@@ -177,18 +191,17 @@ export default {
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
                 @update="intersectionThicknessUpdated"
             />
+            
             <SectionSelector
-                v-show="showInsulationOptions" 
                 :sectionIndex="selectedSectionIndex"
                 :masStore="masStore"
                 @sectionIndexChanged="sectionIndexChanged"
             />
 
-            <Dimension 
+            <Dimension
                 v-tooltip="topOrLeftMarginTooltip"
-                v-if="showInsulationOptions"
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-2 text-start"
                 :name="'topOrLeftMargin'"
                 :replaceTitle="'Top Margin'"
                 :unit="'m'"
@@ -213,9 +226,8 @@ export default {
 
             <Dimension
                 v-tooltip="bottomOrRightMarginTooltip"
-                v-if="showInsulationOptions"
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-2 text-start"
                 :name="'bottomOrRightMargin'"
                 :replaceTitle="'Bottom Margin'"
                 :unit="'m'"
@@ -240,3 +252,81 @@ export default {
         </div>
     </div>
 </template>
+
+<style scoped>
+.insulation-panel {
+    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.08) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+    border-radius: 14px;
+    padding: 0;
+    margin: 0.15rem 0 0.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.insulation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(var(--bs-primary-rgb), 0.12);
+    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--bs-primary);
+    letter-spacing: 0.02em;
+}
+
+.insulation-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.insulation-header-left i {
+    font-size: 1rem;
+    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.4));
+}
+
+.insulation-close-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--bs-primary);
+    font-size: 1rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.insulation-close-btn:hover {
+    background: rgba(var(--bs-primary-rgb), 0.15);
+    color: var(--bs-white);
+}
+
+.insulation-body {
+    padding: 0.5rem 0.6rem 0.5rem 1.15rem;
+}
+
+.insulation-body :deep(.form-label),
+.insulation-body :deep(label) {
+    padding-left: 0.35rem !important;
+}
+</style>
