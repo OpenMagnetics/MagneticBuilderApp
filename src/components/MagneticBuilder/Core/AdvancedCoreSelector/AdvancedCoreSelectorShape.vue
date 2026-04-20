@@ -56,7 +56,9 @@ export default {
         }
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
 
-        this.core.functionalDescription.shape.name = this.core.functionalDescription.shape.name.startsWith("Custom")? this.core.functionalDescription.shape.name : "Custom " + this.core.functionalDescription.shape.name;
+        if (this.core.functionalDescription.shape && typeof this.core.functionalDescription.shape === 'object' && this.core.functionalDescription.shape.name) {
+            this.core.functionalDescription.shape.name = this.core.functionalDescription.shape.name.startsWith("Custom")? this.core.functionalDescription.shape.name : "Custom " + this.core.functionalDescription.shape.name;
+        }
 
         const subscriptions = []
         const forceUpdate = 0;
@@ -155,8 +157,10 @@ export default {
             });
         }))
         this.getFamilies();
-        this.assignLocalData(this.core.functionalDescription.shape);
-        this.getDimensionKeys();
+        if (this.core.functionalDescription.shape && typeof this.core.functionalDescription.shape === 'object') {
+            this.assignLocalData(this.core.functionalDescription.shape);
+            this.getDimensionKeys();
+        }
     },
     beforeUnmount () {
         this.subscriptions.forEach((subscription) => {subscription();})
@@ -294,7 +298,7 @@ export default {
                 dimensions: {},
             };
 
-            Object.keys(shape.dimensions).forEach((key) => {
+            Object.keys(shape.dimensions ?? {}).forEach((key) => {
                 this.taskQueueStore.resolveDimensionWithTolerance(shape.dimensions[key]).then((response) => {
                     localData.dimensions[key] = response
                 });
