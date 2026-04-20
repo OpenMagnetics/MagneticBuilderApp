@@ -420,7 +420,13 @@ export default {
                     // Only update coil and trigger actions if not blocked
                     if (!this.taskQueueStore.windingIndexChangeBlock) {
                         this.masStore.mas.magnetic.coil.functionalDescription = coil.functionalDescription;
-                        this.cleanCoil();
+                        // Preserve sections/turns layout from adviser (e.g. CMC spacers); only wipe if absent
+                        if (coil.sectionsDescription) {
+                            this.masStore.mas.magnetic.coil.sectionsDescription = coil.sectionsDescription;
+                            this.masStore.mas.magnetic.coil.turnsDescription = coil.turnsDescription ?? null;
+                        } else {
+                            this.cleanCoil();
+                        }
                         this.$emit("wireUpdated", this.windingIndex);
 
                         this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
@@ -464,7 +470,13 @@ export default {
                     // Only update coil and trigger actions if not blocked
                     if (!this.taskQueueStore.windingIndexChangeBlock) {
                         this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
-                        this.cleanCoil();
+                        // Preserve sections/turns layout from adviser (e.g. CMC spacers); only wipe if absent
+                        if (result.coil?.sectionsDescription) {
+                            this.masStore.mas.magnetic.coil.sectionsDescription = result.coil.sectionsDescription;
+                            this.masStore.mas.magnetic.coil.turnsDescription = result.coil.turnsDescription ?? null;
+                        } else {
+                            this.cleanCoil();
+                        }
                         this.$emit("wireUpdated", this.windingIndex);
 
                         this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
@@ -562,7 +574,7 @@ export default {
                     />
                 </div>
                 <div
-                    v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
+                    v-if="!masStore.hasMirroredWindings"
                     class="wire-config-winding-bar"
                 >
                     <WindingSelector

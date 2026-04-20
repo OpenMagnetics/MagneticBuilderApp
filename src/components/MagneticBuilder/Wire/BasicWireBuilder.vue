@@ -140,7 +140,7 @@ export default {
         turnsUpdated(modifiedWindingIndex) {
             if (!this.blockingRebounds && !this.taskQueueStore.windingIndexChangeBlock) {
                 this.blockingRebounds = true;
-                if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+                if (this.masStore.hasMirroredWindings) {
                     const tempCoilFunctionalDescription = deepCopy(this.masStore.mas.magnetic.coil.functionalDescription)
                     this.masStore.mas.magnetic.coil.functionalDescription.forEach((_, windingIndex) => {
                         if (modifiedWindingIndex != windingIndex) {
@@ -157,7 +157,7 @@ export default {
         wireUpdated(modifiedWindingIndex) {
             if (!this.blockingRebounds && !this.taskQueueStore.windingIndexChangeBlock) {
                 this.blockingRebounds = true;
-                if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+                if (this.masStore.hasMirroredWindings) {
                     const tempCoilFunctionalDescription = deepCopy(this.masStore.mas.magnetic.coil.functionalDescription)
                     this.masStore.mas.magnetic.coil.functionalDescription.forEach((_, windingIndex) => {
                         if (modifiedWindingIndex != windingIndex) {

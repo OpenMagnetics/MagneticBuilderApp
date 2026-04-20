@@ -78,7 +78,7 @@ export default {
 
         let localData = {};
 
-        if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+        if (this.masStore.hasMirroredWindings) {
             localData = {
                 sectionsOrientation: "contiguous",
                 sectionsAlignment: "spread",
@@ -256,7 +256,7 @@ export default {
                 }
                 if (action.name == "resetMas") {
                     // Reset localData to defaults based on application type
-                    if (this.$stateStore.hasCurrentApplicationMirroredWindings()) {
+                    if (this.masStore.hasMirroredWindings) {
                         this.localData.sectionsOrientation = "contiguous";
                         this.localData.sectionsAlignment = "spread";
                         this.localData.dataPerSection = [{
@@ -788,7 +788,7 @@ export default {
                 </div>
                 <div class="coil-config-header-right">
                     <button
-                        v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
+                        v-if="!masStore.hasMirroredWindings"
                         type="button"
                         :disabled="!enableSubmenu || loading"
                         :class="['coil-config-header-btn', showAlignmentOptions ? 'coil-config-header-btn-primary' : 'coil-config-header-btn-outline']"
@@ -955,7 +955,7 @@ export default {
         </div>
                
         <BasicCoilSectionAlignmentSelector
-            v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
+            v-if="!masStore.hasMirroredWindings"
             :data="localData"
             :showAlignmentOptions="showAlignmentOptions"
             :masStore="masStore"

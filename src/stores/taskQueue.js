@@ -560,7 +560,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         coreAdvised(success = true, dataOrMessage = '') {
         },
 
-        async adviseCore(inputs, hasCurrentApplicationMirroredWindings, coreAdviserWeights, adviserSettings) {
+        async adviseCore(inputs, coreAdviserWeights, adviserSettings) {
             console.log('[DEBUG adviseCore] Starting...');
             const mkf = await waitForMkf();
             await mkf.ready;
@@ -568,7 +568,10 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             const settings = JSON.parse(await mkf.get_settings());
 
-            if (hasCurrentApplicationMirroredWindings) {
+            // CMC topology → force toroidal, no distributed gaps (winding goes around).
+            const isCmc = inputs?.designRequirements?.topology === 'CommonModeChoke';
+
+            if (isCmc) {
                 settings["coreIncludeDistributedGaps"] = false;
                 settings["coreIncludeMargin"] = true;
                 settings["coreIncludeStacks"] = true;
@@ -583,6 +586,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 settings["useToroidalCores"] = adviserSettings.allowToroidalCores;
                 settings["useOnlyCoresInStock"] = false;
             }
+            settings["coreAdviserEnableTemperatureFilter"] = adviserSettings.enableTemperatureFilter ?? false;
+            settings["coreAdviserMaximumTemperature"] = adviserSettings.maximumTemperature ?? 130;
             await mkf.set_settings(JSON.stringify(settings));
 
             // Ensure coreAdviseMode is a string, not an object

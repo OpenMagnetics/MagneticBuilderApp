@@ -162,14 +162,15 @@ export default {
     },
     methods: {
         insertIntermediateMas() {
-            const url = import.meta.env.VITE_API_ENDPOINT + '/insert_intermediate_mas'
+            const endpoint = import.meta.env.VITE_API_ENDPOINT;
+            if (!endpoint) return;
+            const url = endpoint + '/insert_intermediate_mas'
 
             this.$axios.post(url, this.masStore.mas)
             .then(response => {
             })
-            .catch(error => {
-                console.error("Error inserting")
-                console.error(error)
+            .catch(() => {
+                // Telemetry; fire-and-forget. Silent on failure so dev without backend isn't noisy.
             });
         },
         isMagneticBuilt() {

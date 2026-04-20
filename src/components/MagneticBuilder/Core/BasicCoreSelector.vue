@@ -460,7 +460,7 @@ export default {
                     useOnlyCoresInStock: this.$settingsStore.magneticBuilderSettings.useOnlyCoresInStock,
                 };
 
-                this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.$stateStore.hasCurrentApplicationMirroredWindings(), this.masStore.coreAdviserWeights, settings).then(async (magnetic) => {
+                this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.masStore.coreAdviserWeights, settings).then(async (magnetic) => {
                     this.masStore.mas.magnetic.core = magnetic.core;
                     
                     // Generate bobbin first

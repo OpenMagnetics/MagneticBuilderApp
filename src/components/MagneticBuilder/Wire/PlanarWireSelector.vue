@@ -345,7 +345,7 @@ export default {
                     />
                 </div>
                 <div
-                    v-if="!$stateStore.hasCurrentApplicationMirroredWindings()"
+                    v-if="!masStore.hasMirroredWindings"
                     class="wire-config-winding-bar"
                 >
                     <WindingSelector

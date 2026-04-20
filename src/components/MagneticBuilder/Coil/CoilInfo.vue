@@ -737,7 +737,7 @@ export default {
                         :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <div
-                        v-if="masStore.mas.magnetic.coil.functionalDescription.length > 2 && !$stateStore.hasCurrentApplicationMirroredWindings()"
+                        v-if="masStore.mas.magnetic.coil.functionalDescription.length > 2 && !masStore.hasMirroredWindings"
                         class="coilinfo-winding-bar"
                     >
                         <WindingSelector
