@@ -179,7 +179,7 @@ export default {
             <div class="modal-content bg-dark border-0 shadow-lg">
                 <div class="modal-header border-bottom border-secondary px-4 py-3">
                     <div class="d-flex align-items-center">
-                        <i class="fa-solid fa-gear text-primary me-2 fs-5"></i>
+                        <i class="bi bi-gear-fill text-primary me-2 fs-5"></i>
                         <h5 :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title text-white mb-0" :id="modalName + '-settingsModalLabel'">Settings</h5>
                     </div>
                     <button ref="closeSettingsModalRef" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="settingsModalClose"></button>
@@ -260,7 +260,7 @@ export default {
                     <!-- Simulation Models Section -->
                     <div class="mt-4">
                         <h6 class="text-white mb-3 border-bottom border-secondary pb-2">
-                            <i class="fa-solid fa-calculator text-primary me-2"></i>
+                            <i class="bi bi-calculator text-primary me-2"></i>
                             Simulation Models
                         </h6>
                         <small class="text-secondary d-block mb-3">Select the calculation models used in simulations (loaded from MKF)</small>
@@ -431,7 +431,7 @@ export default {
                     <!-- Field Plot Resolution Section -->
                     <div class="mt-4">
                         <h6 class="text-white mb-3 border-bottom border-secondary pb-2">
-                            <i class="fa-solid fa-chart-area text-primary me-2"></i>
+                            <i class="bi bi-graph-up text-primary me-2"></i>
                             Field Plot Resolution
                         </h6>
                         <small class="text-secondary d-block mb-3">Control the grid resolution for magnetic and electric field visualizations</small>
@@ -480,7 +480,7 @@ export default {
 
                             <div class="alert alert-dark border-secondary mt-3" role="alert">
                                 <small class="text-muted">
-                                    <i class="fa-solid fa-circle-info me-1"></i>
+                                    <i class="bi bi-info-circle-fill me-1"></i>
                                     Higher values produce finer visualizations but may slow down rendering. Default: 25×50
                                 </small>
                             </div>

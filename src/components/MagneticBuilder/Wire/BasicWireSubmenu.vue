@@ -22,7 +22,7 @@ export default {
             class="mb-btn mb-btn-outline"
             @click="$emit('customizeCore')"
         >
-            <i class="fa-solid fa-sliders me-2"></i>Customize
+            <i class="bi bi-sliders me-2"></i>Customize
         </button>
     </div>
 </template>

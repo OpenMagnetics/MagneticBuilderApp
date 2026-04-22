@@ -62,7 +62,7 @@ export default {
     <div class="filling-panel">
         <div class="filling-header">
             <div class="filling-header-left">
-                <i class="fa-solid fa-gauge-high"></i>
+                <i class="bi bi-speedometer2"></i>
                 <span>Filling Factors</span>
             </div>
         </div>

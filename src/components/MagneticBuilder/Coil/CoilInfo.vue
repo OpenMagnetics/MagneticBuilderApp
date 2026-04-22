@@ -339,7 +339,7 @@ export default {
     <div v-else class="coilinfo-panel">
         <div class="coilinfo-header">
             <div class="coilinfo-header-left">
-                <i class="fa-solid fa-bolt"></i>
+                <i class="bi bi-lightning-fill"></i>
                 <span>Coil Info</span>
             </div>
             <div v-if="!dataUptoDate && !loading && hasCalculableData" class="coilinfo-outdated-badge">Outdated</div>

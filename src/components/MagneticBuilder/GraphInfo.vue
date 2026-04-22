@@ -45,7 +45,7 @@ export default {
 <template>
     <div class="graph-panel">
         <div class="graph-header">
-            <i class="fa-solid fa-chart-line"></i>
+            <i class="bi bi-graph-up-arrow"></i>
             <span>Graphs</span>
         </div>
         <div class="graph-body">

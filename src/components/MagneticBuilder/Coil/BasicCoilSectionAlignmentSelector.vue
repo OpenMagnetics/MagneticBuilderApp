@@ -154,7 +154,7 @@ export default {
     <div v-show="showAlignmentOptions && masStore.mas.magnetic.coil.sectionsDescription != null" class="alignment-panel">
                 <div class="alignment-header">
                     <div class="alignment-header-left">
-                        <i class="fa-solid fa-align-center"></i>
+                        <i class="bi bi-text-center"></i>
                         <span>Alignment Settings</span>
                     </div>
                     <button
@@ -163,7 +163,7 @@ export default {
                         aria-label="Close alignment settings"
                         @click="$emit('closeAlignment')"
                     >
-                        <i class="fa-solid fa-xmark"></i>
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
 

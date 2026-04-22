@@ -111,6 +111,9 @@ export default {
         errorInDimensions() {
             this.errorMessage = "There is an error in the dimensions, please review them";
         },
+        clearError() {
+            this.errorMessage = "";
+        },
     }
 }
 </script>
@@ -118,7 +121,7 @@ export default {
 <template>
     <div class="advcore-panel">
         <div class="advcore-header">
-            <i class="fa-solid fa-screwdriver-wrench"></i>
+            <i class="bi bi-tools"></i>
             <span>Custom magnetic core</span>
         </div>
         <div class="advcore-body">
@@ -129,6 +132,7 @@ export default {
                 :core="localCore"
                 :enableSimulation="true"
                 @errorInDimensions="errorInDimensions"
+                @renderSuccess="clearError"
             />
             <AdvancedCoreSelectorGapping
                 v-if="$stateStore.magneticBuilder.submode.core == $stateStore.MagneticBuilderCoreSubmodes.Gapping"

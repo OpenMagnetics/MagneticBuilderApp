@@ -16,6 +16,7 @@ import { useTaskQueueStore } from '../../../../stores/taskQueue'
 <script>
 
 export default {
+    emits: ["errorInDimensions", "renderSuccess"],
     props: {
         dataTestLabel: {
             type: String,
@@ -579,6 +580,7 @@ export default {
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                         @errorInDimensions="$emit('errorInDimensions')"
+                        @renderSuccess="$emit('renderSuccess')"
                     />
                 </div>
             </div>
@@ -589,13 +591,14 @@ export default {
                     class="row"
                     :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
                 >
-                    <Core2DVisualizer 
+                    <Core2DVisualizer
                         :dataTestLabel="`${dataTestLabel}-Core2DVisualizer`"
                         :core="localCoreToDraw"
                         :forceUpdate="forceUpdate"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                         @errorInDimensions="$emit('errorInDimensions')"
+                        @renderSuccess="$emit('renderSuccess')"
                     />
                 </div>
             </div>

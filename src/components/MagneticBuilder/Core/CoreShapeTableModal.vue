@@ -61,7 +61,7 @@ export default {
             <div class="modal-content shape-modal-content">
                 <div class="modal-header shape-modal-header">
                     <div class="d-flex align-items-center">
-                        <i class="fa-solid fa-cubes shape-header-icon me-3"></i>
+                        <i class="bi bi-boxes shape-header-icon me-3"></i>
                         <h5 :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title mb-0 shape-modal-title" :id="'coreShapeTableModal-settingsModalLabel'">Select Core Shape</h5>
                     </div>
                     <button ref="closeSettingsModalRef" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="settingsModalClose"></button>
@@ -90,7 +90,7 @@ export default {
                             <button
                                 class="btn shape-select-btn"
                                 @click="selectCoreShape(props.rowData)"
-                            ><i class="fa-solid fa-arrow-right"></i></button>
+                            ><i class="bi bi-arrow-right"></i></button>
                         </template>
                     </DataTable>
                 </div>

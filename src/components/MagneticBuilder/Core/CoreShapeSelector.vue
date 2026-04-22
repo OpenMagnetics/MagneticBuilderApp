@@ -313,7 +313,7 @@ export default {
                     data-bs-toggle="modal"
                     data-bs-target="#coreShapeTableModal"
                     >
-                    <i class="fa-solid fa-table-list"></i>
+                    <i class="bi bi-table"></i>
                 </button>
             </div>
     </div>

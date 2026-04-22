@@ -270,7 +270,7 @@ export default {
     <div class="wireinfo-panel">
         <div class="wireinfo-header">
             <div class="wireinfo-header-left">
-                <i class="fa-solid fa-bolt"></i>
+                <i class="bi bi-lightning-fill"></i>
                 <span>Wire Info</span>
             </div>
             <div v-if="!dataUptoDate && hasCalculableData" class="wireinfo-outdated-badge">Outdated</div>

@@ -17,6 +17,7 @@ import { useTaskQueueStore } from '../../../../stores/taskQueue'
 <script>
 
 export default {
+    emits: ["errorInDimensions", "renderSuccess"],
     props: {
         dataTestLabel: {
             type: String,
@@ -178,6 +179,9 @@ export default {
         },
         errorInDimensions() {
             this.errorMessage = "There is an error in the dimensions, please review them";
+        },
+        clearError() {
+            this.errorMessage = "";
         },
         gapTypeChanged(newType, columnIndex) {
             if (newType == "Spacer") {
@@ -532,10 +536,27 @@ export default {
                         :fullCoreModel="true"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
-                        @errorInDimensions="$emit('errorInDimensions')"
+                        @errorInDimensions="errorInDimensions"
+                        @renderSuccess="clearError"
                     />
                 </div>
                 <h3 class= "mb-3"> {{'Technical Drawing'}} </h3>
+                <div
+                    v-if="core.functionalDescription != null"
+                    class="row"
+                    :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
+                >
+                    <Core2DVisualizer
+                        :dataTestLabel="`${dataTestLabel}-Core2DVisualizerGapping`"
+                        :core="localCoreToDraw"
+                        :forceUpdate="forceUpdate3DCore"
+                        :gappingMode="true"
+                        :loadingGif="$settingsStore.loadingGif"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
+                        @errorInDimensions="errorInDimensions"
+                        @renderSuccess="clearError"
+                    />
+                </div>
                 <div
                     v-if="core.functionalDescription != null"
                     class="border-bottom border-top row text-start py-2"

@@ -228,7 +228,7 @@ export default {
     <div class="coreinfo-panel">
         <div class="coreinfo-header">
             <div class="coreinfo-header-left">
-                <i class="fa-solid fa-cube"></i>
+                <i class="bi bi-box-fill"></i>
                 <span>Core Info</span>
             </div>
             <div v-if="!dataUptoDate && hasCalculableData" class="coreinfo-outdated-badge">Outdated</div>

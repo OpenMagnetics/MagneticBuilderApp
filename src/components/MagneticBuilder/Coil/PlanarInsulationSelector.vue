@@ -60,7 +60,7 @@ export default {
     <div class="planar-insulation-panel">
         <div class="planar-insulation-header">
             <div class="planar-insulation-header-left">
-                <i class="fa-solid fa-shield-halved"></i>
+                <i class="bi bi-shield-shaded"></i>
                 <span>Insulation Settings</span>
             </div>
             <button
@@ -69,7 +69,7 @@ export default {
                 @click="$emit('closeInsulation')"
                 aria-label="Close"
             >
-                <i class="fa-solid fa-xmark"></i>
+                <i class="bi bi-x-lg"></i>
             </button>
         </div>
         <div class="planar-insulation-body">

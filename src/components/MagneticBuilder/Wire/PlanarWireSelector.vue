@@ -286,7 +286,7 @@ export default {
         <div class="wire-config-panel">
             <div class="wire-config-header">
                 <div class="wire-config-header-left">
-                    <i class="fa-solid fa-bolt"></i>
+                    <i class="bi bi-lightning-fill"></i>
                     <span>Wire Configuration</span>
                 </div>
                 <div v-if="enableAdvise && enableSubmenu && !readOnly" class="wire-config-header-right">
@@ -298,7 +298,7 @@ export default {
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseWireRequested"
                     >
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <i class="bi bi-magic"></i>
                         <span>Advise</span>
                     </button>
                     <button
@@ -309,7 +309,7 @@ export default {
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseAllWiresRequested"
                     >
-                        <i class="fa-solid fa-wand-sparkles"></i>
+                        <i class="bi bi-magic"></i>
                         <span>Advise all</span>
                     </button>
                     <button
@@ -320,7 +320,7 @@ export default {
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseWireRequested"
                     >
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <i class="bi bi-magic"></i>
                         <span>Advise</span>
                     </button>
                 </div>

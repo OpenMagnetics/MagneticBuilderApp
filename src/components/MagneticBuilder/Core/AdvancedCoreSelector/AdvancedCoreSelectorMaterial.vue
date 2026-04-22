@@ -59,8 +59,11 @@ export default {
                     if (args[0]) {
                         const coreMaterial = args[1];
                         this.core.functionalDescription.material = coreMaterial;
-                        this.loadAdvancedMaterialData();
-
+                        // Do not call loadAdvancedMaterialData() — that would re-trigger
+                        // processCoreMaterial and loop. Just load complex permeability if needed.
+                        if (coreMaterial.permeability != null && coreMaterial.permeability.complex == null) {
+                            this.loadMaterialComplexPermeabilityData();
+                        }
                     }
                     else {
                         console.error(args[1]);
@@ -200,40 +203,9 @@ export default {
                 return;
             }
 
-            const url = import.meta.env.VITE_API_ENDPOINT + '/read_advanced_core_material_by_name'
-            const data = {
-                "name": material.name
-            }
-            console.log('[AdvancedCoreSelectorMaterial] Fetching from API for material:', material.name);
-            this.$axios.post(url, data)
-            .then(response => {
-                console.log('[AdvancedCoreSelectorMaterial] API response:', response.data);
-                console.log('[AdvancedCoreSelectorMaterial] API bhCycle:', response.data.bhCycle);
-                console.log('[AdvancedCoreSelectorMaterial] API volumetricLosses:', response.data.volumetricLosses);
-
-                if (response.data.bhCycle != null && response.data.bhCycle.length > 0) {
-                    material.bhCycle = response.data.bhCycle;
-                    console.log('[AdvancedCoreSelectorMaterial] Set bhCycle:', material.bhCycle);
-                }
-                if (response.data.volumetricLosses != null) {
-                    Object.keys(response.data.volumetricLosses).forEach((key) => {
-                        response.data.volumetricLosses[key].forEach((method) => {
-                            material.volumetricLosses[key].push(method)
-                        })
-                    })
-                    console.log('[AdvancedCoreSelectorMaterial] Updated volumetricLosses:', material.volumetricLosses);
-                }
-                if (response.data.permeability != null && response.data.permeability.amplitude != null) {
-                    material.permeability.amplitude = response.data.permeability.amplitude;
-                }
-
-                if (material.permeability.complex == null) {
-                    this.loadMaterialComplexPermeabilityData();
-                }
-            })
-            .catch(error => {
-                console.error('[AdvancedCoreSelectorMaterial] API error:', error);
-            });
+            // Use MKF WASM to load full material data (no backend required)
+            console.log('[AdvancedCoreSelectorMaterial] Fetching via MKF WASM for material:', material.name);
+            this.taskQueueStore.processCoreMaterial(material.name);
         },
         loadMaterialData() {
             this.taskQueueStore.processCoreMaterial(this.core.functionalDescription.material);

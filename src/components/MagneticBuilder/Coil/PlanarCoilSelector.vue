@@ -487,7 +487,7 @@ export default {
         <div class="coil-config-panel">
             <div class="coil-config-header">
                 <div class="coil-config-header-left">
-                    <i class="fa-solid fa-gears"></i>
+                    <i class="bi bi-gear-wide-connected"></i>
                     <span>Coil Configuration</span>
                 </div>
                 <div class="coil-config-header-right">
@@ -497,7 +497,7 @@ export default {
                         :data-cy="dataTestLabel + '-Coil-ShowInsulationOptions-button'"
                         @click="swapShowInsulationOptions(!showInsulationOptions)"
                     >
-                        <i class="fa-solid fa-shield-halved"></i>
+                        <i class="bi bi-shield-shaded"></i>
                         <span>Insulation</span>
                     </button>
                 </div>
@@ -536,7 +536,7 @@ export default {
                         class="builder-action-btn builder-action-btn-outline"
                         @click="showParasiticsView"
                     >
-                        <i class="fa-solid fa-wave-square me-2"></i>Advanced Parasitics
+                        <i class="bi bi-soundwave me-2"></i>Advanced Parasitics
                     </button>
 
                     <button
@@ -546,7 +546,7 @@ export default {
                         :class="['builder-action-btn', $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'builder-action-btn-primary' : 'builder-action-btn-ghost']"
                         @click="toggleTemperaturePlot"
                     >
-                        <i class="fa-solid fa-temperature-half me-2 temp-icon"></i>{{ $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'Hide Temperature' : 'Show Temperature' }}
+                        <i class="bi bi-thermometer-half me-2 temp-icon"></i>{{ $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'Hide Temperature' : 'Show Temperature' }}
                     </button>
                 </div>
 

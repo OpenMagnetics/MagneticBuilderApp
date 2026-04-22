@@ -179,7 +179,7 @@ export default {
                 aria-label="Undo"
                 title="Undo"
             >
-                <i class="fa-solid fa-arrow-rotate-left"></i>
+                <i class="bi bi-arrow-counterclockwise"></i>
             </button>
             <button
                 :disabled="!historyStore.isForwardPossible()"
@@ -188,7 +188,7 @@ export default {
                 aria-label="Redo"
                 title="Redo"
             >
-                <i class="fa-solid fa-arrow-rotate-right"></i>
+                <i class="bi bi-arrow-clockwise"></i>
             </button>
         </div>
 
@@ -199,14 +199,14 @@ export default {
                 class="scp-btn scp-btn-primary"
                 @click="load"
             >
-                <i class="fa-solid fa-folder-open"></i>
+                <i class="bi bi-folder2-open"></i>
                 <span>{{loading ? 'Loading…' : 'Load MAS'}}</span>
             </button>
             <button
                 class="scp-btn scp-btn-primary"
                 @click="exportMAS"
             >
-                <i class="fa-solid fa-file-export"></i>
+                <i class="bi bi-file-earmark-arrow-up"></i>
                 <span>Export MAS</span>
             </button>
         </div>
@@ -221,7 +221,7 @@ export default {
                 aria-label="Settings"
                 title="Settings"
                 >
-                <i class="fa-solid fa-gear"></i>
+                <i class="bi bi-gear-fill"></i>
             </button>
             <button
                 v-if="showResetButton"
@@ -230,7 +230,7 @@ export default {
                 aria-label="Reset"
                 title="Reset"
                 >
-                <i class="fa-solid fa-power-off"></i>
+                <i class="bi bi-power"></i>
             </button>
         </div>
     </div>

@@ -476,7 +476,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async getCoreTemperatureDependantParameters(core, ambientTemperature) {
-            if (core['functionalDescription']['shape'] != "" && core['functionalDescription']['material'] != "") {
+            if (core?.functionalDescription?.shape && core?.functionalDescription?.material) {
                 const mkf = await waitForMkf();
                 await mkf.ready;
 
@@ -561,10 +561,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async adviseCore(inputs, coreAdviserWeights, adviserSettings) {
-            console.log('[DEBUG adviseCore] Starting...');
             const mkf = await waitForMkf();
             await mkf.ready;
-            console.log('[DEBUG adviseCore] MKF ready');
 
             const settings = JSON.parse(await mkf.get_settings());
 
@@ -597,11 +595,6 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 coreAdviseMode = "standard cores";
             }
             
-            console.log('[DEBUG adviseCore] Calling calculate_advised_cores...');
-            console.log('[DEBUG adviseCore] Inputs:', JSON.stringify(inputs).substring(0, 200));
-            console.log('[DEBUG adviseCore] Weights:', JSON.stringify(coreAdviserWeights));
-            console.log('[DEBUG adviseCore] Mode:', coreAdviseMode);
-
             // Validate and fix frequency before calling WASM
             // Frequency must be a reasonable value (1 Hz to 100 MHz range)
             // Values outside this range are likely uninitialized/garbage
@@ -614,7 +607,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                         op.excitationsPerWinding.forEach((exc, excIndex) => {
                             const freq = exc.frequency;
                             if (!freq || !Number.isFinite(freq) || freq < MIN_VALID_FREQUENCY || freq > MAX_VALID_FREQUENCY) {
-                                console.warn(`[DEBUG adviseCore] Invalid frequency=${freq} in operating point ${opIndex}, excitation ${excIndex}. Set to ${DEFAULT_FREQUENCY}`);
+                                console.warn(`[taskQueue] Invalid frequency=${freq} in operating point ${opIndex}, excitation ${excIndex}. Set to ${DEFAULT_FREQUENCY}`);
                                 exc.frequency = DEFAULT_FREQUENCY;
                             }
                         });
@@ -1211,8 +1204,6 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 const masWithCoil = JSON.parse(resultMasWithCoil);
-                console.warn("masWithCoil")
-                console.warn(deepCopy(masWithCoil))
                 setTimeout(() => {this.allWiresAdvised(true, masWithCoil.magnetic.coil);}, this.task_standard_response_delay);
                 return masWithCoil.magnetic.coil;
             }
@@ -1259,8 +1250,6 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 const masWithCoil = JSON.parse(resultMasWithCoil);
-                console.warn("masWithCoil")
-                console.warn(deepCopy(masWithCoil))
                 setTimeout(() => {this.allWiresAdvised(true, masWithCoil.magnetic.coil.functionalDescription[windingIndex]);}, this.task_standard_response_delay);
                 return {
                     winding: masWithCoil.magnetic.coil.functionalDescription[windingIndex],

@@ -27,7 +27,7 @@ export default {
             class="mb-btn mb-btn-ghost"
             @click="$emit('customizeCoil')"
         >
-            <i class="fa-solid fa-sliders me-2"></i>Customize
+            <i class="bi bi-sliders me-2"></i>Customize
         </button>
     </div>
 </template>

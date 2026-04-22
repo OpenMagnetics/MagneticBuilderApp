@@ -511,7 +511,7 @@ export default {
         <div class="core-config-panel">
             <div class="core-config-header">
                 <div class="core-config-header-left">
-                    <i class="fa-solid fa-cube"></i>
+                    <i class="bi bi-box-fill"></i>
                     <span>Core Configuration</span>
                 </div>
                 <div v-if="enableAdvise && enableSubmenu && !readOnly" class="core-config-header-right">
@@ -523,7 +523,7 @@ export default {
                         v-tooltip="isCoreIncomplete ? 'Core not fully configured — click to get a recommended starting core' : 'Get a recommended core for these requirements'"
                         @click="adviseCoreRequested"
                     >
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <i class="bi bi-magic"></i>
                         <span>Advise</span>
                     </button>
                 </div>

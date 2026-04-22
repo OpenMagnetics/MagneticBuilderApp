@@ -969,7 +969,7 @@ export default {
             <!-- Left Column: Resistance -->
             <div class="advancedcoil-card">
                 <div class="advancedcoil-card-header">
-                    <i class="fa-solid fa-bolt"></i>
+                    <i class="bi bi-lightning-fill"></i>
                     <span>Resistance</span>
                 </div>
                 <div class="advancedcoil-card-body">
@@ -991,7 +991,7 @@ export default {
                         </div>
                     </div>
                     <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="advancedcoil-hint">
-                        <i class="fas fa-info-circle"></i> Hover over the image to see values
+                        <i class="bi bi-info-circle"></i> Hover over the image to see values
                     </div>
                     
                     <div class="advancedcoil-freq">
@@ -1015,7 +1015,7 @@ export default {
                     
                     <div class="advancedcoil-matrix">
                         <div v-if="calculatingMatrices" class="advancedcoil-loading">
-                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                            <i class="bi bi-arrow-repeat fa-spin"></i> Calculating...
                         </div>
                         <vue-latex
                             v-else-if="resistanceMatrixLatex && resistanceMatrix"
@@ -1033,7 +1033,7 @@ export default {
             <!-- Middle Column: Leakage Inductance -->
             <div class="advancedcoil-card">
                 <div class="advancedcoil-card-header">
-                    <i class="fa-solid fa-magnet"></i>
+                    <i class="bi bi-magnet-fill"></i>
                     <span>Leakage Inductance</span>
                 </div>
                 <div class="advancedcoil-card-body">
@@ -1058,13 +1058,13 @@ export default {
                         </div>
                     </div>
                     <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="advancedcoil-hint">
-                        <i class="fas fa-info-circle"></i> Hover over the image to see values
+                        <i class="bi bi-info-circle"></i> Hover over the image to see values
                     </div>
                     
                     <div class="advancedcoil-matrix">
                         <span class="advancedcoil-matrix-title">Inductance Matrix</span>
                         <div v-if="calculatingMatrices" class="advancedcoil-loading">
-                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                            <i class="bi bi-arrow-repeat fa-spin"></i> Calculating...
                         </div>
                         <vue-latex
                             v-else-if="inductanceMatrixLatex"
@@ -1080,7 +1080,7 @@ export default {
                     <div class="advancedcoil-matrix">
                         <span class="advancedcoil-matrix-title">Leakage Inductance Matrix</span>
                         <div v-if="calculatingMatrices" class="advancedcoil-loading">
-                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                            <i class="bi bi-arrow-repeat fa-spin"></i> Calculating...
                         </div>
                         <vue-latex
                             v-else-if="leakageInductanceMatrixLatex"
@@ -1096,7 +1096,7 @@ export default {
                     <div class="advancedcoil-matrix">
                         <span class="advancedcoil-matrix-title">Coupling Coefficient</span>
                         <div v-if="calculatingMatrices" class="advancedcoil-loading">
-                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                            <i class="bi bi-arrow-repeat fa-spin"></i> Calculating...
                         </div>
                         <vue-latex
                             v-else-if="couplingCoefficientMatrixLatex"
@@ -1114,7 +1114,7 @@ export default {
             <!-- Right Column: Stray Capacitance -->
             <div class="advancedcoil-card">
                 <div class="advancedcoil-card-header">
-                    <i class="fa-solid fa-broadcast-tower"></i>
+                    <i class="bi bi-broadcast"></i>
                     <span>Stray Capacitance</span>
                 </div>
                 <div class="advancedcoil-card-body">
@@ -1136,13 +1136,13 @@ export default {
                         </div>
                     </div>
                     <div v-if="masStore.mas?.magnetic?.coil?.turnsDescription" class="advancedcoil-hint">
-                        <i class="fas fa-info-circle"></i> Hover over the image to see values
+                        <i class="bi bi-info-circle"></i> Hover over the image to see values
                     </div>
                     
                     <div class="advancedcoil-matrix">
                         <span class="advancedcoil-matrix-title">Capacitance Matrix (All Windings)</span>
                         <div v-if="calculatingMatrices" class="advancedcoil-loading">
-                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                            <i class="bi bi-arrow-repeat fa-spin"></i> Calculating...
                         </div>
                         <vue-latex
                             v-else-if="capacitanceMatrixAllWindingsLatex"
@@ -1195,7 +1195,7 @@ export default {
                         <span class="advancedcoil-matrix-title">Maxwell Capacitance Matrix</span>
                         <span class="advancedcoil-matrix-subtitle">{{ selectedWindingPair.primary }} - {{ selectedWindingPair.secondary }}</span>
                         <div v-if="calculatingMatrices" class="advancedcoil-loading">
-                            <i class="fas fa-spinner fa-spin"></i> Calculating...
+                            <i class="bi bi-arrow-repeat fa-spin"></i> Calculating...
                         </div>
                         <vue-latex
                             v-else-if="maxwellCapacitanceMatrixForSelectedPairLatex"

@@ -131,7 +131,7 @@ export default {
     <div v-show="showInsulationOptions && masStore.mas.magnetic.coil.sectionsDescription != null" class="insulation-panel">
         <div class="insulation-header">
             <div class="insulation-header-left">
-                <i class="fa-solid fa-shield-halved"></i>
+                <i class="bi bi-shield-shaded"></i>
                 <span>Insulation Settings</span>
             </div>
             <button
@@ -140,7 +140,7 @@ export default {
                 aria-label="Close insulation settings"
                 @click="$emit('closeInsulation')"
             >
-                <i class="fa-solid fa-xmark"></i>
+                <i class="bi bi-x-lg"></i>
             </button>
         </div>
 

@@ -424,6 +424,13 @@ export default {
                         if (coil.sectionsDescription) {
                             this.masStore.mas.magnetic.coil.sectionsDescription = coil.sectionsDescription;
                             this.masStore.mas.magnetic.coil.turnsDescription = coil.turnsDescription ?? null;
+                            // Propagate bobbin sectionsOrientation so subsequent wind() calls
+                            // inherit CONTIGUOUS for CMC toroids instead of resetting to OVERLAPPING
+                            const srcWw = coil.bobbin?.processedDescription?.windingWindows?.[0];
+                            const dstWw = this.masStore.mas.magnetic.coil.bobbin?.processedDescription?.windingWindows?.[0];
+                            if (srcWw?.sectionsOrientation && dstWw) {
+                                dstWw.sectionsOrientation = srcWw.sectionsOrientation;
+                            }
                         } else {
                             this.cleanCoil();
                         }
@@ -511,7 +518,7 @@ export default {
         <div class="wire-config-panel">
             <div class="wire-config-header">
                 <div class="wire-config-header-left">
-                    <i class="fa-solid fa-bolt"></i>
+                    <i class="bi bi-lightning-fill"></i>
                     <span>Wire Configuration</span>
                 </div>
                 <div v-if="enableAdvise && enableSubmenu && !readOnly" class="wire-config-header-right">
@@ -524,7 +531,7 @@ export default {
                         v-tooltip="isCurrentWireIncomplete ? 'Wire not configured for this winding — click to get a recommendation' : 'Get a recommended wire for this winding'"
                         @click="adviseWireRequested"
                     >
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <i class="bi bi-magic"></i>
                         <span>Advise</span>
                     </button>
                     <button
@@ -536,7 +543,7 @@ export default {
                         v-tooltip="anyWireIncomplete ? 'Some wires are not configured — click to get a recommendation for every winding' : 'Get a recommendation for every winding'"
                         @click="adviseAllWiresRequested"
                     >
-                        <i class="fa-solid fa-wand-sparkles"></i>
+                        <i class="bi bi-magic"></i>
                         <span>Advise all</span>
                     </button>
                     <button
@@ -548,7 +555,7 @@ export default {
                         v-tooltip="isCurrentWireIncomplete ? 'Wire not configured — click to get a recommendation' : 'Get a recommended wire'"
                         @click="adviseWireRequested"
                     >
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <i class="bi bi-magic"></i>
                         <span>Advise</span>
                     </button>
                 </div>
