@@ -265,8 +265,16 @@ export default {
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
-        isStackable() {
-            let shapeFamily = this.masStore.mas.magnetic.core.functionalDescription.shape.family;
+        isStackable(shape) {
+            // Accept an explicit shape so callers in mid-transition (shape just
+            // swapped in a local mas copy but not yet committed to the store)
+            // can ask about the *new* shape; otherwise default to the store.
+            let shapeData = shape ?? this.masStore.mas.magnetic.core.functionalDescription.shape;
+            if (shapeData == null) return false;
+            let shapeFamily = (typeof shapeData === 'string' || shapeData instanceof String)
+                ? shapeData
+                : shapeData.family;
+            if (shapeFamily == null) return false;
 
             if (shapeFamily == "e" || shapeFamily == "planar e" || shapeFamily == "t" || shapeFamily == "u") {
                 return true;
@@ -362,7 +370,7 @@ export default {
                         const mas = deepCopy(this.masStore.mas);
                         mas.magnetic.core.functionalDescription.shape = shape;
 
-                        if (!this.isStackable()) {
+                        if (!this.isStackable(shape)) {
                             mas.magnetic.core.functionalDescription.numberStacks = 1;
                         }
 
