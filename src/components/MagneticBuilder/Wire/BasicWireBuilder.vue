@@ -119,6 +119,19 @@ export default {
                     }
                 }
                 if (name == "newWireCreated") {
+                    if (args[0] && this.masStore.hasMirroredWindings && !this.taskQueueStore.windingIndexChangeBlock) {
+                        const newWire = args[1];
+                        if (newWire && this.masStore.mas.magnetic.coil.functionalDescription.length > 1) {
+                            const modifiedWindingIndex = this.selectedWindingIndex;
+                            const tempCoilFunctionalDescription = deepCopy(this.masStore.mas.magnetic.coil.functionalDescription);
+                            this.masStore.mas.magnetic.coil.functionalDescription.forEach((_, windingIndex) => {
+                                if (modifiedWindingIndex != windingIndex) {
+                                    tempCoilFunctionalDescription[windingIndex].wire = newWire;
+                                }
+                            });
+                            this.masStore.mas.magnetic.coil.functionalDescription = tempCoilFunctionalDescription;
+                        }
+                    }
                     if (this.$settingsStore.magneticBuilderSettings.autoRedraw) {
                         this.imageUpToDate = true;
                         this.forceUpdate += 1;
