@@ -424,6 +424,13 @@ export default {
 
             const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 
+            // Normalize wire: "" to "Dummy" — empty string is not a valid wire name
+            // and will cause a WASM schema error in find_wire_by_name("").
+            // This can occur for extra windings that have not yet been assigned by the adviser.
+            inputCoil.functionalDescription?.forEach(w => {
+                if (w.wire == null || w.wire === "") w.wire = "Dummy";
+            });
+
             const margins = [];
             // Use object format only when there are existing sections AND no new sections were added.
             // When new sections are added (e.g. interleaving pattern changed), we must use the array
