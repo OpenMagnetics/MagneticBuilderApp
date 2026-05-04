@@ -27,7 +27,7 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: '#b18aea',
+            colorLabel: '#e3000b',
             type: 'value', // log or value
             position: 'left',
             unit: 'H',
@@ -35,7 +35,7 @@ export default {
         }]
         const dcBiasData = {
             label: 'DC Bias',
-            colorLabel: '#d4d4d4',
+            colorLabel: '#555555',
             type: 'value', // log or value
             unit: 'A',
         }
