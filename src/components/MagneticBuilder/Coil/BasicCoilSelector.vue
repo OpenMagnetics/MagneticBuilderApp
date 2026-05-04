@@ -44,6 +44,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        showInterleavingOrder: {
+            type: Boolean,
+            default: true,
+        },
         operatingPointIndex: {
             type: Number,
             default: 0,
@@ -916,7 +920,7 @@ export default {
                             @update="bobbinUpdated"
                         />
                     </div>
-                    <div v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 1" class="coil-config-cell coil-config-cell-wide">
+                    <div v-if="showInterleavingOrder && !loading && masStore.mas.magnetic.coil.functionalDescription.length > 1" class="coil-config-cell coil-config-cell-wide">
                         <img :data-cy="dataTestLabel + '-BasicCoilSelector-loading'" v-if="loading" class="mx-auto d-block col-12" alt="loading" style="width: 60%; height: auto;" :src="$settingsStore.loadingGif">
                         <ListOfCharacters
                             v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"

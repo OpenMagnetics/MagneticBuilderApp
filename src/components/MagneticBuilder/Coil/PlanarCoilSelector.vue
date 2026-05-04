@@ -44,6 +44,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        showInterleavingOrder: {
+            type: Boolean,
+            default: true,
+        },
         operatingPointIndex: {
             type: Number,
             default: 0,
@@ -551,7 +555,7 @@ export default {
                 </div>
 
                 <div class="coil-config-grid">
-                    <div v-if="!loading && masStore.mas.magnetic.coil.functionalDescription.length > 0" class="coil-config-cell coil-config-cell-wide">
+                    <div v-if="showInterleavingOrder && !loading && masStore.mas.magnetic.coil.functionalDescription.length > 0" class="coil-config-cell coil-config-cell-wide">
                         <ListOfCharacters
                             v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"
                             :disabled="readOnly"

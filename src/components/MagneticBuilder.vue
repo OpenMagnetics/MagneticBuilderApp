@@ -59,6 +59,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        showInterleavingOrder: {
+            type: Boolean,
+            default: true,
+        },
         operatingPointIndex: {
             type: Number,
             default: 0,
@@ -282,6 +286,7 @@ export default {
                     :enableSubmenu="enableSubmenu"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
+                    :showInterleavingOrder="showInterleavingOrder"
                 />
             </div> 
             <div v-else class="col-2"/>

@@ -44,6 +44,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        showInterleavingOrder: {
+            type: Boolean,
+            default: true,
+        },
         operatingPointIndex: {
             type: Number,
             default: 0,
@@ -222,6 +226,7 @@ export default {
                 :useVisualizers="useVisualizers"
                 :imageUpToDate="imageUpToDate"
                 :forceUpdateVisualizer="forceUpdate"
+                :showInterleavingOrder="showInterleavingOrder"
                 @fits="fits"
                 @plotModeChange="plotModeChange"
                 @swapIncludeFringing="swapIncludeFringing"
@@ -238,6 +243,7 @@ export default {
                 :useVisualizers="useVisualizers"
                 :imageUpToDate="imageUpToDate"
                 :forceUpdateVisualizer="forceUpdate"
+                :showInterleavingOrder="showInterleavingOrder"
                 @fits="fits"
                 @plotModeChange="plotModeChange"
                 @swapIncludeFringing="swapIncludeFringing"
