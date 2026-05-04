@@ -1,4 +1,5 @@
 <script setup>
+import { CoilAlignment, WindingOrientation } from '../../../assets/ts/MAS.ts'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
@@ -80,13 +81,13 @@ export default {
 
         if (this.masStore.hasMirroredWindings) {
             localData = {
-                sectionsOrientation: "contiguous",
-                sectionsAlignment: "spread",
+                sectionsOrientation: WindingOrientation.Contiguous,
+                sectionsAlignment: CoilAlignment.Spread,
                 interlayerThickness: 0,
                 intersectionThickness: 0,
                 dataPerSection: [{
-                    layersOrientation: "overlapping",
-                    turnsAlignment: "centered",
+                    layersOrientation: WindingOrientation.Overlapping,
+                    turnsAlignment: CoilAlignment.Centered,
                     topOrLeftMargin: 0,
                     bottomOrRightMargin: 0,
                 }],
@@ -104,13 +105,13 @@ export default {
         }
         else {
             localData = {
-                sectionsOrientation: "overlapping",
-                sectionsAlignment: "inner or top",
+                sectionsOrientation: WindingOrientation.Overlapping,
+                sectionsAlignment: CoilAlignment.InnerOrTop,
                 interlayerThickness: 0,
                 intersectionThickness: 0,
                 dataPerSection: [{
-                    layersOrientation: "overlapping",
-                    turnsAlignment: "spread",
+                    layersOrientation: WindingOrientation.Overlapping,
+                    turnsAlignment: CoilAlignment.Spread,
                     topOrLeftMargin: 0,
                     bottomOrRightMargin: 0,
                 }],
@@ -257,21 +258,21 @@ export default {
                 if (action.name == "resetMas") {
                     // Reset localData to defaults based on application type
                     if (this.masStore.hasMirroredWindings) {
-                        this.localData.sectionsOrientation = "contiguous";
-                        this.localData.sectionsAlignment = "spread";
+                        this.localData.sectionsOrientation = WindingOrientation.Contiguous;
+                        this.localData.sectionsAlignment = CoilAlignment.Spread;
                         this.localData.dataPerSection = [{
-                            layersOrientation: "overlapping",
-                            turnsAlignment: "centered",
+                            layersOrientation: WindingOrientation.Overlapping,
+                            turnsAlignment: CoilAlignment.Centered,
                             topOrLeftMargin: 0,
                             bottomOrRightMargin: 0,
                         }];
                     }
                     else {
-                        this.localData.sectionsOrientation = "overlapping";
-                        this.localData.sectionsAlignment = "inner or top";
+                        this.localData.sectionsOrientation = WindingOrientation.Overlapping;
+                        this.localData.sectionsAlignment = CoilAlignment.InnerOrTop;
                         this.localData.dataPerSection = [{
-                            layersOrientation: "overlapping",
-                            turnsAlignment: "spread",
+                            layersOrientation: WindingOrientation.Overlapping,
+                            turnsAlignment: CoilAlignment.Spread,
                             topOrLeftMargin: 0,
                             bottomOrRightMargin: 0,
                         }];
@@ -586,8 +587,8 @@ export default {
                                     }
                                     const template = sameWindingSection || previousSection;
                                     this.localData.dataPerSection.push({
-                                        layersOrientation: template ? template.layersOrientation : "overlapping",
-                                        turnsAlignment: template ? template.turnsAlignment : "spread",
+                                        layersOrientation: template ? template.layersOrientation : WindingOrientation.Overlapping,
+                                        turnsAlignment: template ? template.turnsAlignment : CoilAlignment.Spread,
                                         topOrLeftMargin: template ? template.topOrLeftMargin : 0,
                                         bottomOrRightMargin: template ? template.bottomOrRightMargin : 0,
                                     });
@@ -716,8 +717,8 @@ export default {
                     // Final fallback to defaults
                     if (!newSection) {
                         newSection = {
-                            layersOrientation: "overlapping",
-                            turnsAlignment: "spread",
+                            layersOrientation: WindingOrientation.Overlapping,
+                            turnsAlignment: CoilAlignment.Spread,
                             topOrLeftMargin: 0,
                             bottomOrRightMargin: 0,
                         };

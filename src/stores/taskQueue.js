@@ -2,6 +2,56 @@ import { defineStore } from 'pinia'
 import { waitForMkf, isWorkerMode } from '/WebSharedComponents/assets/js/mkfRuntime'
 import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
+import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
+
+// MAS sentry. Validates an outgoing payload against the generated MAS schema
+// (via quicktype's `Convert.to*`) before we hand it to the WASM. Loud failure
+// here is far cheaper to diagnose than a generic "Input JSON does not conform
+// to schema!" coming back from C++ MAS.hpp deserialization.
+//
+// `where`: short label for the call site (e.g. "simulate").
+// `obj`:   the JS object we are about to JSON.stringify and send to WASM.
+// `kind`:  one of "Mas" | "Inputs" | "Magnetic" | "Coil" | "Wire".
+//
+// We never silently downgrade — on failure we throw with the full quicktype
+// error message (which includes the offending field path).
+function masSentry(where, obj, kind = 'Mas') {
+    const fn = MasConvert['to' + kind];
+    if (typeof fn !== 'function') {
+        throw new Error(`[MAS sentry @ ${where}] Unknown sentry kind "${kind}" (no Convert.to${kind} in MAS.ts)`);
+    }
+    // Sentry-local cleaner. Recursively strips object keys whose value is
+    // `null`, `"null"`, or `undefined`. Quicktype's optional fields are
+    // decoded as `u(undefined, ...)` and reject explicit `null`. We do NOT
+    // strip empty arrays or empty objects: required array fields (e.g.
+    // `outputs`) must remain present even when empty.
+    function stripNulls(v) {
+        if (Array.isArray(v)) {
+            for (const item of v) stripNulls(item);
+            return v;
+        }
+        if (v && typeof v === 'object') {
+            for (const k of Object.keys(v)) {
+                const val = v[k];
+                if (val === null || val === 'null' || val === undefined) {
+                    delete v[k];
+                } else {
+                    stripNulls(val);
+                }
+            }
+        }
+        return v;
+    }
+    try {
+        const cleaned = stripNulls(JSON.parse(JSON.stringify(obj)));
+        fn(JSON.stringify(cleaned));
+    } catch (e) {
+        const msg = `[MAS sentry @ ${where}/${kind}] Frontend produced invalid payload: ${e.message}`;
+        // eslint-disable-next-line no-console
+        console.error(msg);
+        throw new Error(msg);
+    }
+}
 
 /**
  * Convert Embind vector or array to JS array.
@@ -84,6 +134,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
+            masSentry('masAutocomplete', mas, 'Mas');
             const result = await mkf.mas_autocomplete(JSON.stringify(mas), flag, JSON.stringify(settings));
             if (result.startsWith('Exception')) {
                 setTimeout(() => { this.masAutocompleted(false, result); }, this.task_standard_response_delay);
@@ -631,6 +682,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 }
             }
 
+            masSentry('adviseCore', inputsClean, 'Inputs');
             const result = await mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), 1, coreAdviseMode);
 
             if (result.startsWith("Exception")) {
@@ -1196,6 +1248,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
+            masSentry('adviseAllWires', mas, 'Mas');
             const resultMasWithCoil = await mkf.calculate_advised_coil(JSON.stringify(mas));
 
             if (resultMasWithCoil.startsWith("Exception")) {
@@ -1242,6 +1295,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
+            masSentry('adviseWire', mas, 'Mas');
             const resultMasWithCoil = await mkf.calculate_advised_coil(JSON.stringify(mas));
 
             if (resultMasWithCoil.startsWith("Exception")) {
@@ -1264,6 +1318,10 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         async simulate(mas, modelsData) {
             const mkf = await waitForMkf();
             await mkf.ready;
+
+            // MAS sentry — validate before WASM round-trip. Catches schema
+            // drift at the boundary with the exact bad field, not deep in C++.
+            masSentry('simulate', mas, 'Mas');
 
             const inputsString = JSON.stringify(mas.inputs);
             const magneticsString = JSON.stringify(mas.magnetic);
@@ -1436,6 +1494,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
+            masSentry('calculateFillingFactors', coil, 'Coil');
             const result = await mkf.calculate_filling_factor(JSON.stringify(coil));
 
             if (result.startsWith("Exception")) {
