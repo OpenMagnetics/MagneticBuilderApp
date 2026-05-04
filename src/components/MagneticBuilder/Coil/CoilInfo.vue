@@ -301,7 +301,14 @@ export default {
                 const modelsString = JSON.stringify(modelsData);
 
 
-                if (this.masStore.mas.magnetic.coil.turnsDescription != null && (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels)) {
+                // The simulate path eventually reaches LeakageInductance, which
+                // requires BOTH turns AND layers descriptions to be populated.
+                // Without the layers gate, CoilInfo throws [COIL_NOT_PROCESSED]
+                // for coils that have turns but not layers (e.g. between wire
+                // assignment and full Coil::process()).
+                const coil = this.masStore.mas.magnetic.coil;
+                const coilReady = coil.turnsDescription != null && coil.layersDescription != null;
+                if (coilReady && (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels)) {
 
                     this.taskQueueStore.simulate(this.masStore.mas, modelsData).then((mas) => {
 
