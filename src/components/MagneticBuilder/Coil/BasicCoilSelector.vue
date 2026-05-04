@@ -109,7 +109,7 @@ export default {
         else {
             localData = {
                 sectionsOrientation: "overlapping",
-                sectionsAlignment: "inner or top",
+                sectionsAlignment: "innerOrTop",
                 interlayerThickness: 0,
                 intersectionThickness: 0,
                 dataPerSection: [{
@@ -272,7 +272,7 @@ export default {
                     }
                     else {
                         this.localData.sectionsOrientation = "overlapping";
-                        this.localData.sectionsAlignment = "inner or top";
+                        this.localData.sectionsAlignment = "innerOrTop";
                         this.localData.dataPerSection = [{
                             layersOrientation: "overlapping",
                             turnsAlignment: "spread",
