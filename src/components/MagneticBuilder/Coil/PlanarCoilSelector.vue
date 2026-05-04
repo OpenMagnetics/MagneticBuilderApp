@@ -527,6 +527,8 @@ export default {
                         :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
                         :marginColor="$styleStore.magneticBuilder.painterColorMargin || '0xfff05b'"
+                        :spacerColor="$styleStore.magneticBuilder.painterColorSpacer || '0x3b3b3b'"
+                        :drawSpacer="$styleStore.magneticBuilder.painterDrawSpacer !== undefined ? $styleStore.magneticBuilder.painterDrawSpacer : true"
                         @plotModeChange="$emit('plotModeChange', $event)"
                         @swapIncludeFringing="$emit('swapIncludeFringing', $event)"
                         @errorInImage="$emit('errorInImage')"
