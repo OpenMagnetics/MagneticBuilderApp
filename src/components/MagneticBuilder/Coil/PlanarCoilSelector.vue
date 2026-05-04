@@ -525,6 +525,8 @@ export default {
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
                         :textColor="$styleStore.magneticBuilder.inputTextColor?.color || 'var(--bs-white)'"
                         :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
+                        :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
+                        :marginColor="$styleStore.magneticBuilder.painterColorMargin || '0xfff05b'"
                         @plotModeChange="$emit('plotModeChange', $event)"
                         @swapIncludeFringing="$emit('swapIncludeFringing', $event)"
                         @errorInImage="$emit('errorInImage')"
