@@ -869,7 +869,7 @@ export default {
                     </button>
                 </div>
 
-                <div class="coil-config-grid">
+                <div v-if="showInterleavingOrder || masStore.mas.magnetic.core.functionalDescription.shape.family != 't'" class="coil-config-grid">
                     <div v-if="masStore.mas.magnetic.core.functionalDescription.shape.family != 't'" class="coil-config-cell coil-config-cell-wide">
                         <Dimension 
                             :disabled="readOnly"
