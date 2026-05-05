@@ -276,7 +276,7 @@ export default {
                 : shapeData.family;
             if (shapeFamily == null) return false;
 
-            if (shapeFamily == "e" || shapeFamily == "planar e" || shapeFamily == "t" || shapeFamily == "u") {
+            if (shapeFamily == "e" || shapeFamily == "planarE" || shapeFamily == "t" || shapeFamily == "u") {
                 return true;
             }
             else {
@@ -394,7 +394,7 @@ export default {
             
             this.taskQueueStore.changeCoreMaterial(value, deepCopy(this.masStore.mas.magnetic.core)).then((core) => {
                 // Ensure default gapping is set so core losses can be calculated
-                if (!core.functionalDescription.gapping || (core.functionalDescription.type == 'two-piece set' && core.functionalDescription.gapping.length === 0)) {
+                if (!core.functionalDescription.gapping || (core.functionalDescription.type == 'twoPieceSet' && core.functionalDescription.gapping.length === 0)) {
                     core.functionalDescription.gapping = deepCopy(defaultUngappedGapping);
                 }
                 this.masStore.mas.magnetic.core = core;
@@ -633,7 +633,7 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
-                    <div v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'two-piece set' && masStore.mas.magnetic.core.processedDescription != null" class="core-config-cell core-config-cell-wide core-config-gap-cell">
+                    <div v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'twoPieceSet' && masStore.mas.magnetic.core.processedDescription != null" class="core-config-cell core-config-cell-wide core-config-gap-cell">
                         <CoreGappingSelector class="text-start"
                             :disabled="readOnly"
                             :title="'Gap Info: '"
