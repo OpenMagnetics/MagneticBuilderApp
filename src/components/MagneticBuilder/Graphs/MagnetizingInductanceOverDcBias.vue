@@ -166,6 +166,7 @@ export default {
                     :data="magnetizingInductanceOverDcBiasData"
                     :xAxisOptions="dcBiasData"
                     :title="'Magnetizing Inductance over DC Bias'"
+                    :linePaddings="{top: 1.1, left: 1, right: 1, bottom: 1.1}"
                     :forceUpdate="forceUpdate"
                     :bgColor="$styleStore.magneticBuilder.graphBgColor['background-color']"
                     :lineColor="$styleStore.magneticBuilder.graphLineColor.color"
