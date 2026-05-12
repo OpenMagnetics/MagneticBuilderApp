@@ -1,4 +1,5 @@
 <script setup>
+import { CoilAlignment } from '../../../assets/ts/MAS.ts'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
@@ -83,7 +84,7 @@ export default {
             clearancePerWinding: {},
             coreToLayerDistance: 0.0001,
             borderToWireDistance: 0.0001,
-            sectionsAlignment: "centered"
+            sectionsAlignment: CoilAlignment.Centered
         }
         const coilAlignments = {};
 
@@ -144,7 +145,7 @@ export default {
                     this.localData.clearancePerWinding = {};
                     this.localData.coreToLayerDistance = 0.0001;
                     this.localData.borderToWireDistance = 0.0001;
-                    this.localData.sectionsAlignment = "centered";
+                    this.localData.sectionsAlignment = CoilAlignment.Centered;
                 }
             });
         }))

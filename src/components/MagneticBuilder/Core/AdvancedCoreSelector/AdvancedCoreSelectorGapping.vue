@@ -1,4 +1,5 @@
 <script setup>
+import { GapType } from '../../../../assets/ts/MAS.ts'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
@@ -213,7 +214,7 @@ export default {
             })
             this.reorderedColumns.forEach((elem) => {
                 this.core.functionalDescription.gapping[elem.gaps[0].index].length = firstGapInColumnLength;
-                this.core.functionalDescription.gapping[elem.gaps[0].index].type = "additive";
+                this.core.functionalDescription.gapping[elem.gaps[0].index].type = GapType.Additive;
                 this.core.functionalDescription.gapping[elem.gaps[0].index].coordinates[1] = 0;
             })
             this.forceUpdate += 1;
@@ -223,7 +224,7 @@ export default {
                 if (elem.type == "Spacer") {
                     elem.type = "Ungapped";
                     this.core.functionalDescription.gapping[elem.gaps[0].index].length = this.engineConstants['residualGap'];
-                    this.core.functionalDescription.gapping[elem.gaps[0].index].type = "subtractive";
+                    this.core.functionalDescription.gapping[elem.gaps[0].index].type = GapType.Subtractive;
                 }
             })
             this.forceUpdate += 1;
@@ -233,7 +234,7 @@ export default {
             for (let i = this.reorderedColumns[columnIndex].gaps.length - 1; i >= 1; i--) {
                 this.removeGap(this.reorderedColumns[columnIndex].gaps[i].index);
             }
-            this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = "subtractive";
+            this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = GapType.Subtractive;
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].length = this.engineConstants['residualGap'];
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].coordinates[1] = 0;
             this.forceUpdate += 1;
@@ -241,7 +242,7 @@ export default {
         setDistributed(columnIndex) {
             this.unsetSpacer();
             const numberDistributedGaps = 3;
-            this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = "subtractive";
+            this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = GapType.Subtractive;
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].length = this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].length / numberDistributedGaps;
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].coordinates[1] = 0;
             for (let i = numberDistributedGaps - 2; i >= 0; i--) {
@@ -254,7 +255,7 @@ export default {
             for (let i = this.reorderedColumns[columnIndex].gaps.length - 1; i >= 1; i--) {
                 this.removeGap(this.reorderedColumns[columnIndex].gaps[i].index);
             }
-            this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = "subtractive";
+            this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].type = GapType.Subtractive;
             const length = this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].length;
             this.core.functionalDescription.gapping[this.reorderedColumns[columnIndex].gaps[0].index].coordinates[1] = length / 2;
             this.forceUpdate += 1;

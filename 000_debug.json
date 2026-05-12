@@ -6,7 +6,7 @@
             },
             "name": "My Design Requirements",
             "turnsRatios": [],
-            "wiringTechnology": "Wound"
+            "wiringTechnology": "wound"
         },
         "operatingPoints": [
             {
@@ -286,7 +286,7 @@
                                 "dutyCycle": 0.5,
                                 "peakToPeak": 1,
                                 "offset": 10,
-                                "label": "Sinusoidal",
+                                "label": "sinusoidal",
                                 "acEffectiveFrequency": 1,
                                 "effectiveFrequency": 0.049926691373327836,
                                 "peak": 10.499961755694008,
@@ -573,7 +573,7 @@
                                 "average": -2.795208725939191e-20,
                                 "dutyCycle": 0.5,
                                 "effectiveFrequency": 0.9999949261155328,
-                                "label": "Sinusoidal",
+                                "label": "sinusoidal",
                                 "negativePeak": -0.00031393804878563004,
                                 "offset": 0.000001,
                                 "peak": 0.0003149605689024064,
@@ -681,7 +681,7 @@
                         }
                     ],
                     "sectionsOrientation": "overlapping",
-                    "type": "Wound"
+                    "type": "wound"
                 }
             ],
             "layersDescription": [
@@ -1513,7 +1513,7 @@
                     "name": "PQ 20/16",
                     "type": "standard"
                 },
-                "type": "two-piece set",
+                "type": "twoPieceSet",
                 "magneticCircuit": "open"
             },
             "name": "Custom",
@@ -1573,7 +1573,7 @@
                         "name": "PQ 20/16",
                         "type": "standard"
                     },
-                    "type": "half set"
+                    "type": "halfSet"
                 },
                 {
                     "coordinates": [
@@ -1630,7 +1630,7 @@
                         "name": "PQ 20/16",
                         "type": "standard"
                     },
-                    "type": "half set"
+                    "type": "halfSet"
                 }
             ],
             "processedDescription": {
@@ -1845,7 +1845,7 @@
                     },
                     "processed": {
                         "dutyCycle": 0.5,
-                        "label": "Sinusoidal",
+                        "label": "sinusoidal",
                         "negativePeak": 0.5184225599897341,
                         "offset": 0.5457057610272877,
                         "peak": 0.5729889620648415,
@@ -2277,7 +2277,7 @@
                                     "average": 9.999999999999996,
                                     "dutyCycle": 0.5,
                                     "effectiveFrequency": 0.05027903568120131,
-                                    "label": "Sinusoidal",
+                                    "label": "sinusoidal",
                                     "offset": 10,
                                     "peak": 10.499961755694008,
                                     "peakToPeak": 1,
@@ -2686,7 +2686,7 @@
                                 },
                                 "processed": {
                                     "dutyCycle": 0.5,
-                                    "label": "Sinusoidal",
+                                    "label": "sinusoidal",
                                     "negativePeak": 0.5184225599897341,
                                     "offset": 0.5457057610272877,
                                     "peak": 0.5729889620648415,
@@ -3066,7 +3066,7 @@
                                     "average": 9.999999999999996,
                                     "dutyCycle": 0.5,
                                     "effectiveFrequency": 0.05027903568120131,
-                                    "label": "Sinusoidal",
+                                    "label": "sinusoidal",
                                     "offset": 10,
                                     "peak": 10.499961755694008,
                                     "peakToPeak": 1,
@@ -3478,7 +3478,7 @@
                                     "average": 0.0000010000000000000396,
                                     "dutyCycle": 0.5,
                                     "effectiveFrequency": 1.0107780820763914,
-                                    "label": "Sinusoidal",
+                                    "label": "sinusoidal",
                                     "negativePeak": -0.00031296056890240634,
                                     "offset": 0.0000010000000000000243,
                                     "peak": 0.0003149605689024064,
