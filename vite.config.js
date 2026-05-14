@@ -99,6 +99,14 @@ export default defineConfig({
                 {
                     src: 'src/assets/js/libMKF.wasm.wasm',
                     dest: 'wasm'
+                },
+                {
+                    src: 'src/assets/js/mvbpp.js',
+                    dest: 'wasm'
+                },
+                {
+                    src: 'src/assets/js/mvbpp.wasm',
+                    dest: 'wasm'
                 }
             ]
         }),
