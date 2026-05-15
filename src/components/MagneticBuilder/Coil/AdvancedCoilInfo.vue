@@ -965,6 +965,11 @@ export default {
 
 <template>
     <div class="advancedcoil-wrapper">
+        <div class="advancedcoil-topbar">
+            <button class="btn btn-sm btn-outline-secondary advancedcoil-back-btn" @click="$stateStore.magneticBuilder.mode.coil = $stateStore.MagneticBuilderModes.Basic">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </button>
+        </div>
         <div class="advancedcoil-grid" :class="{ 'advancedcoil-dimmed': !dataUptoDate }">
             <!-- Left Column: Resistance -->
             <div class="advancedcoil-card">
@@ -1393,6 +1398,17 @@ export default {
 <style scoped>
 .advancedcoil-wrapper {
     padding: 0.5rem 0;
+}
+
+.advancedcoil-topbar {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.5rem 0.75rem;
+}
+
+.advancedcoil-back-btn {
+    display: inline-flex;
+    align-items: center;
 }
 
 .advancedcoil-grid {

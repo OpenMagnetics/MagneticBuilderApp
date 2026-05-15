@@ -626,6 +626,8 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             @update="numberStacksUpdated"
+                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
+                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
