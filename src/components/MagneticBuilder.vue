@@ -256,7 +256,7 @@ export default {
                     :enableSimulation="enableSimulationComputed"
                     :enableAutoSimulation="enableAutoSimulationComputed"
                     :enableSubmenu="enableSubmenu"
-                    :enableCustomize="enableSubmenu"
+                    :enableCustomize="magneticBuilderSettingsStore.enableCustomize"
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
                     @customizeCore="customizeCore"
