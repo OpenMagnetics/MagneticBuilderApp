@@ -521,13 +521,26 @@ export interface Buck {
 }
 
 /**
- * The description of a CLLC Bidirectional Resonant converter excitation
+ * CLLC Bidirectional Resonant converter excitation. Schema v2 adds asymmetric-tank ratios
+ * (a, b), bridge-type selection (full/half) and leakage-integration flags so that Lr1, Lr2
+ * can be either discrete components or absorbed into transformer leakage. The pre-v2
+ * boolean `symmetricDesign` is retained as a derived alias (true iff a==1 && b==1). See
+ * Infineon AN-2024-06 §2.3 for the canonical 11-step design procedure and the asymmetric
+ * design rationale of Min et al., IEEE TPE 36(6) 2021.
  */
 export interface CllcResonant {
     /**
-     * Whether the converter operates in bidirectional mode
+     * Whether the converter operates in bidirectional mode (active synchronous rectifier on the
+     * secondary side, capable of reverse power flow). When false the secondary still uses SR
+     * for efficiency but reverse mode is not exercised.
      */
     bidirectional?: boolean;
+    /**
+     * Bridge topology of the primary inverter. Full-bridge gives bridge-voltage factor 1.0
+     * (peak Vpri = Vin); half-bridge gives 0.5 (peak Vpri = Vin/2). Most CLLC > 1 kW use full
+     * bridge; sub-1 kW server / V2L designs use half-bridge.
+     */
+    bridgeType?: LlcBridgeType;
     /**
      * The target efficiency
      */
@@ -536,6 +549,18 @@ export interface CllcResonant {
      * The input voltage (HV side) of the CLLC converter
      */
     inputVoltage: DimensionWithTolerance;
+    /**
+     * If true, the primary resonant inductor Lr1 is realised as transformer primary leakage (no
+     * discrete inductor). When false, Lr1 is a discrete component placed in series with the
+     * primary winding.
+     */
+    integratedResonantInductor1?: boolean;
+    /**
+     * If true, the secondary resonant inductor Lr2 is realised as transformer secondary
+     * leakage. When false, Lr2 is a discrete component placed in series with the secondary
+     * winding (CLLLC layout).
+     */
+    integratedResonantInductor2?: boolean;
     /**
      * The maximum switching frequency for regulation
      */
@@ -549,14 +574,49 @@ export interface CllcResonant {
      */
     operatingPoints: CllcOperatingPoint[];
     /**
-     * The quality factor of the resonant tank
+     * Quality factor of the resonant tank, Infineon convention Q = sqrt(Lr/Cr) / Ro. Two other
+     * conventions exist in the literature (Steigerwald uses 1/Q, Erickson uses Ro/sqrt(Lr/Cr));
+     * the Infineon convention is documented in the class header.
      */
     qualityFactor?: number;
     /**
-     * Whether to use symmetric resonant tank design
+     * Asymmetric-tank ratio b = Cr2 / (n^2 * Cr1). Symmetric tank: b = 1. Typical asymmetric
+     * battery-charger design: b ~= 1.052 so that fr1 = fr2 (a*b ~ 1).
+     */
+    resonantCapacitorRatio?: number;
+    /**
+     * Asymmetric-tank ratio a = n^2 * Lr2 / Lr1. Symmetric tank: a = 1. Typical asymmetric
+     * battery-charger design (Min IEEE TPE 2021): a ~= 0.95.
+     */
+    resonantInductorRatio?: number;
+    /**
+     * DEPRECATED - retained for v1 compatibility. True iff resonantInductorRatio==1 &&
+     * resonantCapacitorRatio==1. New code should set the ratio fields directly.
      */
     symmetricDesign?: boolean;
     [property: string]: any;
+}
+
+/**
+ * Bridge topology of the primary inverter. Full-bridge gives bridge-voltage factor 1.0
+ * (peak Vpri = Vin); half-bridge gives 0.5 (peak Vpri = Vin/2). Most CLLC > 1 kW use full
+ * bridge; sub-1 kW server / V2L designs use half-bridge.
+ *
+ * CLLC primary bridge topology selector
+ *
+ * The HV-side bridge topology
+ *
+ * The type of bridge for CLLLC
+ *
+ * The LV-side bridge topology
+ *
+ * The type of primary bridge
+ *
+ * The type of primary bridge for LLC
+ */
+export enum LlcBridgeType {
+    FullBridge = "fullBridge",
+    HalfBridge = "halfBridge",
 }
 
 /**
@@ -717,22 +777,6 @@ export interface ClllcResonant {
      */
     tankSymmetryRatio?: number;
     [property: string]: any;
-}
-
-/**
- * The HV-side bridge topology
- *
- * The type of bridge for CLLLC
- *
- * The LV-side bridge topology
- *
- * The type of primary bridge
- *
- * The type of primary bridge for LLC
- */
-export enum LlcBridgeType {
-    FullBridge = "fullBridge",
-    HalfBridge = "halfBridge",
 }
 
 /**
@@ -6482,12 +6526,17 @@ const typeMap: any = {
     ], "any"),
     "CllcResonant": o([
         { json: "bidirectional", js: "bidirectional", typ: u(undefined, true) },
+        { json: "bridgeType", js: "bridgeType", typ: u(undefined, r("LlcBridgeType")) },
         { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
         { json: "inputVoltage", js: "inputVoltage", typ: r("DimensionWithTolerance") },
+        { json: "integratedResonantInductor1", js: "integratedResonantInductor1", typ: u(undefined, true) },
+        { json: "integratedResonantInductor2", js: "integratedResonantInductor2", typ: u(undefined, true) },
         { json: "maxSwitchingFrequency", js: "maxSwitchingFrequency", typ: 3.14 },
         { json: "minSwitchingFrequency", js: "minSwitchingFrequency", typ: 3.14 },
         { json: "operatingPoints", js: "operatingPoints", typ: a(r("CllcOperatingPoint")) },
         { json: "qualityFactor", js: "qualityFactor", typ: u(undefined, 3.14) },
+        { json: "resonantCapacitorRatio", js: "resonantCapacitorRatio", typ: u(undefined, 3.14) },
+        { json: "resonantInductorRatio", js: "resonantInductorRatio", typ: u(undefined, 3.14) },
         { json: "symmetricDesign", js: "symmetricDesign", typ: u(undefined, true) },
     ], "any"),
     "CllcOperatingPoint": o([
@@ -7704,13 +7753,13 @@ const typeMap: any = {
         "currentDoubler",
         "fullBridge",
     ],
-    "CllcPowerFlow": [
-        "forward",
-        "reverse",
-    ],
     "LlcBridgeType": [
         "fullBridge",
         "halfBridge",
+    ],
+    "CllcPowerFlow": [
+        "forward",
+        "reverse",
     ],
     "ClllcControlStrategy": [
         "fixedFrequencyPhaseShift",
