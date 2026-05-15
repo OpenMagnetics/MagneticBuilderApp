@@ -64,12 +64,15 @@ export interface SupportedTopologies {
     boost?:                  Boost;
     buck?:                   Buck;
     cllcResonant?:           CllcResonant;
+    clllcResonant?:          ClllcResonant;
     commonModeChoke?:        CommonModeChoke;
+    cuk?:                    Cuk;
     currentTransformer?:     CurrentTransformer;
     differentialModeChoke?:  DifferentialModeChoke;
     dualActiveBridge?:       DualActiveBridge;
     flyback?:                Flyback;
     forward?:                Forward;
+    fourSwitchBuckBoost?:    FourSwitchBuckBoost;
     isolatedBuck?:           IsolatedBuck;
     isolatedBuckBoost?:      IsolatedBuckBoost;
     llcResonant?:            LlcResonant;
@@ -77,6 +80,11 @@ export interface SupportedTopologies {
     phaseShiftedHalfBridge?: PhaseShiftedHalfBridge;
     powerFactorCorrection?:  PowerFactorCorrection;
     pushPull?:               PushPull;
+    sepic?:                  Sepic;
+    seriesResonant?:         SeriesResonant;
+    viennaRectifier?:        ViennaRectifier;
+    weinberg?:               Weinberg;
+    zeta?:                   Zeta;
     [property: string]: any;
 }
 
@@ -147,7 +155,13 @@ export interface AsymmetricHalfBridge {
  *
  * The input voltage (HV side) of the CLLC converter
  *
+ * The HV-side bus voltage (typically 380-800 V for OBC)
+ *
+ * The LV-side bus voltage (typically 200-500 V for OBC)
+ *
  * The operating voltage across the choke (line-to-line or line-to-neutral)
+ *
+ * The input voltage of the Cuk
  *
  * The input voltage of the filter stage
  *
@@ -156,6 +170,9 @@ export interface AsymmetricHalfBridge {
  * The input voltage of the flyback
  *
  * The input voltage of the forward
+ *
+ * The input voltage of the 4-switch buck-boost (must support a sweep range that crosses
+ * Vo)
  *
  * The input voltage of the isolatedBuck
  *
@@ -170,6 +187,16 @@ export interface AsymmetricHalfBridge {
  * The AC input voltage (RMS) with tolerance range (e.g., 85-265V universal input)
  *
  * The input voltage of the pushPull
+ *
+ * The input voltage of the SEPIC
+ *
+ * The input voltage of the SRC converter
+ *
+ * AC line-to-line RMS voltage (e.g. 400 V for EU, 480 V for US)
+ *
+ * The input voltage of the Weinberg
+ *
+ * The input voltage of the Zeta
  *
  * Required values for the altitude
  *
@@ -275,6 +302,9 @@ export interface DimensionWithTolerance {
  *
  * The description of one forward operating point
  *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
  * The description of one isolatedBuck operating point
  *
  * The description of one isolatedBuckBoost operating point
@@ -282,6 +312,18 @@ export interface DimensionWithTolerance {
  * The description of one LLC operating point
  *
  * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
  */
 export interface AhbOperatingPoint {
     /**
@@ -314,7 +356,8 @@ export interface AhbOperatingPoint {
     switchingFrequency: number;
     /**
      * Commanded duty cycle of Q1 for this operating point (0 < D <= 0.5 for the conventional
-     * non-monotonic gain branch)
+     * non-monotonic gain branch). Schema bounds 0 <= D <= 1 to permit the upper-branch research
+     * configuration.
      */
     dutyCycle: number;
     [property: string]: any;
@@ -391,6 +434,9 @@ export interface Boost {
  *
  * The description of one forward operating point
  *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
  * The description of one isolatedBuck operating point
  *
  * The description of one isolatedBuckBoost operating point
@@ -398,6 +444,18 @@ export interface Boost {
  * The description of one LLC operating point
  *
  * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
  */
 export interface TopologyExcitation {
     /**
@@ -512,6 +570,9 @@ export interface CllcResonant {
  *
  * The description of one forward operating point
  *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
  * The description of one isolatedBuck operating point
  *
  * The description of one isolatedBuckBoost operating point
@@ -519,6 +580,18 @@ export interface CllcResonant {
  * The description of one LLC operating point
  *
  * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
  */
 export interface CllcOperatingPoint {
     /**
@@ -560,10 +633,192 @@ export interface CllcOperatingPoint {
  * The power flow direction.
  *
  * The power flow direction
+ *
+ * The power flow direction for one CLLLC operating point
+ *
+ * Power-flow direction. Forward = source -> load via L1; reverse = load -> source via L2.
+ *
+ * Power-flow direction for one operating point of a bidirectional Cuk (ignored when
+ * bidirectional=false).
  */
 export enum CllcPowerFlow {
     Forward = "forward",
     Reverse = "reverse",
+}
+
+/**
+ * The description of a CLLLC bidirectional symmetric resonant converter excitation
+ */
+export interface ClllcResonant {
+    /**
+     * The HV-side bridge topology
+     */
+    bridgeTypePrimary?: LlcBridgeType;
+    /**
+     * The LV-side bridge topology
+     */
+    bridgeTypeSecondary?: LlcBridgeType;
+    /**
+     * How the controller modulates frequency vs phase-shift
+     */
+    controlStrategy?: ClllcControlStrategy;
+    /**
+     * The target efficiency
+     */
+    efficiency?: number;
+    /**
+     * The HV-side bus voltage (typically 380-800 V for OBC)
+     */
+    highVoltageBusVoltage: DimensionWithTolerance;
+    /**
+     * K = Lm/Lr1, the magnetizing-to-series-inductance ratio
+     */
+    inductanceRatioK?: number;
+    /**
+     * If true, Lr1 and Lr2 are integrated as transformer leakage on each side
+     */
+    integratedResonantInductors?: boolean;
+    /**
+     * The LV-side bus voltage (typically 200-500 V for OBC)
+     */
+    lowVoltageBusVoltage: DimensionWithTolerance;
+    /**
+     * The maximum switching frequency for regulation
+     */
+    maxSwitchingFrequency: number;
+    /**
+     * The minimum switching frequency for regulation
+     */
+    minSwitchingFrequency: number;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: ClllcOperatingPoint[];
+    /**
+     * Optional explicit primary-side resonant capacitor (Cr1) in F. Overrides Q/K/fr derivation
+     * when set.
+     */
+    primaryResonantCapacitance?: number;
+    /**
+     * f_r1 = 1/(2*pi*sqrt(Lr1*Cr1)). Optional; computed if absent.
+     */
+    primaryResonantFrequency?: number;
+    /**
+     * Optional explicit primary-side resonant inductor (Lr1) in H. Overrides Q/K/fr derivation
+     * when set.
+     */
+    primarySeriesInductance?: number;
+    /**
+     * The quality factor of the resonant tank
+     */
+    qualityFactor?: number;
+    /**
+     * (Lr2/(n^2*Lr1)) * (Cr2*n^2/Cr1). 1.0 = perfectly symmetric.
+     */
+    tankSymmetryRatio?: number;
+    [property: string]: any;
+}
+
+/**
+ * The HV-side bridge topology
+ *
+ * The type of bridge for CLLLC
+ *
+ * The LV-side bridge topology
+ *
+ * The type of primary bridge
+ *
+ * The type of primary bridge for LLC
+ */
+export enum LlcBridgeType {
+    FullBridge = "fullBridge",
+    HalfBridge = "halfBridge",
+}
+
+/**
+ * How the controller modulates frequency vs phase-shift
+ *
+ * The CLLLC control strategy
+ */
+export enum ClllcControlStrategy {
+    FixedFrequencyPhaseShift = "fixedFrequencyPhaseShift",
+    HybridPfmPSM = "hybridPfmPsm",
+    PSM = "psm",
+    Pfm = "pfm",
+}
+
+/**
+ * The description of one CLLLC operating point
+ *
+ * Base fields common to all topology operating points
+ *
+ * The description of one boost operating point
+ *
+ * The description of one buck operating point
+ *
+ * The description of one forward operating point
+ *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one isolatedBuck operating point
+ *
+ * The description of one isolatedBuckBoost operating point
+ *
+ * The description of one LLC operating point
+ *
+ * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
+ */
+export interface ClllcOperatingPoint {
+    /**
+     * Ambient temperature of the operating point. Unit: Celsius. See docs/units.md.
+     */
+    ambientTemperature: number;
+    /**
+     * List of output currents, one per output. Interpreted per outputCurrentsType (default:
+     * dc). See docs/normative-references.md.
+     */
+    outputCurrents: number[];
+    /**
+     * Type of value carried in outputCurrents: which aggregate of the periodic waveform the
+     * number represents. Defaults to dc. See IEV 103-02 (values of a periodic quantity).
+     */
+    outputCurrentsType?: OutputSType;
+    /**
+     * List of output voltages, one per output. Interpreted per outputVoltagesType (default:
+     * dc). See docs/normative-references.md.
+     */
+    outputVoltages: number[];
+    /**
+     * Type of value carried in outputVoltages: which aggregate of the periodic waveform the
+     * number represents. Defaults to dc. See IEV 103-02 (values of a periodic quantity).
+     */
+    outputVoltagesType?: OutputSType;
+    /**
+     * Switching frequency of the operating point. Unit: Hz. See docs/units.md.
+     */
+    switchingFrequency: number;
+    /**
+     * Inter-bridge phase shift; only used by psm or hybridPfmPsm
+     */
+    phaseShiftDegrees?: number;
+    /**
+     * The power flow direction.
+     */
+    powerFlowDirection?: CllcPowerFlow;
+    [property: string]: any;
 }
 
 /**
@@ -655,6 +910,152 @@ export interface InsertionLossAtFrequency {
      * The target insertion loss in dB at this frequency
      */
     insertionLoss: number;
+    [property: string]: any;
+}
+
+/**
+ * Cuk converter excitation. Five wiring variants are supported via the boolean flags below:
+ * V1 non-isolated (defaults), V2 coupled-inductor zero-ripple (coupledInductor=true), V3
+ * transformer-isolated (isolated=true), V4 synchronous (synchronous=true), V5 bidirectional
+ * (bidirectional=true, V4 implied). For V1/V2/V4/V5 the magnetic returned by
+ * process_design_requirements is the input inductor L1 (V2: a 2-winding coupled inductor);
+ * for V3 it is a 2-winding transformer. The remaining reactive elements (L2, C1, Co, plus
+ * Ca/Cb in V3) are emitted via get_extra_components_inputs.
+ */
+export interface Cuk {
+    /**
+     * If true, both switches are active and the converter can transfer power in either
+     * direction depending on operatingPoint.powerFlow. Implies synchronous=true.
+     */
+    bidirectional?: boolean;
+    /**
+     * If true, L1 and L2 are wound on the same core with coupling coefficient
+     * couplingCoefficient (Cuk's zero-ripple trick when k = sqrt(L1/L2)). The magnetic returned
+     * is a 2-winding coupled inductor. Mutually exclusive with isolated=true.
+     */
+    coupledInductor?: boolean;
+    /**
+     * Secondary-side coupling capacitance Cb in farads (used only when isolated=true). If
+     * absent, Cb defaults to Ca scaled by turnsRatio^2 to balance V*s on each side.
+     */
+    couplingCapacitanceSecondary?: number;
+    /**
+     * Magnetic coupling coefficient k between L1 and L2 (used only when coupledInductor=true).
+     * Zero-ripple condition: k * sqrt(L2/L1) = 1.
+     */
+    couplingCoefficient?: number;
+    /**
+     * The maximum input-inductor (L1) current ripple ratio (delta-IL1 / IL1_avg)
+     */
+    currentRippleRatio?: number;
+    /**
+     * The voltage drop on the diode (ignored when synchronous=true)
+     */
+    diodeVoltageDrop: number;
+    /**
+     * The target efficiency
+     */
+    efficiency?: number;
+    /**
+     * The input voltage of the Cuk
+     */
+    inputVoltage: DimensionWithTolerance;
+    /**
+     * If true, the coupling capacitor is split into Ca/Cb and an isolation transformer is
+     * inserted between them. The magnetic returned is the transformer (2 windings, isolation
+     * sides PRIMARY and SECONDARY); L1 and L2 become extra components.
+     */
+    isolated?: boolean;
+    /**
+     * The maximum current that can go through the selected switch
+     */
+    maximumSwitchCurrent?: number;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: CukOperatingPoint[];
+    /**
+     * If true, the catch diode D1 is replaced by an actively-driven synchronous switch S2.
+     * Reduces conduction loss; mandatory for bidirectional=true.
+     */
+    synchronous?: boolean;
+    /**
+     * Transformer turns ratio Np:Ns for isolated=true (used as Vo/Vin step targeting). Ignored
+     * for non-isolated variants.
+     */
+    turnsRatio?: number;
+    [property: string]: any;
+}
+
+/**
+ * The description of one Cuk operating point. NOTE: outputVoltages magnitudes are passed
+ * positive here; Vo is signed negative internally per Cuk polarity convention. powerFlow is
+ * required only when the parent Cuk has bidirectional=true.
+ *
+ * Base fields common to all topology operating points
+ *
+ * The description of one boost operating point
+ *
+ * The description of one buck operating point
+ *
+ * The description of one forward operating point
+ *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one isolatedBuck operating point
+ *
+ * The description of one isolatedBuckBoost operating point
+ *
+ * The description of one LLC operating point
+ *
+ * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
+ */
+export interface CukOperatingPoint {
+    /**
+     * Ambient temperature of the operating point. Unit: Celsius. See docs/units.md.
+     */
+    ambientTemperature: number;
+    /**
+     * List of output currents, one per output. Interpreted per outputCurrentsType (default:
+     * dc). See docs/normative-references.md.
+     */
+    outputCurrents: number[];
+    /**
+     * Type of value carried in outputCurrents: which aggregate of the periodic waveform the
+     * number represents. Defaults to dc. See IEV 103-02 (values of a periodic quantity).
+     */
+    outputCurrentsType?: OutputSType;
+    /**
+     * List of output voltages, one per output. Interpreted per outputVoltagesType (default:
+     * dc). See docs/normative-references.md.
+     */
+    outputVoltages: number[];
+    /**
+     * Type of value carried in outputVoltages: which aggregate of the periodic waveform the
+     * number represents. Defaults to dc. See IEV 103-02 (values of a periodic quantity).
+     */
+    outputVoltagesType?: OutputSType;
+    /**
+     * Switching frequency of the operating point. Unit: Hz. See docs/units.md.
+     */
+    switchingFrequency: number;
+    /**
+     * Power-flow direction. Forward = source -> load via L1; reverse = load -> source via L2.
+     */
+    powerFlow?: CllcPowerFlow;
     [property: string]: any;
 }
 
@@ -859,6 +1260,9 @@ export interface DualActiveBridge {
  *
  * The description of one forward operating point
  *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
  * The description of one isolatedBuck operating point
  *
  * The description of one isolatedBuckBoost operating point
@@ -866,6 +1270,18 @@ export interface DualActiveBridge {
  * The description of one LLC operating point
  *
  * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
  */
 export interface DabOperatingPoint {
     /**
@@ -1048,6 +1464,87 @@ export interface Forward {
 }
 
 /**
+ * 4-Switch Buck-Boost (also called non-inverting buck-boost, H-bridge buck-boost, FSBB)
+ * excitation. Single inductor with two half-bridges (Q1/Q2 buck leg, Q3/Q4 boost leg). The
+ * controller selects one of three operating regions per Vin value: BUCK (Vo/Vin <
+ * 1-hysteresis: Q3 always-on, Q1/Q2 PWM), BOOST (Vo/Vin > 1+hysteresis: Q1 always-on, Q3/Q4
+ * PWM), or BUCK_BOOST (transition band: all four switches modulate). The magnetic returned
+ * by process_design_requirements is the single inductor sized for the worst-case region
+ * across the Vin sweep (max(L_buck@VinMax, L_boost@VinMin)). Cin and Co are emitted via
+ * get_extra_components_inputs. References: TI SLVA535B, TI LM5175/LM5176, ADI LT8390,
+ * Restrepo IEEE 8986423.
+ */
+export interface FourSwitchBuckBoost {
+    /**
+     * If true, controller allows reverse power flow (V2G / battery / 12V<->48V mild-hybrid)
+     */
+    bidirectional?: boolean;
+    /**
+     * Controller duty-assignment strategy in the buck-boost region (peakCurrent: TI LM5176,
+     * peakBuckPeakBoost: ADI LT8390, averageCurrent: USB-PD, voltageMode: legacy)
+     */
+    controlMode?: ControlMode;
+    /**
+     * The maximum inductor current ripple ratio (delta-IL / IL_avg)
+     */
+    currentRippleRatio?: number;
+    /**
+     * The target efficiency
+     */
+    efficiency?: number;
+    /**
+     * The input voltage of the 4-switch buck-boost (must support a sweep range that crosses Vo)
+     */
+    inputVoltage: DimensionWithTolerance;
+    /**
+     * The maximum current that can go through any of the four switches
+     */
+    maximumSwitchCurrent?: number;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: TopologyExcitation[];
+    /**
+     * The output voltage ripple ratio (delta-Vo / Vo)
+     */
+    outputVoltageRippleRatio?: number;
+    /**
+     * Number of interleaved phases (default 1; >1 for automotive 12V<->48V)
+     */
+    phaseCount?: number;
+    /**
+     * Width of the buck-boost band as |1 - Vo/Vin| (default 0.15 per LM5176)
+     */
+    transitionHysteresisRatio?: number;
+    /**
+     * Buck-boost-region modulation: 'simultaneous' (Mode 1, Q1+Q3 ON together) or 'splitPwm'
+     * (Mode 2, sequential split-PWM, LM5176/LT8390 default)
+     */
+    transitionMode?: TransitionMode;
+    [property: string]: any;
+}
+
+/**
+ * Controller duty-assignment strategy in the buck-boost region (peakCurrent: TI LM5176,
+ * peakBuckPeakBoost: ADI LT8390, averageCurrent: USB-PD, voltageMode: legacy)
+ */
+export enum ControlMode {
+    AverageCurrent = "averageCurrent",
+    PeakBuckPeakBoost = "peakBuckPeakBoost",
+    PeakCurrent = "peakCurrent",
+    VoltageMode = "voltageMode",
+}
+
+/**
+ * Buck-boost-region modulation: 'simultaneous' (Mode 1, Q1+Q3 ON together) or 'splitPwm'
+ * (Mode 2, sequential split-PWM, LM5176/LT8390 default)
+ */
+export enum TransitionMode {
+    Simultaneous = "simultaneous",
+    SplitPwm = "splitPwm",
+}
+
+/**
  * The description of a Isolated Buck / Flybuck converter excitation
  */
 export interface IsolatedBuck {
@@ -1167,16 +1664,6 @@ export interface LlcResonant {
 }
 
 /**
- * The type of primary bridge
- *
- * The type of primary bridge for LLC
- */
-export enum LlcBridgeType {
-    FullBridge = "fullBridge",
-    HalfBridge = "halfBridge",
-}
-
-/**
  * The description of a Phase Shift Full Bridge (PSFB) converter excitation
  */
 export interface PhaseShiftedFullBridge {
@@ -1227,6 +1714,9 @@ export interface PhaseShiftedFullBridge {
  *
  * The description of one forward operating point
  *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
  * The description of one isolatedBuck operating point
  *
  * The description of one isolatedBuckBoost operating point
@@ -1234,6 +1724,18 @@ export interface PhaseShiftedFullBridge {
  * The description of one LLC operating point
  *
  * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
  */
 export interface PsfbOperatingPoint {
     /**
@@ -1339,6 +1841,9 @@ export interface PhaseShiftedHalfBridge {
  *
  * The description of one forward operating point
  *
+ * The description of one 4-switch buck-boost operating point. Outputs are non-inverting (Vo
+ * positive).
+ *
  * The description of one isolatedBuck operating point
  *
  * The description of one isolatedBuckBoost operating point
@@ -1346,6 +1851,18 @@ export interface PhaseShiftedHalfBridge {
  * The description of one LLC operating point
  *
  * The description of one pushPull operating point
+ *
+ * The description of one SEPIC operating point. SEPIC outputs are non-inverting (Vo
+ * positive).
+ *
+ * The description of one SRC operating point
+ *
+ * The description of one Vienna rectifier operating point
+ *
+ * The description of one Weinberg operating point. Weinberg outputs are non-inverting (Vo
+ * positive); positive Iout flows through the load to GND.
+ *
+ * The description of one Zeta operating point. Zeta outputs are non-inverting (Vo positive).
  */
 export interface PshbOperatingPoint {
     /**
@@ -1384,17 +1901,25 @@ export interface PshbOperatingPoint {
 }
 
 /**
- * The description of a Power Factor Correction (PFC) boost inductor. PFC converters shape
- * the input current to follow the input voltage waveform, achieving near-unity power
- * factor. The inductor operates with a triangular current ripple superimposed on a
- * half-sinusoidal envelope. This topology covers both continuous (CCM) and discontinuous
- * (DCM) conduction modes.
+ * The description of a Power Factor Correction (PFC) stage. PFC converters shape the input
+ * current to follow the input voltage waveform, achieving near-unity power factor. The
+ * inductor operates with a triangular current ripple superimposed on a half-sinusoidal
+ * envelope. This topology covers both continuous (CCM) and discontinuous (DCM) conduction
+ * modes across the standard single-phase and three-phase variants (boost, bridgeless,
+ * totem-pole, interleaved boost, Vienna, etc.).
  */
 export interface PowerFactorCorrection {
     /**
      * The ambient temperature for the application
      */
     ambientTemperature: number;
+    /**
+     * The DC bus bulk capacitance in farads. Used by the operating-point synthesis to compute
+     * the twice-line-frequency bus-voltage ripple: ΔVbus ≈ Pout / (2·π·f_line·Cbus·Vbus). Sized
+     * in practice from hold-up-time requirements (~1–4 µF/W of output power for 230 Vrms input,
+     * 400 V bus, 20 ms hold-up).
+     */
+    bulkCapacitance?: number;
     /**
      * The peak-to-peak current ripple as a ratio of the average current (typically 0.2-0.4 for
      * CCM)
@@ -1429,6 +1954,11 @@ export interface PowerFactorCorrection {
      */
     mode?: PfcModes;
     /**
+     * Number of parallel phases / interleaved cells. 1 for boost/bridgeless/totemPole/buck
+     * variants; 2 or 3 for interleavedBoost; 3 for vienna.
+     */
+    numberOfPhases?: number;
+    /**
      * The output power in watts
      */
     outputPower: number;
@@ -1440,6 +1970,22 @@ export interface PowerFactorCorrection {
      * The switching frequency of the PFC stage
      */
     switchingFrequency: number;
+    /**
+     * The PFC topology variant. 'boost' is the classical single-phase boost PFC (full-bridge
+     * rectifier + boost stage), the default. 'bridgeless' / 'semiBridgeless' / 'totemPole'
+     * eliminate the input rectifier bridge for higher efficiency. 'interleavedBoost' uses N>=2
+     * parallel boost cells phase-shifted for ripple cancellation. 'vienna' is the 3-phase
+     * 3-level rectifier used in telecom and EV chargers. 'buck' / 'buckBoost' / 'sepic' / 'cuk'
+     * are step-down or buck-boost variants used in low-power LED drivers and isolated PFC
+     * stages.
+     */
+    topologyVariant?: PfcTopologyVariants;
+    /**
+     * Whether the active switches are wide-bandgap (GaN/SiC) devices. Required true for
+     * totem-pole CCM PFC (Si MOSFET body-diode reverse recovery makes CCM totem-pole
+     * infeasible).
+     */
+    wideBandgapSwitch?: boolean;
     [property: string]: any;
 }
 
@@ -1451,6 +1997,30 @@ export enum PfcModes {
     CriticalConductionMode = "criticalConductionMode",
     DiscontinuousConductionMode = "discontinuousConductionMode",
     TransitionMode = "transitionMode",
+}
+
+/**
+ * The PFC topology variant. 'boost' is the classical single-phase boost PFC (full-bridge
+ * rectifier + boost stage), the default. 'bridgeless' / 'semiBridgeless' / 'totemPole'
+ * eliminate the input rectifier bridge for higher efficiency. 'interleavedBoost' uses N>=2
+ * parallel boost cells phase-shifted for ripple cancellation. 'vienna' is the 3-phase
+ * 3-level rectifier used in telecom and EV chargers. 'buck' / 'buckBoost' / 'sepic' / 'cuk'
+ * are step-down or buck-boost variants used in low-power LED drivers and isolated PFC
+ * stages.
+ *
+ * The PFC topology variant. See `topologyVariant` field for descriptions.
+ */
+export enum PfcTopologyVariants {
+    Boost = "boost",
+    Bridgeless = "bridgeless",
+    Buck = "buck",
+    BuckBoost = "buckBoost",
+    Cuk = "cuk",
+    InterleavedBoost = "interleavedBoost",
+    SemiBridgeless = "semiBridgeless",
+    Sepic = "sepic",
+    TotemPole = "totemPole",
+    Vienna = "vienna",
 }
 
 /**
@@ -1489,6 +2059,384 @@ export interface PushPull {
      * A list of operating points
      */
     operatingPoints: TopologyExcitation[];
+    [property: string]: any;
+}
+
+/**
+ * SEPIC (Single-Ended Primary-Inductor Converter) excitation. Non-inverting fourth-order
+ * DC-DC converter with capacitive energy transfer through the coupling capacitor Cs between
+ * L1 and L2. Two wiring variants are supported via the boolean flags below: V1 uncoupled
+ * (defaults; L1 and L2 are independent inductors) and V2 coupled-inductor
+ * (coupledInductor=true; L1 and L2 share one core, ripple-steering per TI SLYT411).
+ * Optional synchronousRectifier replaces the catch diode with a low-side MOSFET. The
+ * magnetic returned by process_design_requirements is the input inductor L1 (or, when
+ * coupledInductor=true, a 2-winding coupled inductor). The remaining reactive elements (L2,
+ * Cs, Co) are emitted via get_extra_components_inputs.
+ */
+export interface Sepic {
+    /**
+     * If true, L1 and L2 are wound on the same core (1:1 coupled) with coupling coefficient
+     * couplingCoefficient. Ripple-steering per TI SLYT411 reduces input-current ripple. The
+     * magnetic returned is a 2-winding coupled inductor.
+     */
+    coupledInductor?: boolean;
+    /**
+     * Magnetic coupling coefficient k between L1 and L2 (used only when coupledInductor=true).
+     * Typical values 0.95-0.999.
+     */
+    couplingCoefficient?: number;
+    /**
+     * The maximum input-inductor (L1) current ripple ratio (delta-IL1 / IL1_avg)
+     */
+    currentRippleRatio?: number;
+    /**
+     * The voltage drop on the rectifier diode (ignored when synchronousRectifier=true)
+     */
+    diodeVoltageDrop: number;
+    /**
+     * The target efficiency
+     */
+    efficiency?: number;
+    /**
+     * The input voltage of the SEPIC
+     */
+    inputVoltage: DimensionWithTolerance;
+    /**
+     * The maximum current that can go through the selected switch
+     */
+    maximumSwitchCurrent?: number;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: TopologyExcitation[];
+    /**
+     * If true, the catch diode is replaced by an actively-driven low-side synchronous MOSFET.
+     * Reduces conduction loss; common at low Vout.
+     */
+    synchronousRectifier?: boolean;
+    [property: string]: any;
+}
+
+/**
+ * The description of a Series Resonant Converter (SRC) excitation. Two-element series Lr+Cr
+ * tank with no Lm branch. Gain M <= 1 (step-down only). Steigerwald 1988; Kazimierczuk Ch.
+ * 4. See src/converter_models/SRC_PLAN.md for the full design rationale.
+ */
+export interface SeriesResonant {
+    /**
+     * The type of primary bridge
+     */
+    bridgeType?: SrcBridgeType;
+    /**
+     * The target efficiency
+     */
+    efficiency?: number;
+    /**
+     * The input voltage of the SRC converter
+     */
+    inputVoltage: DimensionWithTolerance;
+    /**
+     * Whether the converter has an isolation transformer between the resonant tank and the
+     * rectifier. When false, the tank drives the rectifier directly (non-isolated SRC).
+     */
+    isolated?: boolean;
+    /**
+     * The maximum switching frequency for regulation
+     */
+    maxSwitchingFrequency: number;
+    /**
+     * The minimum switching frequency for regulation
+     */
+    minSwitchingFrequency: number;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: TopologyExcitation[];
+    /**
+     * The quality factor Q = sqrt(Lr/Cr) / Rload of the resonant tank. Determines gain-curve
+     * sharpness and Cr peak voltage stress (Vcr_peak ~ Q*Vin/pi at resonance for half-bridge).
+     */
+    qualityFactor?: number;
+    /**
+     * The secondary rectifier topology
+     */
+    rectifierType?: SrcRectifierType;
+    /**
+     * Optional explicit resonant capacitor (Cr) value in F. Overrides Q/fr derivation when set.
+     */
+    resonantCapacitance?: number;
+    /**
+     * The resonant frequency fr = 1/(2*pi*sqrt(Lr*Cr)) of the tank (optional, will be
+     * calculated if not provided)
+     */
+    resonantFrequency?: number;
+    /**
+     * Optional explicit resonant inductor (Lr) value in H. Overrides Q/fr derivation when set.
+     */
+    seriesInductance?: number;
+    /**
+     * Whether the secondary rectifier uses synchronous MOSFETs instead of diodes
+     */
+    useSynchronousRectifier?: boolean;
+    [property: string]: any;
+}
+
+/**
+ * The type of primary bridge
+ *
+ * The type of primary bridge for the SRC
+ */
+export enum SrcBridgeType {
+    FullBridge = "fullBridge",
+    FullBridgePhaseShift = "fullBridgePhaseShift",
+    HalfBridge = "halfBridge",
+}
+
+/**
+ * The secondary rectifier topology
+ *
+ * The secondary rectifier topology for the SRC
+ */
+export enum SrcRectifierType {
+    CenterTappedDiode = "centerTappedDiode",
+    CurrentDoubler = "currentDoubler",
+    FullBridgeDiode = "fullBridgeDiode",
+}
+
+/**
+ * The description of a Vienna rectifier (3-phase 3-level boost-type PFC, unidirectional).
+ * Three identical line-frequency boost inductors carry pure-AC line current. Switch
+ * blocking voltage = Vdc/2 (3-level advantage). Originally Kolar & Zach 1994; modern SiC
+ * industrial implementations: TI TIDA-010257, ST STDES-VIENNARECT, Microchip
+ * MSCSICPFC-REF5. See src/converter_models/VIENNA_PLAN.md for the full design rationale.
+ */
+export interface ViennaRectifier {
+    /**
+     * DeltaI_L,pp / I_pk at peak-of-line (typical 0.2-0.3)
+     */
+    currentRippleRatio?: number;
+    /**
+     * Target efficiency
+     */
+    efficiency?: number;
+    /**
+     * Line frequency in Hz (typically 50 or 60)
+     */
+    lineFrequency?: number;
+    /**
+     * AC line-to-line RMS voltage (e.g. 400 V for EU, 480 V for US)
+     */
+    lineToLineVoltage: DimensionWithTolerance;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: TopologyExcitation[];
+    /**
+     * Total DC bus voltage Vdc = Vdc+ + |Vdc-| (typical 700-800 V)
+     */
+    outputDcVoltage: number;
+    /**
+     * Number of interleaved Vienna channels in parallel (1 = single Vienna, >1 = multi-channel
+     * for >50 kW)
+     */
+    phaseCount?: number;
+    /**
+     * Target input power factor (typically >= 0.99)
+     */
+    powerFactor?: number;
+    /**
+     * How the line-cycle envelope is sampled: peakOfLineOnly = single sample at omega*t = pi/2
+     * (cheapest); peakOfLinePlusSectors = peak + 30/60-degree sector samples; fullLineCycle =
+     * 36 samples per cycle (THD validation only)
+     */
+    samplingStrategy?: ViennaSamplingStrategy;
+    /**
+     * Per-leg switching frequency in Hz
+     */
+    switchingFrequency: number;
+    /**
+     * How each per-leg bidirectional switch is realised: tType (modern SiC default, two
+     * anti-series MOSFETs to neutral); backToBackMosfet; singleMosfetIn4DiodeBridge (Kolar 1994
+     * classic)
+     */
+    switchType?: ViennaSwitchType;
+    /**
+     * If true, the 6 fast rectifier diodes are replaced with MOSFETs
+     */
+    synchronousRectifier?: boolean;
+    /**
+     * Vienna switch arrangement: viennaI = single bidirectional switch per leg (3 switches
+     * total, classic Kolar 1994); viennaII = two switches per leg (reduced conduction loss at
+     * >30 kW)
+     */
+    viennaVariant?: ViennaVariant;
+    [property: string]: any;
+}
+
+/**
+ * How the line-cycle envelope is sampled: peakOfLineOnly = single sample at omega*t = pi/2
+ * (cheapest); peakOfLinePlusSectors = peak + 30/60-degree sector samples; fullLineCycle =
+ * 36 samples per cycle (THD validation only)
+ *
+ * Line-cycle envelope sampling strategy
+ */
+export enum ViennaSamplingStrategy {
+    FullLineCycle = "fullLineCycle",
+    PeakOfLineOnly = "peakOfLineOnly",
+    PeakOfLinePlusSectors = "peakOfLinePlusSectors",
+}
+
+/**
+ * How each per-leg bidirectional switch is realised: tType (modern SiC default, two
+ * anti-series MOSFETs to neutral); backToBackMosfet; singleMosfetIn4DiodeBridge (Kolar 1994
+ * classic)
+ *
+ * Per-leg bidirectional switch realisation
+ */
+export enum ViennaSwitchType {
+    BackToBackMOSFET = "backToBackMosfet",
+    SingleMOSFETIn4DiodeBridge = "singleMosfetIn4DiodeBridge",
+    TType = "tType",
+}
+
+/**
+ * Vienna switch arrangement: viennaI = single bidirectional switch per leg (3 switches
+ * total, classic Kolar 1994); viennaII = two switches per leg (reduced conduction loss at
+ * >30 kW)
+ *
+ * Vienna switch arrangement variant
+ */
+export enum ViennaVariant {
+    ViennaI = "viennaI",
+    ViennaII = "viennaII",
+}
+
+/**
+ * Weinberg DC-DC converter (current-fed push-pull-derivative, isolated, boost-capable).
+ * Spacecraft-heritage topology featuring a 1:1 input coupled inductor L1 with
+ * energy-recovery diode D3 to Vin, plus a center-tapped main transformer with center-tapped
+ * full-wave secondary rectifier. Intrinsically supports switch overlap above D=0.5 (boost
+ * regime) without needing a freewheel switch. Variants supported: V1 classic (push-pull
+ * primary, 2 switches) and V2 bridge (H-bridge primary, 4 switches) via the `variant` flag;
+ * optional synchronousRectifier replaces secondary diodes with active SR MOSFETs. The
+ * magnetic returned by process_design_requirements is the main 2-winding transformer (n =
+ * Np_total/Ns_total); the input coupled inductor L1 and output capacitor Co are emitted via
+ * get_extra_components_inputs.
+ */
+export interface Weinberg {
+    /**
+     * Magnetic coupling coefficient k between the two L1 windings (1:1 input coupled inductor).
+     * Typical values 0.99-0.999.
+     */
+    couplingCoefficientInput?: number;
+    /**
+     * Magnetic coupling coefficient k for the main transformer (4-way coupling among Lpri_a,
+     * Lpri_b, Lsec_a, Lsec_b). Typical values 0.95-0.99 (some leakage required for SPICE
+     * convergence and ZCS).
+     */
+    couplingCoefficientMain?: number;
+    /**
+     * The maximum input-coupled-inductor (L1) current ripple ratio (delta-IL1 / IL1_avg per
+     * winding)
+     */
+    currentRippleRatio?: number;
+    /**
+     * The voltage drop on the rectifier diode (ignored when synchronousRectifier=true)
+     */
+    diodeVoltageDrop: number;
+    /**
+     * The target efficiency
+     */
+    efficiency?: number;
+    /**
+     * The input voltage of the Weinberg
+     */
+    inputVoltage: DimensionWithTolerance;
+    /**
+     * The maximum current that can go through the selected switch
+     */
+    maximumSwitchCurrent?: number;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: TopologyExcitation[];
+    /**
+     * If true, the secondary CT-FW diodes (D_pos, D_neg) are replaced by actively-driven
+     * synchronous MOSFETs (S_pos, S_neg) gated complementary to the primary switches.
+     */
+    synchronousRectifier?: boolean;
+    /**
+     * Primary topology variant: 'classic' (V1 push-pull, 2 switches; switch V_DS = 2*Vin/(1-D))
+     * or 'bridge' (V2 H-bridge, 4 switches; switch V_DS = Vin).
+     */
+    variant?: Variant;
+    [property: string]: any;
+}
+
+/**
+ * Primary topology variant: 'classic' (V1 push-pull, 2 switches; switch V_DS = 2*Vin/(1-D))
+ * or 'bridge' (V2 H-bridge, 4 switches; switch V_DS = Vin).
+ */
+export enum Variant {
+    Bridge = "bridge",
+    Classic = "classic",
+}
+
+/**
+ * Zeta excitation. Non-inverting fourth-order DC-DC converter — the dual of SEPIC: same
+ * gain M = D/(1-D), but the LC filter is on the OUTPUT side (so output-voltage ripple is
+ * small and there is no right-half-plane zero in CCM). The switch is HIGH-SIDE (PFET by
+ * default in the SPICE model). Two wiring variants are supported via the boolean flags
+ * below: V1 uncoupled (defaults; L1 magnetizing and L2 output filter are independent
+ * inductors) and V2 coupled-inductor (coupledInductor=true; L1 and L2 share one core,
+ * ripple-steering per TI SLYT411 — same condition as coupled-SEPIC because both inductors
+ * see identical voltages during both subintervals). Optional synchronousRectifier replaces
+ * the catch diode with a low-side MOSFET. The magnetic returned by
+ * process_design_requirements is L1 (or, when coupledInductor=true, a 2-winding coupled
+ * inductor). The remaining reactive elements (L2, Cc, Co) are emitted via
+ * get_extra_components_inputs.
+ */
+export interface Zeta {
+    /**
+     * If true, L1 and L2 are wound on the same core (1:1 coupled) with coupling coefficient
+     * couplingCoefficient. Ripple-steering per TI SLYT411 reduces input-current ripple. The
+     * magnetic returned is a 2-winding coupled inductor.
+     */
+    coupledInductor?: boolean;
+    /**
+     * Magnetic coupling coefficient k between L1 and L2 (used only when coupledInductor=true).
+     * Typical values 0.95-0.999.
+     */
+    couplingCoefficient?: number;
+    /**
+     * The maximum magnetizing-inductor (L1) current ripple ratio (delta-IL1 / IL1_avg)
+     */
+    currentRippleRatio?: number;
+    /**
+     * The voltage drop on the rectifier diode (ignored when synchronousRectifier=true)
+     */
+    diodeVoltageDrop: number;
+    /**
+     * The target efficiency
+     */
+    efficiency?: number;
+    /**
+     * The input voltage of the Zeta
+     */
+    inputVoltage: DimensionWithTolerance;
+    /**
+     * The maximum current that can go through the selected switch
+     */
+    maximumSwitchCurrent?: number;
+    /**
+     * A list of operating points
+     */
+    operatingPoints: TopologyExcitation[];
+    /**
+     * If true, the catch diode is replaced by an actively-driven low-side synchronous MOSFET.
+     * Reduces conduction loss; common at low Vout.
+     */
+    synchronousRectifier?: boolean;
     [property: string]: any;
 }
 
@@ -1723,11 +2671,14 @@ export enum Topologies {
     BoostConverter = "boostConverter",
     BuckConverter = "buckConverter",
     CllcResonantConverter = "cllcResonantConverter",
+    ClllcResonantConverter = "clllcResonantConverter",
     CommonModeChoke = "commonModeChoke",
+    CukConverter = "cukConverter",
     CurrentTransformer = "currentTransformer",
     DifferentialModeChoke = "differentialModeChoke",
     DualActiveBridgeConverter = "dualActiveBridgeConverter",
     FlybackConverter = "flybackConverter",
+    FourSwitchBuckBoostConverter = "fourSwitchBuckBoostConverter",
     IsolatedBuckBoostConverter = "isolatedBuckBoostConverter",
     IsolatedBuckConverter = "isolatedBuckConverter",
     LlcResonantConverter = "llcResonantConverter",
@@ -1735,8 +2686,13 @@ export enum Topologies {
     PhaseShiftedHalfBridgeConverter = "phaseShiftedHalfBridgeConverter",
     PowerFactorCorrection = "powerFactorCorrection",
     PushPullConverter = "pushPullConverter",
+    SepicConverter = "sepicConverter",
+    SeriesResonantConverter = "seriesResonantConverter",
     SingleSwitchForwardConverter = "singleSwitchForwardConverter",
     TwoSwitchForwardConverter = "twoSwitchForwardConverter",
+    ViennaRectifierConverter = "viennaRectifierConverter",
+    WeinbergConverter = "weinbergConverter",
+    ZetaConverter = "zetaConverter",
 }
 
 /**
@@ -5447,12 +6403,15 @@ const typeMap: any = {
         { json: "boost", js: "boost", typ: u(undefined, r("Boost")) },
         { json: "buck", js: "buck", typ: u(undefined, r("Buck")) },
         { json: "cllcResonant", js: "cllcResonant", typ: u(undefined, r("CllcResonant")) },
+        { json: "clllcResonant", js: "clllcResonant", typ: u(undefined, r("ClllcResonant")) },
         { json: "commonModeChoke", js: "commonModeChoke", typ: u(undefined, r("CommonModeChoke")) },
+        { json: "cuk", js: "cuk", typ: u(undefined, r("Cuk")) },
         { json: "currentTransformer", js: "currentTransformer", typ: u(undefined, r("CurrentTransformer")) },
         { json: "differentialModeChoke", js: "differentialModeChoke", typ: u(undefined, r("DifferentialModeChoke")) },
         { json: "dualActiveBridge", js: "dualActiveBridge", typ: u(undefined, r("DualActiveBridge")) },
         { json: "flyback", js: "flyback", typ: u(undefined, r("Flyback")) },
         { json: "forward", js: "forward", typ: u(undefined, r("Forward")) },
+        { json: "fourSwitchBuckBoost", js: "fourSwitchBuckBoost", typ: u(undefined, r("FourSwitchBuckBoost")) },
         { json: "isolatedBuck", js: "isolatedBuck", typ: u(undefined, r("IsolatedBuck")) },
         { json: "isolatedBuckBoost", js: "isolatedBuckBoost", typ: u(undefined, r("IsolatedBuckBoost")) },
         { json: "llcResonant", js: "llcResonant", typ: u(undefined, r("LlcResonant")) },
@@ -5460,6 +6419,11 @@ const typeMap: any = {
         { json: "phaseShiftedHalfBridge", js: "phaseShiftedHalfBridge", typ: u(undefined, r("PhaseShiftedHalfBridge")) },
         { json: "powerFactorCorrection", js: "powerFactorCorrection", typ: u(undefined, r("PowerFactorCorrection")) },
         { json: "pushPull", js: "pushPull", typ: u(undefined, r("PushPull")) },
+        { json: "sepic", js: "sepic", typ: u(undefined, r("Sepic")) },
+        { json: "seriesResonant", js: "seriesResonant", typ: u(undefined, r("SeriesResonant")) },
+        { json: "viennaRectifier", js: "viennaRectifier", typ: u(undefined, r("ViennaRectifier")) },
+        { json: "weinberg", js: "weinberg", typ: u(undefined, r("Weinberg")) },
+        { json: "zeta", js: "zeta", typ: u(undefined, r("Zeta")) },
     ], "any"),
     "AsymmetricHalfBridge": o([
         { json: "dcBlockingCapacitance", js: "dcBlockingCapacitance", typ: u(undefined, 3.14) },
@@ -5535,6 +6499,34 @@ const typeMap: any = {
         { json: "switchingFrequency", js: "switchingFrequency", typ: 3.14 },
         { json: "powerFlow", js: "powerFlow", typ: r("CllcPowerFlow") },
     ], "any"),
+    "ClllcResonant": o([
+        { json: "bridgeTypePrimary", js: "bridgeTypePrimary", typ: u(undefined, r("LlcBridgeType")) },
+        { json: "bridgeTypeSecondary", js: "bridgeTypeSecondary", typ: u(undefined, r("LlcBridgeType")) },
+        { json: "controlStrategy", js: "controlStrategy", typ: u(undefined, r("ClllcControlStrategy")) },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "highVoltageBusVoltage", js: "highVoltageBusVoltage", typ: r("DimensionWithTolerance") },
+        { json: "inductanceRatioK", js: "inductanceRatioK", typ: u(undefined, 3.14) },
+        { json: "integratedResonantInductors", js: "integratedResonantInductors", typ: u(undefined, true) },
+        { json: "lowVoltageBusVoltage", js: "lowVoltageBusVoltage", typ: r("DimensionWithTolerance") },
+        { json: "maxSwitchingFrequency", js: "maxSwitchingFrequency", typ: 3.14 },
+        { json: "minSwitchingFrequency", js: "minSwitchingFrequency", typ: 3.14 },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("ClllcOperatingPoint")) },
+        { json: "primaryResonantCapacitance", js: "primaryResonantCapacitance", typ: u(undefined, 3.14) },
+        { json: "primaryResonantFrequency", js: "primaryResonantFrequency", typ: u(undefined, 3.14) },
+        { json: "primarySeriesInductance", js: "primarySeriesInductance", typ: u(undefined, 3.14) },
+        { json: "qualityFactor", js: "qualityFactor", typ: u(undefined, 3.14) },
+        { json: "tankSymmetryRatio", js: "tankSymmetryRatio", typ: u(undefined, 3.14) },
+    ], "any"),
+    "ClllcOperatingPoint": o([
+        { json: "ambientTemperature", js: "ambientTemperature", typ: 3.14 },
+        { json: "outputCurrents", js: "outputCurrents", typ: a(3.14) },
+        { json: "outputCurrentsType", js: "outputCurrentsType", typ: u(undefined, r("OutputSType")) },
+        { json: "outputVoltages", js: "outputVoltages", typ: a(3.14) },
+        { json: "outputVoltagesType", js: "outputVoltagesType", typ: u(undefined, r("OutputSType")) },
+        { json: "switchingFrequency", js: "switchingFrequency", typ: 3.14 },
+        { json: "phaseShiftDegrees", js: "phaseShiftDegrees", typ: u(undefined, 3.14) },
+        { json: "powerFlowDirection", js: "powerFlowDirection", typ: u(undefined, r("CllcPowerFlow")) },
+    ], "any"),
     "CommonModeChoke": o([
         { json: "ambientTemperature", js: "ambientTemperature", typ: 3.14 },
         { json: "lineFrequency", js: "lineFrequency", typ: 3.14 },
@@ -5559,6 +6551,30 @@ const typeMap: any = {
     "InsertionLossAtFrequency": o([
         { json: "frequency", js: "frequency", typ: 3.14 },
         { json: "insertionLoss", js: "insertionLoss", typ: 3.14 },
+    ], "any"),
+    "Cuk": o([
+        { json: "bidirectional", js: "bidirectional", typ: u(undefined, true) },
+        { json: "coupledInductor", js: "coupledInductor", typ: u(undefined, true) },
+        { json: "couplingCapacitanceSecondary", js: "couplingCapacitanceSecondary", typ: u(undefined, 3.14) },
+        { json: "couplingCoefficient", js: "couplingCoefficient", typ: u(undefined, 3.14) },
+        { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
+        { json: "diodeVoltageDrop", js: "diodeVoltageDrop", typ: 3.14 },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "inputVoltage", js: "inputVoltage", typ: r("DimensionWithTolerance") },
+        { json: "isolated", js: "isolated", typ: u(undefined, true) },
+        { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("CukOperatingPoint")) },
+        { json: "synchronous", js: "synchronous", typ: u(undefined, true) },
+        { json: "turnsRatio", js: "turnsRatio", typ: u(undefined, 3.14) },
+    ], "any"),
+    "CukOperatingPoint": o([
+        { json: "ambientTemperature", js: "ambientTemperature", typ: 3.14 },
+        { json: "outputCurrents", js: "outputCurrents", typ: a(3.14) },
+        { json: "outputCurrentsType", js: "outputCurrentsType", typ: u(undefined, r("OutputSType")) },
+        { json: "outputVoltages", js: "outputVoltages", typ: a(3.14) },
+        { json: "outputVoltagesType", js: "outputVoltagesType", typ: u(undefined, r("OutputSType")) },
+        { json: "switchingFrequency", js: "switchingFrequency", typ: 3.14 },
+        { json: "powerFlow", js: "powerFlow", typ: u(undefined, r("CllcPowerFlow")) },
     ], "any"),
     "CurrentTransformer": o([
         { json: "ambientTemperature", js: "ambientTemperature", typ: 3.14 },
@@ -5635,6 +6651,19 @@ const typeMap: any = {
         { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
         { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
     ], "any"),
+    "FourSwitchBuckBoost": o([
+        { json: "bidirectional", js: "bidirectional", typ: u(undefined, true) },
+        { json: "controlMode", js: "controlMode", typ: u(undefined, r("ControlMode")) },
+        { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "inputVoltage", js: "inputVoltage", typ: r("DimensionWithTolerance") },
+        { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
+        { json: "outputVoltageRippleRatio", js: "outputVoltageRippleRatio", typ: u(undefined, 3.14) },
+        { json: "phaseCount", js: "phaseCount", typ: u(undefined, 0) },
+        { json: "transitionHysteresisRatio", js: "transitionHysteresisRatio", typ: u(undefined, 3.14) },
+        { json: "transitionMode", js: "transitionMode", typ: u(undefined, r("TransitionMode")) },
+    ], "any"),
     "IsolatedBuck": o([
         { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
         { json: "diodeVoltageDrop", js: "diodeVoltageDrop", typ: 3.14 },
@@ -5705,6 +6734,7 @@ const typeMap: any = {
     ], "any"),
     "PowerFactorCorrection": o([
         { json: "ambientTemperature", js: "ambientTemperature", typ: 3.14 },
+        { json: "bulkCapacitance", js: "bulkCapacitance", typ: u(undefined, 3.14) },
         { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
         { json: "diodeVoltageDrop", js: "diodeVoltageDrop", typ: u(undefined, 3.14) },
         { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
@@ -5713,9 +6743,12 @@ const typeMap: any = {
         { json: "maximumCoreTemperatureRise", js: "maximumCoreTemperatureRise", typ: u(undefined, 3.14) },
         { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
         { json: "mode", js: "mode", typ: u(undefined, r("PfcModes")) },
+        { json: "numberOfPhases", js: "numberOfPhases", typ: u(undefined, 0) },
         { json: "outputPower", js: "outputPower", typ: 3.14 },
         { json: "outputVoltage", js: "outputVoltage", typ: 3.14 },
         { json: "switchingFrequency", js: "switchingFrequency", typ: 3.14 },
+        { json: "topologyVariant", js: "topologyVariant", typ: u(undefined, r("PfcTopologyVariants")) },
+        { json: "wideBandgapSwitch", js: "wideBandgapSwitch", typ: u(undefined, true) },
     ], "any"),
     "PushPull": o([
         { json: "currentRippleRatio", js: "currentRippleRatio", typ: 3.14 },
@@ -5726,6 +6759,70 @@ const typeMap: any = {
         { json: "maximumDrainSourceVoltage", js: "maximumDrainSourceVoltage", typ: u(undefined, 3.14) },
         { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
         { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
+    ], "any"),
+    "Sepic": o([
+        { json: "coupledInductor", js: "coupledInductor", typ: u(undefined, true) },
+        { json: "couplingCoefficient", js: "couplingCoefficient", typ: u(undefined, 3.14) },
+        { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
+        { json: "diodeVoltageDrop", js: "diodeVoltageDrop", typ: 3.14 },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "inputVoltage", js: "inputVoltage", typ: r("DimensionWithTolerance") },
+        { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
+        { json: "synchronousRectifier", js: "synchronousRectifier", typ: u(undefined, true) },
+    ], "any"),
+    "SeriesResonant": o([
+        { json: "bridgeType", js: "bridgeType", typ: u(undefined, r("SrcBridgeType")) },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "inputVoltage", js: "inputVoltage", typ: r("DimensionWithTolerance") },
+        { json: "isolated", js: "isolated", typ: u(undefined, true) },
+        { json: "maxSwitchingFrequency", js: "maxSwitchingFrequency", typ: 3.14 },
+        { json: "minSwitchingFrequency", js: "minSwitchingFrequency", typ: 3.14 },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
+        { json: "qualityFactor", js: "qualityFactor", typ: u(undefined, 3.14) },
+        { json: "rectifierType", js: "rectifierType", typ: u(undefined, r("SrcRectifierType")) },
+        { json: "resonantCapacitance", js: "resonantCapacitance", typ: u(undefined, 3.14) },
+        { json: "resonantFrequency", js: "resonantFrequency", typ: u(undefined, 3.14) },
+        { json: "seriesInductance", js: "seriesInductance", typ: u(undefined, 3.14) },
+        { json: "useSynchronousRectifier", js: "useSynchronousRectifier", typ: u(undefined, true) },
+    ], "any"),
+    "ViennaRectifier": o([
+        { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "lineFrequency", js: "lineFrequency", typ: u(undefined, 3.14) },
+        { json: "lineToLineVoltage", js: "lineToLineVoltage", typ: r("DimensionWithTolerance") },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
+        { json: "outputDcVoltage", js: "outputDcVoltage", typ: 3.14 },
+        { json: "phaseCount", js: "phaseCount", typ: u(undefined, 0) },
+        { json: "powerFactor", js: "powerFactor", typ: u(undefined, 3.14) },
+        { json: "samplingStrategy", js: "samplingStrategy", typ: u(undefined, r("ViennaSamplingStrategy")) },
+        { json: "switchingFrequency", js: "switchingFrequency", typ: 3.14 },
+        { json: "switchType", js: "switchType", typ: u(undefined, r("ViennaSwitchType")) },
+        { json: "synchronousRectifier", js: "synchronousRectifier", typ: u(undefined, true) },
+        { json: "viennaVariant", js: "viennaVariant", typ: u(undefined, r("ViennaVariant")) },
+    ], "any"),
+    "Weinberg": o([
+        { json: "couplingCoefficientInput", js: "couplingCoefficientInput", typ: u(undefined, 3.14) },
+        { json: "couplingCoefficientMain", js: "couplingCoefficientMain", typ: u(undefined, 3.14) },
+        { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
+        { json: "diodeVoltageDrop", js: "diodeVoltageDrop", typ: 3.14 },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "inputVoltage", js: "inputVoltage", typ: r("DimensionWithTolerance") },
+        { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
+        { json: "synchronousRectifier", js: "synchronousRectifier", typ: u(undefined, true) },
+        { json: "variant", js: "variant", typ: u(undefined, r("Variant")) },
+    ], "any"),
+    "Zeta": o([
+        { json: "coupledInductor", js: "coupledInductor", typ: u(undefined, true) },
+        { json: "couplingCoefficient", js: "couplingCoefficient", typ: u(undefined, 3.14) },
+        { json: "currentRippleRatio", js: "currentRippleRatio", typ: u(undefined, 3.14) },
+        { json: "diodeVoltageDrop", js: "diodeVoltageDrop", typ: 3.14 },
+        { json: "efficiency", js: "efficiency", typ: u(undefined, 3.14) },
+        { json: "inputVoltage", js: "inputVoltage", typ: r("DimensionWithTolerance") },
+        { json: "maximumSwitchCurrent", js: "maximumSwitchCurrent", typ: u(undefined, 3.14) },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("TopologyExcitation")) },
+        { json: "synchronousRectifier", js: "synchronousRectifier", typ: u(undefined, true) },
     ], "any"),
     "DesignRequirements": o([
         { json: "application", js: "application", typ: u(undefined, r("Application")) },
@@ -6611,6 +7708,16 @@ const typeMap: any = {
         "forward",
         "reverse",
     ],
+    "LlcBridgeType": [
+        "fullBridge",
+        "halfBridge",
+    ],
+    "ClllcControlStrategy": [
+        "fixedFrequencyPhaseShift",
+        "hybridPfmPsm",
+        "psm",
+        "pfm",
+    ],
     "WaveformLabel": [
         "bipolarRectangular",
         "bipolarTriangular",
@@ -6647,9 +7754,15 @@ const typeMap: any = {
         "discontinuousConductionMode",
         "quasiResonantMode",
     ],
-    "LlcBridgeType": [
-        "fullBridge",
-        "halfBridge",
+    "ControlMode": [
+        "averageCurrent",
+        "peakBuckPeakBoost",
+        "peakCurrent",
+        "voltageMode",
+    ],
+    "TransitionMode": [
+        "simultaneous",
+        "splitPwm",
     ],
     "BRectifierType": [
         "centerTapped",
@@ -6661,6 +7774,46 @@ const typeMap: any = {
         "criticalConductionMode",
         "discontinuousConductionMode",
         "transitionMode",
+    ],
+    "PfcTopologyVariants": [
+        "boost",
+        "bridgeless",
+        "buck",
+        "buckBoost",
+        "cuk",
+        "interleavedBoost",
+        "semiBridgeless",
+        "sepic",
+        "totemPole",
+        "vienna",
+    ],
+    "SrcBridgeType": [
+        "fullBridge",
+        "fullBridgePhaseShift",
+        "halfBridge",
+    ],
+    "SrcRectifierType": [
+        "centerTappedDiode",
+        "currentDoubler",
+        "fullBridgeDiode",
+    ],
+    "ViennaSamplingStrategy": [
+        "fullLineCycle",
+        "peakOfLineOnly",
+        "peakOfLinePlusSectors",
+    ],
+    "ViennaSwitchType": [
+        "backToBackMosfet",
+        "singleMosfetIn4DiodeBridge",
+        "tType",
+    ],
+    "ViennaVariant": [
+        "viennaI",
+        "viennaII",
+    ],
+    "Variant": [
+        "bridge",
+        "classic",
     ],
     "Application": [
         "interferenceSuppression",
@@ -6740,11 +7893,14 @@ const typeMap: any = {
         "boostConverter",
         "buckConverter",
         "cllcResonantConverter",
+        "clllcResonantConverter",
         "commonModeChoke",
+        "cukConverter",
         "currentTransformer",
         "differentialModeChoke",
         "dualActiveBridgeConverter",
         "flybackConverter",
+        "fourSwitchBuckBoostConverter",
         "isolatedBuckBoostConverter",
         "isolatedBuckConverter",
         "llcResonantConverter",
@@ -6752,8 +7908,13 @@ const typeMap: any = {
         "phaseShiftedHalfBridgeConverter",
         "powerFactorCorrection",
         "pushPullConverter",
+        "sepicConverter",
+        "seriesResonantConverter",
         "singleSwitchForwardConverter",
         "twoSwitchForwardConverter",
+        "viennaRectifierConverter",
+        "weinbergConverter",
+        "zetaConverter",
     ],
     "WiringTechnology": [
         "deposition",
