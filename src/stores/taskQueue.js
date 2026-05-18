@@ -3,6 +3,21 @@ import { waitForMkf, isWorkerMode } from '/WebSharedComponents/assets/js/mkfRunt
 import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
+import { useSettingsStore } from './settings'
+
+// Returns the restricted shape-family whitelist (lowercase) if set in
+// magneticBuilderSettings, or null when no restriction applies. Defensive
+// against the field being absent in older persisted settings blobs.
+function getRestrictedShapeFamilies() {
+    try {
+        const s = useSettingsStore();
+        const list = s?.magneticBuilderSettings?.restrictedShapeFamilies;
+        if (!Array.isArray(list) || list.length === 0) return null;
+        return list.map(f => String(f).toLowerCase());
+    } catch (_) {
+        return null;
+    }
+}
 
 // MAS sentry. Validates an outgoing payload against the generated MAS schema
 // (via quicktype's `Convert.to*`) before we hand it to the WASM. Loud failure
@@ -255,12 +270,14 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             await mkf.ready;
 
             let coreShapeFamilies = [];
+            const allowed = getRestrictedShapeFamilies();
 
             const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
                 if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
                     !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
                     if (wiringTechnology == null || wiringTechnology == 'Wound' || shapeFamily != 'T') {
+                        if (allowed != null && !allowed.includes(shapeFamily.toLowerCase())) continue;
                         coreShapeFamilies.push(shapeFamily);
                     }
                 }
@@ -329,6 +346,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             let coreShapeFamilies = [];
             const coreShapeNames = {};
+            const allowed = getRestrictedShapeFamilies();
 
             const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
@@ -339,6 +357,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     const isPlanarMode = mas.inputs.designRequirements.wiringTechnology != null && 
                                          mas.inputs.designRequirements.wiringTechnology !== 'Wound';
                     if (!(isToroidal && isPlanarMode)) {
+                        if (allowed != null && !allowed.includes(shapeFamily.toLowerCase())) continue;
                         coreShapeFamilies.push(shapeFamily);
                     }
                 }
