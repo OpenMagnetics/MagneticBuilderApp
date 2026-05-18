@@ -280,62 +280,103 @@ export default {
                 :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                 :textColor="$styleStore.magneticBuilder.inputTextColor"
             />
-            <ElementFromList
-                v-tooltip="tooltipsMagneticBuilder.coreShape"
-                v-if="!loading && localData.shapeFamily != null && coreShapeNames[localData.shapeFamily] != null && coreShapeNames[localData.shapeFamily].length > 0"
-                :disabled="readOnly"
-                class="col-10 mb-1 text-start"
-                :dataTestLabel="dataTestLabel + '-ShapeNames'"
-                :name="'shape'"
-                :titleSameRow="true"
-                :justifyContent="true"
-                v-model="localData"
-                :optionsToDisable="Object.keys(coreShapeFamilies)"
-                :options="coreShapeNames[localData.shapeFamily]"
-                @update="$emit('update', localData.shape, localData.shapeFamily)"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                :textColor="$styleStore.magneticBuilder.inputTextColor"
-            />
-
             <div
                 v-if="!loading && localData.shapeFamily != null && coreShapeNames[localData.shapeFamily] != null && coreShapeNames[localData.shapeFamily].length > 0"
-                class="ms-3 col-1 p-0 pt-1"
-                v-tooltip="'Open core shape table'"
+                class="core-shape-input-group col-12"
             >
-                <button
-                    :style="$styleStore.magneticBuilder.tableButton"
-                    class="shape-table-btn"
-                    data-bs-toggle="modal"
-                    data-bs-target="#coreShapeTableModal"
-                    >
-                    <i class="bi bi-table"></i>
-                </button>
+                <ElementFromList
+                    v-tooltip="tooltipsMagneticBuilder.coreShape"
+                    :disabled="readOnly"
+                    class="col-12 text-start core-shape-row"
+                    :dataTestLabel="dataTestLabel + '-ShapeNames'"
+                    :name="'shape'"
+                    :titleSameRow="true"
+                    :justifyContent="true"
+                    v-model="localData"
+                    :optionsToDisable="Object.keys(coreShapeFamilies)"
+                    :options="coreShapeNames[localData.shapeFamily]"
+                    @update="$emit('update', localData.shape, localData.shapeFamily)"
+                    :labelWidthProportionClass="'col-sm-12 col-md-5'"
+                    :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                    :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                    :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                    :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                    :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                    :textColor="$styleStore.magneticBuilder.inputTextColor"
+                />
+
+                <div
+                    v-if="!readOnly"
+                    class="core-shape-table-btn-wrapper"
+                    v-tooltip="'Open core shape table'"
+                >
+                    <button
+                        :style="$styleStore.magneticBuilder.tableButton"
+                        class="shape-table-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#coreShapeTableModal"
+                        >
+                        <i class="bi bi-table"></i>
+                    </button>
+                </div>
             </div>
     </div>
 </template>
 
 <style scoped>
+/* Bundle the Shape <select> and the "open table" button into one visually
+   unified input-group: the select shrinks on its right side and the button
+   sits flush against it (no left border, flattened left corners). The
+   wrapper is the positioning context for the absolutely-placed button so
+   nothing here depends on outer (project-level) layout classes. */
+.core-shape-input-group {
+    position: relative;
+}
+
+.core-shape-table-btn-wrapper {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    display: flex;
+    /* Align to the top of the row so the button sits flush with the
+       <select>'s top edge. The row container is slightly taller than the
+       select itself (mb-1 spacing below), so centering would push the
+       button a couple of pixels below the select. */
+    align-items: flex-start;
+    z-index: 2;
+    padding: 0;
+}
+
+/* Reserve space on the right of the Shape <select> for the table button
+   so the select ends to the left of the button instead of overlapping it.
+   We use margin-right on the select (a flex child) rather than padding on
+   the row — that way only the select column shrinks; the label keeps its
+   full col-md-5 share so the label/value split stays aligned with the
+   other rows (Manufacturer / Material). */
+.core-shape-input-group :deep(.core-shape-row select.efl-select) {
+    margin-right: 2.5rem !important;
+}
+
 .shape-table-btn {
     height: 1.75rem;
-    padding: 0 0.6rem;
-    background-color: var(--p-surface-600);
-    color: var(--p-surface-50);
-    border: 1px solid var(--p-surface-400);
-    border-radius: var(--p-border-radius);
+    width: 2.25rem;
+    padding: 0;
+    background-color: var(--p-primary-color);
+    color: #ffffff;
+    border: 1px solid var(--p-primary-color);
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: var(--p-border-radius);
+    border-bottom-right-radius: var(--p-border-radius);
     font-family: var(--p-font-family);
     font-size: 0.8rem;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition: filter 0.2s;
 }
 
 .shape-table-btn:hover {
-    background-color: var(--p-primary-color);
-    border-color: var(--p-primary-color);
-    color: var(--p-surface-800);
+    filter: brightness(0.9);
 }
 </style>
