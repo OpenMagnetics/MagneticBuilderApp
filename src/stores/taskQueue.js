@@ -967,28 +967,15 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             const data = {};
 
-            // numberParallels = how many physical wires share one turn.
-            // The MKF per-meter helpers below operate on a SINGLE wire, so
-            // every "per meter" electrical quantity must be divided by
-            // numberParallels to reflect the parallel bundle:
-            //   R_bundle = R_wire / N
-            //   P_bundle = I²·R_wire / N           (each wire sees I/N, N wires total)
-            //   J_eff    = I / (N · A_wire)
-            // (Skin depth and outer geometry are wire properties, no /N.)
-            const numberParallels = coil.functionalDescription[windingIndex].numberParallels;
-            if (!(numberParallels > 0)) {
-                throw new Error(`Invalid numberParallels=${numberParallels} for winding ${windingIndex}`);
-            }
-
             data.turnsRatio = coil.functionalDescription[0].numberTurns / coil.functionalDescription[windingIndex].numberTurns;
-            data.dcResistancePerMeter = (await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints?.conditions?.ambientTemperature || 25)) / numberParallels;
+            data.dcResistancePerMeter = await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints?.conditions?.ambientTemperature || 25);
 
             if (hasCurrentData) {
-                data.skinAcResistancePerMeter = (await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / numberParallels;
+                data.skinAcResistancePerMeter = await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
                 data.skinAcFactor = await mkf.calculate_skin_ac_factor(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-                data.dcLossesPerMeter = (await mkf.calculate_dc_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / numberParallels;
-                data.skinAcLossesPerMeter = (await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / numberParallels;
-                data.effectiveCurrentDensity = (await mkf.calculate_effective_current_density(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / 1000000 / numberParallels;
+                data.dcLossesPerMeter = await mkf.calculate_dc_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+                data.skinAcLossesPerMeter = await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
+                data.effectiveCurrentDensity = (await mkf.calculate_effective_current_density(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
                 data.effectiveSkinDepth = await mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);
             } else {
                 // Set default values when no current data is available
