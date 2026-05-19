@@ -135,14 +135,15 @@ export default {
         },
     },
     watch: {
-        'operatingPointIndex': {
-            handler(newValue, oldValue) {
-                if (oldValue !== undefined) {
-                    this.taskQueueStore.processCore(this.masStore.mas.magnetic.core);
-                }
-            },
-          deep: true
-        },
+        // NOTE: previously watched `operatingPointIndex` and called
+        // `processCore` here. That was wrong: operating point has no
+        // effect on core geometry (shape / gapping / material), so the
+        // only thing the call did was null-then-rewrite
+        // `mas.magnetic.core.{geometrical,processed}Description`, which
+        // tripped the deep watcher in Magnetic3DVisualizer and forced an
+        // unnecessary 3D STL rebuild on every operating-point change.
+        // Loss / temperature calculations that DO depend on the operating
+        // point are handled by `simulate`, not `processCore`.
     },
     created () {
     },

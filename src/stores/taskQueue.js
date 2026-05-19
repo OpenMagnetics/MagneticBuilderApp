@@ -712,6 +712,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const aux = JSON.parse(result);
             const log = aux["log"];
             const data = aux["data"];
+            // Diagnostic: expose raw result on window so capture specs can read the full payload
+            try { if (typeof window !== 'undefined') window.__lastAdviseCoreRaw = aux; } catch (_) {}
 
             if (data.length > 0) {
                 const magnetic = data[0].mas.magnetic;
@@ -719,7 +721,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 return magnetic;
             }
             else {
-                throw new Error("No suitable core found for the given requirements");
+                // Surface the MKF Core Adviser log so we can see WHY every
+                // candidate was rejected (gap too large, temperature, losses, etc).
+                const logSummary = Array.isArray(log)
+                    ? log.slice(-20).join('\n')
+                    : (typeof log === 'string' ? log : JSON.stringify(log));
+                throw new Error(`No suitable core found for the given requirements\n--- MKF Core Adviser log ---\n${logSummary}`);
             }
         },
 

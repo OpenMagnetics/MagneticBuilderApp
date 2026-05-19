@@ -71,6 +71,21 @@ export default {
         },
     },
     watch: {
+        'operatingPointIndex': {
+            handler(newValue, oldValue) {
+                // Operating point change invalidates loss/inductance/flux density
+                // outputs (they depend on excitation waveform & frequency, not on
+                // core geometry). Re-run the simulation so Bpeak / BACpeak / Pcore
+                // / L reflect the newly selected OP. Geometry (Leff, Aeff, ...) is
+                // OP-independent and reused from the cached coreEffectiveParameters.
+                if (this.enableAutoSimulation) {
+                    this.calculateCoreLosses();
+                }
+                else {
+                    this.dataUptoDate = false;
+                }
+            },
+        },
         'enableAutoSimulation': {
             handler(newValue, oldValue) {
                 // When auto-simulation is turned off, mark data as outdated
