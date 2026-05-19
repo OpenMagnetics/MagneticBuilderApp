@@ -257,8 +257,19 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 const cores = JSON.parse(allCoresResult);
-                this.allCoresFromShapesProcessed(true, cores);
-                return cores;
+                // Honour the same shape-family whitelist that filters the
+                // family/shape dropdowns (see getCoreShapes / getCoreShapeFamilies).
+                // Without this the "open core shape table" modal would list
+                // every family in the WASM database even though the rest of
+                // the UI is restricted (e.g. el-choker forces ['t']).
+                const allowed = getRestrictedShapeFamilies();
+                const filtered = allowed
+                    ? cores.filter(c => allowed.includes(
+                        String(c?.functionalDescription?.shape?.family ?? '').toLowerCase()
+                    ))
+                    : cores;
+                this.allCoresFromShapesProcessed(true, filtered);
+                return filtered;
             }
         },
 
