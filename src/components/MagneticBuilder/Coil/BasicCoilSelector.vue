@@ -65,6 +65,10 @@ export default {
             type: Number,
             default: 0,
         },
+        enableTemperaturePlot: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -843,6 +847,7 @@ export default {
                          :marginColor="$styleStore.magneticBuilder.painterColorMargin || '0xfff05b'"
                          :spacerColor="$styleStore.magneticBuilder.painterColorSpacer || '0x3b3b3b'"
                          :drawSpacer="$styleStore.magneticBuilder.painterDrawSpacer !== undefined ? $styleStore.magneticBuilder.painterDrawSpacer : true"
+                         :enableTemperaturePlot="enableTemperaturePlot"
                          @plotModeChange="$emit('plotModeChange', $event)"
                          @swapIncludeFringing="$emit('swapIncludeFringing', $event)"
                         @errorInImage="$emit('errorInImage')"
@@ -862,7 +867,7 @@ export default {
                     </button>
 
                     <button
-                        v-if="enableSimulation"
+                        v-if="enableSimulation && enableTemperaturePlot"
                         :disabled="masStore.mas.magnetic == null || masStore.mas.magnetic.core == null || masStore.mas.magnetic.core.functionalDescription.shape == ''"
                         :data-cy="dataTestLabel + '-Coil-ToggleTemperaturePlot-button'"
                         :class="['builder-action-btn', $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'builder-action-btn-primary' : 'builder-action-btn-ghost']"
