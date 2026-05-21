@@ -391,26 +391,43 @@ export default {
                     if (section.type == "conduction") {
                         const windingIndex = this.getWindingIndex(coil, section.partialWindings[0].winding);
                         this.localData.pattern += String(windingIndex + 1)
+                        // Append wound_with partner indices so the backend wind() sees
+                        // ALL real windings, not just the "main" winding of each shared
+                        // section. Otherwise center-tap secondaries (e.g. AHB Sb, Push-Pull
+                        // Pb/Sb) end up with zero sections and throw "Number of slots
+                        // cannot be less than 1".
+                        const partners = coil.functionalDescription[windingIndex]?.woundWith ?? [];
+                        partners.forEach((partnerName) => {
+                            const partnerIndex = this.getWindingIndex(coil, partnerName);
+                            if (partnerIndex != null && partnerIndex !== windingIndex) {
+                                this.localData.pattern += String(partnerIndex + 1);
+                            }
+                        });
+                        // Distribute this section's dimension across ALL partial windings
+                        // sharing it, so center-tap pairs (PH1+PH2, SH1+SH2) end up with
+                        // equal proportions. Otherwise only partialWindings[0] gets the
+                        // full width, leaving the other halves at ~0 → backend computes
+                        // negative section widths ("section dimensions wrong").
+                        const sectionPartialWindings = section.partialWindings ?? [];
+                        const partialCount = sectionPartialWindings.length || 1;
+                        let sectionDim = 0;
                         if (bobbinShape == "round") {
-                            if (sectionsOrientation == "contiguous") {
-                                windingDimensions[windingIndex] += section.dimensions[1];
-                                windingDimensionsTotal += section.dimensions[1];
-                            }
-                            else {
-                                windingDimensions[windingIndex] += section.dimensions[0];
-                                windingDimensionsTotal += section.dimensions[0];
-                            }
+                            sectionDim = (sectionsOrientation == "contiguous")
+                                ? section.dimensions[1]
+                                : section.dimensions[0];
+                        } else {
+                            sectionDim = (sectionsOrientation == "contiguous")
+                                ? section.dimensions[1]
+                                : section.dimensions[0];
                         }
-                        else {
-                            if (sectionsOrientation == "contiguous") {
-                                windingDimensions[windingIndex] += section.dimensions[1];
-                                windingDimensionsTotal += section.dimensions[1];
+                        const perPartialDim = sectionDim / partialCount;
+                        sectionPartialWindings.forEach((pw) => {
+                            const pwIdx = this.getWindingIndex(coil, pw.winding);
+                            if (pwIdx != null) {
+                                windingDimensions[pwIdx] += perPartialDim;
+                                windingDimensionsTotal += perPartialDim;
                             }
-                            else {
-                                windingDimensions[windingIndex] += section.dimensions[0];
-                                windingDimensionsTotal += section.dimensions[0];
-                            }
-                        }
+                        });
                     }
                 })
                 this.localData.proportionPerWinding = []
