@@ -685,17 +685,43 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 });
             }
 
-            // Deep-clone inputs (strips Vue reactivity) and filter nulls from harmonics
+            // Deep-clone inputs (strips Vue reactivity) and sanitize excitation signals.
+            // WASM calculate_buck_inputs returns garbage for some operating points:
+            //   - all-zero frequency harmonics → strip zero-freq entries, remove key if empty
+            //   - waveform.time arrays with trailing nulls → truncate at first null
+            //   - waveform.data arrays mismatched with time → truncate to match
             const inputsClean = JSON.parse(JSON.stringify(inputs));
             if (inputsClean.operatingPoints) {
                 for (const op of inputsClean.operatingPoints) {
                     if (op.excitationsPerWinding == null) continue;
                     for (const exc of op.excitationsPerWinding) {
                         for (const signal of ['current', 'voltage']) {
-                            const harmonics = exc[signal]?.harmonics;
-                            if (harmonics == null) continue;
-                            if (harmonics.amplitudes != null) harmonics.amplitudes = harmonics.amplitudes.filter(v => v !== null);
-                            if (harmonics.frequencies != null) harmonics.frequencies = harmonics.frequencies.filter(v => v !== null);
+                            if (!exc[signal]) continue;
+
+                            // Sanitize harmonics
+                            const harmonics = exc[signal].harmonics;
+                            if (harmonics != null) {
+                                if (harmonics.amplitudes != null) harmonics.amplitudes = harmonics.amplitudes.filter(v => v !== null);
+                                if (harmonics.frequencies != null) harmonics.frequencies = harmonics.frequencies.filter(v => v !== null);
+                                const keep = (harmonics.frequencies || []).map(f => f !== 0);
+                                if (harmonics.amplitudes) harmonics.amplitudes = harmonics.amplitudes.filter((_, i) => keep[i]);
+                                if (harmonics.frequencies) harmonics.frequencies = harmonics.frequencies.filter((_, i) => keep[i]);
+                                if (!harmonics.amplitudes?.length && !harmonics.frequencies?.length) {
+                                    delete exc[signal].harmonics;
+                                }
+                            }
+
+                            // Sanitize waveform — truncate arrays at first null in time
+                            const waveform = exc[signal].waveform;
+                            if (waveform?.time) {
+                                const firstNull = waveform.time.indexOf(null);
+                                if (firstNull === 0) {
+                                    delete exc[signal].waveform;
+                                } else if (firstNull > 0) {
+                                    waveform.time = waveform.time.slice(0, firstNull);
+                                    if (waveform.data) waveform.data = waveform.data.slice(0, firstNull);
+                                }
+                            }
                         }
                     }
                 }
