@@ -67,6 +67,10 @@ export default {
             type: Number,
             default: 0,
         },
+        enableTemperaturePlot: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         const historyStore = useHistoryStore();
@@ -287,6 +291,7 @@ export default {
                     :enableAdvise="enableAdvisers && !isIsolatedApp"
                     :operatingPointIndex="operatingPointIndex"
                     :showInterleavingOrder="showInterleavingOrder"
+                    :enableTemperaturePlot="enableTemperaturePlot"
                 />
             </div> 
             <div v-else class="col-2"/>

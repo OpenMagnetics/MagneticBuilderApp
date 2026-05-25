@@ -52,6 +52,10 @@ export default {
             type: Number,
             default: 0,
         },
+        enableTemperaturePlot: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
@@ -227,6 +231,7 @@ export default {
                 :imageUpToDate="imageUpToDate"
                 :forceUpdateVisualizer="forceUpdate"
                 :showInterleavingOrder="showInterleavingOrder"
+                :enableTemperaturePlot="enableTemperaturePlot"
                 @fits="fits"
                 @plotModeChange="plotModeChange"
                 @swapIncludeFringing="swapIncludeFringing"
@@ -244,6 +249,7 @@ export default {
                 :imageUpToDate="imageUpToDate"
                 :forceUpdateVisualizer="forceUpdate"
                 :showInterleavingOrder="showInterleavingOrder"
+                :enableTemperaturePlot="enableTemperaturePlot"
                 @fits="fits"
                 @plotModeChange="plotModeChange"
                 @swapIncludeFringing="swapIncludeFringing"

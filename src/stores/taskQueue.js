@@ -257,8 +257,19 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 const cores = JSON.parse(allCoresResult);
-                this.allCoresFromShapesProcessed(true, cores);
-                return cores;
+                // Honour the same shape-family whitelist that filters the
+                // family/shape dropdowns (see getCoreShapes / getCoreShapeFamilies).
+                // Without this the "open core shape table" modal would list
+                // every family in the WASM database even though the rest of
+                // the UI is restricted (e.g. el-choker forces ['t']).
+                const allowed = getRestrictedShapeFamilies();
+                const filtered = allowed
+                    ? cores.filter(c => allowed.includes(
+                        String(c?.functionalDescription?.shape?.family ?? '').toLowerCase()
+                    ))
+                    : cores;
+                this.allCoresFromShapesProcessed(true, filtered);
+                return filtered;
             }
         },
 
@@ -984,7 +995,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             data.turnsRatio = coil.functionalDescription[0].numberTurns / coil.functionalDescription[windingIndex].numberTurns;
             data.dcResistancePerMeter = await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints?.conditions?.ambientTemperature || 25);
-            
+
             if (hasCurrentData) {
                 data.skinAcResistancePerMeter = await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
                 data.skinAcFactor = await mkf.calculate_skin_ac_factor(wireString, currentString, operatingPoints.conditions.ambientTemperature);
