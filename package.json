@@ -23,7 +23,7 @@
     "datatables.net-bs5": "^2.3.7",
     "datatables.net-vue3": "^3.0.4",
     "echarts": "^5.5.1",
-    "mathjs": "^14.5.3",
+    "mathjs": "^15.2.0",
     "pinia": "^2.2.2",
     "pinia-plugin-persistedstate": "^4.0.2",
     "primeflex": "^3.3.1",
