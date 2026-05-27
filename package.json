@@ -44,11 +44,13 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
     "@vitejs/plugin-vue-jsx": "^4.2.0",
-    "cypress": "^13.14.2",
     "raw-loader": "^4.0.2",
     "sass": "^1.79.3",
     "vite": "^6.3.5",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-static-copy": "^3.2.0"
+  },
+  "overrides": {
+    "katex": "^0.16.21"
   }
 }
