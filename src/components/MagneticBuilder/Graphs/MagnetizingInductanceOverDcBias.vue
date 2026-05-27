@@ -27,7 +27,7 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: '#e3000b',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#0d6efd',
             type: 'value', // log or value
             position: 'left',
             unit: 'H',
@@ -35,7 +35,7 @@ export default {
         }]
         const dcBiasData = {
             label: 'DC Bias',
-            colorLabel: '#555555',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary').trim() || '#6c757d',
             type: 'value', // log or value
             unit: 'A',
         }

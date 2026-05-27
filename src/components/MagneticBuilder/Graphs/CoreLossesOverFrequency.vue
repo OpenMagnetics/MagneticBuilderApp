@@ -31,14 +31,14 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: '#e3000b',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#0d6efd',
             type: 'log', // log or value
             position: 'left',
             unit: 'W',
         }]
         const frequencyData = {
             label: 'Frequency',
-            colorLabel: '#555555',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary').trim() || '#6c757d',
             type: 'log', // log or value
             unit: 'Hz',
         }

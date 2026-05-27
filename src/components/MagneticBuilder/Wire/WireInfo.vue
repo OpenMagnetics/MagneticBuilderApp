@@ -641,8 +641,8 @@ export default {
 }
 
 .wireinfo-cell {
-    background: rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: transparent;
+    border: 0;
     border-radius: 10px;
     padding: 0.1rem 0.4rem 0.1rem 0.4rem;
     transition: opacity 0.3s ease;

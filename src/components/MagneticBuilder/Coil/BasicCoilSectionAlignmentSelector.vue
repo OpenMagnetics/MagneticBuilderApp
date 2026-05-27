@@ -201,7 +201,7 @@ export default {
                         :justifyContent="true"
                         :modelValue="data"
                         :options="coilAlignments"
-                        :labelWidthProportionClass="'col-6'"
+                        :labelWidthProportionClass="'col-7'"
                         :selectStyleClass="'col-5'"
                         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
@@ -228,7 +228,7 @@ export default {
                         :justifyContent="true"
                         v-model="data.dataPerSection[selectedSectionIndex]"
                         :options="coilAlignments"
-                        :labelWidthProportionClass="'col-6'"
+                        :labelWidthProportionClass="'col-7'"
                         :selectStyleClass="'col-5'"
                         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
@@ -334,6 +334,7 @@ export default {
 
 .alignment-body {
     padding: 0.5rem 0.6rem 0.5rem 1.15rem;
+    background-color: rgb(26, 26, 26);
 }
 
 .alignment-body :deep(.form-label),

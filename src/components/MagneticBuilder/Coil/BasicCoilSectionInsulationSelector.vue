@@ -160,7 +160,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data"
                 :forceUpdate="forceUpdate"
-                :styleClassInput="'offset-3 col-6'"
+                :labelWidthProportionClass="'col-sm-12 col-md-7'"
+                :valueWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -183,7 +184,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data"
                 :forceUpdate="forceUpdate"
-                :styleClassInput="'offset-3 col-6'"
+                :labelWidthProportionClass="'col-sm-12 col-md-7'"
+                :valueWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -214,7 +216,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data.dataPerSection[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
-                :styleClassInput="'offset-3 col-6'"
+                :labelWidthProportionClass="'col-sm-12 col-md-7'"
+                :valueWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -240,7 +243,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data.dataPerSection[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
-                :styleClassInput="'offset-3 col-6'"
+                :labelWidthProportionClass="'col-sm-12 col-md-7'"
+                :valueWidthProportionClass="'col-sm-12 col-md-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -323,6 +327,7 @@ export default {
 
 .insulation-body {
     padding: 0.5rem 0.6rem 0.5rem 1.15rem;
+    background-color: rgb(26, 26, 26);
 }
 
 .insulation-body :deep(.form-label),

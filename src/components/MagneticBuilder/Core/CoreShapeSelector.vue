@@ -61,7 +61,7 @@ export default {
             // (e.g., exclude toroidal cores when in Planar mode)
             if (newVal !== oldVal) {
                 // If switching to Printed/Planar and currently a toroidal core is selected, clear it
-                if (newVal === 'Printed' && this.localData.shapeFamily?.toLowerCase() === 't') {
+                if (newVal?.toLowerCase() === 'printed' && this.localData.shapeFamily?.toLowerCase() === 't') {
                     this.localData.shapeFamily = null;
                     this.localData.shape = null;
                     // Also clear from the mas store
@@ -339,11 +339,10 @@ export default {
     top: 0;
     height: 100%;
     display: flex;
-    /* Align to the top of the row so the button sits flush with the
-       <select>'s top edge. The row container is slightly taller than the
-       select itself (mb-1 spacing below), so centering would push the
-       button a couple of pixels below the select. */
-    align-items: flex-start;
+    /* ElementFromList always renders an empty first .efl-row above the
+       populated one, so the select sits at the BOTTOM of the wrapper's
+       full-height span. Align the button there too. */
+    align-items: flex-end;
     z-index: 2;
     padding: 0;
 }

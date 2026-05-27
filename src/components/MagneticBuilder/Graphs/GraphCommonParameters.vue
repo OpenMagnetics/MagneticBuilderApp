@@ -74,12 +74,12 @@ export default {
         class="gcp-cell"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
         :name="'xAxisMode'"
-        :titleSameRow="false"
-        :justifyContent="false"
+        :titleSameRow="true"
+        :justifyContent="true"
         v-model="$stateStore.graphParameters"
         :options="availableModes"
-        :labelWidthProportionClass="'col-12'"
-        :selectStyleClass="'col-12'"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :selectStyleClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -90,12 +90,12 @@ export default {
         class="gcp-cell"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
         :name="'yAxisMode'"
-        :titleSameRow="false"
-        :justifyContent="false"
+        :titleSameRow="true"
+        :justifyContent="true"
         v-model="$stateStore.graphParameters"
         :options="availableModes"
-        :labelWidthProportionClass="'col-12'"
-        :selectStyleClass="'col-12'"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :selectStyleClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -114,6 +114,8 @@ export default {
         :allowNegative="false"
         :allowZero="false"
         :modelValue="$stateStore.graphParameters"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :valueWidthProportionClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -132,6 +134,8 @@ export default {
         :allowNegative="false"
         :allowZero="false"
         :modelValue="$stateStore.graphParameters"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :valueWidthProportionClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -151,6 +155,8 @@ export default {
         :allowNegative="true"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :valueWidthProportionClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -170,6 +176,8 @@ export default {
         :allowNegative="true"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :valueWidthProportionClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -189,6 +197,8 @@ export default {
         :allowNegative="false"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :valueWidthProportionClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -208,6 +218,8 @@ export default {
         :allowNegative="false"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
+        :labelWidthProportionClass="'col-sm-12 col-md-7'"
+        :valueWidthProportionClass="'col-sm-12 col-md-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -242,11 +254,12 @@ export default {
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.1rem;
+    background-color: rgb(26, 26, 26);
 }
 
 .gcp-cell {
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: transparent;
+    border: 0;
     border-radius: 9px;
     padding: 0.4rem 0.55rem 0.5rem 0.55rem;
     transition: background 0.15s, border-color 0.15s;

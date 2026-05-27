@@ -572,11 +572,12 @@ export default {
                     style="height: 50vh"
                     :style="imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
                 >
-                    <Core3DVisualizer 
+                    <Core3DVisualizer
                         :dataTestLabel="`${dataTestLabel}-Core3DVisualizer`"
                         :core="localCoreToDraw"
                         :forceUpdate="forceUpdate"
                         :fullCoreModel="true"
+                        :ignoreStacks="true"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                         @errorInDimensions="$emit('errorInDimensions')"
@@ -595,6 +596,7 @@ export default {
                         :dataTestLabel="`${dataTestLabel}-Core2DVisualizer`"
                         :core="localCoreToDraw"
                         :forceUpdate="forceUpdate"
+                        :ignoreStacks="true"
                         :loadingGif="$settingsStore.loadingGif"
                         :backgroundColor="$styleStore.magneticBuilder.main['background-color']"
                         @errorInDimensions="$emit('errorInDimensions')"

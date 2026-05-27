@@ -3,7 +3,6 @@ import { CoilAlignment } from '../../../assets/ts/MAS.ts'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
-import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import CoilInfo from './CoilInfo.vue'
 import BasicCoilFillingFactors from './BasicCoilFillingFactors.vue'
 import PlanarInsulationSelector from './PlanarInsulationSelector.vue'
@@ -473,8 +472,6 @@ export default {
             } else {
                 this.showInsulationOptions = !this.showInsulationOptions;
             }
-        },
-        customizeCoil() {
         },
         showParasiticsView() {
             this.$stateStore.magneticBuilder.mode.coil = this.$stateStore.MagneticBuilderModes.Advanced;

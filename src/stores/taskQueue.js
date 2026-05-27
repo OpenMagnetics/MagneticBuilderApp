@@ -287,7 +287,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             for (const shapeFamily of coreShapeFamiliesArr) {
                 if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
                     !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
-                    if (wiringTechnology == null || wiringTechnology == 'Wound' || shapeFamily != 'T') {
+                    if (wiringTechnology == null || wiringTechnology?.toLowerCase() === 'wound' || shapeFamily.toLowerCase() !== 't') {
                         if (allowed != null && !allowed.includes(shapeFamily.toLowerCase())) continue;
                         coreShapeFamilies.push(shapeFamily);
                     }
@@ -365,8 +365,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
                     // Exclude toroidal cores (T family) when in Planar/Printed mode
                     const isToroidal = shapeFamily.toLowerCase() === 't';
-                    const isPlanarMode = mas.inputs.designRequirements.wiringTechnology != null && 
-                                         mas.inputs.designRequirements.wiringTechnology !== 'Wound';
+                    const isPlanarMode = mas.inputs.designRequirements.wiringTechnology != null &&
+                                         mas.inputs.designRequirements.wiringTechnology?.toLowerCase() !== 'wound';
                     if (!(isToroidal && isPlanarMode)) {
                         if (allowed != null && !allowed.includes(shapeFamily.toLowerCase())) continue;
                         coreShapeFamilies.push(shapeFamily);
@@ -600,7 +600,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             await mkf.ready;
 
             let bobbinResult = "";
-            if (wiringTechnology == "Printed") {
+            if (wiringTechnology?.toLowerCase() === "printed") {
                 bobbinResult = await mkf.create_simple_bobbin_from_core_with_custom_thickness(JSON.stringify(core), 0);
             }
             else {
@@ -648,7 +648,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const settings = JSON.parse(await mkf.get_settings());
 
             // CMC topology → force toroidal, no distributed gaps (winding goes around).
-            const isCmc = inputs?.designRequirements?.topology === 'CommonModeChoke';
+            const isCmc = inputs?.designRequirements?.topology?.toLowerCase() === 'commonmodechoke';
 
             if (isCmc) {
                 settings["coreIncludeDistributedGaps"] = false;

@@ -3,7 +3,6 @@ import { CoilAlignment, WindingOrientation } from '../../../assets/ts/MAS.ts'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import ListOfCharacters from '/WebSharedComponents/DataInput/ListOfCharacters.vue'
-import BasicCoilSubmenu from './BasicCoilSubmenu.vue'
 import CoilInfo from './CoilInfo.vue'
 import BasicCoilFillingFactors from './BasicCoilFillingFactors.vue'
 import BasicCoilSectionInsulationSelector from './BasicCoilSectionInsulationSelector.vue'
@@ -762,8 +761,6 @@ export default {
         swapShowInsulationOptions(showInsulationOptions) {
             this.showInsulationOptions = showInsulationOptions;
         },
-        customizeCoil() {
-        },
         bobbinUpdated(thickness) {
             // Prevent regenerating bobbin with zero thickness values
             if (this.localData.bobbinWallThickness <= 0 || this.localData.bobbinColumnThickness <= 0) {
@@ -981,14 +978,6 @@ export default {
                     :sectionsOrientation="localData.sectionsOrientation"
                 />
 
-                <BasicCoilSubmenu
-                    v-if="enableSubmenu"
-                    :readOnly="readOnly"
-                    class="col-12 mb-1 text-start"
-                    :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
-                    :enableCustomize="false"
-                    @customizeCore="customizeCoil"
-                />
             </div>
         </div>
                
