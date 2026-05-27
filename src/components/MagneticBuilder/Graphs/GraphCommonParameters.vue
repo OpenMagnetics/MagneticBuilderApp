@@ -254,7 +254,7 @@ export default {
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.1rem;
-    background-color: rgb(26, 26, 26);
+    background-color: var(--bs-dark);
 }
 
 .gcp-cell {
@@ -267,7 +267,7 @@ export default {
 }
 
 .gcp-cell:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--bs-white-rgb), 0.05);
     border-color: rgba(var(--bs-primary-rgb), 0.25);
 }
 
@@ -280,7 +280,7 @@ export default {
 .gcp-cell :deep(.dim-label),
 .gcp-cell :deep(.efl-label),
 .gcp-cell :deep(label) {
-    color: rgba(242, 242, 242, 0.65) !important;
+    color: rgba(var(--bs-light-rgb), 0.65) !important;
     font-size: 0.66rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.05em;

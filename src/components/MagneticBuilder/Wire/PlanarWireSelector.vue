@@ -341,7 +341,7 @@ export default {
                         :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
                         :includeCurrentDensity="false"
                         :loadingGif="$settingsStore.loadingGif"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--bs-dark)'"
                     />
                 </div>
                 <div
@@ -445,7 +445,7 @@ export default {
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -514,8 +514,8 @@ export default {
     box-shadow:
         0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
         0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.25);
 }
 
 .wire-config-body {

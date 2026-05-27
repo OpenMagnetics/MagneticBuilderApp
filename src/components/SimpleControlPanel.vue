@@ -250,7 +250,7 @@ export default {
     border: 1px solid rgba(var(--bs-light-rgb), 0.08);
     border-top: 3px solid rgba(var(--bs-primary-rgb), 0.8);
     border-radius: 14px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
+    box-shadow: 0 6px 24px rgba(var(--bs-black-rgb), 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
     flex-wrap: wrap;
 }
 
@@ -303,15 +303,15 @@ export default {
     box-shadow:
         0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
         0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.25);
 }
 
 .scp-btn-icon {
     background: rgba(var(--bs-light-rgb), 0.08);
     border: 1px solid rgba(var(--bs-light-rgb), 0.22);
     color: rgba(var(--bs-light-rgb), 0.9);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 4px rgba(var(--bs-black-rgb), 0.2);
     min-width: 2.1rem;
     padding: 0.4rem 0.55rem;
 }
@@ -326,7 +326,7 @@ export default {
     background: rgb(var(--bs-danger-rgb) / 0.2);
     border: 1px solid rgb(var(--bs-danger-rgb) / 0.55);
     color: var(--bs-danger);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 1px 4px rgba(var(--bs-black-rgb), 0.25);
     min-width: 2.1rem;
     padding: 0.4rem 0.55rem;
 }

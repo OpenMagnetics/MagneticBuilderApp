@@ -854,7 +854,7 @@ export default {
                          :coilFits="true"
                          :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
                          :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
-                         :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || '#1a1a1a'"
+                         :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--bs-dark)'"
                          :textColor="$styleStore.magneticBuilder.inputTextColor?.color || 'var(--bs-white)'"
                          :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
                          :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
@@ -1009,7 +1009,7 @@ export default {
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -1078,15 +1078,15 @@ export default {
     box-shadow:
         0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
         0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.25);
 }
 
 .coil-config-header-btn-outline {
     background: rgb(var(--bs-primary-rgb) / 0.2);
     border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
     color: var(--bs-primary);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 4px rgba(var(--bs-black-rgb), 0.2);
 }
 
 .coil-config-header-btn-outline:hover {
@@ -1173,22 +1173,22 @@ export default {
     box-shadow:
         0 0 0 2px rgb(var(--bs-success-rgb) / 0.35),
         0 4px 14px rgb(var(--bs-success-rgb) / 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+    text-shadow: 0 1px 2px rgba(var(--bs-black-rgb), 0.25);
 }
 
 .builder-action-btn-outline {
     background: rgb(var(--bs-primary-rgb) / 0.2);
     border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
     color: var(--bs-primary);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
 }
 
 .builder-action-btn-ghost {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    background: rgba(var(--bs-white-rgb), 0.08);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.28);
+    color: rgba(var(--bs-white-rgb), 0.9);
+    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
 }
 
 .temp-icon {

@@ -169,7 +169,7 @@ export default {
     border-left: 3px solid rgba(var(--bs-primary-rgb), 0.8);
     border-radius: 14px;
     margin: 0.5rem 0 1rem 0;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
+    box-shadow: 0 6px 24px rgba(var(--bs-black-rgb), 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
     overflow: hidden;
 }
 

@@ -71,22 +71,22 @@ export default {
     box-shadow:
         0 0 0 2px rgb(var(--bs-primary-rgb) / 0.35),
         0 4px 14px rgb(var(--bs-primary-rgb) / 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+    text-shadow: 0 1px 2px rgba(var(--bs-black-rgb), 0.25);
 }
 
 .mb-btn-primary:not(:disabled):hover {
     box-shadow:
         0 0 0 2px rgb(var(--bs-primary-rgb) / 0.35),
         0 6px 20px rgb(var(--bs-primary-rgb) / 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
 }
 
 .mb-btn-outline {
     background: rgb(var(--bs-primary-rgb) / 0.2);
     border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
     color: var(--bs-primary);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
 }
 
 .mb-btn-outline:not(:disabled):hover {
@@ -96,14 +96,14 @@ export default {
 }
 
 .mb-btn-ghost {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(var(--bs-white-rgb), 0.08);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.28);
     color: var(--bs-light);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
 }
 
 .mb-btn-ghost:not(:disabled):hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(var(--bs-white-rgb), 0.14);
+    border-color: rgba(var(--bs-white-rgb), 0.4);
 }
 </style>

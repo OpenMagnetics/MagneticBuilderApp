@@ -271,7 +271,7 @@ export default {
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.5rem 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.15), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.05);
     overflow: hidden;
     animation: slideDown 0.25s ease-out;
 }
@@ -334,7 +334,7 @@ export default {
 
 .alignment-body {
     padding: 0.5rem 0.6rem 0.5rem 1.15rem;
-    background-color: rgb(26, 26, 26);
+    background-color: var(--bs-dark);
 }
 
 .alignment-body :deep(.form-label),

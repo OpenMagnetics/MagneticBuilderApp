@@ -186,7 +186,7 @@ export default {
     border-radius: 14px;
     padding: 0;
     margin: 0.5rem 0 1rem 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.15), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.05);
     overflow: hidden;
     animation: slideDown 0.25s ease-out;
 }
@@ -234,8 +234,8 @@ export default {
     height: 1.75rem;
     padding: 0;
     border-radius: 999px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(var(--bs-black-rgb), 0.25);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.12);
     color: var(--bs-primary);
     cursor: pointer;
     transition: background 0.15s, color 0.15s, transform 0.1s;
@@ -262,7 +262,7 @@ export default {
 .planar-insulation-section-title {
     font-size: 0.85rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(var(--bs-white-rgb), 0.8);
     margin-bottom: 0.5rem;
     padding-left: 0.25rem;
 }
@@ -280,8 +280,8 @@ export default {
 }
 
 .planar-insulation-cell {
-    background: rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(var(--bs-black-rgb), 0.18);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.04);
     border-radius: 10px;
     padding: 0.5rem 0.6rem;
 }

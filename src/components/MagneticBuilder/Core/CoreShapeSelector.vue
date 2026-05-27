@@ -362,7 +362,7 @@ export default {
     width: 2.25rem;
     padding: 0;
     background-color: var(--p-primary-color);
-    color: #ffffff;
+    color: var(--bs-white);
     border: 1px solid var(--p-primary-color);
     border-left: none;
     border-top-left-radius: 0;

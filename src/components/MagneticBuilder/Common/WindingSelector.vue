@@ -100,17 +100,17 @@ export default {
     flex-wrap: wrap;
     gap: 0.35rem;
     justify-content: flex-start;
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(var(--bs-black-rgb), 0.25);
     padding: 0.25rem;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.06);
 }
 
 .winding-pill {
     appearance: none;
     border: none;
     background: transparent;
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(var(--bs-white-rgb), 0.65);
     font-size: 0.78rem;
     font-weight: 600;
     padding: 0.35rem 0.85rem;
@@ -121,8 +121,8 @@ export default {
 }
 
 .winding-pill:hover {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.06);
+    color: rgba(var(--bs-white-rgb), 0.9);
+    background: rgba(var(--bs-white-rgb), 0.06);
 }
 
 .winding-pill.active {

@@ -149,7 +149,7 @@ export default {
     border-radius: 14px;
     padding: 0;
     margin: 0.5rem 0 1rem 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -194,8 +194,8 @@ export default {
 }
 
 .filling-cell {
-    background: rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(var(--bs-black-rgb), 0.18);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.04);
     border-radius: 10px;
     padding: 0.5rem 0.6rem;
 }

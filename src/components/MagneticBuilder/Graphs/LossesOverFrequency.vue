@@ -33,7 +33,7 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#0d6efd',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || 'var(--bs-primary)',
             type: 'log', // log or value
             position: 'left',
             unit: 'W',
@@ -44,14 +44,14 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-dark').trim() || '#212529',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-dark').trim() ,
             type: 'log', // log or value
             position: 'right',
             unit: 'W',
         }]
         const frequencyData = {
             label: 'Frequency',
-            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary').trim() || '#6c757d',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary').trim() || 'var(--bs-secondary)',
             type: 'log', // log or value
             unit: 'Hz',
         }
