@@ -577,7 +577,7 @@ export default {
                         :operatingPoint="masStore.mas.inputs.operatingPoints[operatingPointIndex]"
                         :includeCurrentDensity="false"
                         :loadingGif="$settingsStore.loadingGif"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--bs-dark)'"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--p-dark)'"
                     />
                 </div>
                 <div
@@ -605,7 +605,7 @@ export default {
                     <ElementFromList
                         v-tooltip="tooltipsMagneticBuilder.wireType"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-WireType'"
                             :name="'type'"
                             :titleSameRow="true"
@@ -628,7 +628,7 @@ export default {
                         <ElementFromList
                             v-tooltip="tooltipsMagneticBuilder.wireStandard"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-WireStandard'"
                             :name="'standard'"
                             :titleSameRow="true"
@@ -649,7 +649,7 @@ export default {
                         <ElementFromList
                             v-tooltip="tooltipsMagneticBuilder.wireRoundConductingDiameter"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-WireConductingDiameter'"
                             :replaceTitle="'Cond. diameter'"
                             :name="'roundConductingDiameter'"
@@ -671,7 +671,7 @@ export default {
                         <ElementFromList
                             v-tooltip="tooltipsMagneticBuilder.wireLitzStrandConductingDiameter"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-StrandConductingDiameter'"
                             :replaceTitle="'Cond. diameter'"
                             :name="'litzStrandConductingDiameter'"
@@ -693,7 +693,7 @@ export default {
                         <ElementFromList
                             v-tooltip="tooltipsMagneticBuilder.wireCoating"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-WireCoating'"
                             :name="'coating'"
                             :titleSameRow="true"
@@ -711,7 +711,7 @@ export default {
                         />
                     </div>
                     <div v-if="!loading && localData.type == 'litz'" class="wire-config-cell wire-config-cell-wide">
-                        <Dimension class="text-start"
+                        <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireLitzNumberConductors"
                             :disabled="readOnly"
                             :name="'numberConductors'"
@@ -735,7 +735,7 @@ export default {
                         />
                     </div>
                     <div v-if="!loading && localData.type == 'rectangular'" class="wire-config-cell">
-                        <Dimension class="text-start"
+                        <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireRectangularConductingHeight"
                             :disabled="readOnly"
                             :name="'rectangularConductingHeight'"
@@ -759,7 +759,7 @@ export default {
                         />
                     </div>
                     <div v-if="!loading && localData.type == 'rectangular'" class="wire-config-cell">
-                        <Dimension class="text-start"
+                        <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireRectangularConductingWidth"
                             :disabled="readOnly"
                             :name="'rectangularConductingWidth'"
@@ -783,7 +783,7 @@ export default {
                         />
                     </div>
                     <div v-if="!loading && localData.type == 'foil'" class="wire-config-cell">
-                        <Dimension class="text-start"
+                        <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireFoilConductingHeight"
                             :disabled="readOnly"
                             :name="'foilConductingHeight'"
@@ -807,7 +807,7 @@ export default {
                         />
                     </div>
                     <div v-if="!loading && localData.type == 'foil'" class="wire-config-cell">
-                        <Dimension class="text-start"
+                        <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireFoilConductingWidth"
                             :disabled="readOnly"
                             :name="'foilConductingWidth'"
@@ -845,7 +845,7 @@ export default {
 
                 <BasicWireSubmenu
                     v-if="enableSubmenu && !readOnly"
-                    class="col-12 mb-1 text-start"
+                    class="col-12 mb-1 text-left"
                     :dataTestLabel="dataTestLabel + '-BasicWireSubmenu'"
                     :enableCustomize="false"
                     @customizeCore="customizeWire"
@@ -860,12 +860,12 @@ export default {
 
 <style scoped>
 .wire-config-panel {
-    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.06) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.15);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
-    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
+    box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.12), inset 0 1px 0 rgba(var(--p-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -874,11 +874,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.6rem 0.9rem;
-    background: rgba(var(--bs-primary-rgb), 0.1);
-    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    background: rgba(var(--p-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.12);
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -890,7 +890,7 @@ export default {
 
 .wire-config-header-left i {
     font-size: 0.95rem;
-    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.35));
 }
 
 .wire-config-header-right {
@@ -926,33 +926,33 @@ export default {
 
 .wire-config-header-btn-primary {
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
-        var(--bs-primary) 55%,
-        rgb(var(--bs-primary-rgb) / 0.85) 100%);
-    color: var(--bs-white);
-    border: 1px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
+        color-mix(in srgb, var(--p-primary) 115%, transparent 0%) 0%,
+        var(--p-primary) 55%,
+        rgb(var(--p-primary-rgb) / 0.85) 100%);
+    color: var(--p-white);
+    border: 1px solid color-mix(in srgb, var(--p-primary) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
-        0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
-    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.25);
+        0 0 0 1px rgb(var(--p-primary-rgb) / 0.35),
+        0 2px 8px rgb(var(--p-primary-rgb) / 0.4),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
+    text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.25);
 }
 
 /* Highlight the Advise / Advise all buttons in danger color while a wire is
    incomplete, so the user is reminded they can use it as a shortcut. */
 .wire-config-header-btn.wire-config-header-btn-needs-attention {
-    color: var(--bs-danger) !important;
-    border-color: rgb(var(--bs-danger-rgb) / 0.6) !important;
-    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.35);
+    color: var(--p-danger) !important;
+    border-color: rgb(var(--p-danger-rgb) / 0.6) !important;
+    text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.35);
     box-shadow:
-        0 0 0 1px rgb(var(--bs-danger-rgb) / 0.4),
-        0 2px 10px rgb(var(--bs-danger-rgb) / 0.4),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+        0 0 0 1px rgb(var(--p-danger-rgb) / 0.4),
+        0 2px 10px rgb(var(--p-danger-rgb) / 0.4),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     animation: wire-advise-pulse 1.8s ease-in-out infinite;
 }
 
 .wire-config-header-btn.wire-config-header-btn-needs-attention i {
-    color: var(--bs-danger);
+    color: var(--p-danger);
 }
 
 @keyframes wire-advise-pulse {
@@ -972,7 +972,7 @@ export default {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.15rem;
-    background: var(--bs-dark);
+    background: var(--p-dark);
     border-radius: 10px;
     padding: 0.35rem;
     box-sizing: border-box;

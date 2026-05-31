@@ -398,7 +398,7 @@ export default {
                 <h3 class= "mb-3"> {{'Dimensions'}} </h3>
                 <ElementFromList
                     v-if="allowFamilyChange"
-                    class="col-10 col-offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-left"
                     :dataTestLabel="dataTestLabel + '-ShapeFamilies'"
                     :name="'family'"
                     :titleSameRow="true"
@@ -415,7 +415,7 @@ export default {
                     @update="familyUpdated"
                 />
                 <Text
-                    class="col-10 col-offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-left"
                     :name="'name'"
                     v-model="core.functionalDescription.shape"
                     :defaultValue="'Shape name'"
@@ -431,7 +431,7 @@ export default {
                 />
                 <ElementFromList
                     v-if="availableFamilySubtypes.length > 0"
-                    class="col-10 col-offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-left"
                     :dataTestLabel="dataTestLabel + '-ShapeFamilySubtypes'"
                     :name="'familySubtype'"
                     :replaceTitle="'Subtype'"
@@ -450,7 +450,7 @@ export default {
                 />
                 <div
                     v-for="key in Object.keys(localData.dimensions)"
-                    class="col-10 col-offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-left"
                 >
                     <Dimension 
                         :name="key"
@@ -481,7 +481,7 @@ export default {
                     </label>
                 </div>
 
-                <div class=" mt-5 mb-3 pb-3 border-bottom border-top pt-2 text-start" :style="$styleStore.magneticBuilder.main">
+                <div class=" mt-5 mb-3 pb-3 border-bottom border-top pt-2 text-left" :style="$styleStore.magneticBuilder.main">
                     <div
                         v-if="core.processedDescription != null"
                         class="row"

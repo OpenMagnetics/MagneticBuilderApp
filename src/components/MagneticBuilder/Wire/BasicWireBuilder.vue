@@ -238,7 +238,7 @@ export default {
 
     <div v-else class="container">
         <div v-if="isIsolatedApp" class="row">
-            <ElementFromList class="border-bottom py-2 px-4 col-12 text-start"
+            <ElementFromList class="border-bottom py-2 px-4 col-12 text-left"
                 :name="'numberWindings'"
                 :disabled="readOnly"
                 :dataTestLabel="dataTestLabel + '-NumberWindings'"
@@ -302,10 +302,10 @@ export default {
 <style type="text/css">
 /* --------------------------- webkit browsers */
 .slider::-webkit-slider-thumb {
-  background-color: var(--bs-primary);
+  background-color: var(--p-primary);
 }
 /* -------------------------- Firefox */
 .slider::-moz-range-thumb { 
-  background-color: var(--bs-primary);
+  background-color: var(--p-primary);
 }
 </style>

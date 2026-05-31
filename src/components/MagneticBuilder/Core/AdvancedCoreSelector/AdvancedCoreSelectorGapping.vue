@@ -461,7 +461,7 @@ export default {
                         {{columnNames[columnIndex]}}
                     </label>
                     <ElementFromList
-                        class="col-12 px-4 mb-3 text-start"
+                        class="col-12 px-4 mb-3 text-left"
                         :dataTestLabel="dataTestLabel + '-GapType'"
                         :name="'type'"
                         :titleSameRow="true"
@@ -503,7 +503,7 @@ export default {
                     <div
                         v-for="(gap, gapIndex) in gapsPerColumn.gaps"
                         :key="'gap-' + gapIndex"
-                        class="col-12 mb-1 px-2 text-start"
+                        class="col-12 mb-1 px-2 text-left"
                     >
                         <AdvancedCoreSelectorGap 
                             :dataTestLabel="dataTestLabel + '-AdvancedCoreSelectorGap-' + gap.index"
@@ -560,7 +560,7 @@ export default {
                 </div>
                 <div
                     v-if="core.functionalDescription != null"
-                    class="border-bottom border-top row text-start py-2"
+                    class="border-bottom border-top row text-left py-2"
                     :style="dataUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
                 >
                     <DimensionReadOnly 

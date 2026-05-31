@@ -15,9 +15,9 @@ export default {
     will-change: filter;
 }
 .logo:hover {
-    filter: drop-shadow(0 0 2em rgba(var(--bs-primary-rgb), 0.67));
+    filter: drop-shadow(0 0 2em rgba(var(--p-primary-rgb), 0.67));
 }
 .logo.vue:hover {
-    filter: drop-shadow(0 0 2em rgba(var(--bs-success-rgb), 0.67));
+    filter: drop-shadow(0 0 2em rgba(var(--p-success-rgb), 0.67));
 }
 </style>

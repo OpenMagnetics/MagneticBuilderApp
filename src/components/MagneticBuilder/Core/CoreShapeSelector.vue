@@ -267,7 +267,7 @@ export default {
                 v-tooltip="tooltipsMagneticBuilder.coreShapeFamily"
                 v-if="!loading"
                 :disabled="readOnly"
-                class="col-12 mb-1 text-start"
+                class="col-12 mb-1 text-left"
                 :dataTestLabel="dataTestLabel + '-ShapeFamilies'"
                 :name="'shapeFamily'"
                 :titleSameRow="true"
@@ -289,7 +289,7 @@ export default {
                 <ElementFromList
                     v-tooltip="tooltipsMagneticBuilder.coreShape"
                     :disabled="readOnly"
-                    class="col-12 text-start core-shape-row"
+                    class="col-12 text-left core-shape-row"
                     :dataTestLabel="dataTestLabel + '-ShapeNames'"
                     :name="'shape'"
                     :titleSameRow="true"
@@ -371,7 +371,7 @@ export default {
     width: 1.75rem;
     padding: 0;
     background-color: transparent;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     border: 0;
     border-radius: var(--p-border-radius);
     font-family: var(--p-font-family);
@@ -381,7 +381,7 @@ export default {
 }
 
 .shape-table-btn:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.15);
-    color: var(--bs-white);
+    background-color: rgba(var(--p-primary-rgb), 0.15);
+    color: var(--p-white);
 }
 </style>

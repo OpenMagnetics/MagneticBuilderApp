@@ -247,7 +247,7 @@ export default {
                 <div>
                     <Text
                         v-if="core.functionalDescription.material.name != null"
-                        class="col-11 col-offset-1 mb-1 text-start"
+                        class="col-11 col-offset-1 mb-1 text-left"
                         :name="'name'"
                         v-model="core.functionalDescription.material"
                         :defaultValue="'Material name'"
@@ -263,7 +263,7 @@ export default {
                     />
                     <Text
                         v-if="core.functionalDescription.material.family != null"
-                        class="col-11 col-offset-1 mb-1 text-start"
+                        class="col-11 col-offset-1 mb-1 text-left"
                         :name="'family'"
                         v-model="core.functionalDescription.material"
                         :defaultValue="'Material Family'"
@@ -279,7 +279,7 @@ export default {
                     />
                     <Text
                         v-if="core.functionalDescription.material.manufacturerInfo != null && core.functionalDescription.material.manufacturerInfo.name != null"
-                        class="col-11 col-offset-1 mb-1 text-start"
+                        class="col-11 col-offset-1 mb-1 text-left"
                         :name="'name'"
                         :replaceTitle="'Manufacturer'"
                         v-model="core.functionalDescription.material.manufacturerInfo"
@@ -298,7 +298,7 @@ export default {
                         v-if="core.functionalDescription.material.curieTemperature != null"
                         :name="'curieTemperature'"
                         :unit="'°C'"
-                        class="col-11 col-offset-1 ml-3 pl-1 mb-1 text-start"
+                        class="col-11 col-offset-1 ml-3 pl-1 mb-1 text-left"
                         :dataTestLabel="dataTestLabel + '-CurieTemperature'"
                         :justifyContent="true"
                         :allowNegative="true"
@@ -318,7 +318,7 @@ export default {
                         v-if="core.functionalDescription.material.density != null"
                         :name="'density'"
                         :unit="'g/m³'"
-                        class="col-11 col-offset-1 ml-3 pl-1 mb-1 text-start"
+                        class="col-11 col-offset-1 ml-3 pl-1 mb-1 text-left"
                         :dataTestLabel="dataTestLabel + '-Density'"
                         :justifyContent="true"
                         :allowNegative="true"
@@ -336,7 +336,7 @@ export default {
                     />
                     <ElementFromList
                         v-if="core.functionalDescription.material.material != null"
-                        class="col-10 col-offset-1 ml-3 pl-1 mb-1 text-start"
+                        class="col-10 col-offset-1 ml-3 pl-1 mb-1 text-left"
                         :dataTestLabel="dataTestLabel + '-Material'"
                         :name="'material'"
                         :titleSameRow="true"
@@ -353,7 +353,7 @@ export default {
                     />
                     <ElementFromList
                         v-if="core.functionalDescription.material.materialComposition != null"
-                        class="col-10 col-offset-1 ml-3 pl-1 mb-1 text-start"
+                        class="col-10 col-offset-1 ml-3 pl-1 mb-1 text-left"
                         :dataTestLabel="dataTestLabel + '-MaterialComposition'"
                         :name="'materialComposition'"
                         :replaceTitle="'Material Comp.'"

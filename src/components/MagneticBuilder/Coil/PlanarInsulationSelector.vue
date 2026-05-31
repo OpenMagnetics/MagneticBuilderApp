@@ -74,7 +74,7 @@ export default {
         </div>
         <div class="planar-insulation-body">
             <div class="planar-insulation-row">
-                <Dimension class="col-12 text-start mb-2"
+                <Dimension class="col-12 text-left mb-2"
                     v-tooltip="tooltipsMagneticBuilder.coreToLayerDistance"
                     v-if="!loading"
                     :disabled="readOnly"
@@ -96,7 +96,7 @@ export default {
                     :textColor="$styleStore.magneticBuilder.inputTextColor"
                     @update="$emit('update')"
                 />
-                <Dimension class="col-12 text-start mb-3"
+                <Dimension class="col-12 text-left mb-3"
                     v-tooltip="tooltipsMagneticBuilder.borderToWireDistance"
                     v-if="!loading"
                     :disabled="readOnly"
@@ -181,12 +181,12 @@ export default {
 
 <style scoped>
 .planar-insulation-panel {
-    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.08) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.08) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.2);
     border-radius: 14px;
     padding: 0;
     margin: 0.5rem 0 1rem 0;
-    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.15), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.05);
+    box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.15), inset 0 1px 0 rgba(var(--p-white-rgb), 0.05);
     overflow: hidden;
     animation: slideDown 0.25s ease-out;
 }
@@ -207,11 +207,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: rgba(var(--bs-primary-rgb), 0.12);
-    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    background: rgba(var(--p-primary-rgb), 0.12);
+    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.15);
     font-weight: 600;
     font-size: 0.92rem;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -223,7 +223,7 @@ export default {
 
 .planar-insulation-header-left i {
     font-size: 1rem;
-    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.4));
+    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.4));
 }
 
 .planar-insulation-close {
@@ -234,16 +234,16 @@ export default {
     height: 1.75rem;
     padding: 0;
     border-radius: 999px;
-    background: rgba(var(--bs-black-rgb), 0.25);
-    border: 1px solid rgba(var(--bs-white-rgb), 0.12);
-    color: var(--bs-primary);
+    background: rgba(var(--p-black-rgb), 0.25);
+    border: 1px solid rgba(var(--p-white-rgb), 0.12);
+    color: var(--p-primary);
     cursor: pointer;
     transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 
 .planar-insulation-close:hover {
-    background: rgba(var(--bs-danger-rgb), 0.2);
-    color: var(--bs-danger);
+    background: rgba(var(--p-danger-rgb), 0.2);
+    color: var(--p-danger);
     transform: translateY(-1px);
 }
 
@@ -262,7 +262,7 @@ export default {
 .planar-insulation-section-title {
     font-size: 0.85rem;
     font-weight: 600;
-    color: rgba(var(--bs-white-rgb), 0.8);
+    color: rgba(var(--p-white-rgb), 0.8);
     margin-bottom: 0.5rem;
     padding-left: 0.25rem;
 }
@@ -280,8 +280,8 @@ export default {
 }
 
 .planar-insulation-cell {
-    background: rgba(var(--bs-black-rgb), 0.18);
-    border: 1px solid rgba(var(--bs-white-rgb), 0.04);
+    background: rgba(var(--p-black-rgb), 0.18);
+    border: 1px solid rgba(var(--p-white-rgb), 0.04);
     border-radius: 10px;
     padding: 0.5rem 0.6rem;
 }

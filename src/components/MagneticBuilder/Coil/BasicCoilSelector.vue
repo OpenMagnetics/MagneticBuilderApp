@@ -854,8 +854,8 @@ export default {
                          :coilFits="true"
                          :plotModeInit="$stateStore.magnetic2DVisualizerState.plotMode"
                          :includeFringingInit="$stateStore.magnetic2DVisualizerState.includeFringing"
-                         :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--bs-dark)'"
-                         :textColor="$styleStore.magneticBuilder.inputTextColor?.color || 'var(--bs-white)'"
+                         :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--p-dark)'"
+                         :textColor="$styleStore.magneticBuilder.inputTextColor?.color || 'var(--p-white)'"
                          :buttonStyle="$styleStore.magneticBuilder.coilVisualizerButton"
                          :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
                          :marginColor="$styleStore.magneticBuilder.painterColorMargin || '0xfff05b'"
@@ -895,7 +895,7 @@ export default {
                     <div v-if="masStore.mas.magnetic.core.functionalDescription.shape.family != 't'" class="coil-config-cell coil-config-cell-wide">
                         <Dimension 
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :name="'bobbinWallThickness'"
                             :replaceTitle="'Wall Thickness'"
                             :unit="'m'"
@@ -920,7 +920,7 @@ export default {
                     <div v-if="masStore.mas.magnetic.core.functionalDescription.shape.family != 't'" class="coil-config-cell coil-config-cell-wide">
                         <Dimension 
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :name="'bobbinColumnThickness'"
                             :replaceTitle="'Column Thickness'"
                             :unit="'m'"
@@ -947,7 +947,7 @@ export default {
                         <ListOfCharacters
                             v-tooltip="tooltipsMagneticBuilder.sectionsInterleaving"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-SectionsInterleaving'"
                             :modelValue="localData.pattern" 
                             @updateModelValue="localData.pattern = $event"
@@ -1004,12 +1004,12 @@ export default {
 
 <style scoped>
 .coil-config-panel {
-    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.06) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.15);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
-    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
+    box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.12), inset 0 1px 0 rgba(var(--p-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -1018,11 +1018,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.6rem 0.9rem;
-    background: rgba(var(--bs-primary-rgb), 0.1);
-    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    background: rgba(var(--p-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.12);
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -1034,7 +1034,7 @@ export default {
 
 .coil-config-header-left i {
     font-size: 0.95rem;
-    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.35));
 }
 
 .coil-config-header-right {
@@ -1070,29 +1070,29 @@ export default {
 
 .coil-config-header-btn-primary {
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
-        var(--bs-primary) 55%,
-        rgb(var(--bs-primary-rgb) / 0.85) 100%);
-    color: var(--bs-white);
-    border: 1px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
+        color-mix(in srgb, var(--p-primary) 115%, transparent 0%) 0%,
+        var(--p-primary) 55%,
+        rgb(var(--p-primary-rgb) / 0.85) 100%);
+    color: var(--p-white);
+    border: 1px solid color-mix(in srgb, var(--p-primary) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
-        0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
-    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.25);
+        0 0 0 1px rgb(var(--p-primary-rgb) / 0.35),
+        0 2px 8px rgb(var(--p-primary-rgb) / 0.4),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
+    text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.25);
 }
 
 .coil-config-header-btn-outline {
-    background: rgb(var(--bs-primary-rgb) / 0.2);
-    border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
-    color: var(--bs-primary);
-    box-shadow: 0 1px 4px rgba(var(--bs-black-rgb), 0.2);
+    background: rgb(var(--p-primary-rgb) / 0.2);
+    border: 1px solid rgb(var(--p-primary-rgb) / 0.55);
+    color: var(--p-primary);
+    box-shadow: 0 1px 4px rgba(var(--p-black-rgb), 0.2);
 }
 
 .coil-config-header-btn-outline:hover {
-    background: rgb(var(--bs-primary-rgb) / 0.3);
-    border-color: rgb(var(--bs-primary-rgb) / 0.75);
-    box-shadow: 0 2px 6px rgb(var(--bs-primary-rgb) / 0.25);
+    background: rgb(var(--p-primary-rgb) / 0.3);
+    border-color: rgb(var(--p-primary-rgb) / 0.75);
+    box-shadow: 0 2px 6px rgb(var(--p-primary-rgb) / 0.25);
 }
 
 .coil-config-body {
@@ -1103,7 +1103,7 @@ export default {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.15rem;
-    background: var(--bs-dark);
+    background: var(--p-dark);
     border-radius: 10px;
     padding: 0.35rem;
     box-sizing: border-box;
@@ -1252,33 +1252,33 @@ export default {
 
 .builder-action-btn-primary {
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--bs-success) 115%, transparent 0%) 0%,
-        var(--bs-success) 55%,
-        rgb(var(--bs-success-rgb) / 0.85) 100%);
-    color: var(--bs-white);
-    border: 2px solid color-mix(in srgb, var(--bs-success) 70%, var(--bs-white) 30%);
+        color-mix(in srgb, var(--p-success) 115%, transparent 0%) 0%,
+        var(--p-success) 55%,
+        rgb(var(--p-success-rgb) / 0.85) 100%);
+    color: var(--p-white);
+    border: 2px solid color-mix(in srgb, var(--p-success) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 2px rgb(var(--bs-success-rgb) / 0.35),
-        0 4px 14px rgb(var(--bs-success-rgb) / 0.5),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
-    text-shadow: 0 1px 2px rgba(var(--bs-black-rgb), 0.25);
+        0 0 0 2px rgb(var(--p-success-rgb) / 0.35),
+        0 4px 14px rgb(var(--p-success-rgb) / 0.5),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
+    text-shadow: 0 1px 2px rgba(var(--p-black-rgb), 0.25);
 }
 
 .builder-action-btn-outline {
-    background: rgb(var(--bs-primary-rgb) / 0.2);
-    border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
-    color: var(--bs-primary);
-    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
+    background: rgb(var(--p-primary-rgb) / 0.2);
+    border: 1px solid rgb(var(--p-primary-rgb) / 0.55);
+    color: var(--p-primary);
+    box-shadow: 0 2px 6px rgba(var(--p-black-rgb), 0.2);
 }
 
 .builder-action-btn-ghost {
-    background: rgba(var(--bs-white-rgb), 0.08);
-    border: 1px solid rgba(var(--bs-white-rgb), 0.28);
-    color: rgba(var(--bs-white-rgb), 0.9);
-    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
+    background: rgba(var(--p-white-rgb), 0.08);
+    border: 1px solid rgba(var(--p-white-rgb), 0.28);
+    color: rgba(var(--p-white-rgb), 0.9);
+    box-shadow: 0 2px 6px rgba(var(--p-black-rgb), 0.2);
 }
 
 .temp-icon {
-    color: var(--bs-danger);
+    color: var(--p-danger);
 }
 </style>

@@ -254,7 +254,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.effectiveLength"
-                            class="text-start"
+                            class="text-left"
                             :name="'L'"
                             :subscriptName="'eff'"
                             :unit="'m'"
@@ -275,7 +275,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.effectiveArea"
-                            class="text-start"
+                            class="text-left"
                             :name="'A'"
                             :subscriptName="'eff'"
                             :unit="'m²'"
@@ -296,7 +296,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.effectiveVolume"
-                            class="text-start"
+                            class="text-left"
                             :name="'V'"
                             :subscriptName="'eff'"
                             :unit="'m³'"
@@ -317,7 +317,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.minimumArea"
-                            class="text-start"
+                            class="text-left"
                             :name="'A'"
                             :subscriptName="'min'"
                             :unit="'m²'"
@@ -338,7 +338,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.initialPermeability"
-                            class="text-start"
+                            class="text-left"
                             :name="'μ'"
                             :subscriptName="'ini'"
                             :unit="null"
@@ -360,7 +360,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.effectivePermeability"
-                            class="text-start"
+                            class="text-left"
                             :name="'μ'"
                             :subscriptName="'eff'"
                             :unit="null"
@@ -382,7 +382,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.permeance"
-                            class="text-start"
+                            class="text-left"
                             :name="'A'"
                             :subscriptName="'L'"
                             :unit="'H/tu²'"
@@ -404,7 +404,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.saturatingMagneticFluxDensity"
-                            class="text-start"
+                            class="text-left"
                             :name="'B'"
                             :subscriptName="'sat'"
                             :unit="'T'"
@@ -426,7 +426,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
-                            class="text-start"
+                            class="text-left"
                             :name="'B'"
                             :subscriptName="'peak'"
                             :unit="'T'"
@@ -448,7 +448,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
-                            class="text-start"
+                            class="text-left"
                             :name="'B'"
                             :subscriptName="'ACpeak'"
                             :unit="'T'"
@@ -470,7 +470,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
-                            class="text-start"
+                            class="text-left"
                             :name="'L'"
                             :unit="'H'"
                             :power="1"
@@ -491,7 +491,7 @@ export default {
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.coreLosses"
-                            class="text-start"
+                            class="text-left"
                             :name="'P'"
                             :subscriptName="'core'"
                             :unit="'W'"
@@ -516,7 +516,7 @@ export default {
                 <div class="coreinfo-simple" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         :name="'L'"
                         :replaceTitle="'Magnetizing Inductance'"
                         :unit="'H'"
@@ -536,7 +536,7 @@ export default {
                     />
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.coreLosses"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         :replaceTitle="'Core Losses'"
                         :name="'P'"
                         :unit="'W'"
@@ -556,7 +556,7 @@ export default {
                     />
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.saturationProportion"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         :name="'Saturation Proportion'"
                         :unit="'%'"
                         :power="1"
@@ -581,12 +581,12 @@ export default {
 
 <style scoped>
 .coreinfo-panel {
-    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.06) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.15);
     border-radius: 14px;
     padding: 0;
     margin: 0.05rem 0 0.5rem 0;
-    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
+    box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.12), inset 0 1px 0 rgba(var(--p-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -595,11 +595,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.6rem 0.9rem;
-    background: rgba(var(--bs-primary-rgb), 0.1);
-    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    background: rgba(var(--p-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.12);
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -611,7 +611,7 @@ export default {
 
 .coreinfo-header-left i {
     font-size: 0.95rem;
-    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.35));
 }
 
 .coreinfo-outdated-badge {
@@ -621,9 +621,9 @@ export default {
     letter-spacing: 0.05em;
     padding: 0.2rem 0.55rem;
     border-radius: 999px;
-    background: rgba(var(--bs-warning-rgb), 0.2);
-    color: var(--bs-warning);
-    border: 1px solid rgba(var(--bs-warning-rgb), 0.35);
+    background: rgba(var(--p-warning-rgb), 0.2);
+    color: var(--p-warning);
+    border: 1px solid rgba(var(--p-warning-rgb), 0.35);
 }
 
 .coreinfo-body {
@@ -661,8 +661,8 @@ export default {
 .coreinfo-cell :deep(.dim-ro-container) {
     margin: 0 !important;
     padding: 0 !important;
-    --bs-gutter-x: 0;
-    --bs-gutter-y: 0;
+    --p-gutter-x: 0;
+    --p-gutter-y: 0;
     min-height: 0 !important;
     line-height: 1.25 !important;
 }

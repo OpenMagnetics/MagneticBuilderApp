@@ -107,49 +107,49 @@ export default {
 /* PRIMARY — advise: bold, glowing, unmistakable */
 .mb-btn-primary {
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
-        var(--bs-primary) 55%,
-        rgb(var(--bs-primary-rgb) / 0.85) 100%);
-    color: var(--bs-white);
-    border: 2px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
+        color-mix(in srgb, var(--p-primary) 115%, transparent 0%) 0%,
+        var(--p-primary) 55%,
+        rgb(var(--p-primary-rgb) / 0.85) 100%);
+    color: var(--p-white);
+    border: 2px solid color-mix(in srgb, var(--p-primary) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 2px rgb(var(--bs-primary-rgb) / 0.35),
-        0 4px 14px rgb(var(--bs-primary-rgb) / 0.5),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
-    text-shadow: 0 1px 2px rgba(var(--bs-black-rgb), 0.25);
+        0 0 0 2px rgb(var(--p-primary-rgb) / 0.35),
+        0 4px 14px rgb(var(--p-primary-rgb) / 0.5),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
+    text-shadow: 0 1px 2px rgba(var(--p-black-rgb), 0.25);
 }
 
 .mb-btn-primary:not(:disabled):hover {
     box-shadow:
-        0 0 0 2px rgb(var(--bs-primary-rgb) / 0.35),
-        0 6px 20px rgb(var(--bs-primary-rgb) / 0.6),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+        0 0 0 2px rgb(var(--p-primary-rgb) / 0.35),
+        0 6px 20px rgb(var(--p-primary-rgb) / 0.6),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
 }
 
 /* OUTLINE — strong tinted bg, clear border */
 .mb-btn-outline {
-    background: rgb(var(--bs-primary-rgb) / 0.2);
-    border: 1px solid rgb(var(--bs-primary-rgb) / 0.55);
-    color: var(--bs-primary);
-    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
+    background: rgb(var(--p-primary-rgb) / 0.2);
+    border: 1px solid rgb(var(--p-primary-rgb) / 0.55);
+    color: var(--p-primary);
+    box-shadow: 0 2px 6px rgba(var(--p-black-rgb), 0.2);
 }
 
 .mb-btn-outline:not(:disabled):hover {
-    background: rgb(var(--bs-primary-rgb) / 0.3);
-    border-color: rgb(var(--bs-primary-rgb) / 0.75);
-    box-shadow: 0 3px 10px rgb(var(--bs-primary-rgb) / 0.25);
+    background: rgb(var(--p-primary-rgb) / 0.3);
+    border-color: rgb(var(--p-primary-rgb) / 0.75);
+    box-shadow: 0 3px 10px rgb(var(--p-primary-rgb) / 0.25);
 }
 
 /* GHOST — still visible, lighter weight */
 .mb-btn-ghost {
-    background: rgba(var(--bs-white-rgb), 0.08);
-    border: 1px solid rgba(var(--bs-white-rgb), 0.28);
-    color: var(--bs-white);
-    box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
+    background: rgba(var(--p-white-rgb), 0.08);
+    border: 1px solid rgba(var(--p-white-rgb), 0.28);
+    color: var(--p-white);
+    box-shadow: 0 2px 6px rgba(var(--p-black-rgb), 0.2);
 }
 
 .mb-btn-ghost:not(:disabled):hover {
-    background: rgba(var(--bs-white-rgb), 0.14);
-    border-color: rgba(var(--bs-white-rgb), 0.4);
+    background: rgba(var(--p-white-rgb), 0.14);
+    border-color: rgba(var(--p-white-rgb), 0.4);
 }
 </style>

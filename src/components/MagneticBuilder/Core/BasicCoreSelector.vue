@@ -551,9 +551,9 @@ export default {
                         :showCore="true"
                         :showTurns="true"
                         :showBobbin="true"
-                        :buttonColor="$styleStore.magneticBuilder.visualizerButtonColor?.color || 'var(--bs-white)'"
+                        :buttonColor="$styleStore.magneticBuilder.visualizerButtonColor?.color || 'var(--p-white)'"
                         :loadingGif="$settingsStore.loadingGif"
-                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--bs-dark)'"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'var(--p-dark)'"
                     />
                 </div>
                 <img :data-cy="dataTestLabel + '-BasicCoreSelector-loading'" v-if="loading" class="mx-auto d-block" alt="loading" style="width: 60%; max-width: 100%; height: auto;" :src="$settingsStore.loadingGif">
@@ -570,7 +570,7 @@ export default {
                         <ElementFromList
                             v-tooltip="tooltipsMagneticBuilder.coreMaterialManufacturer"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-MaterialManufacturers'"
                             :name="'materialManufacturer'"
                             :replaceTitle="'Manufacturer'"
@@ -592,7 +592,7 @@ export default {
                         <ElementFromList
                             v-tooltip="tooltipsMagneticBuilder.coreMaterial"
                             :disabled="readOnly"
-                            class="text-start"
+                            class="text-left"
                             :dataTestLabel="dataTestLabel + '-MaterialNames'"
                             :name="'material'"
                             :titleSameRow="true"
@@ -613,7 +613,7 @@ export default {
                     <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2 col-12">Select a family and a shape for the core</h5>
 
                     <div v-if="isStackable() && localData.shape != '' && !loading" class="core-config-cell core-config-cell-wide">
-                        <Dimension class="text-start"
+                        <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.coreNumberStacks"
                             :disabled="readOnly"
                             :name="'numberStacks'"
@@ -637,7 +637,7 @@ export default {
                         />
                     </div>
                     <div v-if="localData.shape != '' && localData.shapeFamily != null && localData.shape != null && !loading && masStore.mas.magnetic.core.functionalDescription.type == 'twoPieceSet' && masStore.mas.magnetic.core.processedDescription != null" class="core-config-cell core-config-cell-wide core-config-gap-cell">
-                        <CoreGappingSelector class="text-start"
+                        <CoreGappingSelector class="text-left"
                             :disabled="readOnly"
                             :title="'Gap Info: '"
                             :dataTestLabel="dataTestLabel + '-Gap'"
@@ -666,7 +666,7 @@ export default {
 
                 <BasicCoreSubmenu 
                     v-if="enableSubmenu && !readOnly"
-                    class="col-12 mb-1 text-start"
+                    class="col-12 mb-1 text-left"
                     :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                     :masStore="masStore"
                     :enableCustomize="enableCustomize"
@@ -681,12 +681,12 @@ export default {
 
 <style scoped>
 .core-config-panel {
-    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.06) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.15);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
-    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
+    box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.12), inset 0 1px 0 rgba(var(--p-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -695,11 +695,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.6rem 0.9rem;
-    background: rgba(var(--bs-primary-rgb), 0.1);
-    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    background: rgba(var(--p-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.12);
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -711,7 +711,7 @@ export default {
 
 .core-config-header-left i {
     font-size: 0.95rem;
-    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.35));
 }
 
 .core-config-header-right {
@@ -747,33 +747,33 @@ export default {
 
 .core-config-header-btn-primary {
     background: linear-gradient(135deg,
-        color-mix(in srgb, var(--bs-primary) 115%, transparent 0%) 0%,
-        var(--bs-primary) 55%,
-        rgb(var(--bs-primary-rgb) / 0.85) 100%);
-    color: var(--bs-white);
-    border: 1px solid color-mix(in srgb, var(--bs-primary) 70%, var(--bs-white) 30%);
+        color-mix(in srgb, var(--p-primary) 115%, transparent 0%) 0%,
+        var(--p-primary) 55%,
+        rgb(var(--p-primary-rgb) / 0.85) 100%);
+    color: var(--p-white);
+    border: 1px solid color-mix(in srgb, var(--p-primary) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 1px rgb(var(--bs-primary-rgb) / 0.35),
-        0 2px 8px rgb(var(--bs-primary-rgb) / 0.4),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
-    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.25);
+        0 0 0 1px rgb(var(--p-primary-rgb) / 0.35),
+        0 2px 8px rgb(var(--p-primary-rgb) / 0.4),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
+    text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.25);
 }
 
 /* Highlight the Advise button in danger color while the core is incomplete,
    so the user is reminded they can use it to get a starting selection. */
 .core-config-header-btn.core-config-header-btn-needs-attention {
-    color: var(--bs-danger) !important;
-    border-color: rgb(var(--bs-danger-rgb) / 0.6) !important;
-    text-shadow: 0 1px 1px rgba(var(--bs-black-rgb), 0.35);
+    color: var(--p-danger) !important;
+    border-color: rgb(var(--p-danger-rgb) / 0.6) !important;
+    text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.35);
     box-shadow:
-        0 0 0 1px rgb(var(--bs-danger-rgb) / 0.4),
-        0 2px 10px rgb(var(--bs-danger-rgb) / 0.4),
-        inset 0 1px 0 rgba(var(--bs-white-rgb), 0.3);
+        0 0 0 1px rgb(var(--p-danger-rgb) / 0.4),
+        0 2px 10px rgb(var(--p-danger-rgb) / 0.4),
+        inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     animation: core-advise-pulse 1.8s ease-in-out infinite;
 }
 
 .core-config-header-btn.core-config-header-btn-needs-attention i {
-    color: var(--bs-danger);
+    color: var(--p-danger);
 }
 
 @keyframes core-advise-pulse {
@@ -793,7 +793,7 @@ export default {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.15rem;
-    background: var(--bs-dark);
+    background: var(--p-dark);
     border-radius: 10px;
     padding: 0.35rem;
     box-sizing: border-box;
@@ -820,7 +820,7 @@ export default {
 
 /* CoreShapeSelector uses `<div class="row g-0">` (zero gutter) for its
  * inner rows, while the other cells (Manufacturer / Material / …) use
- * default Bootstrap row gutters that inset the col by ~0.75rem. That
+ * default row gutters that inset the col by ~0.75rem. That
  * shifts Shape Family's dropdown ~4-6px further right than the others.
  * Restore the gutter padding on Shape Family / Shape value columns so
  * all dropdowns share the same right edge. */
@@ -868,7 +868,7 @@ export default {
 
 /* Align all labels (Shape Family / Shape / Manufacturer / Material /
  * Number of Stacks / Gap Info / Type / Length) to the SAME left x.
- * Cause of the misalignment: Bootstrap's .row has a default
+ * Cause of the misalignment: the .row has a default
  * margin-left:-0.75rem and PrimeFlex's .col-12 adds its own
  * padding-left, so the rows inside CoreShapeSelector / CoreGappingSelector
  * end up offset from cells that don't use a .row wrapper. Zero both. */

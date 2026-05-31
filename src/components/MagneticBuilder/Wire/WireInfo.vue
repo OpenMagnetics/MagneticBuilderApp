@@ -281,7 +281,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.dcResistancePerMeter"
-                            class="text-start"
+                            class="text-left"
                             :name="'R'"
                             :subscriptName="'DC'"
                             :unit="'Ω/m'"
@@ -301,7 +301,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.skinResistancePerMeter"
-                            class="text-start"
+                            class="text-left"
                             :name="'R'"
                             :subscriptName="'sk.AC'"
                             :unit="'Ω/m'"
@@ -321,7 +321,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.ohmicLossesPerMeter"
-                            class="text-start"
+                            class="text-left"
                             :name="'P'"
                             :subscriptName="'DC'"
                             :unit="'W/m'"
@@ -341,7 +341,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.skinLossesPermeter"
-                            class="text-start"
+                            class="text-left"
                             :name="'P'"
                             :subscriptName="'sk.AC'"
                             :unit="'W/m'"
@@ -361,7 +361,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
-                            class="text-start"
+                            class="text-left"
                             :name="'J'"
                             :subscriptName="'eff'"
                             :unit="'A/mm²'"
@@ -381,7 +381,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
-                            class="text-start"
+                            class="text-left"
                             :name="'δ'"
                             :subscriptName="'eff'"
                             :unit="'m'"
@@ -402,7 +402,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.wireWidth"
-                            class="text-start"
+                            class="text-left"
                             :name="'Width'"
                             :unit="'m'"
                             :dataTestLabel="dataTestLabel + '-OuterWidth'"
@@ -421,7 +421,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.skinFactor"
-                            class="text-start"
+                            class="text-left"
                             :name="'F'"
                             :subscriptName="'skin'"
                             :unit="null"
@@ -442,7 +442,7 @@ export default {
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.wireHeight"
-                            class="text-start"
+                            class="text-left"
                             :name="'Height'"
                             :unit="'m'"
                             :dataTestLabel="dataTestLabel + '-OuterHeight'"
@@ -461,7 +461,7 @@ export default {
                     <div v-if="windingIndex > 0" class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.turnsRatio"
-                            class="text-start"
+                            class="text-left"
                             :name="'T'"
                             :subscriptName="'ratio'"
                             :unit="null"
@@ -485,7 +485,7 @@ export default {
                 <div class="wireinfo-simple" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         :name="'Eff. Current Density'"
                         :unit="'A/mm²'"
                         :dataTestLabel="dataTestLabel + '-Jeff'"
@@ -502,7 +502,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         :name="'Eff. Skin Depth'"
                         :unit="'m'"
                         :dataTestLabel="dataTestLabel + '-EffectiveSkinDepth'"
@@ -520,7 +520,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.wireWidth"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         :name="'Outer Width'"
                         :unit="'m'"
                         :dataTestLabel="dataTestLabel + '-OuterWidth'"
@@ -537,7 +537,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.wireHeight"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         :name="'Outer Height'"
                         :unit="'m'"
                         :dataTestLabel="dataTestLabel + '-OuterHeight'"
@@ -554,7 +554,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.turnsRatio"
-                        class="text-start pl-4 pr-4"
+                        class="text-left pl-4 pr-4"
                         v-if="windingIndex > 0"
                         :name="'Turns Ratio'"
                         :unit="null"
@@ -579,12 +579,12 @@ export default {
 
 <style scoped>
 .wireinfo-panel {
-    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.06) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.15);
     border-radius: 14px;
     padding: 0;
     margin: 0.05rem 0 0.5rem 0;
-    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.12), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
+    box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.12), inset 0 1px 0 rgba(var(--p-white-rgb), 0.04);
     overflow: hidden;
 }
 
@@ -593,11 +593,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.6rem 0.9rem;
-    background: rgba(var(--bs-primary-rgb), 0.1);
-    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    background: rgba(var(--p-primary-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.12);
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -609,7 +609,7 @@ export default {
 
 .wireinfo-header-left i {
     font-size: 0.95rem;
-    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.35));
+    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.35));
 }
 
 .wireinfo-outdated-badge {
@@ -619,9 +619,9 @@ export default {
     letter-spacing: 0.05em;
     padding: 0.2rem 0.55rem;
     border-radius: 999px;
-    background: rgba(var(--bs-warning-rgb), 0.2);
-    color: var(--bs-warning);
-    border: 1px solid rgba(var(--bs-warning-rgb), 0.35);
+    background: rgba(var(--p-warning-rgb), 0.2);
+    color: var(--p-warning);
+    border: 1px solid rgba(var(--p-warning-rgb), 0.35);
 }
 
 .wireinfo-body {
@@ -658,8 +658,8 @@ export default {
 .wireinfo-cell :deep(.dim-ro-container) {
     margin: 0 !important;
     padding: 0 !important;
-    --bs-gutter-x: 0;
-    --bs-gutter-y: 0;
+    --p-gutter-x: 0;
+    --p-gutter-y: 0;
     min-height: 0 !important;
     line-height: 1.25 !important;
 }

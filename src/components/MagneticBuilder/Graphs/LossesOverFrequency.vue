@@ -33,7 +33,7 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || 'var(--bs-primary)',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--p-primary').trim() || 'var(--p-primary)',
             type: 'log', // log or value
             position: 'left',
             unit: 'W',
@@ -44,14 +44,14 @@ export default {
                 x: [0, 1],
                 y: [0, 1],
             },
-            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-dark').trim() ,
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--p-dark').trim() ,
             type: 'log', // log or value
             position: 'right',
             unit: 'W',
         }]
         const frequencyData = {
             label: 'Frequency',
-            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary').trim() || 'var(--bs-secondary)',
+            colorLabel: getComputedStyle(document.documentElement).getPropertyValue('--p-secondary').trim() || 'var(--p-secondary)',
             type: 'log', // log or value
             unit: 'Hz',
         }
@@ -221,8 +221,8 @@ export default {
 }
 
 .graph-params {
-    background: rgba(var(--bs-white-rgb), 0.04);
-    border: 1px solid rgba(var(--bs-white-rgb), 0.1);
+    background: rgba(var(--p-white-rgb), 0.04);
+    border: 1px solid rgba(var(--p-white-rgb), 0.1);
     border-radius: 12px;
     padding: 0.6rem 0.55rem;
     display: flex;

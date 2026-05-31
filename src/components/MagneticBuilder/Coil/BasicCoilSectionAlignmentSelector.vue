@@ -171,7 +171,7 @@ export default {
                     <ElementFromList
                         v-tooltip="tooltipsMagneticBuilder.windingsOrientation"
                         :disabled="readOnly"
-                        class="col-12 mb-2 text-start"
+                        class="col-12 mb-2 text-left"
                         :dataTestLabel="dataTestLabel + '-sectionsOrientation'"
                         :name="'sectionsOrientation'"
                         :replaceTitle="'Windings Orientation'"
@@ -193,7 +193,7 @@ export default {
                     <ElementFromList
                         v-tooltip="tooltipsMagneticBuilder.sectionsAlignment"
                         :disabled="readOnly"
-                        class="col-12 mb-2 text-start"
+                        class="col-12 mb-2 text-left"
                         :dataTestLabel="dataTestLabel + '-SectionsAlignment'"
                         :name="'sectionsAlignment'"
                         :replaceTitle="'Section Alignment'"
@@ -221,7 +221,7 @@ export default {
                     <ElementFromList
                         v-tooltip="tooltipsMagneticBuilder.turnsAlignment"
                         :disabled="readOnly"
-                        class="col-12 mb-2 text-start"
+                        class="col-12 mb-2 text-left"
                         :dataTestLabel="dataTestLabel + '-TurnsAlignment'"
                         :name="'turnsAlignment'"
                         :titleSameRow="true"
@@ -242,7 +242,7 @@ export default {
                         v-tooltip="tooltipsMagneticBuilder.proportions"
                         v-if="masStore.mas.magnetic.coil.functionalDescription.length > 1"
                         :disabled="readOnly"
-                        class="col-12 mt-1 text-start"
+                        class="col-12 mt-1 text-left"
                         :dataTestLabel="dataTestLabel + '-ProportionPerWinding'"
                         :modelValue="data.proportionPerWinding"
                         :name="'proportionPerWinding'"
@@ -266,12 +266,12 @@ export default {
 
 <style scoped>
 .alignment-panel {
-    background: linear-gradient(145deg, rgba(var(--bs-primary-rgb), 0.08) 0%, rgba(var(--bs-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.08) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.2);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.5rem 0;
-    box-shadow: 0 4px 20px rgba(var(--bs-black-rgb), 0.15), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.05);
+    box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.15), inset 0 1px 0 rgba(var(--p-white-rgb), 0.05);
     overflow: hidden;
     animation: slideDown 0.25s ease-out;
 }
@@ -292,11 +292,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: rgba(var(--bs-primary-rgb), 0.12);
-    border-bottom: 1px solid rgba(var(--bs-primary-rgb), 0.15);
+    background: rgba(var(--p-primary-rgb), 0.12);
+    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.15);
     font-weight: 600;
     font-size: 0.92rem;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -308,14 +308,14 @@ export default {
 
 .alignment-header-left i {
     font-size: 1rem;
-    filter: drop-shadow(0 0 4px rgba(var(--bs-primary-rgb), 0.4));
+    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.4));
 }
 
 .alignment-close-btn {
     appearance: none;
     background: transparent;
     border: none;
-    color: var(--bs-primary);
+    color: var(--p-primary);
     font-size: 1rem;
     width: 1.75rem;
     height: 1.75rem;
@@ -328,13 +328,13 @@ export default {
 }
 
 .alignment-close-btn:hover {
-    background: rgba(var(--bs-primary-rgb), 0.15);
-    color: var(--bs-white);
+    background: rgba(var(--p-primary-rgb), 0.15);
+    color: var(--p-white);
 }
 
 .alignment-body {
     padding: 0.5rem 0.6rem 0.5rem 1.15rem;
-    background-color: var(--bs-dark);
+    background-color: var(--p-dark);
 }
 
 .alignment-body :deep(.form-label),

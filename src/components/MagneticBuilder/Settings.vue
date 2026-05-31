@@ -284,7 +284,7 @@ export default {
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <label class="text-white mb-1 d-block">Manual Wire Losses Models</label>
-                                        <small class="text-muted">Override automatic model selection for windings</small>
+                                        <small class="text-color-secondary">Override automatic model selection for windings</small>
                                     </div>
                                     <div class="form-check form-switch">
                                         <input 
@@ -310,10 +310,10 @@ export default {
                                     :labelWidthProportionClass="'col-0'"
                                     :valueWidthProportionClass="'col-12'"
                                     :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                                    :textColor="'var(--bs-white)'"
+                                    :textColor="'var(--p-white)'"
                                      @update="handleModelChange"
                                 />
-                                <small class="text-muted">Used for magnetic field visualization and calculations</small>
+                                <small class="text-color-secondary">Used for magnetic field visualization and calculations</small>
                             </div>
 
                             <!-- Fringing Effect Model -->
@@ -328,10 +328,10 @@ export default {
                                     :labelWidthProportionClass="'col-0'"
                                     :valueWidthProportionClass="'col-12'"
                                     :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                                    :textColor="'var(--bs-white)'"
+                                    :textColor="'var(--p-white)'"
                                      @update="handleModelChange"
                                 />
-                                <small class="text-muted">Used for gap fringing field calculations</small>
+                                <small class="text-color-secondary">Used for gap fringing field calculations</small>
                             </div>
 
                             <!-- Reluctance Model -->
@@ -346,10 +346,10 @@ export default {
                                     :labelWidthProportionClass="'col-0'"
                                     :valueWidthProportionClass="'col-12'"
                                     :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                                    :textColor="'var(--bs-white)'"
+                                    :textColor="'var(--p-white)'"
                                      @update="handleModelChange"
                                 />
-                                <small class="text-muted">Used for magnetic circuit reluctance calculations</small>
+                                <small class="text-color-secondary">Used for magnetic circuit reluctance calculations</small>
                             </div>
 
                             <!-- Core Losses Model -->
@@ -364,14 +364,14 @@ export default {
                                     :labelWidthProportionClass="'col-0'"
                                     :valueWidthProportionClass="'col-12'"
                                     :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                                    :textColor="isCoreLossesDisabled ? 'var(--bs-secondary)' : 'var(--bs-white)'"
+                                    :textColor="isCoreLossesDisabled ? 'var(--p-secondary)' : 'var(--p-white)'"
                                     :disabled="isCoreLossesDisabled"
                                      @update="handleModelChange"
                                 />
-                                <small class="text-muted" v-if="modelSettingsStore.availableCoreLossesMethodsError">
+                                <small class="text-color-secondary" v-if="modelSettingsStore.availableCoreLossesMethodsError">
                                     {{ modelSettingsStore.availableCoreLossesMethodsError }}
                                 </small>
-                                <small class="text-muted" v-else>
+                                <small class="text-color-secondary" v-else>
                                     Used for core loss calculations
                                 </small>
                             </div>
@@ -388,11 +388,11 @@ export default {
                                     :labelWidthProportionClass="'col-0'"
                                     :valueWidthProportionClass="'col-12'"
                                     :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                                    :textColor="modelSettingsStore.coilEnableUserWindingLossesModels ? 'var(--bs-white)' : 'var(--bs-secondary)'"
+                                    :textColor="modelSettingsStore.coilEnableUserWindingLossesModels ? 'var(--p-white)' : 'var(--p-secondary)'"
                                     :disabled="!modelSettingsStore.coilEnableUserWindingLossesModels"
                                      @update="handleModelChange"
                                 />
-                                <small class="text-muted">Used for skin effect loss calculations</small>
+                                <small class="text-color-secondary">Used for skin effect loss calculations</small>
                             </div>
 
                             <!-- Winding Proximity Effect Losses Model -->
@@ -407,11 +407,11 @@ export default {
                                     :labelWidthProportionClass="'col-0'"
                                     :valueWidthProportionClass="'col-12'"
                                     :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                                    :textColor="modelSettingsStore.coilEnableUserWindingLossesModels ? 'var(--bs-white)' : 'var(--bs-secondary)'"
+                                    :textColor="modelSettingsStore.coilEnableUserWindingLossesModels ? 'var(--p-white)' : 'var(--p-secondary)'"
                                     :disabled="!modelSettingsStore.coilEnableUserWindingLossesModels"
                                      @update="handleModelChange"
                                 />
-                                <small class="text-muted">Used for proximity effect loss calculations</small>
+                                <small class="text-color-secondary">Used for proximity effect loss calculations</small>
                             </div>
 
                             <!-- Stray Capacitance Model -->
@@ -426,10 +426,10 @@ export default {
                                     :labelWidthProportionClass="'col-0'"
                                     :valueWidthProportionClass="'col-12'"
                                     :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                                    :textColor="'var(--bs-white)'"
+                                    :textColor="'var(--p-white)'"
                                      @update="handleModelChange"
                                 />
-                                <small class="text-muted">Used for stray capacitance calculations</small>
+                                <small class="text-color-secondary">Used for stray capacitance calculations</small>
                             </div>
                         </div><!-- End v-else -->
                     </div>
@@ -464,7 +464,7 @@ export default {
                                     step="5"
                                     v-model.number="modelSettingsStore.painterNumberPointsX"
                                 >
-                                <small class="text-muted">Number of grid points in the horizontal direction (10-200)</small>
+                                <small class="text-color-secondary">Number of grid points in the horizontal direction (10-200)</small>
                             </div>
 
                             <!-- Number of Points Y -->
@@ -481,11 +481,11 @@ export default {
                                     step="5"
                                     v-model.number="modelSettingsStore.painterNumberPointsY"
                                 >
-                                <small class="text-muted">Number of grid points in the vertical direction (10-200)</small>
+                                <small class="text-color-secondary">Number of grid points in the vertical direction (10-200)</small>
                             </div>
 
                             <div class="alert alert-dark border-secondary mt-3" role="alert">
-                                <small class="text-muted">
+                                <small class="text-color-secondary">
                                     <i class="pi pi-info-circle mr-1"></i>
                                     Higher values produce finer visualizations but may slow down rendering. Default: 25×50
                                 </small>
@@ -524,16 +524,16 @@ export default {
 }
 
 .custom-switch:checked {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
+    background-color: var(--p-primary);
+    border-color: var(--p-primary);
 }
 
 .custom-switch:focus {
-    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(var(--p-primary-rgb), 0.25);
 }
 
 .setting-item:hover {
-    background-color: rgba(var(--bs-white-rgb), 0.03);
+    background-color: rgba(var(--p-white-rgb), 0.03);
     margin-left: -1rem;
     margin-right: -1rem;
     padding-left: 1rem;
@@ -542,7 +542,7 @@ export default {
 }
 
 .model-setting:hover {
-    background-color: rgba(var(--bs-white-rgb), 0.03);
+    background-color: rgba(var(--p-white-rgb), 0.03);
     margin-left: -0.5rem;
     margin-right: -0.5rem;
     padding-left: 0.5rem;
