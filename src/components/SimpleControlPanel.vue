@@ -39,6 +39,7 @@ export default {
             masExported,
             loading,
             undoRedoBlocked,
+            settingsVisible: false,
         }
     },
     methods: {
@@ -78,8 +79,7 @@ export default {
             setTimeout(() => this.masExported = false, 2000);
         },
         openSettings() {
-            this.masExported = true
-            setTimeout(() => this.masExported = false, 2000);
+            this.settingsVisible = true;
         },
         onSettingsUpdated() {
             // setTimeout(() => {this.$router.push('/engine_loader');}, 100);
@@ -168,6 +168,7 @@ export default {
 <template>
     <Settings
         :modalName="'MagneticBuilderConfigurationModal'"
+        v-model:visible="settingsVisible"
         @onSettingsUpdated="onSettingsUpdated"
     />
     <div class="scp-panel">
@@ -179,7 +180,7 @@ export default {
                 aria-label="Undo"
                 title="Undo"
             >
-                <i class="bi bi-arrow-counterclockwise"></i>
+                <i class="pi pi-history"></i>
             </button>
             <button
                 :disabled="!historyStore.isForwardPossible()"
@@ -188,7 +189,7 @@ export default {
                 aria-label="Redo"
                 title="Redo"
             >
-                <i class="bi bi-arrow-clockwise"></i>
+                <i class="pi pi-refresh"></i>
             </button>
         </div>
 
@@ -199,14 +200,14 @@ export default {
                 class="scp-btn scp-btn-primary"
                 @click="load"
             >
-                <i class="bi bi-folder2-open"></i>
+                <i class="pi pi-folder-open"></i>
                 <span>{{loading ? 'Loading…' : 'Load MAS'}}</span>
             </button>
             <button
                 class="scp-btn scp-btn-primary"
                 @click="exportMAS"
             >
-                <i class="bi bi-file-earmark-arrow-up"></i>
+                <i class="pi pi-file-export"></i>
                 <span>Export MAS</span>
             </button>
         </div>
@@ -215,13 +216,11 @@ export default {
             <button
                 v-if="showConfigurationButton"
                 class="scp-btn scp-btn-icon"
-                data-bs-toggle="modal"
-                data-bs-target="#MagneticBuilderConfigurationModal"
                 @click="openSettings"
                 aria-label="Settings"
                 title="Settings"
                 >
-                <i class="bi bi-gear-fill"></i>
+                <i class="pi pi-cog"></i>
             </button>
             <button
                 v-if="showResetButton"
@@ -230,7 +229,7 @@ export default {
                 aria-label="Reset"
                 title="Reset"
                 >
-                <i class="bi bi-power"></i>
+                <i class="pi pi-power-off"></i>
             </button>
         </div>
     </div>
@@ -247,10 +246,10 @@ export default {
     background: linear-gradient(180deg,
         rgba(var(--bs-dark-rgb), 0.75) 0%,
         rgba(var(--bs-dark-rgb), 0.55) 100%);
-    border: 1px solid rgba(var(--bs-light-rgb), 0.08);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.08);
     border-top: 3px solid rgba(var(--bs-primary-rgb), 0.8);
     border-radius: 14px;
-    box-shadow: 0 6px 24px rgba(var(--bs-black-rgb), 0.45), inset 0 1px 0 rgba(var(--bs-light-rgb), 0.04);
+    box-shadow: 0 6px 24px rgba(var(--bs-black-rgb), 0.45), inset 0 1px 0 rgba(var(--bs-white-rgb), 0.04);
     flex-wrap: wrap;
 }
 
@@ -308,9 +307,9 @@ export default {
 }
 
 .scp-btn-icon {
-    background: rgba(var(--bs-light-rgb), 0.08);
-    border: 1px solid rgba(var(--bs-light-rgb), 0.22);
-    color: rgba(var(--bs-light-rgb), 0.9);
+    background: rgba(var(--bs-white-rgb), 0.08);
+    border: 1px solid rgba(var(--bs-white-rgb), 0.22);
+    color: rgba(var(--bs-white-rgb), 0.9);
     box-shadow: 0 1px 4px rgba(var(--bs-black-rgb), 0.2);
     min-width: 2.1rem;
     padding: 0.4rem 0.55rem;

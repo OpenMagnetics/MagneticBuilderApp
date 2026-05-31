@@ -270,7 +270,7 @@ export default {
     <div class="wireinfo-panel">
         <div class="wireinfo-header">
             <div class="wireinfo-header-left">
-                <i class="bi bi-lightning-fill"></i>
+                <i class="pi pi-bolt"></i>
                 <span>Wire Info</span>
             </div>
             <div v-if="!dataUptoDate && hasCalculableData" class="wireinfo-outdated-badge">Outdated</div>
@@ -485,7 +485,7 @@ export default {
                 <div class="wireinfo-simple" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Eff. Current Density'"
                         :unit="'A/mm²'"
                         :dataTestLabel="dataTestLabel + '-Jeff'"
@@ -502,7 +502,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Eff. Skin Depth'"
                         :unit="'m'"
                         :dataTestLabel="dataTestLabel + '-EffectiveSkinDepth'"
@@ -520,7 +520,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.wireWidth"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Outer Width'"
                         :unit="'m'"
                         :dataTestLabel="dataTestLabel + '-OuterWidth'"
@@ -537,7 +537,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.wireHeight"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Outer Height'"
                         :unit="'m'"
                         :dataTestLabel="dataTestLabel + '-OuterHeight'"
@@ -554,7 +554,7 @@ export default {
                     />
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.turnsRatio"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         v-if="windingIndex > 0"
                         :name="'Turns Ratio'"
                         :unit="null"
@@ -625,13 +625,13 @@ export default {
 }
 
 .wireinfo-body {
-    padding: 0.5rem 0.4rem;
+    padding: 0.2rem 0.4rem;
 }
 
 .wireinfo-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.1rem 0.5rem;
+    gap: 0 0.5rem;
 }
 
 @media (max-width: 576px) {
@@ -644,13 +644,53 @@ export default {
     background: transparent;
     border: 0;
     border-radius: 10px;
-    padding: 0.1rem 0.4rem 0.1rem 0.4rem;
+    padding: 0.05rem 0.4rem;
+    margin: 0;
     transition: opacity 0.3s ease;
+    line-height: 1.25;
+    font-size: 0.9rem;
 }
 
+.wireinfo-cell :deep(.row),
+.wireinfo-cell :deep(.grid),
+.wireinfo-cell :deep(.dim-ro-row),
+.wireinfo-cell :deep(.dim-ro-value-row),
+.wireinfo-cell :deep(.dim-ro-container) {
+    margin: 0 !important;
+    padding: 0 !important;
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+}
+.wireinfo-cell :deep(.row > *),
+.wireinfo-cell :deep(.grid > *),
+.wireinfo-cell :deep(.dim-ro-row > *) {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+}
 .wireinfo-cell :deep(.form-label),
-.wireinfo-cell :deep(label) {
-    padding-left: 0.35rem !important;
+.wireinfo-cell :deep(label),
+.wireinfo-cell :deep(.dim-ro-label) {
+    padding: 0 0 0 0.35rem !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+    text-align: start !important;
+}
+.wireinfo-cell :deep(.p-inputnumber),
+.wireinfo-cell :deep(.p-inputnumber > input),
+.wireinfo-cell :deep(.p-select),
+.wireinfo-cell :deep(.p-inputtext),
+.wireinfo-cell :deep(.dim-ro-input),
+.wireinfo-cell :deep(.dim-ro-value),
+.wireinfo-cell :deep(.dim-ro-unit) {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.25 !important;
 }
 
 .wireinfo-simple {

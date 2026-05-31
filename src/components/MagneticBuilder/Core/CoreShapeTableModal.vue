@@ -1,5 +1,5 @@
-<script setup >
-import { Modal } from "bootstrap";
+<script setup>
+import Dialog from 'primevue/dialog'
 import DataTable from 'datatables.net-vue3';
 import DataTablesCore from 'datatables.net';
 </script>
@@ -7,7 +7,8 @@ import DataTablesCore from 'datatables.net';
 <script>
 
 export default {
-    emits: ['coreShapeSelected'],
+    components: { Dialog },
+    emits: ['coreShapeSelected', 'update:visible'],
     props: {
         dataTestLabel: {
             type: String,
@@ -21,6 +22,7 @@ export default {
             type: Array,
             required: true,
         },
+        visible: { type: Boolean, default: false },
     },
     data() {
         DataTable.use(DataTablesCore);
@@ -40,14 +42,16 @@ export default {
     watch: {
         'shapeFamily': {
             handler(newValue, oldValue) {
-                this.$refs.coreShapeTable.dt.search(newValue).draw().columns.adjust();
+                if (this.$refs.coreShapeTable && this.$refs.coreShapeTable.dt) {
+                    this.$refs.coreShapeTable.dt.search(newValue).draw().columns.adjust();
+                }
             },
           deep: true
         },
     },
     methods: {
         selectCoreShape(data) {
-            this.$refs.closeSettingsModalRef.click();
+            this.$emit('update:visible', false);
             this.$emit('coreShapeSelected', data)
         }
     }
@@ -56,17 +60,20 @@ export default {
 
 
 <template>
-    <div class="modal fade" :id="'coreShapeTableModal'" tabindex="-1" :aria-labelledby="'coreShapeTableModal-settingsModalLabel'" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable shape-table-modal">
-            <div class="modal-content shape-modal-content">
-                <div class="modal-header shape-modal-header">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-boxes shape-header-icon me-3"></i>
-                        <h5 :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title mb-0 shape-modal-title" :id="'coreShapeTableModal-settingsModalLabel'">Select Core Shape</h5>
-                    </div>
-                    <button ref="closeSettingsModalRef" type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="settingsModalClose"></button>
-                </div>
-                <div class="modal-body px-4 py-4" id="dataTables_wrapper">
+    <Dialog
+        :visible="visible"
+        @update:visible="(v) => $emit('update:visible', v)"
+        :modal="true"
+        :draggable="false"
+        :style="{ width: 'min(95vw, 1200px)' }"
+        :pt="{ root: { class: 'shape-modal-content' } }">
+        <template #header>
+            <div class="d-flex align-items-center">
+                <i class="pi pi-box shape-header-icon mr-3"></i>
+                <h5 :data-cy="dataTestLabel + '-settingsModal-notification-text'" class="modal-title mb-0 shape-modal-title">Select Core Shape</h5>
+            </div>
+        </template>
+        <div class="px-2 py-2" id="dataTables_wrapper">
                     <DataTable
                         :class="''"
                         :columns="coreShapeColumns"
@@ -90,13 +97,11 @@ export default {
                             <button
                                 class="btn shape-select-btn"
                                 @click="selectCoreShape(props.rowData)"
-                            ><i class="bi bi-arrow-right"></i></button>
+                            ><i class="pi pi-arrow-right"></i></button>
                         </template>
                     </DataTable>
                 </div>
-            </div>
-        </div>
-    </div>
+    </Dialog>
 </template>
 
 <style>

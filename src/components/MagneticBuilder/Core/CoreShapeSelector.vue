@@ -41,6 +41,7 @@ export default {
             taskQueueStore,
             historyStore,
             localData,
+            coreShapeTableVisible: false,
             coreShapeNames,
             coreShapeFamilies,
             loading,
@@ -252,7 +253,8 @@ export default {
 }
 </script>
 <template>
-    <CoreShapeTableModal 
+    <CoreShapeTableModal
+        v-model:visible="coreShapeTableVisible"
         :dataTestLabel="dataTestLabel"
         :coreShapeData="coreShapeData"
         :shapeFamily="localData.shapeFamily"
@@ -272,8 +274,8 @@ export default {
                 :justifyContent="true"
                 v-model="localData"
                 :options="coreShapeFamilies"
-                :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                :labelWidthProportionClass="'col-12 md:col-5'"
+                :valueWidthProportionClass="'col-12 md:col-7'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -296,8 +298,8 @@ export default {
                     :optionsToDisable="Object.keys(coreShapeFamilies)"
                     :options="coreShapeNames[localData.shapeFamily]"
                     @update="$emit('update', localData.shape, localData.shapeFamily)"
-                    :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                    :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                    :labelWidthProportionClass="'col-12 md:col-5'"
+                    :valueWidthProportionClass="'col-12 md:col-7'"
                     :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                     :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                     :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -313,10 +315,9 @@ export default {
                     <button
                         :style="$styleStore.magneticBuilder.tableButton"
                         class="shape-table-btn"
-                        data-bs-toggle="modal"
-                        data-bs-target="#coreShapeTableModal"
+                        @click="coreShapeTableVisible = true"
                         >
-                        <i class="bi bi-table"></i>
+                        <i class="pi pi-table"></i>
                     </button>
                 </div>
             </div>
@@ -324,58 +325,63 @@ export default {
 </template>
 
 <style scoped>
-/* Bundle the Shape <select> and the "open table" button into one visually
-   unified input-group: the select shrinks on its right side and the button
-   sits flush against it (no left border, flattened left corners). The
-   wrapper is the positioning context for the absolutely-placed button so
-   nothing here depends on outer (project-level) layout classes. */
+/* Shape <select> + "open core-shape table" button on the SAME row,
+ * button flush against the select's right edge, not overlapping it. */
 .core-shape-input-group {
     position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
 }
 
+/* The ElementFromList wrapper takes the full row width. The button is
+ * absolute-positioned over the row's right edge: only the dropdown
+ * inside the value column needs to shrink by the button's width. */
+.core-shape-input-group :deep(.core-shape-row) {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+/* Shrink the dropdown (and only the dropdown) inside the value column so
+ * it doesn't slide under the absolute-positioned table button. */
+.core-shape-input-group :deep(.core-shape-row .p-select),
+.core-shape-input-group :deep(.core-shape-row select.efl-select) {
+    width: calc(100% - 2.25rem) !important;
+    max-width: calc(100% - 2.25rem) !important;
+    margin-right: 2.25rem !important;
+}
+
+/* The button is absolute-positioned against `.core-shape-input-group`
+ * (relative parent), pinned to the right edge and vertically centered
+ * over the select's row inside the ElementFromList. */
 .core-shape-table-btn-wrapper {
     position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
+    right: 8px;             /* shim: align button right edge with the other
+                               dropdowns (Family / Mfg / Material), which end
+                               8px inside the value column's right border */
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
-    /* ElementFromList always renders an empty first .efl-row above the
-       populated one, so the select sits at the BOTTOM of the wrapper's
-       full-height span. Align the button there too. */
-    align-items: flex-end;
+    align-items: center;
     z-index: 2;
     padding: 0;
 }
 
-/* Reserve space on the right of the Shape <select> for the table button
-   so the select ends to the left of the button instead of overlapping it.
-   We use margin-right on the select (a flex child) rather than padding on
-   the row — that way only the select column shrinks; the label keeps its
-   full col-md-5 share so the label/value split stays aligned with the
-   other rows (Manufacturer / Material). */
-.core-shape-input-group :deep(.core-shape-row select.efl-select) {
-    margin-right: 2.5rem !important;
-}
-
 .shape-table-btn {
     height: 1.75rem;
-    width: 2.25rem;
+    width: 1.75rem;
     padding: 0;
-    background-color: var(--p-primary-color);
-    color: var(--bs-white);
-    border: 1px solid var(--p-primary-color);
-    border-left: none;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-top-right-radius: var(--p-border-radius);
-    border-bottom-right-radius: var(--p-border-radius);
+    background-color: transparent;
+    color: var(--bs-primary);
+    border: 0;
+    border-radius: var(--p-border-radius);
     font-family: var(--p-font-family);
-    font-size: 0.8rem;
+    font-size: 1rem;
     cursor: pointer;
-    transition: filter 0.2s;
+    transition: background-color 0.15s, color 0.15s;
 }
 
 .shape-table-btn:hover {
-    filter: brightness(0.9);
+    background-color: rgba(var(--bs-primary-rgb), 0.15);
+    color: var(--bs-white);
 }
 </style>

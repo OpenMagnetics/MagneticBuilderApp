@@ -520,7 +520,7 @@ export default {
         <div class="core-config-panel">
             <div class="core-config-header">
                 <div class="core-config-header-left">
-                    <i class="bi bi-box-fill"></i>
+                    <i class="pi pi-box"></i>
                     <span>Core Configuration</span>
                 </div>
                 <div v-if="enableAdvise && enableSubmenu && !readOnly" class="core-config-header-right">
@@ -532,7 +532,7 @@ export default {
                         v-tooltip="isCoreIncomplete ? 'Core not fully configured — click to get a recommended starting core' : 'Get a recommended core for these requirements'"
                         @click="adviseCoreRequested"
                     >
-                        <i class="bi bi-magic"></i>
+                        <i class="pi pi-sparkles"></i>
                         <span>Advise</span>
                     </button>
                 </div>
@@ -578,8 +578,8 @@ export default {
                             :justifyContent="true"
                             v-model="localData"
                             :options="coreMaterialManufacturers"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -601,8 +601,8 @@ export default {
                             :optionsToDisable="coreMaterialManufacturers"
                             :options="coreMaterialNames[localData.materialManufacturer]"
                             @update="materialUpdated"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -627,8 +627,8 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             @update="numberStacksUpdated"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -791,16 +791,23 @@ export default {
 
 .core-config-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.15rem;
     background: var(--bs-dark);
     border-radius: 10px;
     padding: 0.35rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .core-config-cell {
     border-radius: 10px;
-    padding: 0.1rem 0.35rem 0.1rem 0.35rem;
+    padding: 0.1rem 0.35rem;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .core-config-cell-wide {
@@ -808,11 +815,100 @@ export default {
 }
 
 .core-config-gap-cell {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
 }
 
+/* CoreShapeSelector uses `<div class="row g-0">` (zero gutter) for its
+ * inner rows, while the other cells (Manufacturer / Material / …) use
+ * default Bootstrap row gutters that inset the col by ~0.75rem. That
+ * shifts Shape Family's dropdown ~4-6px further right than the others.
+ * Restore the gutter padding on Shape Family / Shape value columns so
+ * all dropdowns share the same right edge. */
+.core-config-cell :deep(.row.g-0) > [class*="col-"] {
+    padding-right: 0.75rem;
+}
+
+/* Core Shape row: dropdown + table-icon button act as ONE element
+ * aligned left and right with the Shape Family dropdown above.
+ * - Dropdown's left edge = Shape Family dropdown's left edge (via the
+ *   inner ElementFromList's col-5 label + col-7 select split)
+ * - Button right edge = Shape Family dropdown's right edge (the button
+ *   is pinned with `right: 12px` to compensate for the row gutter that
+ *   insets the other selects from the cell's right edge)
+ * - Dropdown is shrunk by 3rem so it doesn't overlap the 28px button
+ *   and there's a visible gap between them. */
+.core-config-cell :deep(.core-shape-input-group) {
+    position: relative !important;
+    display: block;
+}
+.core-config-cell :deep(.core-shape-input-group .core-shape-row) {
+    width: 100%;
+}
+.core-config-cell :deep(.core-shape-input-group .core-shape-row .p-select) {
+    width: calc(100% - 3rem) !important;
+    max-width: calc(100% - 3rem) !important;
+    margin-right: 2.5rem !important;
+}
+/* Match Shape Family dropdown's right edge to Shape dropdown's right
+ * edge (don't push Shape closer to the button — instead shrink Shape
+ * Family so they line up). The Shape Family ElementFromList sits in
+ * its own .efl-container.mb-1; reserve the same horizontal space on
+ * the right as the Shape row reserves for its table button. */
+.core-config-cell :deep(.efl-container.mb-1 .p-select) {
+    width: calc(100% - 3.5rem) !important;
+    max-width: calc(100% - 3.5rem) !important;
+    margin-right: 3rem !important;
+}
+.core-config-cell :deep(.core-shape-table-btn-wrapper) {
+    position: absolute !important;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%) !important;
+}
+
+/* Align all labels (Shape Family / Shape / Manufacturer / Material /
+ * Number of Stacks / Gap Info / Type / Length) to the SAME left x.
+ * Cause of the misalignment: Bootstrap's .row has a default
+ * margin-left:-0.75rem and PrimeFlex's .col-12 adds its own
+ * padding-left, so the rows inside CoreShapeSelector / CoreGappingSelector
+ * end up offset from cells that don't use a .row wrapper. Zero both. */
+.core-config-cell :deep(.row),
+.core-config-gap-cell :deep(.row) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+.core-config-cell :deep(.row) > [class*="col-"],
+.core-config-gap-cell :deep(.row) > [class*="col-"] {
+    padding-left: 0 !important;
+}
+/* Nested .efl-container.col-12 (e.g. inside CoreShapeSelector's
+ * .core-shape-input-group) also has PrimeFlex padding-left; zero it
+ * so the Shape label lines up with Shape Family / Manufacturer / etc. */
+.core-config-cell :deep(.efl-container[class*="col-"]) {
+    padding-left: 0 !important;
+}
 .core-config-cell :deep(.form-label),
 .core-config-cell :deep(label) {
-    padding-left: 0.35rem !important;
+    text-align: start !important;
+}
+.core-config-gap-cell :deep(.form-label),
+.core-config-gap-cell :deep(label) {
+    text-align: start !important;
+}
+
+/* Match input value/unit font size to the surrounding DimensionReadOnly
+ * value text (Core Info card below). PrimeVue Aura's defaults on Select
+ * / InputNumber inner text override what we set on the parent — we have
+ * to bump everything explicitly. */
+.core-config-cell :deep(.p-select-label),
+.core-config-cell :deep(.p-select .p-select-label),
+.core-config-cell :deep(.p-inputnumber-input),
+.core-config-cell :deep(.p-inputnumber input),
+.core-config-cell :deep(input.p-inputtext),
+.core-config-cell :deep(.dwt-unit-addon),
+.core-config-cell :deep(.dim-unit),
+.core-config-cell :deep(.dim-input),
+.core-config-cell :deep(.dim-input input) {
+    font-size: 1.15rem !important;
 }
 </style>

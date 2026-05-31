@@ -252,7 +252,7 @@ export default {
             v-else
             class="row gx-0"
         >
-            <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
+            <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'col-offset-1 col-4'">
                 <CoreBuilder 
                     :masStore="masStore"
                     :readOnly="readOnly"
@@ -266,7 +266,7 @@ export default {
                     @customizeCore="customizeCore"
                 />
             </div>
-            <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'offset-1 col-4'">
+            <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'col-offset-1 col-4'">
                 <BasicWireBuilder 
                     :masStore="masStore"
                     :readOnly="readOnly"

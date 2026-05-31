@@ -14,6 +14,8 @@ export default {
         const masStore = useMasStore();
         return {
             masStore,
+            bugReporterVisible: false,
+            navCollapseOpen: false,
         }
     },
     methods: {
@@ -41,42 +43,42 @@ export default {
     <nav class="navbar navbar-expand-lg bg-dark navbar-dark text-primary mb-1 om-header" id="header_wrapper">
         <div class="container-fluid">
             <a data-cy="Header-logo-home-link" href="/" aria-label="Visit OpenMagnetics and Tear Down the Paywalls!">
-                <img src="/images/newLogo.png" width="60" height="40" href="/" class="d-inline-block align-top me-3" alt="OpenMagnetics Logo">
+                <img src="/images/newLogo.png" width="60" height="40" href="/" class="d-inline-block align-top mr-3" alt="OpenMagnetics Logo">
             </a>
             <a  data-cy="Header-brand-home-link" class="navbar-brand text-primary" href="/">OpenMagnetics's Magnetic Builder</a>
-            <button class="navbar-toggler text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler text-primary" type="button" @click="navCollapseOpen = !navCollapseOpen" aria-controls="navbarNavDropdown" :aria-expanded="navCollapseOpen ? 'true' : 'false'" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon text-white"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <div class="collapse navbar-collapse" :class="{ show: navCollapseOpen }" id="navbarNavDropdown">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a data-cy="Header-alfs-musings-link" class="nav-link text-primary me-3" href="https://www.linkedin.com/newsletters/7026708624966135808/" target="_blank" rel="noopener noreferrer">Alf's Musings</a>
+                        <a data-cy="Header-alfs-musings-link" class="nav-link text-primary mr-3" href="https://www.linkedin.com/newsletters/7026708624966135808/" target="_blank" rel="noopener noreferrer">Alf's Musings</a>
                     </li>
                     <li class="nav-item">
                         <span class="nav-item">
-                            <button data-cy="Header-new-magnetic-link" class="btn me-4 nav-link text-dark bg-primary border-dark" @click="newPowerMagneticToolDesign">New magnetic<i class="ms-2 bi bi-briefcase-fill"></i> </button>
+                            <button data-cy="Header-new-magnetic-link" class="btn mr-4 nav-link text-dark bg-primary border-dark" @click="newPowerMagneticToolDesign">New magnetic<i class="ml-2 pi pi-briefcase"></i> </button>
                         </span>
                     </li>
                     <li v-if="$stateStore.isAnyDesignLoaded() && $route.name != 'MagneticTool'" class="nav-item">
                         <span class="nav-item">
-                            <button data-cy="Header-donate-link" class="btn me-4 nav-link text-dark bg-primary border-dark" @click="continueMagneticToolDesign">Continue design<i class="ms-2 bi bi-box-seam"></i> </button>
+                            <button data-cy="Header-donate-link" class="btn mr-4 nav-link text-dark bg-primary border-dark" @click="continueMagneticToolDesign">Continue design<i class="ml-2 pi pi-box-seam"></i> </button>
                         </span>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <span class="nav-item">
-                            <a data-cy="Header-donate-link" href="https://en.liberapay.com/OpenMagnetics/" target="_blank" rel="noopener noreferrer" class="btn me-4 nav-link text-dark bg-info border-dark">Donate to OM <i class="bi bi-piggy-bank-fill"></i> </a>
+                            <a data-cy="Header-donate-link" href="https://en.liberapay.com/OpenMagnetics/" target="_blank" rel="noopener noreferrer" class="btn mr-4 nav-link text-dark bg-info border-dark">Donate to OM <i class="pi pi-dollar"></i> </a>
                         </span>
                     </li>
                     <li class="nav-item">
                         <span class="nav-item">
-                            <button data-cy="Header-report-bug-modal-button" class="btn me-4 nav-link text-danger border-dark"  data-bs-toggle="modal" data-bs-target="#reportBugModal">Report bug <i class="bi bi-bug-fill"></i> </button>
+                            <button data-cy="Header-report-bug-modal-button" class="btn mr-4 nav-link text-danger border-dark" @click="bugReporterVisible = true">Report bug <i class="pi pi-server"></i> </button>
                         </span>
                     </li>
                     <li class="nav-item">
                         <span class="nav-item">
-                            <a data-cy="Header-repository-link" class="btn me-4 nav-link text-success border-dark" href="https://github.com/OpenMagnetics/" target="_blank" rel="noopener noreferrer">Beta <i class="bi bi-github"></i> </a>
+                            <a data-cy="Header-repository-link" class="btn mr-4 nav-link text-success border-dark" href="https://github.com/OpenMagnetics/" target="_blank" rel="noopener noreferrer">Beta <i class="pi pi-github"></i> </a>
                         </span>
                     </li>
                 </ul>
@@ -86,7 +88,7 @@ export default {
     </nav>
 
     <!-- Modal -->
-    <BugReporterModal/>
+    <BugReporterModal v-model:visible="bugReporterVisible"/>
 </template>
 
 <style>

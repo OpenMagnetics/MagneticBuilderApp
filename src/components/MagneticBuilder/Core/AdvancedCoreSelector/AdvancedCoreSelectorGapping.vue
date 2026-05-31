@@ -450,7 +450,7 @@ export default {
             <div
                 v-for="(gapsPerColumn, columnIndex) in reorderedColumns"
                 :key="'column-' + columnIndex"
-                class="column-container col-sm-4 col-md-3 row mb-1 text-center mx-0"
+                class="column-container col-4 md:col-3 row mb-1 text-center mx-0"
                 :style="{'background-image': `url(${columnImages[columnIndex]}`}"
             >
                 <div>
@@ -468,8 +468,8 @@ export default {
                         :justifyContent="true"
                         v-model="reorderedColumns[columnIndex]"
                         :options="gapTypesWithoutCustom"
-                        :labelWidthProportionClass="'col-sm-12 col-md-4'"
-                        :valueWidthProportionClass="'col-sm-12 col-md-8'"
+                        :labelWidthProportionClass="'col-12 md:col-4'"
+                        :valueWidthProportionClass="'col-12 md:col-8'"
                         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                         :labelBgColor="{'background': 'transparent'}"
@@ -484,7 +484,7 @@ export default {
                         <button
                             :style="$styleStore.magneticBuilder.addButton"
                             :data-cy="dataTestLabel + 'add-gap-button'"
-                            class="btn col-sm-12 col-md-6 px-0"
+                            class="btn col-12 md:col-6 px-0"
                             @click="addGap(columnIndex)"
 
                         >
@@ -493,7 +493,7 @@ export default {
                         <button
                             :style="$styleStore.magneticBuilder.utilityButton"
                             :data-cy="dataTestLabel + 'add-gap-button'"
-                            class="btn col-sm-12 col-md-6 px-0"
+                            class="btn col-12 md:col-6 px-0"
                             @click="autoDistributeGaps(columnIndex)"
 
                         >
@@ -522,7 +522,7 @@ export default {
                     </div>
                 </div>
             </div>
-            <div class="col-sm-12 col-md-3">
+            <div class="col-12 md:col-3">
                 <h3 class= "mb-3"> {{'3D model'}} </h3>
                 <div
                     v-if="core.functionalDescription != null"
@@ -564,7 +564,7 @@ export default {
                     :style="dataUpToDate? 'opacity: 100%;' : 'opacity: 20%;'"
                 >
                     <DimensionReadOnly 
-                        class="col-12 pe-4 ps-3"
+                        class="col-12 pr-4 pl-3"
                         :name="'μ'"
                         :subscriptName="'ini'"
                         :unit="null"
@@ -583,7 +583,7 @@ export default {
                         :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <DimensionReadOnly 
-                        class="col-12 pe-4 ps-3"
+                        class="col-12 pr-4 pl-3"
                         :name="'μ'"
                         :subscriptName="'eff'"
                         :unit="null"
@@ -602,7 +602,7 @@ export default {
                         :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <DimensionReadOnly 
-                        class="col-12 pe-4 ps-3"
+                        class="col-12 pr-4 pl-3"
                         :name="'A'"
                         :subscriptName="'L ungap.'"
                         :unit="'H/tu²'"
@@ -621,7 +621,7 @@ export default {
                         :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <DimensionReadOnly 
-                        class="col-12 pe-4 ps-3"
+                        class="col-12 pr-4 pl-3"
                         :name="'A'"
                         :subscriptName="'L gap.'"
                         :unit="'H/tu²'"

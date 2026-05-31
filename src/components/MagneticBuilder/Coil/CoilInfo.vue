@@ -346,7 +346,7 @@ export default {
     <div v-else class="coilinfo-panel">
         <div class="coilinfo-header">
             <div class="coilinfo-header-left">
-                <i class="bi bi-lightning-fill"></i>
+                <i class="pi pi-bolt"></i>
                 <span>Coil Info</span>
             </div>
             <div v-if="!dataUptoDate && !loading && hasCalculableData" class="coilinfo-outdated-badge">Outdated</div>
@@ -706,7 +706,7 @@ export default {
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.windingLosses"
                         v-if="outputsData.windingLosses != null"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Winding losses'"
                         :unit="'W'"
                         :power="1"
@@ -726,7 +726,7 @@ export default {
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.totalLosses"
                         v-if="outputsData.totalLosses != null"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Total losses'"
                         :unit="'W'"
                         :power="1"
@@ -758,7 +758,7 @@ export default {
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.leakageInductanceReflectedToPrimary"
                         v-if="outputsData.leakageInductancePerWinding != null && masStore.mas.magnetic.coil.functionalDescription.length > 1"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Leakage Inductance'"
                         :unit="'H'"
                         :power="1"
@@ -829,13 +829,13 @@ export default {
 }
 
 .coilinfo-body {
-    padding: 0.5rem 0.4rem;
+    padding: 0.2rem 0.4rem;
 }
 
 .coilinfo-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.1rem 0.5rem;
+    gap: 0 0.5rem;
 }
 
 @media (max-width: 576px) {
@@ -848,13 +848,53 @@ export default {
     background: transparent;
     border: 0;
     border-radius: 10px;
-    padding: 0.1rem 0.4rem 0.1rem 0.4rem;
+    padding: 0.05rem 0.4rem;
+    margin: 0;
     transition: opacity 0.3s ease;
+    line-height: 1.25;
+    font-size: 0.9rem;
 }
 
+.coilinfo-cell :deep(.row),
+.coilinfo-cell :deep(.grid),
+.coilinfo-cell :deep(.dim-ro-row),
+.coilinfo-cell :deep(.dim-ro-value-row),
+.coilinfo-cell :deep(.dim-ro-container) {
+    margin: 0 !important;
+    padding: 0 !important;
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+}
+.coilinfo-cell :deep(.row > *),
+.coilinfo-cell :deep(.grid > *),
+.coilinfo-cell :deep(.dim-ro-row > *) {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+}
 .coilinfo-cell :deep(.form-label),
-.coilinfo-cell :deep(label) {
-    padding-left: 0.35rem !important;
+.coilinfo-cell :deep(label),
+.coilinfo-cell :deep(.dim-ro-label) {
+    padding: 0 0 0 0.35rem !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+    text-align: start !important;
+}
+.coilinfo-cell :deep(.p-inputnumber),
+.coilinfo-cell :deep(.p-inputnumber > input),
+.coilinfo-cell :deep(.p-select),
+.coilinfo-cell :deep(.p-inputtext),
+.coilinfo-cell :deep(.dim-ro-input),
+.coilinfo-cell :deep(.dim-ro-value),
+.coilinfo-cell :deep(.dim-ro-unit) {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.25 !important;
 }
 
 .coilinfo-winding-bar {

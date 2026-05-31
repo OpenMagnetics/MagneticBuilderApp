@@ -78,8 +78,8 @@ export default {
         :justifyContent="true"
         v-model="$stateStore.graphParameters"
         :options="availableModes"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :selectStyleClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :selectStyleClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -94,8 +94,8 @@ export default {
         :justifyContent="true"
         v-model="$stateStore.graphParameters"
         :options="availableModes"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :selectStyleClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :selectStyleClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -114,8 +114,8 @@ export default {
         :allowNegative="false"
         :allowZero="false"
         :modelValue="$stateStore.graphParameters"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :valueWidthProportionClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :valueWidthProportionClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -134,8 +134,8 @@ export default {
         :allowNegative="false"
         :allowZero="false"
         :modelValue="$stateStore.graphParameters"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :valueWidthProportionClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :valueWidthProportionClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -155,8 +155,8 @@ export default {
         :allowNegative="true"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :valueWidthProportionClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :valueWidthProportionClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -176,8 +176,8 @@ export default {
         :allowNegative="true"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :valueWidthProportionClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :valueWidthProportionClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -197,8 +197,8 @@ export default {
         :allowNegative="false"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :valueWidthProportionClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :valueWidthProportionClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -218,8 +218,8 @@ export default {
         :allowNegative="false"
         :allowZero="true"
         :modelValue="$stateStore.graphParameters"
-        :labelWidthProportionClass="'col-sm-12 col-md-7'"
-        :valueWidthProportionClass="'col-sm-12 col-md-5'"
+        :labelWidthProportionClass="'col-12 md:col-7'"
+        :valueWidthProportionClass="'col-12 md:col-5'"
         :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
         :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -276,12 +276,12 @@ export default {
     margin-right: 0 !important;
 }
 
-/* Uppercase pill caption above each input */
+/* Uppercase pill caption above each input — same size as the value text. */
 .gcp-cell :deep(.dim-label),
 .gcp-cell :deep(.efl-label),
 .gcp-cell :deep(label) {
-    color: rgba(var(--bs-light-rgb), 0.65) !important;
-    font-size: 0.66rem !important;
+    color: rgba(var(--bs-white-rgb), 0.65) !important;
+    font-size: 1rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -290,11 +290,61 @@ export default {
     background: transparent !important;
 }
 
-.gcp-cell :deep(input[type="number"]),
+.gcp-cell :deep(.p-select-label),
+.gcp-cell :deep(.p-select .p-select-label),
+.gcp-cell :deep(.p-inputnumber-input),
+.gcp-cell :deep(.p-inputnumber input),
+.gcp-cell :deep(input.p-inputtext),
+.gcp-cell :deep(.dwt-unit-addon),
+.gcp-cell :deep(.dim-unit),
 .gcp-cell :deep(.dim-input),
+.gcp-cell :deep(.dim-input input),
 .gcp-cell :deep(.efl-select) {
-    font-size: 0.88rem !important;
+    font-size: 1rem !important;
     font-weight: 600;
-    height: 1.8rem !important;
+    min-height: 1.95rem;
+}
+
+/* Fix unit-dropdown width so the InputNumber's right edge lines up
+ * between rows regardless of unit string length (kHz vs MHz). */
+.gcp-cell :deep(.dwt-unit-addon),
+.gcp-cell :deep(.dim-unit) {
+    width: 3.5rem !important;
+    min-width: 3.5rem !important;
+    max-width: 3.5rem !important;
+    flex: 0 0 3.5rem !important;
+}
+
+/* Keep cell content inside the panel and align Dimension value groups
+ * (input + unit selector) to the right edge of the cell so they line up
+ * with the X/Y axis-mode dropdowns above. */
+.gcp-cell { overflow: hidden; }
+.gcp-cell :deep([class*="col-"]) {
+    box-sizing: border-box;
+    min-width: 0;
+}
+/* Right-align the value column's content so the input + unit dropdown
+ * stops at the cell's right edge instead of starting at the col's left. */
+.gcp-cell :deep(.col-5),
+.gcp-cell :deep(.md\:col-5) {
+    display: flex;
+    justify-content: flex-end;
+}
+.gcp-cell :deep(.p-inputgroup) {
+    max-width: 100%;
+    flex-wrap: nowrap;
+}
+.gcp-cell :deep(.p-inputgroup .p-inputnumber) {
+    flex: 1 1 0;
+    min-width: 0;
+}
+.gcp-cell :deep(.p-inputgroup .p-inputnumber input) {
+    width: 100%;
+    min-width: 0;
+}
+.gcp-cell :deep(.p-inputgroup-addon),
+.gcp-cell :deep(.dwt-unit-addon) {
+    flex: 0 0 auto;
+    max-width: 4.5rem;
 }
 </style>

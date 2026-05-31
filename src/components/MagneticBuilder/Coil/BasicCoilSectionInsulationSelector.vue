@@ -131,7 +131,7 @@ export default {
     <div v-show="showInsulationOptions && masStore.mas.magnetic.coil.sectionsDescription != null" class="insulation-panel">
         <div class="insulation-header">
             <div class="insulation-header-left">
-                <i class="bi bi-shield-shaded"></i>
+                <i class="pi pi-shield"></i>
                 <span>Insulation Settings</span>
             </div>
             <button
@@ -140,7 +140,7 @@ export default {
                 aria-label="Close insulation settings"
                 @click="$emit('closeInsulation')"
             >
-                <i class="bi bi-x-lg"></i>
+                <i class="pi pi-times"></i>
             </button>
         </div>
 
@@ -160,8 +160,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data"
                 :forceUpdate="forceUpdate"
-                :labelWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueWidthProportionClass="'col-sm-12 col-md-5'"
+                :labelWidthProportionClass="'col-12 md:col-7'"
+                :valueWidthProportionClass="'col-12 md:col-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -184,8 +184,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data"
                 :forceUpdate="forceUpdate"
-                :labelWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueWidthProportionClass="'col-sm-12 col-md-5'"
+                :labelWidthProportionClass="'col-12 md:col-7'"
+                :valueWidthProportionClass="'col-12 md:col-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -216,8 +216,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data.dataPerSection[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
-                :labelWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueWidthProportionClass="'col-sm-12 col-md-5'"
+                :labelWidthProportionClass="'col-12 md:col-7'"
+                :valueWidthProportionClass="'col-12 md:col-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -243,8 +243,8 @@ export default {
                 :allowZero="true"
                 :modelValue="data.dataPerSection[selectedSectionIndex]"
                 :forceUpdate="forceUpdate"
-                :labelWidthProportionClass="'col-sm-12 col-md-7'"
-                :valueWidthProportionClass="'col-sm-12 col-md-5'"
+                :labelWidthProportionClass="'col-12 md:col-7'"
+                :valueWidthProportionClass="'col-12 md:col-5'"
                 :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                 :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                 :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"

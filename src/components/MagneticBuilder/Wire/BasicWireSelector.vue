@@ -518,7 +518,7 @@ export default {
         <div class="wire-config-panel">
             <div class="wire-config-header">
                 <div class="wire-config-header-left">
-                    <i class="bi bi-lightning-fill"></i>
+                    <i class="pi pi-bolt"></i>
                     <span>Wire Configuration</span>
                 </div>
                 <div v-if="enableAdvise && enableSubmenu && !readOnly" class="wire-config-header-right">
@@ -531,7 +531,7 @@ export default {
                         v-tooltip="isCurrentWireIncomplete ? 'Wire not configured for this winding — click to get a recommendation' : 'Get a recommended wire for this winding'"
                         @click="adviseWireRequested"
                     >
-                        <i class="bi bi-magic"></i>
+                        <i class="pi pi-sparkles"></i>
                         <span>Advise</span>
                     </button>
                     <button
@@ -543,7 +543,7 @@ export default {
                         v-tooltip="anyWireIncomplete ? 'Some wires are not configured — click to get a recommendation for every winding' : 'Get a recommendation for every winding'"
                         @click="adviseAllWiresRequested"
                     >
-                        <i class="bi bi-magic"></i>
+                        <i class="pi pi-sparkles"></i>
                         <span>Advise all</span>
                     </button>
                     <button
@@ -555,7 +555,7 @@ export default {
                         v-tooltip="isCurrentWireIncomplete ? 'Wire not configured — click to get a recommendation' : 'Get a recommended wire'"
                         @click="adviseWireRequested"
                     >
-                        <i class="bi bi-magic"></i>
+                        <i class="pi pi-sparkles"></i>
                         <span>Advise</span>
                     </button>
                 </div>
@@ -612,8 +612,8 @@ export default {
                             :justifyContent="true"
                             v-model="localData"
                             :options="wireTypes"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :selectStyleClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :selectStyleClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -633,8 +633,8 @@ export default {
                             :name="'standard'"
                             :titleSameRow="true"
                             :justifyContent="true"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :selectStyleClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :selectStyleClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -655,8 +655,8 @@ export default {
                             :name="'roundConductingDiameter'"
                             :titleSameRow="true"
                             :justifyContent="true"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :selectStyleClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :selectStyleClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -675,8 +675,8 @@ export default {
                             :dataTestLabel="dataTestLabel + '-StrandConductingDiameter'"
                             :replaceTitle="'Cond. diameter'"
                             :name="'litzStrandConductingDiameter'"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :selectStyleClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :selectStyleClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -698,8 +698,8 @@ export default {
                             :name="'coating'"
                             :titleSameRow="true"
                             :justifyContent="true"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :selectStyleClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :selectStyleClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -724,8 +724,8 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -748,8 +748,8 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -772,8 +772,8 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -796,8 +796,8 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -820,8 +820,8 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                            :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -975,7 +975,12 @@ export default {
     background: var(--bs-dark);
     border-radius: 10px;
     padding: 0.35rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
+
 
 @media (max-width: 576px) {
     .wire-config-grid {
@@ -985,7 +990,10 @@ export default {
 
 .wire-config-cell {
     border-radius: 10px;
-    padding: 0.1rem 0.35rem 0.1rem 0.35rem;
+    padding: 0.1rem 0.35rem;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .wire-config-cell-wide {
@@ -999,5 +1007,19 @@ export default {
 .wire-config-cell :deep(.form-label),
 .wire-config-cell :deep(label) {
     padding-left: 0.35rem !important;
+    text-align: start !important;
+}
+
+/* Match input value/unit font size to the Wire Info card values below. */
+.wire-config-cell :deep(.p-select-label),
+.wire-config-cell :deep(.p-select .p-select-label),
+.wire-config-cell :deep(.p-inputnumber-input),
+.wire-config-cell :deep(.p-inputnumber input),
+.wire-config-cell :deep(input.p-inputtext),
+.wire-config-cell :deep(.dwt-unit-addon),
+.wire-config-cell :deep(.dim-unit),
+.wire-config-cell :deep(.dim-input),
+.wire-config-cell :deep(.dim-input input) {
+    font-size: 1.15rem !important;
 }
 </style>

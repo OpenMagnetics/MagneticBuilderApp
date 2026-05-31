@@ -286,7 +286,7 @@ export default {
         <div class="wire-config-panel">
             <div class="wire-config-header">
                 <div class="wire-config-header-left">
-                    <i class="bi bi-lightning-fill"></i>
+                    <i class="pi pi-bolt"></i>
                     <span>Wire Configuration</span>
                 </div>
                 <div v-if="enableAdvise && enableSubmenu && !readOnly" class="wire-config-header-right">
@@ -298,7 +298,7 @@ export default {
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseWireRequested"
                     >
-                        <i class="bi bi-magic"></i>
+                        <i class="pi pi-sparkles"></i>
                         <span>Advise</span>
                     </button>
                     <button
@@ -309,7 +309,7 @@ export default {
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseAllWiresRequested"
                     >
-                        <i class="bi bi-magic"></i>
+                        <i class="pi pi-sparkles"></i>
                         <span>Advise all</span>
                     </button>
                     <button
@@ -320,7 +320,7 @@ export default {
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseWireRequested"
                     >
-                        <i class="bi bi-magic"></i>
+                        <i class="pi pi-sparkles"></i>
                         <span>Advise</span>
                     </button>
                 </div>
@@ -401,7 +401,7 @@ export default {
                             :allowNegative="false"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :styleClassInput="'offset-3 col-6'"
+                            :styleClassInput="'col-offset-3 col-6'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"

@@ -243,7 +243,7 @@ export default {
     <div class="coreinfo-panel">
         <div class="coreinfo-header">
             <div class="coreinfo-header-left">
-                <i class="bi bi-box-fill"></i>
+                <i class="pi pi-box"></i>
                 <span>Core Info</span>
             </div>
             <div v-if="!dataUptoDate && hasCalculableData" class="coreinfo-outdated-badge">Outdated</div>
@@ -516,7 +516,7 @@ export default {
                 <div class="coreinfo-simple" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'L'"
                         :replaceTitle="'Magnetizing Inductance'"
                         :unit="'H'"
@@ -536,7 +536,7 @@ export default {
                     />
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.coreLosses"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :replaceTitle="'Core Losses'"
                         :name="'P'"
                         :unit="'W'"
@@ -556,7 +556,7 @@ export default {
                     />
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.saturationProportion"
-                        class="text-start ps-4 pe-4"
+                        class="text-start pl-4 pr-4"
                         :name="'Saturation Proportion'"
                         :unit="'%'"
                         :power="1"
@@ -627,13 +627,13 @@ export default {
 }
 
 .coreinfo-body {
-    padding: 0.5rem 0.4rem;
+    padding: 0.2rem 0.4rem;
 }
 
 .coreinfo-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.1rem 0.5rem;
+    gap: 0 0.5rem;
 }
 
 @media (max-width: 576px) {
@@ -646,13 +646,54 @@ export default {
     background: transparent;
     border: 0;
     border-radius: 10px;
-    padding: 0.1rem 0.4rem 0.1rem 0.4rem;
+    padding: 0.05rem 0.4rem;
+    margin: 0;
     transition: opacity 0.3s ease;
+    line-height: 1.25;
+    font-size: 0.9rem;
 }
 
+/* Crush the inner Dimension component to just the natural text height. */
+.coreinfo-cell :deep(.row),
+.coreinfo-cell :deep(.grid),
+.coreinfo-cell :deep(.dim-ro-row),
+.coreinfo-cell :deep(.dim-ro-value-row),
+.coreinfo-cell :deep(.dim-ro-container) {
+    margin: 0 !important;
+    padding: 0 !important;
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+}
+.coreinfo-cell :deep(.row > *),
+.coreinfo-cell :deep(.grid > *),
+.coreinfo-cell :deep(.dim-ro-row > *) {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+}
 .coreinfo-cell :deep(.form-label),
-.coreinfo-cell :deep(label) {
-    padding-left: 0.35rem !important;
+.coreinfo-cell :deep(label),
+.coreinfo-cell :deep(.dim-ro-label) {
+    padding: 0 0 0 0.35rem !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+    text-align: start !important;
+}
+.coreinfo-cell :deep(.p-inputnumber),
+.coreinfo-cell :deep(.p-inputnumber > input),
+.coreinfo-cell :deep(.p-select),
+.coreinfo-cell :deep(.p-inputtext),
+.coreinfo-cell :deep(.dim-ro-input),
+.coreinfo-cell :deep(.dim-ro-value),
+.coreinfo-cell :deep(.dim-ro-unit) {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    line-height: 1.25 !important;
 }
 
 .coreinfo-simple {

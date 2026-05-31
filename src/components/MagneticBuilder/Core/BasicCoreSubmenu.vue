@@ -65,7 +65,7 @@ export default {
             class="mb-btn mb-btn-outline"
             @click="$emit('customizeCore')"
         >
-            <i class="bi bi-sliders me-2"></i>Customize
+            <i class="pi pi-sliders-h mr-2"></i>Customize
         </button>
     </div>
 </template>
@@ -144,7 +144,7 @@ export default {
 .mb-btn-ghost {
     background: rgba(var(--bs-white-rgb), 0.08);
     border: 1px solid rgba(var(--bs-white-rgb), 0.28);
-    color: var(--bs-light);
+    color: var(--bs-white);
     box-shadow: 0 2px 6px rgba(var(--bs-black-rgb), 0.2);
 }
 

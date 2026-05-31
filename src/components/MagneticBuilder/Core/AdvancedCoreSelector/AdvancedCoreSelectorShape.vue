@@ -394,19 +394,19 @@ export default {
             v-if="'dimensions' in localData"
             class="row"
         >
-            <div class="col-md-3 col-sm-12">
+            <div class="md:col-3 sm:col-12">
                 <h3 class= "mb-3"> {{'Dimensions'}} </h3>
                 <ElementFromList
                     v-if="allowFamilyChange"
-                    class="col-10 offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-start"
                     :dataTestLabel="dataTestLabel + '-ShapeFamilies'"
                     :name="'family'"
                     :titleSameRow="true"
                     :justifyContent="true"
                     v-model="localData"
                     :options="availableFamilies"
-                    :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                    :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                    :labelWidthProportionClass="'col-12 md:col-5'"
+                    :valueWidthProportionClass="'col-12 md:col-7'"
                     :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                     :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                     :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -415,14 +415,14 @@ export default {
                     @update="familyUpdated"
                 />
                 <Text
-                    class="col-10 offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-start"
                     :name="'name'"
                     v-model="core.functionalDescription.shape"
                     :defaultValue="'Shape name'"
                     :dataTestLabel="dataTestLabel + '-ShapeName'"
                     :canBeEmpty="false"
-                    :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                    :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                    :labelWidthProportionClass="'col-12 md:col-5'"
+                    :valueWidthProportionClass="'col-12 md:col-7'"
                     :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                     :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                     :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -431,7 +431,7 @@ export default {
                 />
                 <ElementFromList
                     v-if="availableFamilySubtypes.length > 0"
-                    class="col-10 offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-start"
                     :dataTestLabel="dataTestLabel + '-ShapeFamilySubtypes'"
                     :name="'familySubtype'"
                     :replaceTitle="'Subtype'"
@@ -439,8 +439,8 @@ export default {
                     :justifyContent="true"
                     v-model="localData"
                     :options="availableFamilySubtypes"
-                    :labelWidthProportionClass="'col-sm-12 col-md-5'"
-                    :valueWidthProportionClass="'col-sm-12 col-md-7'"
+                    :labelWidthProportionClass="'col-12 md:col-5'"
+                    :valueWidthProportionClass="'col-12 md:col-7'"
                     :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                     :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                     :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -450,7 +450,7 @@ export default {
                 />
                 <div
                     v-for="key in Object.keys(localData.dimensions)"
-                    class="col-10 offset-1 mb-1 text-start"
+                    class="col-10 col-offset-1 mb-1 text-start"
                 >
                     <Dimension 
                         :name="key"
@@ -488,7 +488,7 @@ export default {
                         :style="dataUptoDate? 'opacity: 100%;' : 'opacity: 20%;'"
                     >
                         <DimensionReadOnly 
-                            class="col-12 pe-4 ps-5"
+                            class="col-12 pr-4 pl-5"
                             :name="'L'"
                             :subscriptName="'eff'"
                             :unit="'m'"
@@ -506,7 +506,7 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                         <DimensionReadOnly 
-                            class="col-12 pe-4 ps-5"
+                            class="col-12 pr-4 pl-5"
                             :name="'A'"
                             :subscriptName="'eff'"
                             :unit="'m²'"
@@ -524,7 +524,7 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                         <DimensionReadOnly 
-                            class="col-12 pe-4 ps-5"
+                            class="col-12 pr-4 pl-5"
                             :name="'V'"
                             :subscriptName="'eff'"
                             :unit="'m³'"
@@ -543,7 +543,7 @@ export default {
                         />
                         <DimensionReadOnly 
                             :class="isMobile($windowWidth)? '' : 'border-start'"
-                            class="col-12 pe-4 ps-5"
+                            class="col-12 pr-4 pl-5"
                             :name="'A'"
                             :subscriptName="'min'"
                             :unit="'m²'"
@@ -564,7 +564,7 @@ export default {
                 </div>
 
             </div>
-            <div class="col-md-5 col-sm-12">
+            <div class="md:col-5 sm:col-12">
                 <h3 class= "mb-3"> {{'3D model'}} </h3>
                 <div
                     v-if="core.functionalDescription != null"
@@ -585,7 +585,7 @@ export default {
                     />
                 </div>
             </div>
-            <div class="col-md-4 col-sm-12">
+            <div class="md:col-4 sm:col-12">
                 <h3 class= "mb-3"> {{'Technical Drawing'}} </h3>
                 <div
                     v-if="core.functionalDescription != null"

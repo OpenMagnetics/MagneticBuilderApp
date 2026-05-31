@@ -813,7 +813,7 @@ export default {
         <div class="coil-config-panel">
             <div class="coil-config-header">
                 <div class="coil-config-header-left">
-                    <i class="bi bi-gear-wide-connected"></i>
+                    <i class="pi pi-cog-wide-connected"></i>
                     <span>Coil Configuration</span>
                 </div>
                 <div class="coil-config-header-right">
@@ -824,7 +824,7 @@ export default {
                         :class="['coil-config-header-btn', showAlignmentOptions ? 'coil-config-header-btn-primary' : 'coil-config-header-btn-outline']"
                         @click="swapShowAlignmentOptions(!showAlignmentOptions)"
                     >
-                        <i class="bi bi-text-center"></i>
+                        <i class="pi pi-align-center"></i>
                         <span>Alignment</span>
                     </button>
                     <button
@@ -833,7 +833,7 @@ export default {
                         :class="['coil-config-header-btn', showInsulationOptions ? 'coil-config-header-btn-primary' : 'coil-config-header-btn-outline']"
                         @click="swapShowInsulationOptions(!showInsulationOptions)"
                     >
-                        <i class="bi bi-shield-shaded"></i>
+                        <i class="pi pi-shield"></i>
                         <span>Insulation</span>
                     </button>
                 </div>
@@ -877,7 +877,7 @@ export default {
                         class="builder-action-btn builder-action-btn-outline"
                         @click="showParasiticsView"
                     >
-                        <i class="bi bi-soundwave me-2"></i>Advanced Parasitics
+                        <i class="pi pi-volume-up mr-2"></i>Advanced Parasitics
                     </button>
 
                     <button
@@ -887,7 +887,7 @@ export default {
                         :class="['builder-action-btn', $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'builder-action-btn-primary' : 'builder-action-btn-ghost']"
                         @click="toggleTemperaturePlot"
                     >
-                        <i class="bi bi-thermometer-half me-2 temp-icon"></i>{{ $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'Hide Temperature' : 'Show Temperature' }}
+                        <i class="pi pi-sun mr-2 temp-icon"></i>{{ $stateStore.magnetic2DVisualizerState.plotMode === 'temperature_field' ? 'Hide Temperature' : 'Show Temperature' }}
                     </button>
                 </div>
 
@@ -908,7 +908,7 @@ export default {
                             :allowZero="true"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :styleClassInput="'offset-3 col-6'"
+                            :styleClassInput="'col-offset-3 col-6'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -933,7 +933,7 @@ export default {
                             :allowZero="true"
                             :modelValue="localData"
                             :forceUpdate="forceUpdate"
-                            :styleClassInput="'offset-3 col-6'"
+                            :styleClassInput="'col-offset-3 col-6'"
                             :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
                             :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
@@ -1106,6 +1106,16 @@ export default {
     background: var(--bs-dark);
     border-radius: 10px;
     padding: 0.35rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.coil-config-cell {
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
 }
 
 @media (max-width: 576px) {
@@ -1126,6 +1136,83 @@ export default {
 .coil-config-cell :deep(.form-label),
 .coil-config-cell :deep(label) {
     padding-left: 0.35rem !important;
+    text-align: start !important;
+}
+
+/* Wall Thickness / Column Thickness / Interleaving Order rows: same
+ * layout discipline as core/wire — labels auto-sized + right-aligned,
+ * value column pinned to right at fixed 50%, no overlap, no truncation. */
+.coil-config-cell-wide :deep(.dim-row),
+.coil-config-cell-wide :deep(.loc-row) {
+    display: flex;
+    align-items: center;
+    column-gap: 0.5rem;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+.coil-config-cell-wide :deep(.dim-row > label.dim-label),
+.coil-config-cell-wide :deep(.loc-row > label.loc-label) {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    text-align: start !important;
+}
+.coil-config-cell-wide :deep(.dim-value-row),
+.coil-config-cell-wide :deep(.loc-input) {
+    flex: 0 0 50% !important;
+    width: 50% !important;
+    max-width: 50% !important;
+    margin-left: auto !important;
+    box-sizing: border-box;
+}
+.coil-config-cell-wide :deep(.dwt-unit-addon),
+.coil-config-cell-wide :deep(.dim-unit) {
+    width: 2.75rem !important;
+    min-width: 2.75rem !important;
+    max-width: 2.75rem !important;
+    flex: 0 0 2.75rem !important;
+}
+.coil-config-cell-wide :deep(.p-inputnumber),
+.coil-config-cell-wide :deep(.p-inputgroup) {
+    width: 100%;
+    min-width: 0;
+}
+.coil-config-cell-wide :deep(.p-inputgroup) {
+    max-width: 100%;
+    flex-wrap: nowrap;
+}
+.coil-config-cell-wide :deep(.p-inputgroup .p-inputnumber) {
+    flex: 1 1 0;
+    min-width: 0;
+}
+.coil-config-cell-wide :deep(.p-inputgroup .p-inputnumber input) {
+    width: 100%;
+    min-width: 0;
+}
+.coil-config-cell-wide :deep(.p-inputgroup-addon),
+.coil-config-cell-wide :deep(.dwt-unit-addon) {
+    flex: 0 0 auto;
+    max-width: 4.5rem;
+}
+/* Match input font size to the surrounding DimensionReadOnly value text.
+ * Inherit from the parent's :style="valueFontSize" instead of overriding
+ * with a hardcoded small size. */
+.coil-config-cell-wide :deep(.loc-input) {
+    min-height: 2rem;
+    padding: 0 0.4rem;
+    font-size: 1.15rem !important;
+}
+.coil-config-cell-wide :deep(.p-inputnumber-input),
+.coil-config-cell-wide :deep(.p-inputnumber input),
+.coil-config-cell-wide :deep(input.p-inputtext),
+.coil-config-cell-wide :deep(.p-select-label),
+.coil-config-cell-wide :deep(.dwt-unit-addon),
+.coil-config-cell-wide :deep(.dim-unit) {
+    font-size: 1.15rem !important;
 }
 
 .builder-actions {
