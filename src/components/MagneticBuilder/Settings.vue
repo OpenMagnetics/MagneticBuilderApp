@@ -493,7 +493,6 @@ export default {
                         </div>
                     </div>
                 </div>
-        </div>
         <template #footer>
             <button
                 :data-cy="dataTestLabel + '-Settings-Modal-reset-defaults-button'"
