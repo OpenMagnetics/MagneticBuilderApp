@@ -1171,10 +1171,10 @@ export default {
 }
 .coil-config-cell-wide :deep(.dwt-unit-addon),
 .coil-config-cell-wide :deep(.dim-unit) {
-    width: 2.75rem !important;
-    min-width: 2.75rem !important;
-    max-width: 2.75rem !important;
-    flex: 0 0 2.75rem !important;
+    width: 3.5rem !important;
+    min-width: 3.5rem !important;
+    max-width: 3.5rem !important;
+    flex: 0 0 3.5rem !important;
 }
 .coil-config-cell-wide :deep(.p-inputnumber),
 .coil-config-cell-wide :deep(.p-inputgroup) {
