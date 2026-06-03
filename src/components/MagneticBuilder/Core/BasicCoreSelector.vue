@@ -517,7 +517,10 @@ export default {
 
 <template>
     <div class="container">
-        <div class="core-config-panel">
+        <div
+            class="core-config-panel"
+            :style="{ '--core-config-value-font-size': $styleStore.magneticBuilder.inputFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputFontSize?.fontSize }"
+        >
             <div class="core-config-header">
                 <div class="core-config-header-left">
                     <i class="pi pi-box"></i>
@@ -896,10 +899,13 @@ export default {
     text-align: start !important;
 }
 
-/* Match input value/unit font size to the surrounding DimensionReadOnly
- * value text (Core Info card below). PrimeVue Aura's defaults on Select
- * / InputNumber inner text override what we set on the parent — we have
- * to bump everything explicitly. */
+/* Input value/unit font size. Externally themable: driven by the host's
+ * style store via the --core-config-value-font-size CSS variable (set on
+ * .core-config-panel from $styleStore.magneticBuilder.inputFontSize), so
+ * OM and embedders (asgard, …) can each pick their own size. Falls back to
+ * 1.15rem when no token is provided. PrimeVue Aura's defaults on Select /
+ * InputNumber inner text override what we set on the parent, so we have to
+ * bump everything explicitly with !important. */
 .core-config-cell :deep(.p-select-label),
 .core-config-cell :deep(.p-select .p-select-label),
 .core-config-cell :deep(.p-inputnumber-input),
@@ -909,6 +915,6 @@ export default {
 .core-config-cell :deep(.dim-unit),
 .core-config-cell :deep(.dim-input),
 .core-config-cell :deep(.dim-input input) {
-    font-size: 1.15rem !important;
+    font-size: var(--core-config-value-font-size, 1.15rem) !important;
 }
 </style>

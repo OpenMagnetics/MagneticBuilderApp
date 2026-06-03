@@ -515,7 +515,10 @@ export default {
 
 <template>
     <div class="container">
-        <div class="wire-config-panel">
+        <div
+            class="wire-config-panel"
+            :style="{ '--wire-config-value-font-size': $styleStore.magneticBuilder.inputFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputFontSize?.fontSize }"
+        >
             <div class="wire-config-header">
                 <div class="wire-config-header-left">
                     <i class="pi pi-bolt"></i>
@@ -1020,6 +1023,6 @@ export default {
 .wire-config-cell :deep(.dim-unit),
 .wire-config-cell :deep(.dim-input),
 .wire-config-cell :deep(.dim-input input) {
-    font-size: 1.15rem !important;
+    font-size: var(--wire-config-value-font-size, 1.15rem) !important;
 }
 </style>

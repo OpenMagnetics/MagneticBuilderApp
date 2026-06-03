@@ -810,7 +810,10 @@ export default {
 
 <template>
     <div class="container">
-        <div class="coil-config-panel">
+        <div
+            class="coil-config-panel"
+            :style="{ '--coil-config-value-font-size': $styleStore.magneticBuilder.inputFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputFontSize?.fontSize }"
+        >
             <div class="coil-config-header">
                 <div class="coil-config-header-left">
                     <i class="pi pi-cog-wide-connected"></i>
@@ -1204,7 +1207,7 @@ export default {
 .coil-config-cell-wide :deep(.loc-input) {
     min-height: 2rem;
     padding: 0 0.4rem;
-    font-size: 1.15rem !important;
+    font-size: var(--coil-config-value-font-size, 1.15rem) !important;
 }
 .coil-config-cell-wide :deep(.p-inputnumber-input),
 .coil-config-cell-wide :deep(.p-inputnumber input),
@@ -1212,7 +1215,7 @@ export default {
 .coil-config-cell-wide :deep(.p-select-label),
 .coil-config-cell-wide :deep(.dwt-unit-addon),
 .coil-config-cell-wide :deep(.dim-unit) {
-    font-size: 1.15rem !important;
+    font-size: var(--coil-config-value-font-size, 1.15rem) !important;
 }
 
 .builder-actions {
