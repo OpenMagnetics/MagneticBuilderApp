@@ -89,7 +89,16 @@ export default {
             drawingPan: { active: false, startX: 0, startY: 0, origX: 0, origY: 0 },
         }
     },
-    watch: { 
+    computed: {
+        // Toroids are a single continuous piece, so the one-piece toggle is
+        // meaningless for them — used to hide it.
+        isToroidalShape() {
+            const fam = (this.core?.functionalDescription?.shape?.family
+                ?? this.localData?.family ?? '').toString().toLowerCase();
+            return fam === 't' || fam === 'toroidal';
+        },
+    },
+    watch: {
     },
     created () {
     },
@@ -638,7 +647,7 @@ export default {
                         @renderSuccess="$emit('renderSuccess')"
                     />
                 </div>
-                <div v-if="core.functionalDescription != null" class="form-check form-switch mt-2 ml-2">
+                <div v-if="core.functionalDescription != null && !isToroidalShape" class="form-check form-switch mt-2 ml-2">
                     <input
                         :id="`${dataTestLabel}-ShowOnePieceOnly`"
                         :data-cy="`${dataTestLabel}-ShowOnePieceOnly`"

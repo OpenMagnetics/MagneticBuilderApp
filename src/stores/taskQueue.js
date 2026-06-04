@@ -405,7 +405,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
                         !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
                         coreShapeNames[shapeFamily] = [];
-                        const coreShapeNamesArr = toArray(await mkf.get_available_core_shapes_by_family(shapeFamily.toLowerCase()));
+                        // Pass the family name exactly as get_available_core_shape_families
+                        // returned it. The CoreShapeFamily enum is case-sensitive
+                        // ("planarE"/"planarEL"/"planarER"); lowercasing breaks the
+                        // WASM from_json parse, leaving an uninitialized family that
+                        // returns another family's shapes.
+                        const coreShapeNamesArr = toArray(await mkf.get_available_core_shapes_by_family(shapeFamily));
 
                         let numberShapes = 0;
                         for (const aux of coreShapeNamesArr) {

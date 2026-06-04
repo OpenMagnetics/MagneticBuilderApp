@@ -118,7 +118,12 @@ export default {
                     if (args[0]) {
                         this.coreShapeNames = args[1];
                         for (const [shapeFamily, group] of Object.entries(this.coreShapeNames)) {
-                            this.coreShapeFamilies[shapeFamily] = shapeFamily.toUpperCase();
+                            // Planar families are camelCase ("planarE", "planarEl",
+                            // "planarEr"); plain toUpperCase() makes them an
+                            // unreadable "PLANARE". Render them as "Planar E" etc.
+                            this.coreShapeFamilies[shapeFamily] = /^planar/i.test(shapeFamily)
+                                ? 'Planar ' + shapeFamily.slice(6).toUpperCase()
+                                : shapeFamily.toUpperCase();
                         }
                         // Use bulk function to get all core data at once
                         this.taskQueueStore.processAllCoresFromShapes();
