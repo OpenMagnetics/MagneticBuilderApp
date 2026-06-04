@@ -75,7 +75,8 @@ export default {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    padding: 10px 4px 6px;
+    padding: 2px 4px;
+    margin-bottom: 0 !important;
 }
 
 .mb-btn {
