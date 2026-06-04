@@ -422,6 +422,35 @@ h1 .pi, h2 .pi, h3 .pi, h4 .pi, h5 .pi, h6 .pi,
     padding-left: calc(var(--p-gutter-x, 0.75rem) * 0.5);
     margin-top: var(--p-gutter-y, 0);
 }
+/* PrimeFlex responsive column classes (md:col-3, sm:col-12, …) must win over the
+   Bootstrap `.row > * { width:100% }` base above — otherwise responsive layouts like
+   the Core Shape Customizer (Dimensions | 3D | Drawing) stack full-width instead of
+   sitting side-by-side as in OpenMagnetics. The `.row >` prefix gives these the extra
+   specificity to override; plain `.col-N` children are untouched. */
+@media screen and (min-width: 576px) {
+    .row > .sm\:col-1 { width: 8.3333%; } .row > .sm\:col-2 { width: 16.6667%; }
+    .row > .sm\:col-3 { width: 25%; } .row > .sm\:col-4 { width: 33.3333%; }
+    .row > .sm\:col-5 { width: 41.6667%; } .row > .sm\:col-6 { width: 50%; }
+    .row > .sm\:col-7 { width: 58.3333%; } .row > .sm\:col-8 { width: 66.6667%; }
+    .row > .sm\:col-9 { width: 75%; } .row > .sm\:col-10 { width: 83.3333%; }
+    .row > .sm\:col-11 { width: 91.6667%; } .row > .sm\:col-12 { width: 100%; }
+}
+@media screen and (min-width: 768px) {
+    .row > .md\:col-1 { width: 8.3333%; } .row > .md\:col-2 { width: 16.6667%; }
+    .row > .md\:col-3 { width: 25%; } .row > .md\:col-4 { width: 33.3333%; }
+    .row > .md\:col-5 { width: 41.6667%; } .row > .md\:col-6 { width: 50%; }
+    .row > .md\:col-7 { width: 58.3333%; } .row > .md\:col-8 { width: 66.6667%; }
+    .row > .md\:col-9 { width: 75%; } .row > .md\:col-10 { width: 83.3333%; }
+    .row > .md\:col-11 { width: 91.6667%; } .row > .md\:col-12 { width: 100%; }
+}
+@media screen and (min-width: 992px) {
+    .row > .lg\:col-1 { width: 8.3333%; } .row > .lg\:col-2 { width: 16.6667%; }
+    .row > .lg\:col-3 { width: 25%; } .row > .lg\:col-4 { width: 33.3333%; }
+    .row > .lg\:col-5 { width: 41.6667%; } .row > .lg\:col-6 { width: 50%; }
+    .row > .lg\:col-7 { width: 58.3333%; } .row > .lg\:col-8 { width: 66.6667%; }
+    .row > .lg\:col-9 { width: 75%; } .row > .lg\:col-10 { width: 83.3333%; }
+    .row > .lg\:col-11 { width: 91.6667%; } .row > .lg\:col-12 { width: 100%; }
+}
 
 /* ========== Display headings ========== */
 .display-1 { font-size: 5rem;    font-weight: 300; line-height: 1.2; }

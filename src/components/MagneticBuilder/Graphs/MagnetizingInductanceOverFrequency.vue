@@ -152,7 +152,7 @@ export default {
 
 <template>
     <div class="graph-wrapper">
-        <div class="row g-3">
+        <div class="grid">
             <div class="col-12 md:col-3">
                 <div class="graph-params">
                     <slot/>

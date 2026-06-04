@@ -65,17 +65,29 @@ export default {
         impedancePoints() {
             const points = [];
             if (this.masStore.mas.inputs.designRequirements.minimumImpedance != null) {
+                // The CMC-inputs builder can emit several entries at the same
+                // frequency (the user's requirement + a derived/margined one), and
+                // impedance.magnitude is a DimensionWithTolerance ({nominal,…})
+                // after autocomplete. Collapse to one point per frequency, keeping
+                // the smallest |Z| — the user's un-margined requirement (e.g. the
+                // entered 1 kΩ, not the derived 1.53 kΩ) — so it matches the input.
+                const reqByFrequency = new Map();
                 this.masStore.mas.inputs.designRequirements.minimumImpedance.forEach((elem) => {
+                    const mag = elem.impedance.magnitude;
+                    const y = (mag != null && typeof mag === 'object')
+                        ? (mag.nominal ?? mag.minimum ?? mag.maximum)
+                        : mag;
+                    if (y == null) return;
+                    const prev = reqByFrequency.get(elem.frequency);
+                    if (prev == null || y < prev) reqByFrequency.set(elem.frequency, y);
+                });
+                reqByFrequency.forEach((y, x) => {
                     points.push({
-                        data: {
-                            x: elem.frequency,
-                            y: elem.impedance.magnitude
-                        },
+                        data: { x, y },
                         unit: 'Ω',
                         colorLabel: 'danger',
-
                     });
-                })
+                });
             }
             return points;
         }
@@ -182,7 +194,7 @@ export default {
 
 <template>
     <div class="graph-wrapper">
-        <div class="row g-3">
+        <div class="grid">
             <div class="col-12 md:col-3">
                 <div class="graph-params">
                     <slot/>

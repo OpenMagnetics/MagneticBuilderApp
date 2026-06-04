@@ -50,6 +50,12 @@ export default {
         }
     },
     computed: {
+        selectedSectionMargins() {
+            const s = this.data && this.data.dataPerSection
+                ? this.data.dataPerSection[this.selectedSectionIndex]
+                : null;
+            return s ? `${s.topOrLeftMargin}|${s.bottomOrRightMargin}` : '';
+        },
         topOrLeftMarginTooltip() {
             if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
                 return tooltipsMagneticBuilder.leftMargin;
@@ -68,8 +74,25 @@ export default {
         },
     },
     watch: {
+        // The parent populates the section margins (assignLocalData) — for a
+        // toroidal core the spacer is stored as the conduction sections' margin —
+        // AFTER these Dimension inputs have read their value once. A Dimension
+        // only re-reads on a forceUpdate bump, so without this it kept showing the
+        // initial 0 and hid the spacer/margin. Bump whenever the selected
+        // section's margins change to a NEW value; the Dimension's own idempotent
+        // write-back produces the same string, so this doesn't loop.
+        selectedSectionMargins() {
+            if (!this.blockingRebounds) {
+                this.forceUpdate += 1;
+            }
+        },
     },
     mounted () {
+        // If the margins were already populated before we mounted, the watcher
+        // above sees no change, so force one re-read after the tree settles.
+        this.$nextTick(() => {
+            this.forceUpdate += 1;
+        });
     },
     methods: {
         interlayerThicknessUpdated(value) {
