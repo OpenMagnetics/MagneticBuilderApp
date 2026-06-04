@@ -890,6 +890,31 @@ export default {
 .core-config-cell :deep(.efl-container[class*="col-"]) {
     padding-left: 0 !important;
 }
+/* Gap Info (CoreGappingSelector) lays its fields out in a .grid (not a .row),
+ * and the per-field col-12 wrappers carry inconsistent PrimeFlex padding
+ * (GapType has p-0, GapLength/NumberGaps don't) → Type and Length were offset
+ * from each other. Zero the padding on the fields inside the indented
+ * .col-offset-* wrapper so Type/Length labels and inputs share one left edge.
+ * The col-offset-1 margin (the intentional Gap-Info indent) is preserved. */
+.core-config-gap-cell :deep([class*="col-offset"]) > [class*="col-"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+/* Gap value columns fill to the right edge so Type's dropdown and Length's
+ * number+unit end at the same right edge (their col-5/col-6 proportions
+ * otherwise leave them short). flex-basis 0 + min-width 0 makes them fill the
+ * available space exactly (the inner number input shrinks rather than
+ * overflowing the cell). */
+.core-config-gap-cell :deep(.dim-value-row),
+.core-config-gap-cell :deep(.efl-row .efl-select) {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+}
+.core-config-gap-cell :deep(.dim-input) {
+    min-width: 0 !important;
+}
 .core-config-cell :deep(.form-label),
 .core-config-cell :deep(label) {
     text-align: start !important;
