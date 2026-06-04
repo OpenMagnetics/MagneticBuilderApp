@@ -821,14 +821,11 @@ export default {
     margin-bottom: 0;
 }
 
-/* CoreShapeSelector uses `<div class="row g-0">` (zero gutter) for its
- * inner rows, while the other cells (Manufacturer / Material / …) use
- * default row gutters that inset the col by ~0.75rem. That
- * shifts Shape Family's dropdown ~4-6px further right than the others.
- * Restore the gutter padding on Shape Family / Shape value columns so
- * all dropdowns share the same right edge. */
+/* Shape Family / Shape value columns fill to the cell's right edge (the
+ * Shape Family dropdown's right edge then matches Manufacturer / Material;
+ * the Shape row's table button is pinned to that same right edge above). */
 .core-config-cell :deep(.row.g-0) > [class*="col-"] {
-    padding-right: 0.75rem;
+    padding-right: 0 !important;
 }
 
 /* Core Shape row: dropdown + table-icon button act as ONE element
@@ -844,27 +841,30 @@ export default {
     position: relative !important;
     display: block;
 }
+/* Reserve room on the right for the table button (the p-select fills the rest
+ * via flex:1, so constrain the row, not the select). */
 .core-config-cell :deep(.core-shape-input-group .core-shape-row) {
     width: 100%;
+    padding-right: 2.25rem;
+    box-sizing: border-box;
 }
 .core-config-cell :deep(.core-shape-input-group .core-shape-row .p-select) {
-    width: calc(100% - 3rem) !important;
-    max-width: calc(100% - 3rem) !important;
-    margin-right: 2.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-right: 0 !important;
 }
-/* Match Shape Family dropdown's right edge to Shape dropdown's right
- * edge (don't push Shape closer to the button — instead shrink Shape
- * Family so they line up). The Shape Family ElementFromList sits in
- * its own .efl-container.mb-1; reserve the same horizontal space on
- * the right as the Shape row reserves for its table button. */
+/* Shape Family fills the whole value column so its right edge lines up with the
+ * Manufacturer / Material dropdowns. */
 .core-config-cell :deep(.efl-container.mb-1 .p-select) {
-    width: calc(100% - 3.5rem) !important;
-    max-width: calc(100% - 3.5rem) !important;
-    margin-right: 3rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-right: 0 !important;
 }
+/* Table button pinned to the right edge — aligns with the Manufacturer /
+ * Material dropdowns' right edge. */
 .core-config-cell :deep(.core-shape-table-btn-wrapper) {
     position: absolute !important;
-    right: 12px;
+    right: 0 !important;
     top: 50%;
     transform: translateY(-50%) !important;
 }
