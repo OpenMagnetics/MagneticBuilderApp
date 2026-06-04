@@ -737,7 +737,7 @@ export default {
                             @update="wireUpdated"
                         />
                     </div>
-                    <div v-if="!loading && localData.type == 'rectangular'" class="wire-config-cell">
+                    <div v-if="!loading && localData.type == 'rectangular'" class="wire-config-cell wire-config-cell-wide">
                         <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireRectangularConductingHeight"
                             :disabled="readOnly"
@@ -761,7 +761,7 @@ export default {
                             @update="wireUpdated"
                         />
                     </div>
-                    <div v-if="!loading && localData.type == 'rectangular'" class="wire-config-cell">
+                    <div v-if="!loading && localData.type == 'rectangular'" class="wire-config-cell wire-config-cell-wide">
                         <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireRectangularConductingWidth"
                             :disabled="readOnly"
@@ -785,7 +785,7 @@ export default {
                             @update="wireUpdated"
                         />
                     </div>
-                    <div v-if="!loading && localData.type == 'foil'" class="wire-config-cell">
+                    <div v-if="!loading && localData.type == 'foil'" class="wire-config-cell wire-config-cell-wide">
                         <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireFoilConductingHeight"
                             :disabled="readOnly"
@@ -809,7 +809,7 @@ export default {
                             @update="wireUpdated"
                         />
                     </div>
-                    <div v-if="!loading && localData.type == 'foil'" class="wire-config-cell">
+                    <div v-if="!loading && localData.type == 'foil'" class="wire-config-cell wire-config-cell-wide">
                         <Dimension class="text-left"
                             v-tooltip="tooltipsMagneticBuilder.wireFoilConductingWidth"
                             :disabled="readOnly"
@@ -1024,5 +1024,16 @@ export default {
 .wire-config-cell :deep(.dim-input),
 .wire-config-cell :deep(.dim-input input) {
     font-size: var(--wire-config-value-font-size, 1.15rem) !important;
+}
+
+/* One fixed label-column width for every wire field so the input boxes share a
+ * single left edge regardless of label text / row gutters (matches the core
+ * panel). Labels longer than this clip instead of shoving the inputs. */
+.wire-config-panel :deep(.efl-label),
+.wire-config-panel :deep(.dim-label) {
+    flex: 0 0 9rem !important;
+    width: 9rem !important;
+    max-width: 9rem !important;
+    box-sizing: border-box;
 }
 </style>

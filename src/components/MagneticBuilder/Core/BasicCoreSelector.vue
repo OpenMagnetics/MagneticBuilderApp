@@ -917,4 +917,46 @@ export default {
 .core-config-cell :deep(.dim-input input) {
     font-size: var(--core-config-value-font-size, 1.15rem) !important;
 }
+
+/* One fixed label-column width for EVERY field (Shape Family / Shape /
+ * Manufacturer / Material / Number of Stacks / Gap …). ElementFromList and
+ * Dimension otherwise size their label to its text (efl-label-inline is
+ * flex:0 0 auto) and the cells have different row gutters, so the input boxes
+ * landed at slightly different x. Pinning the label to a fixed width makes the
+ * value column start at the same left edge regardless of label text or gutter;
+ * labels longer than this clip (overflow:hidden is already set) instead of
+ * shoving the inputs around. */
+.core-config-panel :deep(.efl-label),
+.core-config-panel :deep(.dim-label) {
+    flex: 0 0 9rem !important;
+    width: 9rem !important;
+    max-width: 9rem !important;
+    box-sizing: border-box;
+}
+
+/* Constant vertical rhythm between fields. Shape Family / Shape live inside one
+ * cell (CoreShapeSelector) with taller wrappers than the plain Manufacturer /
+ * Material cells, so gaps were uneven. Drop the grid row-gap and per-cell
+ * vertical padding, strip the wrappers' vertical padding, and give every field
+ * one uniform bottom margin — so the spacing is identical regardless of which
+ * cell a field lives in. */
+.core-config-grid { gap: 0 !important; }
+.core-config-cell { padding-top: 0 !important; padding-bottom: 0 !important; }
+/* Zero the vertical padding PrimeFlex `col-*` wrappers add (e.g. the Shape
+ * field's col-12 carried 8px top/bottom, making its row 44px vs 28px). */
+.core-config-cell :deep([class*="col-"]) {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+.core-config-cell :deep(.efl-container),
+.core-config-cell :deep(.dim-container),
+.core-config-cell :deep(.core-shape-input-group) {
+    margin-top: 0 !important;
+    margin-bottom: 0.4rem !important;
+}
+/* The Shape field's efl-container is nested inside .core-shape-input-group;
+ * without this it would carry the margin twice (Shape row gap > the rest). */
+.core-config-cell :deep(.core-shape-input-group .efl-container) {
+    margin-bottom: 0 !important;
+}
 </style>
