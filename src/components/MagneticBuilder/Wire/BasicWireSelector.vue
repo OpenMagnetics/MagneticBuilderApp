@@ -1036,4 +1036,20 @@ export default {
     max-width: 9rem !important;
     box-sizing: border-box;
 }
+
+/* Constant vertical rhythm between wire fields (No. Turns / No. Parallels were
+ * tighter than the rest). Drop the grid row-gap + per-cell/col vertical padding
+ * and give every field one uniform bottom margin — same approach as the core
+ * panel. */
+.wire-config-grid { row-gap: 0 !important; }
+.wire-config-cell { padding-top: 0 !important; padding-bottom: 0 !important; }
+.wire-config-cell :deep([class*="col-"]) {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+.wire-config-cell :deep(.efl-container),
+.wire-config-cell :deep(.dim-container) {
+    margin-top: 0 !important;
+    margin-bottom: 0.4rem !important;
+}
 </style>

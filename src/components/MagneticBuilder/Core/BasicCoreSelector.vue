@@ -984,4 +984,11 @@ export default {
 .core-config-cell :deep(.core-shape-input-group .efl-container) {
     margin-bottom: 0 !important;
 }
+/* Separate the "Gap Info:" section heading from the Material field above it
+ * (it was sitting tighter than the regular field rhythm). */
+.core-config-gap-cell :deep([data-cy$="-Gap-title"]) {
+    display: block;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.15rem !important;
+}
 </style>
