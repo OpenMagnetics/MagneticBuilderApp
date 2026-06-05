@@ -357,4 +357,18 @@ export default {
 .insulation-body :deep(label) {
     padding-left: 0.35rem !important;
 }
+
+/* Align every row: fixed-width labels so all inputs start at the same x, and
+   value rows that fill the remaining width so their right edges line up too.
+   (The Dimension component otherwise sizes each label to its text, which left
+   the inter-layer / inter-section / margin rows ragged.) */
+.insulation-body :deep(.dim-label) {
+    flex: 0 0 10rem;
+    width: 10rem;
+    max-width: 10rem;
+}
+.insulation-body :deep(.dim-value-row) {
+    flex: 1 1 0;
+    min-width: 0;
+}
 </style>
