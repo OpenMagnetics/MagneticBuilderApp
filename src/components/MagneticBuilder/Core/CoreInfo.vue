@@ -581,8 +581,8 @@ export default {
 
 <style scoped>
 .coreinfo-panel {
-    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.06) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--p-primary-rgb), 0.15);
+    background: linear-gradient(145deg, rgba(120, 120, 120, 0.06) 0%, rgba(120, 120, 120, 0.02) 100%);
+    border: 1px solid rgba(120, 120, 120, 0.2);
     border-radius: 14px;
     padding: 0;
     margin: 0.05rem 0 0.5rem 0;
@@ -595,11 +595,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.6rem 0.9rem;
-    background: rgba(var(--p-primary-rgb), 0.1);
-    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.12);
+    background: rgba(120, 120, 120, 0.1);
+    border-bottom: 1px solid rgba(120, 120, 120, 0.15);
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--p-primary);
+    color: #334155;
     letter-spacing: 0.02em;
 }
 
@@ -611,7 +611,7 @@ export default {
 
 .coreinfo-header-left i {
     font-size: 0.95rem;
-    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.35));
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.12));
 }
 
 .coreinfo-outdated-badge {
