@@ -155,7 +155,23 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 setTimeout(() => { this.masAutocompleted(false, result); }, this.task_standard_response_delay);
                 throw new Error(result);
             }
-            const masResult = JSON.parse(result);
+            // Emscripten's musl printf omits the leading "0" for fractional numbers
+            // whose absolute value is in (0, 1) on some WASM builds — both positive
+            // (e.g. 0.95 → ".95") and negative (e.g. -0.0015 → "-.0015") — which is
+            // not valid JSON. Repair before parsing.
+            // eslint-disable-next-line no-console
+            console.warn('[taskQueue] masAutocomplete: sanitizing WASM output (leading-decimal fix active)');
+            const sanitized = result.replace(/([{,\[:][ \t]*)(-?)\.(\d)/g, '$1$2' + '0.$3');
+            let masResult;
+            try {
+                masResult = JSON.parse(sanitized);
+            } catch (parseErr) {
+                // eslint-disable-next-line no-console
+                console.error('[taskQueue] masAutocomplete: JSON.parse still failed after sanitization. First 500 chars of WASM output:', result.substring(0, 500));
+                // eslint-disable-next-line no-console
+                console.error('[taskQueue] masAutocomplete: First 500 chars of sanitized output:', sanitized.substring(0, 500));
+                throw parseErr;
+            }
             setTimeout(() => { this.masAutocompleted(true, masResult); }, this.task_standard_response_delay);
             return masResult;
         },
