@@ -266,8 +266,8 @@ export default {
 
 <style scoped>
 .alignment-panel {
-    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.08) 0%, rgba(var(--p-primary-rgb), 0.02) 100%);
-    border: 1px solid rgba(var(--p-primary-rgb), 0.2);
+    background: linear-gradient(145deg, rgba(120, 120, 120, 0.08) 0%, rgba(120, 120, 120, 0.02) 100%);
+    border: 1px solid rgba(120, 120, 120, 0.2);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.5rem 0;
@@ -292,11 +292,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: rgba(var(--p-primary-rgb), 0.12);
-    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.15);
+    background: rgba(120, 120, 120, 0.12);
+    border-bottom: 1px solid rgba(120, 120, 120, 0.15);
     font-weight: 600;
     font-size: 0.92rem;
-    color: var(--p-primary);
+    color: #334155;
     letter-spacing: 0.02em;
 }
 
@@ -308,7 +308,7 @@ export default {
 
 .alignment-header-left i {
     font-size: 1rem;
-    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.4));
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.12));
 }
 
 .alignment-close-btn {
@@ -328,7 +328,7 @@ export default {
 }
 
 .alignment-close-btn:hover {
-    background: rgba(var(--p-primary-rgb), 0.15);
+    background: rgba(120, 120, 120, 0.15);
     color: var(--p-white);
 }
 

@@ -1413,8 +1413,8 @@ export default {
 }
 
 .advancedcoil-card {
-    background: linear-gradient(145deg, rgba(var(--p-primary-rgb), 0.05) 0%, rgba(var(--p-primary-rgb), 0.01) 100%);
-    border: 1px solid rgba(var(--p-primary-rgb), 0.12);
+    background: linear-gradient(145deg, rgba(120, 120, 120, 0.05) 0%, rgba(120, 120, 120, 0.01) 100%);
+    border: 1px solid rgba(120, 120, 120, 0.12);
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.12), inset 0 1px 0 rgba(var(--p-white-rgb), 0.04);
@@ -1425,17 +1425,17 @@ export default {
     align-items: center;
     gap: 0.6rem;
     padding: 0.75rem 1rem;
-    background: rgba(var(--p-primary-rgb), 0.1);
-    border-bottom: 1px solid rgba(var(--p-primary-rgb), 0.12);
+    background: rgba(120, 120, 120, 0.1);
+    border-bottom: 1px solid rgba(120, 120, 120, 0.15);
     font-weight: 600;
     font-size: 0.95rem;
-    color: var(--p-primary);
+    color: #334155;
     letter-spacing: 0.02em;
 }
 
 .advancedcoil-card-header i {
     font-size: 1rem;
-    filter: drop-shadow(0 0 4px rgba(var(--p-primary-rgb), 0.35));
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.12));
 }
 
 .advancedcoil-card-body {
