@@ -530,6 +530,8 @@ export default {
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
                         :marginColor="$styleStore.magneticBuilder.painterColorMargin || '0xfff05b'"
                         :spacerColor="$styleStore.magneticBuilder.painterColorSpacer || '0x3b3b3b'"
+                        :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
+                        :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
                         :drawSpacer="$styleStore.magneticBuilder.painterDrawSpacer !== undefined ? $styleStore.magneticBuilder.painterDrawSpacer : true"
                         :enableTemperaturePlot="enableTemperaturePlot"
                         @plotModeChange="$emit('plotModeChange', $event)"
