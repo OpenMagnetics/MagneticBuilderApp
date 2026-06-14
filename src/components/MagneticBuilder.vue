@@ -8,6 +8,7 @@ import AdvancedCoreSelector from './MagneticBuilder/Core/AdvancedCoreSelector.vu
 import AdvancedCoilInfo from './MagneticBuilder/Coil/AdvancedCoilInfo.vue'
 import GraphInfo from './MagneticBuilder/GraphInfo.vue'
 import { isMobile } from '/WebSharedComponents/assets/js/utils.js'
+import { recordDesign } from '/WebSharedComponents/assets/js/telemetry.js'
 import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
 
 </script>
@@ -86,7 +87,6 @@ export default {
             magneticBuilt,
             historyStore,
             subscriptions,
-            _insertMasTimer: null,
         }
     },
     computed: {
@@ -143,15 +143,6 @@ export default {
             if (action.name == "addToHistory") {
                 this.magneticBuilt = this.isMagneticBuilt();
                 this.$emit("canContinue", this.magneticBuilt);
-                if (this.magneticBuilt && !this.isIsolatedApp && this.enableInsertIntermediateMas) {
-                    // Debounce to avoid firing multiple backend calls when
-                    // several addToHistory events arrive in quick succession.
-                    if (this._insertMasTimer) clearTimeout(this._insertMasTimer);
-                    this._insertMasTimer = setTimeout(() => {
-                        this._insertMasTimer = null;
-                        this.insertIntermediateMas();
-                    }, 500);
-                }
             }
         }));
 
@@ -165,21 +156,18 @@ export default {
 
     },
     beforeUnmount() {
-        if (this._insertMasTimer) clearTimeout(this._insertMasTimer);
+        // Capture the builder state once, as the user leaves the builder, rather
+        // than on every edit. Tied to the session_id, this gives one clean
+        // "final builder state" row that pairs with the later design_report.
+        if (this.magneticBuilt && !this.isIsolatedApp && this.enableInsertIntermediateMas) {
+            this.insertIntermediateMas();
+        }
         this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {
         insertIntermediateMas() {
-            const endpoint = import.meta.env.VITE_API_ENDPOINT;
-            if (!endpoint) return;
-            const url = endpoint + '/insert_intermediate_mas'
-
-            this.$axios.post(url, this.masStore.mas)
-            .then(response => {
-            })
-            .catch(() => {
-                // Telemetry; fire-and-forget. Silent on failure so dev without backend isn't noisy.
-            });
+            // Intermediate working state — the builder design as the user leaves it.
+            recordDesign({ event_type: 'builder_snapshot', source: 'builder', mas: this.masStore.mas });
         },
         isMagneticBuilt() {
             if (this.masStore.mas.magnetic.core.functionalDescription.material == null) {
