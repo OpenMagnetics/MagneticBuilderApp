@@ -53,7 +53,13 @@ export default {
 </script>
 
 <template>
-    <div class="gcp-grid">
+    <div
+        class="gcp-grid"
+        :style="{
+            '--gcp-value-font-size': $styleStore.magneticBuilder.inputFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputFontSize?.fontSize,
+            '--gcp-label-font-size': $styleStore.magneticBuilder.inputTitleFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputTitleFontSize?.fontSize,
+        }"
+    >
     <ElementFromList
         class="gcp-cell"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
@@ -276,12 +282,14 @@ export default {
     margin-right: 0 !important;
 }
 
-/* Uppercase pill caption above each input — same size as the value text. */
+/* Uppercase pill caption above each input — label font size driven by the
+ * host style store (inputTitleFontSize) via --gcp-label-font-size, matching
+ * how the Core Configuration panel sizes its field labels. */
 .gcp-cell :deep(.dim-label),
 .gcp-cell :deep(.efl-label),
 .gcp-cell :deep(label) {
     color: rgba(var(--p-white-rgb), 0.65) !important;
-    font-size: 1rem !important;
+    font-size: var(--gcp-label-font-size, 1.25rem) !important;
     font-weight: 700 !important;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -300,7 +308,10 @@ export default {
 .gcp-cell :deep(.dim-input),
 .gcp-cell :deep(.dim-input input),
 .gcp-cell :deep(.efl-select) {
-    font-size: 1rem !important;
+    /* Value/input font size driven by the host style store (inputFontSize)
+     * via --gcp-value-font-size, matching the Core Configuration panel's
+     * --core-config-value-font-size. */
+    font-size: var(--gcp-value-font-size, 1rem) !important;
     font-weight: 600;
     min-height: 1.95rem;
 }
