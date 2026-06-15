@@ -57,7 +57,9 @@ export default {
         class="gcp-grid"
         :style="{
             '--gcp-value-font-size': $styleStore.magneticBuilder.inputFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputFontSize?.fontSize,
-            '--gcp-label-font-size': $styleStore.magneticBuilder.inputTitleFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputTitleFontSize?.fontSize,
+            /* Labels are uppercase+bold, so the title token (1.25rem) reads too big
+             * here; pin to 1.2rem for visual parity with the other panel labels. */
+            '--gcp-label-font-size': '1.2rem',
         }"
     >
     <ElementFromList
