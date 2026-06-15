@@ -599,7 +599,7 @@ export default {
     border-bottom: 1px solid rgba(120, 120, 120, 0.15);
     font-weight: 600;
     font-size: 0.9rem;
-    color: #334155;
+    color: var(--p-primary);
     letter-spacing: 0.02em;
 }
 
@@ -611,7 +611,7 @@ export default {
 
 .coreinfo-header-left i {
     font-size: 0.95rem;
-    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.12));
+    filter: drop-shadow(0 0 3px rgba(var(--p-black-rgb), 0.12));
 }
 
 .coreinfo-outdated-badge {
