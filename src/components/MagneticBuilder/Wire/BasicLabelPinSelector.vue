@@ -31,9 +31,13 @@ export default {
     },
     data() {
         return {
+            // 'Blind' is our local winding-to-winding marker; it is not (yet) in
+            // the generated MAS.ts ConnectionType enum, and round-trips to MAS as
+            // the verbatim string. Two windings sharing a blind pinName are joined.
+            blindType: 'Blind',
             // ConnectionType is a string enum ("Pin", "Screw", "SMT", "Flying Lead");
             // store the value verbatim so it round-trips to MAS unchanged.
-            connectionTypeOptions: Object.values(ConnectionType),
+            connectionTypeOptions: [...Object.values(ConnectionType), 'Blind'],
         }
     },
     computed: {
@@ -84,6 +88,27 @@ export default {
                 opts.push(String(i));
             }
             return opts;
+        },
+        // Distinct blind-node ids already used on ANY winding, offered as combobox
+        // suggestions so picking one joins this winding to that internal node.
+        blindNodeOptions() {
+            const coil = this.masStore.mas.magnetic.coil;
+            const windings = (coil && Array.isArray(coil.functionalDescription))
+                ? coil.functionalDescription : [];
+            const ids = new Set();
+            windings.forEach((w) => {
+                (w.connections || []).forEach((c) => {
+                    if (c && c.type === this.blindType
+                        && c.pinName != null && String(c.pinName).trim() !== '') {
+                        ids.add(String(c.pinName));
+                    }
+                });
+            });
+            return Array.from(ids).sort();
+        },
+        // Per-winding id so multiple mounted selectors never share a <datalist>.
+        datalistId() {
+            return 'blind-nodes-' + this.windingIndex;
         },
         // Match the themed look of the other Wire Configuration inputs.
         fieldStyle() {
@@ -204,6 +229,11 @@ export default {
                 return;
             }
             winding.connections[index][key] = value;
+            // A blind (internal) joint has no lead-to-terminal length; drop any
+            // stale value so the editor and the MAS export agree.
+            if (key === 'type' && value === this.blindType) {
+                delete winding.connections[index].length;
+            }
         },
         // length is stored in metres (MAS); the field edits millimetres. Round to
         // kill the float noise from the m<->mm scaling (e.g. 0.0123 m -> 12.3 mm).
@@ -317,14 +347,31 @@ export default {
                     <span class="labelpin-col-action"></span>
                 </div>
 
+                <datalist :id="datalistId">
+                    <option v-for="node in blindNodeOptions" :key="node" :value="node"></option>
+                </datalist>
+
                 <div
                     v-for="(connection, index) in connections"
                     :key="index"
                     class="labelpin-row"
                     :data-cy="dataTestLabel + '-Connection-' + index"
                 >
+                    <input
+                        v-if="connection.type === blindType"
+                        type="text"
+                        class="labelpin-field"
+                        :style="fieldStyle"
+                        :class="fieldClass"
+                        :disabled="readOnly"
+                        :value="connection.pinName"
+                        :list="datalistId"
+                        :data-cy="dataTestLabel + '-Connection-' + index + '-Pin'"
+                        v-tooltip="'Blind (winding-to-winding) node id. Type a new id, or pick one already used on another winding to join them.'"
+                        @input="updateConnection(index, 'pinName', $event.target.value)"
+                    >
                     <select
-                        v-if="hasBobbinPins"
+                        v-else-if="hasBobbinPins"
                         class="labelpin-field"
                         :style="fieldStyle"
                         :class="fieldClass"
@@ -367,10 +414,10 @@ export default {
                         class="labelpin-field"
                         :style="fieldStyle"
                         :class="fieldClass"
-                        :disabled="readOnly"
-                        :value="leadLengthMm(connection)"
+                        :disabled="readOnly || connection.type === blindType"
+                        :value="connection.type === blindType ? '' : leadLengthMm(connection)"
                         :data-cy="dataTestLabel + '-Connection-' + index + '-Length'"
-                        v-tooltip="'Lead length from the last turn to the terminal, in mm (stored in metres on connection.length). Leave blank to omit.'"
+                        v-tooltip="connection.type === blindType ? 'A blind winding-to-winding joint has no lead-to-terminal length' : 'Lead length from the last turn to the terminal, in mm (stored in metres on connection.length). Leave blank to omit.'"
                         @change="updateLength(index, $event.target.value)"
                     >
                     <button
