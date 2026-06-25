@@ -5358,6 +5358,10 @@ export interface DatasheetInfo {
      */
     part?: Part;
     /**
+     * Data-provenance trail (see provenance).
+     */
+    provenance?: Provenance[];
+    /**
      * Operating temperature range from the datasheet.
      */
     thermal?: Thermal;
@@ -5822,6 +5826,50 @@ export interface Part {
      * Winding construction style (e.g. bifilar, sectional, trifilar).
      */
     windingStyle?: string;
+}
+
+/**
+ * Data-provenance trail (see provenance).
+ *
+ * Data-provenance trail for this part's datasheetInfo. A list, because different fields may
+ * come from different sources (e.g. core specs from the manufacturer datasheet, current
+ * rating from a distributor, a missing field back-filled by librarian enrichment).
+ */
+export interface Provenance {
+    /**
+     * Optional: which datasheetInfo fields this source provided (for mixed-source records).
+     */
+    fields?: string[];
+    /**
+     * Date the data was retrieved (YYYY-MM-DD).
+     */
+    retrievedDate?: null | string;
+    /**
+     * Kind of source this data came from.
+     */
+    source: Source;
+    /**
+     * Human-readable source identifier, e.g. 'TI parametric API', 'WE - Passive
+     * Components.mdb', 'DigiKey'.
+     */
+    sourceName?: string;
+    /**
+     * URL the data was retrieved from, if applicable.
+     */
+    sourceUrl?: null | string;
+}
+
+/**
+ * Kind of source this data came from.
+ */
+export enum Source {
+    Distributor = "distributor",
+    LibrarianEnrichment = "librarianEnrichment",
+    Manual = "manual",
+    ManufacturerDatabase = "manufacturerDatabase",
+    ManufacturerDatasheet = "manufacturerDatasheet",
+    ManufacturerParametric = "manufacturerParametric",
+    Scrape = "scrape",
 }
 
 /**
@@ -7825,6 +7873,7 @@ const typeMap: any = {
         { json: "mechanical", js: "mechanical", typ: u(undefined, r("Mechanical")) },
         { json: "model", js: "model", typ: u(undefined, r("MagneticDatasheetChipBeadModel")) },
         { json: "part", js: "part", typ: u(undefined, r("Part")) },
+        { json: "provenance", js: "provenance", typ: u(undefined, a(r("Provenance"))) },
         { json: "thermal", js: "thermal", typ: u(undefined, r("Thermal")) },
     ], false),
     "MagneticDatasheetApplication": o([
@@ -7928,6 +7977,13 @@ const typeMap: any = {
         { json: "partNumber", js: "partNumber", typ: u(undefined, "") },
         { json: "shielded", js: "shielded", typ: u(undefined, true) },
         { json: "windingStyle", js: "windingStyle", typ: u(undefined, "") },
+    ], false),
+    "Provenance": o([
+        { json: "fields", js: "fields", typ: u(undefined, a("")) },
+        { json: "retrievedDate", js: "retrievedDate", typ: u(undefined, u(null, "")) },
+        { json: "source", js: "source", typ: r("Source") },
+        { json: "sourceName", js: "sourceName", typ: u(undefined, "") },
+        { json: "sourceUrl", js: "sourceUrl", typ: u(undefined, u(null, "")) },
     ], false),
     "Thermal": o([
         { json: "operatingTemperature", js: "operatingTemperature", typ: u(undefined, r("DimensionWithTolerance")) },
@@ -8610,6 +8666,15 @@ const typeMap: any = {
     ],
     "ModelSubtype": [
         "chipBead",
+    ],
+    "Source": [
+        "distributor",
+        "librarianEnrichment",
+        "manual",
+        "manufacturerDatabase",
+        "manufacturerDatasheet",
+        "manufacturerParametric",
+        "scrape",
     ],
     "MASConformance": [
         "A",
