@@ -1393,7 +1393,9 @@ export default {
 
 <style scoped>
 .advancedcoil-wrapper {
-    padding: 0.5rem 0;
+    /* No top padding: align the parasitics cards with the normal MB config cards
+       (same vertical start). The grid gap handles inter-card spacing. */
+    padding: 0;
 }
 
 .advancedcoil-grid {
