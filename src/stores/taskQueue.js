@@ -2077,24 +2077,5 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
         },
 
-        capacitanceModelsBetweenWindingsCalculated(success = true, dataOrMessage = '') {
-        },
-
-        async calculateCapacitanceModelsBetweenWindings(energy, voltageDrop, relativeTurnsRatio) {
-            const mkf = await waitForMkf();
-            await mkf.ready;
-
-            const result = await mkf.calculate_capacitance_models_between_windings(energy, voltageDrop, relativeTurnsRatio);
-
-            if (result.startsWith("Exception")) {
-                setTimeout(() => {this.capacitanceModelsBetweenWindingsCalculated(false, result);}, this.task_standard_response_delay);
-                throw new Error(result);
-            }
-            else {
-                const models = JSON.parse(result);
-                setTimeout(() => {this.capacitanceModelsBetweenWindingsCalculated(true, models);}, this.task_standard_response_delay);
-                return models;
-            }
-        },
     }
 })
