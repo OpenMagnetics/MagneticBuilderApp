@@ -949,6 +949,28 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             return handle;
         },
 
+        volumetricLossesSwept(success = true, dataOrMessage = '') {
+        },
+
+        // ABT #166: engine-computed Pv(f) samples for any loss model of a
+        // material (steinmetz, roshen, proprietary, loss maps). `material`
+        // can be a DB name or a full CoreMaterial object.
+        async sweepVolumetricLossesOverFrequency(material, temperature, magneticFluxDensityPeak, start, stop, numberElements, method = '') {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.sweep_volumetric_losses_over_frequency(
+                typeof material === 'string' ? material : JSON.stringify(clean(material)),
+                temperature, magneticFluxDensityPeak, start, stop, numberElements, method);
+            if (typeof result === 'string' && result.startsWith('Exception')) {
+                setTimeout(() => { this.volumetricLossesSwept(false, result); }, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            const sweep = JSON.parse(result);
+            setTimeout(() => { this.volumetricLossesSwept(true, sweep); }, this.task_standard_response_delay);
+            return sweep;
+        },
+
         coreVolumetricLossesEquationsGotten(success = true, dataOrMessage = '') {
         },
 

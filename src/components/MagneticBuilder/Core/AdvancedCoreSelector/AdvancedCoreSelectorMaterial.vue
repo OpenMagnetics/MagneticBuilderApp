@@ -14,6 +14,7 @@ import BhCyclePerTemperature from './AdvancedCoreSelectorMaterial/BhCyclePerTemp
 import VolumetricLossesPerTemperature from './AdvancedCoreSelectorMaterial/VolumetricLossesPerTemperature.vue'
 import LossFactorVersusFrequency from './AdvancedCoreSelectorMaterial/LossFactorVersusFrequency.vue'
 import VolumetricLossesPerTemperatureEquationBased from './AdvancedCoreSelectorMaterial/VolumetricLossesPerTemperatureEquationBased.vue'
+import VolumetricLossesModelChart from './AdvancedCoreSelectorMaterial/VolumetricLossesModelChart.vue'
 import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import Text from '/WebSharedComponents/DataInput/Text.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
@@ -161,6 +162,17 @@ export default {
                 return false;
             }
             return methods.some((method) => Array.isArray(method) && method.length > 0);
+        },
+        // ABT #166: steinmetz / roshen / other engine-side models have no
+        // frontend-displayable representation — their curves must be sampled
+        // from the engine.
+        hasEngineOnlyLossModel() {
+            const methods = this.core.functionalDescription.material.volumetricLosses?.default;
+            if (methods == null) {
+                return false;
+            }
+            return methods.some((method) => !Array.isArray(method)
+                && !['magnetics', 'micrometals', 'lossFactor'].includes(method.method));
         },
     },
     methods: {
@@ -562,6 +574,11 @@ export default {
                     v-if="core.functionalDescription.material.volumetricLosses != null && isCoreLossesEquationBased"
                     :dataTestLabel="dataTestLabel + '-VolumetricLossesPerTemperature'"
                     :data="core.functionalDescription.material.volumetricLosses"
+                />
+                <VolumetricLossesModelChart
+                    v-if="hasEngineOnlyLossModel"
+                    :dataTestLabel="dataTestLabel + '-VolumetricLossesModelChart'"
+                    :material="core.functionalDescription.material"
                 />
             </div>
         </div>
