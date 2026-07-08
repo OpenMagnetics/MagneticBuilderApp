@@ -163,15 +163,11 @@ export default {
     methods: {
         loadAdvancedMaterialData() {
             const material = this.core.functionalDescription.material;
-            console.log('[AdvancedCoreSelectorMaterial] loadAdvancedMaterialData START');
-            console.log('[AdvancedCoreSelectorMaterial] material.bhCycle:', material.bhCycle);
-            console.log('[AdvancedCoreSelectorMaterial] material.volumetricLosses:', material.volumetricLosses);
-            
+
             // Check if advanced data (bhCycle, volumetricLosses with actual data points) already exists
             // This handles custom materials and materials that already have their data loaded
             const hasBhCycleData = material.bhCycle != null && material.bhCycle.length > 0;
-            console.log('[AdvancedCoreSelectorMaterial] hasBhCycleData:', hasBhCycleData);
-            
+
             // volumetricLosses.default contains either:
             // 1. Arrays of data points (measured data) - these are displayable
             // 2. Method objects with Steinmetz coefficients (k, alpha, beta) - displayable via equation
@@ -195,7 +191,6 @@ export default {
             }
             
             if (hasBhCycleData || hasVolumetricLossesData) {
-                console.log('[AdvancedCoreSelectorMaterial] Data already present, returning early');
                 // Data already present, just load complex permeability if missing
                 if (material.permeability != null && material.permeability.complex == null) {
                     this.loadMaterialComplexPermeabilityData();
@@ -204,7 +199,6 @@ export default {
             }
 
             // Use MKF WASM to load full material data (no backend required)
-            console.log('[AdvancedCoreSelectorMaterial] Fetching via MKF WASM for material:', material.name);
             this.taskQueueStore.processCoreMaterial(material.name);
         },
         loadMaterialData() {
@@ -215,8 +209,12 @@ export default {
                 this.core.functionalDescription.material.permeability.complex = complexPermeability;
             })
             .catch(error => {
-                console.error(materialJson);
-                return;
+                // Many materials (powder cores especially) simply have no
+                // complex-permeability data: the engine throws
+                // MATERIAL_DATA_MISSING and the complex chart stays hidden.
+                // Log the real error — referencing an undefined variable here
+                // used to crash the handler itself (uncaught ReferenceError).
+                console.error(error);
             });
         },
     }
