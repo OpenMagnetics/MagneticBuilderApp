@@ -80,14 +80,10 @@ export default {
                 }
             });
         }))
-        console.log('[AdvancedCoreSelectorMaterial] mounted, material type:', typeof(this.core.functionalDescription.material));
-        console.log('[AdvancedCoreSelectorMaterial] material:', this.core.functionalDescription.material);
         if (typeof(this.core.functionalDescription.material) == "string") {
-            console.log('[AdvancedCoreSelectorMaterial] calling loadMaterialData');
             this.loadMaterialData();
         }
         else {
-            console.log('[AdvancedCoreSelectorMaterial] calling loadAdvancedMaterialData');
             this.loadAdvancedMaterialData();
         }
     },
@@ -149,15 +145,22 @@ export default {
             if (this.core.functionalDescription.material.volumetricLosses == null) {
                 return false;
             }
-            let isCoreLossesLossFactorBased = false; 
+            let isCoreLossesLossFactorBased = false;
             this.core.functionalDescription.material.volumetricLosses.default.forEach((method) => {
                 if (!Array.isArray(method)) {
                     if (method.method == "lossFactor") {
                         isCoreLossesLossFactorBased = true;
                     }
                 }
-            }) 
+            })
             return isCoreLossesLossFactorBased;
+        },
+        hasMeasuredVolumetricLossesPoints() {
+            const methods = this.core.functionalDescription.material.volumetricLosses?.default;
+            if (methods == null) {
+                return false;
+            }
+            return methods.some((method) => Array.isArray(method) && method.length > 0);
         },
     },
     methods: {
@@ -208,14 +211,43 @@ export default {
             this.taskQueueStore.getComplexPermeability(this.core.functionalDescription.material).then((complexPermeability) => {
                 this.core.functionalDescription.material.permeability.complex = complexPermeability;
             })
-            .catch(error => {
-                // Many materials (powder cores especially) simply have no
-                // complex-permeability data: the engine throws
-                // MATERIAL_DATA_MISSING and the complex chart stays hidden.
-                // Log the real error — referencing an undefined variable here
-                // used to crash the handler itself (uncaught ReferenceError).
-                console.error(error);
+            .catch(() => {
+                // Materials without complex-permeability data throw
+                // MATERIAL_DATA_MISSING (already logged once by the global
+                // task-queue error handler in main.js). The section renders
+                // its "no data / Add data" card so the user can enter values.
             });
+        },
+        // "Add data" seeds: create one editable starter row so the property
+        // editor renders for materials that lack the dataset entirely. The
+        // zeros are a blank row for the user to fill, not physics defaults —
+        // the record only persists if the user applies their edits.
+        seedBhCycle() {
+            this.core.functionalDescription.material.bhCycle = [
+                { temperature: 25, magneticField: 0, magneticFluxDensity: 0 },
+            ];
+        },
+        seedVolumetricLossesPoints() {
+            if (this.core.functionalDescription.material.volumetricLosses == null) {
+                this.core.functionalDescription.material.volumetricLosses = { default: [] };
+            }
+            this.core.functionalDescription.material.volumetricLosses.default.push([
+                {
+                    magneticFluxDensity: {
+                        frequency: 100000,
+                        magneticFluxDensity: { processed: { label: "Sinusoidal", offset: 0, peak: 0.1, peakToPeak: 0.2 } },
+                    },
+                    temperature: 25,
+                    value: 0,
+                    origin: "manufacturer",
+                },
+            ]);
+        },
+        seedComplexPermeability() {
+            this.core.functionalDescription.material.permeability.complex = {
+                real: [{ value: 0, frequency: 100000 }],
+                imaginary: [{ value: 0, frequency: 100000 }],
+            };
         },
     }
 }
@@ -476,23 +508,56 @@ export default {
                     :data="core.functionalDescription.material.permeability.complex"
                     :chartStyle="'height: 19vh'"
                 />
+                <div v-else-if="core.functionalDescription.material.permeability != null" class="missing-data-card">
+                    <span>{{'No complex permeability data in this material'}}</span>
+                    <button
+                        :data-cy="dataTestLabel + '-seed-complex-permeability-button'"
+                        :style="$styleStore.magneticBuilder.addButton"
+                        class="btn"
+                        @click="seedComplexPermeability"
+                    >
+                        {{'Add data'}}
+                    </button>
+                </div>
             </div>
             <div class="col-12 md:col-4">
                 <BhCyclePerTemperature
-                    v-if="core.functionalDescription.material.bhCycle != null"
+                    v-if="core.functionalDescription.material.bhCycle != null && core.functionalDescription.material.bhCycle.length > 0"
                     :dataTestLabel="dataTestLabel + '-BhCyclePerTemperature'"
                     :data="core.functionalDescription.material.bhCycle"
                 />
+                <div v-else class="missing-data-card">
+                    <span>{{'No B-H cycle data in this material'}}</span>
+                    <button
+                        :data-cy="dataTestLabel + '-seed-bh-cycle-button'"
+                        :style="$styleStore.magneticBuilder.addButton"
+                        class="btn"
+                        @click="seedBhCycle"
+                    >
+                        {{'Add data'}}
+                    </button>
+                </div>
                 <LossFactorVersusFrequency
                     v-if="core.functionalDescription.material.volumetricLosses != null && isCoreLossesLossFactorBased"
                     :dataTestLabel="dataTestLabel + '-LossFactorVersusFrequency'"
                     :data="core.functionalDescription.material.volumetricLosses"
                 />
                 <VolumetricLossesPerTemperature
-                    v-if="core.functionalDescription.material.volumetricLosses != null && !isCoreLossesEquationBased"
+                    v-if="hasMeasuredVolumetricLossesPoints"
                     :dataTestLabel="dataTestLabel + '-VolumetricLossesPerTemperature'"
                     :data="core.functionalDescription.material.volumetricLosses"
                 />
+                <div v-else class="missing-data-card">
+                    <span>{{'No measured loss points in this material'}}</span>
+                    <button
+                        :data-cy="dataTestLabel + '-seed-loss-points-button'"
+                        :style="$styleStore.magneticBuilder.addButton"
+                        class="btn"
+                        @click="seedVolumetricLossesPoints"
+                    >
+                        {{'Add data'}}
+                    </button>
+                </div>
                 <VolumetricLossesPerTemperatureEquationBased
                     v-if="core.functionalDescription.material.volumetricLosses != null && isCoreLossesEquationBased"
                     :dataTestLabel="dataTestLabel + '-VolumetricLossesPerTemperature'"
@@ -502,3 +567,21 @@ export default {
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Placeholder card shown when the material lacks a dataset (B-H cycle,
+   measured loss points, complex permeability): keeps the section visible and
+   editable instead of silently disappearing. */
+.missing-data-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px dashed rgba(var(--p-white-rgb), 0.25);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    margin: 0.5rem 0;
+    color: rgba(var(--p-white-rgb), 0.6);
+    font-size: 0.9rem;
+}
+</style>
