@@ -3211,9 +3211,18 @@ export interface MagneticDatasheetElectrical {
      */
     ratedCurrents?: number[];
     /**
-     * Peak saturation current in Amperes (I_sat from datasheet).
+     * Peak saturation current in Amperes (I_sat from datasheet). A single unqualified I_sat;
+     * when the datasheet states I_sat at explicit inductance-drop criteria, use
+     * saturationCurrents instead (or in addition).
      */
     saturationCurrentPeak?: number;
+    /**
+     * Saturation-current table: I_sat at one or more inductance-drop criteria (|dL/L| %), when
+     * the datasheet specifies them. Preferred over the single saturationCurrentPeak scalar
+     * because it carries the roll-off basis, enabling apples-to-apples cross-manufacturer
+     * comparison. Omit for a part whose datasheet gives only one unqualified I_sat.
+     */
+    saturationCurrents?: DatasheetSaturationCurrent[];
     /**
      * Self-resonant frequency in Hz.
      */
@@ -3435,6 +3444,28 @@ export interface DatasheetResistancePoint {
      * single-winding parts.
      */
     winding?: string;
+}
+
+/**
+ * Saturation current stated at a specific inductance-drop criterion — one row of a
+ * datasheet's I_sat table. Manufacturer-agnostic: a vendor that quotes I_sat at several
+ * |dL/L| criteria (e.g. 10% and 30%) contributes one entry per criterion; a vendor that
+ * quotes a single unqualified I_sat uses the scalar saturationCurrentPeak instead.
+ */
+export interface DatasheetSaturationCurrent {
+    /**
+     * Saturation current in Amperes at the stated inductance-drop criterion.
+     */
+    current: number;
+    /**
+     * Roll-off criterion in percent: the inductance drop |dL/L| from the small-signal value at
+     * which this saturation current is specified (e.g. 10, 20, 30).
+     */
+    percentInductanceDrop: number;
+    /**
+     * Measurement temperature in degrees Celsius.
+     */
+    temperature?: number;
 }
 
 export enum ElectricalSubtype {
@@ -5207,6 +5238,7 @@ const typeMap: any = {
         { json: "numberTurns", js: "numberTurns", typ: u(undefined, 3.14) },
         { json: "ratedCurrents", js: "ratedCurrents", typ: u(undefined, a(3.14)) },
         { json: "saturationCurrentPeak", js: "saturationCurrentPeak", typ: u(undefined, 3.14) },
+        { json: "saturationCurrents", js: "saturationCurrents", typ: u(undefined, a(r("DatasheetSaturationCurrent"))) },
         { json: "selfResonantFrequency", js: "selfResonantFrequency", typ: u(undefined, 3.14) },
         { json: "subtype", js: "subtype", typ: r("ElectricalSubtype") },
         { json: "couplingCoefficient", js: "couplingCoefficient", typ: u(undefined, 3.14) },
@@ -5261,6 +5293,11 @@ const typeMap: any = {
         { json: "frequency", js: "frequency", typ: 3.14 },
         { json: "resistance", js: "resistance", typ: 3.14 },
         { json: "winding", js: "winding", typ: u(undefined, "") },
+    ], false),
+    "DatasheetSaturationCurrent": o([
+        { json: "current", js: "current", typ: 3.14 },
+        { json: "percentInductanceDrop", js: "percentInductanceDrop", typ: 3.14 },
+        { json: "temperature", js: "temperature", typ: u(undefined, 3.14) },
     ], false),
     "Mechanical": o([
         { json: "assemblyType", js: "assemblyType", typ: u(undefined, "") },
