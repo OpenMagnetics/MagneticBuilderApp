@@ -2462,6 +2462,12 @@ export interface InitialPermeabilitModifier {
      *
      * Field with the coefficients used to calculate how much the permeability decreases with
      * the frequency, as factor = 1 / (a + b * pow(f, c) ) + d
+     *
+     * Field with the coefficients used to calculate how much the permeability decreases with
+     * frequency, as the percent-of-initial rolloff factor = (a / (1 + pow(f / b, c)) + d) *
+     * 0.01, with f in Hz. a is the rolling-off share, d the high-frequency asymptote (a + d =
+     * 100 at DC), b the corner frequency in Hz and c the steepness. Fitted to the
+     * permeability-vs-frequency curves of the POCO catalog.
      */
     frequencyFactor?: FrequencyFactor;
     /**
@@ -2504,6 +2510,12 @@ export interface InitialPermeabilitModifier {
  *
  * Field with the coefficients used to calculate how much the permeability decreases with
  * the frequency, as factor = 1 / (a + b * pow(f, c) ) + d
+ *
+ * Field with the coefficients used to calculate how much the permeability decreases with
+ * frequency, as the percent-of-initial rolloff factor = (a / (1 + pow(f / b, c)) + d) *
+ * 0.01, with f in Hz. a is the rolling-off share, d the high-frequency asymptote (a + d =
+ * 100 at DC), b the corner frequency in Hz and c the steepness. Fitted to the
+ * permeability-vs-frequency curves of the POCO catalog.
  */
 export interface FrequencyFactor {
     a:  number;
