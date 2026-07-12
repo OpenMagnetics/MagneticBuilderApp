@@ -265,9 +265,16 @@ export default {
             }
 
             if (outputs[this.operatingPointIndex].inductance.leakageInductance?.leakageInductancePerWinding) {
-                for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length - 1; windingIndex++) {
-                    const leakageInductance = outputs[this.operatingPointIndex].inductance.leakageInductance.leakageInductancePerWinding[windingIndex].nominal;
-                    this.outputsData.leakageInductancePerWinding.push(leakageInductance);
+                const perWinding = outputs[this.operatingPointIndex].inductance.leakageInductance.leakageInductancePerWinding;
+                const numberWindings = this.masStore.mas.magnetic.coil.functionalDescription.length;
+                // The engine emits a winding-indexed array (N entries, 0 at the primary slot);
+                // outputs saved by older versions carry a legacy secondaries-only (N-1) shape.
+                const windingIndexed = perWinding.length === numberWindings;
+                for (let windingIndex = 1; windingIndex < numberWindings; windingIndex++) {
+                    const entry = perWinding[windingIndexed ? windingIndex : windingIndex - 1];
+                    if (entry != null) {
+                        this.outputsData.leakageInductancePerWinding.push(entry.nominal);
+                    }
                 }
             }
             for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length; windingIndex++) {
