@@ -1316,6 +1316,12 @@ export interface WindingWindowElement {
      */
     area?: number;
     /**
+     * Index of the column (in the columns list of the core processed description) that the
+     * turns placed in this winding window are wound around. If not present, the main column is
+     * assumed (the first central column, or the first column if there is no central one)
+     */
+    column?: number;
+    /**
      * The coordinates of the center of the winding window, referred to the center of the main
      * column. In the case of half-sets, the center will be in the top point, where it would
      * join another half-set
@@ -1431,7 +1437,14 @@ export interface CoilFunctionalDescription {
      * Number of turns (per IEV 151-13-14) in the winding.
      */
     numberTurns: number;
-    wire:        Wire | string;
+    /**
+     * Index of the winding window (in the windingWindows list of the governing bobbin or core
+     * processed description) this winding is intended to be placed in, used by auto-winders and
+     * advisers before sections exist. If not present, the first winding window (index 0) is
+     * assumed. Overridable per group and per section
+     */
+    windingWindow?: number;
+    wire:           Wire | string;
     /**
      * List of winding names that are wound together with this winding.
      */
@@ -1761,6 +1774,12 @@ export interface Group {
      * Type of the group
      */
     type: WiringTechnology;
+    /**
+     * Index of the winding window (in the windingWindows list of the governing bobbin or core
+     * processed description) the sections of this group are placed in. If not present, the
+     * first winding window (index 0) is assumed. Overridable per section
+     */
+    windingWindow?: number;
 }
 
 /**
@@ -1935,6 +1954,13 @@ export interface Section {
      * Defines if the section is wound by consecutive turns or parallels
      */
     windingStyle?: WindingStyle;
+    /**
+     * Index of the winding window (in the windingWindows list of the governing bobbin or core
+     * processed description) this section is placed in. If not present, the group's
+     * windingWindow applies, else the first winding window (index 0). Coordinates stay referred
+     * to the center of the main column regardless of this value
+     */
+    windingWindow?: number;
 }
 
 /**
@@ -2986,9 +3012,15 @@ export interface ColumnElement {
      * Minimum width of the column, if irregular
      */
     minimumWidth?: number;
-    shape:         ColumnShape;
     /**
-     * Name of the column
+     * Name given to the column, so it can be referenced. If not present, the column is
+     * identified by its index in the columns list and by its coordinates
+     */
+    name?: string;
+    shape: ColumnShape;
+    /**
+     * Type of the column, according to its position in the core: central column or lateral
+     * (return) column
      */
     type: ColumnType;
     /**
@@ -2998,7 +3030,8 @@ export interface ColumnElement {
 }
 
 /**
- * Name of the column
+ * Type of the column, according to its position in the core: central column or lateral
+ * (return) column
  */
 export enum ColumnType {
     Central = "central",
@@ -4839,6 +4872,7 @@ const typeMap: any = {
     ], false),
     "WindingWindowElement": o([
         { json: "area", js: "area", typ: u(undefined, 3.14) },
+        { json: "column", js: "column", typ: u(undefined, 0) },
         { json: "coordinates", js: "coordinates", typ: u(undefined, a(3.14)) },
         { json: "height", js: "height", typ: u(undefined, 3.14) },
         { json: "sectionsAlignment", js: "sectionsAlignment", typ: u(undefined, r("CoilAlignment")) },
@@ -4855,6 +4889,7 @@ const typeMap: any = {
         { json: "name", js: "name", typ: "" },
         { json: "numberParallels", js: "numberParallels", typ: 0 },
         { json: "numberTurns", js: "numberTurns", typ: 0 },
+        { json: "windingWindow", js: "windingWindow", typ: u(undefined, 0) },
         { json: "wire", js: "wire", typ: u(r("Wire"), "") },
         { json: "woundWith", js: "woundWith", typ: u(undefined, a("")) },
     ], false),
@@ -4931,6 +4966,7 @@ const typeMap: any = {
         { json: "partialWindings", js: "partialWindings", typ: a(r("PartialWinding")) },
         { json: "sectionsOrientation", js: "sectionsOrientation", typ: r("WindingOrientation") },
         { json: "type", js: "type", typ: r("WiringTechnology") },
+        { json: "windingWindow", js: "windingWindow", typ: u(undefined, 0) },
     ], false),
     "PartialWinding": o([
         { json: "connections", js: "connections", typ: u(undefined, a(r("ConnectionElement"))) },
@@ -4967,6 +5003,7 @@ const typeMap: any = {
         { json: "type", js: "type", typ: r("ElectricalType") },
         { json: "windingOrder", js: "windingOrder", typ: u(undefined, r("WindingOrder")) },
         { json: "windingStyle", js: "windingStyle", typ: u(undefined, r("WindingStyle")) },
+        { json: "windingWindow", js: "windingWindow", typ: u(undefined, 0) },
     ], false),
     "MarginInfo": o([
         { json: "bottomOrRightWidth", js: "bottomOrRightWidth", typ: 3.14 },
@@ -5202,6 +5239,7 @@ const typeMap: any = {
         { json: "height", js: "height", typ: 3.14 },
         { json: "minimumDepth", js: "minimumDepth", typ: u(undefined, 3.14) },
         { json: "minimumWidth", js: "minimumWidth", typ: u(undefined, 3.14) },
+        { json: "name", js: "name", typ: u(undefined, "") },
         { json: "shape", js: "shape", typ: r("ColumnShape") },
         { json: "type", js: "type", typ: r("ColumnType") },
         { json: "width", js: "width", typ: 3.14 },
