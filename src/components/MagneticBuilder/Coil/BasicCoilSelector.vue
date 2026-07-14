@@ -8,9 +8,11 @@ import BasicCoilFillingFactors from './BasicCoilFillingFactors.vue'
 import BasicCoilSectionInsulationSelector from './BasicCoilSectionInsulationSelector.vue'
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import Magnetic2DVisualizer from '/WebSharedComponents/Common/Magnetic2DVisualizer.vue'
+import WindingStudio from '../WindingStudio/WindingStudio.vue'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals, cleanCoil, generateHash } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
 
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
@@ -72,6 +74,7 @@ export default {
     data() {
         const historyStore = useHistoryStore();
         const taskQueueStore = useTaskQueueStore();
+        const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const showAlignmentOptions = false;
 
         const showInsulationOptions = false;
@@ -142,6 +145,7 @@ export default {
             blockingRebounds,
             taskQueueStore,
             historyStore,
+            magneticBuilderSettingsStore,
             localData,
             forceUpdate,
             showAlignmentOptions,
@@ -821,6 +825,16 @@ export default {
                 </div>
                 <div class="coil-config-header-right">
                     <button
+                        type="button"
+                        :disabled="loading"
+                        :class="['coil-config-header-btn', magneticBuilderSettingsStore.enableWindingStudio ? 'coil-config-header-btn-primary' : 'coil-config-header-btn-outline']"
+                        :data-cy="dataTestLabel + '-Coil-WindingStudio-button'"
+                        @click="magneticBuilderSettingsStore.enableWindingStudio = !magneticBuilderSettingsStore.enableWindingStudio"
+                    >
+                        <i class="pi pi-objects-column"></i>
+                        <span>Studio</span>
+                    </button>
+                    <button
                         v-if="!masStore.hasMirroredWindings"
                         type="button"
                         :disabled="!enableSubmenu || loading"
@@ -843,7 +857,23 @@ export default {
             </div>
             <div class="coil-config-body">
                 <div
-                    v-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
+                    v-if="magneticBuilderSettingsStore.enableWindingStudio && useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
+                    class="row mb-3"
+                    :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ' max-height: 50vh;'"
+                >
+                    <WindingStudio
+                        :dataTestLabel="dataTestLabel"
+                        :masStore="masStore"
+                        :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
+                        :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
+                        :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
+                        :marginColor="$styleStore.magneticBuilder.painterColorMargin || '0xfff05b'"
+                        :backgroundColor="$styleStore.magneticBuilder.main['background-color'] || $styleStore.magneticBuilder.main['background'] || 'transparent'"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor?.color || '#ffffff'"
+                    />
+                </div>
+                <div
+                    v-else-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
                     class="row mb-3"
                     :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ' max-height: 50vh;'"
                 >
