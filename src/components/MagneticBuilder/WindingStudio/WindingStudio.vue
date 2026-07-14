@@ -19,6 +19,17 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    // P1: winding chips become drag sources and the core legs drop targets;
+    // dropping emits placeWinding({winding, columnIndex}) for the host to
+    // execute through the WASM winder. Off = P0 read-only view.
+    editable: {
+        type: Boolean,
+        default: false,
+    },
+    busy: {
+        type: Boolean,
+        default: false,
+    },
     ferriteColor: {
         type: String,
         default: '#7b7c7d',
@@ -49,7 +60,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -169,6 +180,102 @@ function legendHover(windingName) {
 function legendLeave() {
     hoveredWinding.value = null;
 }
+
+// P1 fit indicator — pure DISPLAY geometry on the winder's output (section /
+// turn containment in their windows + the winder's own fillingFactor). No
+// physics is recomputed here; the winder remains the authority and throws on
+// truly unwindable inputs.
+const fitStatus = computed(() => {
+    const m = model.value;
+    if (!m.valid || m.windows.length === 0 || m.sections.length === 0) {
+        return null;
+    }
+    const eps = 1e-3; // mm
+    const within = (r, w) =>
+        r.x >= w.x - eps && r.y >= w.y - eps
+        && r.x + r.width <= w.x + w.width + eps
+        && r.y + r.height <= w.y + w.height + eps;
+    const windowFor = (index) => m.windows.find((w) => w.index === index) ?? m.windows[0];
+    let worstFill = 0;
+    let overflow = false;
+    for (const section of m.sections) {
+        if (section.type !== 'conduction') {
+            continue;
+        }
+        if (section.fillingFactor != null) {
+            worstFill = Math.max(worstFill, section.fillingFactor);
+        }
+        if (!within(section.rect, windowFor(section.windingWindow).rect)) {
+            overflow = true;
+        }
+    }
+    for (const turn of m.turns) {
+        // Return crossings legitimately sit outside the windows (even outside
+        // the core for lateral-leg loops); only own crossings must fit.
+        if (!turn.isReturn && !m.windows.some((w) => within(turn.rect, w.rect))) {
+            overflow = true;
+        }
+    }
+    if (worstFill > 1) {
+        overflow = true;
+    }
+    return { overflow, worstFill };
+});
+
+// ---------------------------------------------------------------------------
+// P1: drag a winding chip onto a core leg
+// ---------------------------------------------------------------------------
+
+const drag = ref(null); // {winding, color, x, y} in client coords
+const dropColumn = ref(null); // column index under the pointer
+
+function startChipDrag(windingName, event) {
+    if (!props.editable || props.busy) {
+        return;
+    }
+    // No preventDefault: the chips set touch-action: none, and preventing here
+    // trips Chrome's passive-listener warning.
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.value = {
+        winding: windingName,
+        color: windingColor(model.value.windingNames, windingName),
+        x: event.clientX,
+        y: event.clientY,
+    };
+    dropColumn.value = null;
+}
+
+function moveChipDrag(event) {
+    if (drag.value == null) {
+        return;
+    }
+    drag.value.x = event.clientX;
+    drag.value.y = event.clientY;
+    // The chip holds pointer capture, so hit-test geometrically.
+    const under = document.elementFromPoint(event.clientX, event.clientY);
+    const slot = under?.closest?.('[data-studio-column]');
+    dropColumn.value = slot != null ? Number(slot.getAttribute('data-studio-column')) : null;
+}
+
+function endChipDrag() {
+    if (drag.value == null) {
+        return;
+    }
+    const placement = dropColumn.value;
+    const windingName = drag.value.winding;
+    drag.value = null;
+    if (placement != null) {
+        emit('placeWinding', { winding: windingName, columnIndex: placement });
+    }
+    dropColumn.value = null;
+}
+
+function columnLabel(column) {
+    if (column.type === 'central') {
+        return 'Center leg';
+    }
+    return column.rect.x + column.rect.width / 2 < 0 ? 'Left leg' : 'Right leg';
+}
 </script>
 
 <template>
@@ -189,13 +296,30 @@ function legendLeave() {
                         :key="windingName"
                         type="button"
                         class="winding-studio-chip"
+                        :class="{ 'winding-studio-chip-draggable': editable && !busy }"
                         :style="{ '--chip-color': windingColor(model.windingNames, windingName) }"
+                        :data-cy="dataTestLabel + '-WindingStudio-chip-' + windingName"
                         @mouseenter="legendHover(windingName)"
                         @mouseleave="legendLeave()"
+                        @pointerdown="startChipDrag(windingName, $event)"
+                        @pointermove="moveChipDrag($event)"
+                        @pointerup="endChipDrag()"
+                        @pointercancel="endChipDrag()"
                     >
                         <span class="winding-studio-chip-dot"></span>{{ windingName }}
                     </button>
+                    <span v-if="editable && !busy" class="winding-studio-hint">drag a winding onto a leg</span>
+                    <span v-if="busy" class="winding-studio-hint">winding…</span>
                 </div>
+                <span
+                    v-if="fitStatus != null"
+                    class="winding-studio-fit"
+                    :class="fitStatus.overflow ? 'winding-studio-fit-bad' : 'winding-studio-fit-good'"
+                    :data-cy="dataTestLabel + '-WindingStudio-fit'"
+                >
+                    {{ fitStatus.overflow ? '⚠ does not fit' : '✓ fits' }}<template
+                        v-if="fitStatus.worstFill > 0"> · fill {{ (fitStatus.worstFill * 100).toFixed(0) }}%</template>
+                </span>
                 <label class="winding-studio-toggle">
                     <input v-model="colorByWinding" type="checkbox" />
                     Color by winding
@@ -299,6 +423,29 @@ function legendLeave() {
                         @mouseleave="tooltip = null"
                         @click="onSectionClick(section)"
                     />
+                    <!-- Drop slots: the core legs light up while a chip is dragged -->
+                    <g v-if="drag != null">
+                        <g v-for="column in model.core.columns" :key="'slot' + column.index">
+                            <rect
+                                v-bind="column.rect"
+                                :data-studio-column="column.index"
+                                :fill="dropColumn === column.index ? drag.color : '#ffffff'"
+                                :opacity="dropColumn === column.index ? 0.55 : 0.18"
+                                :stroke="drag.color"
+                                stroke-width="2"
+                                vector-effect="non-scaling-stroke"
+                                class="winding-studio-slot"
+                            />
+                            <text
+                                :x="column.rect.x + column.rect.width / 2"
+                                :y="column.rect.y + column.rect.height / 2"
+                                text-anchor="middle"
+                                dominant-baseline="middle"
+                                class="winding-studio-slot-label"
+                                :style="{ fontSize: Math.min(column.rect.width * 0.28, model.bounds.height * 0.05) + 'px' }"
+                            >{{ columnLabel(column) }}</text>
+                        </g>
+                    </g>
                 </svg>
                 <div
                     v-if="tooltip != null"
@@ -307,7 +454,17 @@ function legendLeave() {
                 >
                     <div v-for="line in tooltip.lines" :key="line">{{ line }}</div>
                 </div>
+                <div v-if="busy" class="winding-studio-busy">winding…</div>
             </div>
+            <Teleport to="body">
+                <div
+                    v-if="drag != null"
+                    class="winding-studio-ghost"
+                    :style="{ left: drag.x + 'px', top: drag.y + 'px', '--chip-color': drag.color }"
+                >
+                    <span class="winding-studio-chip-dot"></span>{{ drag.winding }}
+                </div>
+            </Teleport>
         </template>
     </div>
 </template>
@@ -394,5 +551,62 @@ function legendLeave() {
     font-size: 0.75rem;
     white-space: nowrap;
     z-index: 10;
+}
+.winding-studio-chip-draggable {
+    cursor: grab;
+    touch-action: none;
+}
+.winding-studio-hint {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    font-style: italic;
+}
+.winding-studio-fit {
+    font-size: 0.8rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 1rem;
+    border: 1px solid transparent;
+}
+.winding-studio-fit-good {
+    color: #7fd48a;
+    border-color: #7fd48a55;
+}
+.winding-studio-fit-bad {
+    color: #ff8b8b;
+    border-color: #ff8b8b88;
+}
+.winding-studio-slot {
+    cursor: copy;
+}
+.winding-studio-slot-label {
+    fill: #ffffff;
+    pointer-events: none;
+    font-weight: 600;
+}
+.winding-studio-busy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    color: #ffffff;
+    font-weight: 600;
+    z-index: 5;
+}
+.winding-studio-ghost {
+    position: fixed;
+    transform: translate(12px, 12px);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 1px solid var(--chip-color);
+    border-radius: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 0.05rem 0.5rem;
+    font-size: 0.8rem;
+    pointer-events: none;
+    z-index: 1000;
 }
 </style>
