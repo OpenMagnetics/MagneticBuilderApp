@@ -60,7 +60,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -276,6 +276,108 @@ function columnLabel(column) {
     }
     return column.rect.x + column.rect.width / 2 < 0 ? 'Left leg' : 'Right leg';
 }
+
+// ---------------------------------------------------------------------------
+// P2: drag the boundary between two adjacent sections to resize proportions
+// ---------------------------------------------------------------------------
+
+// Boundaries between adjacent conduction sections of DIFFERENT windings in the
+// same winding window, stacking along x (the concentric overlapping layout).
+// Dragging one re-distributes the per-winding proportions; the winder recomputes
+// the real geometry on the emitted re-wind.
+const sectionBoundaries = computed(() => {
+    if (!props.editable || !model.value.valid) {
+        return [];
+    }
+    const conduction = model.value.sections
+        .filter((section) => section.type === 'conduction')
+        .sort((a, b) => a.rect.x - b.rect.x);
+    const boundaries = [];
+    for (let i = 0; i + 1 < conduction.length; i++) {
+        const left = conduction[i];
+        const right = conduction[i + 1];
+        if (left.windingWindow !== right.windingWindow) {
+            continue;
+        }
+        if (left.windings.join() === right.windings.join()) {
+            continue;
+        }
+        const y0 = Math.max(left.rect.y, right.rect.y);
+        const y1 = Math.min(left.rect.y + left.rect.height, right.rect.y + right.rect.height);
+        if (y1 <= y0) {
+            continue;
+        }
+        boundaries.push({
+            id: `${left.name}|${right.name}`,
+            left,
+            right,
+            x: (left.rect.x + left.rect.width + right.rect.x) / 2,
+            y: y0,
+            height: y1 - y0,
+            hitWidth: Math.max(right.rect.x - left.rect.x - left.rect.width, Math.min(left.rect.width, right.rect.width) * 0.3),
+        });
+    }
+    return boundaries;
+});
+
+const boundaryDrag = ref(null); // {boundary, startClientX, dx (mm), scale}
+
+function startBoundaryDrag(boundary, event) {
+    if (!props.editable || props.busy) {
+        return;
+    }
+    const svg = event.currentTarget.ownerSVGElement;
+    const ctm = svg.getScreenCTM();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    boundaryDrag.value = { boundary, startClientX: event.clientX, dx: 0, scale: 1 / ctm.a };
+}
+
+function moveBoundaryDrag(event) {
+    const drag_ = boundaryDrag.value;
+    if (drag_ == null) {
+        return;
+    }
+    const raw = (event.clientX - drag_.startClientX) * drag_.scale;
+    // Clamp: neither section may shrink below ~15% of its width (the winder is
+    // the authority on true limits; this just keeps the gesture sane).
+    const minKeep = 0.15;
+    const maxGrow = drag_.boundary.right.rect.width * (1 - minKeep);
+    const maxShrink = drag_.boundary.left.rect.width * (1 - minKeep);
+    drag_.dx = Math.max(-maxShrink, Math.min(maxGrow, raw));
+}
+
+function endBoundaryDrag() {
+    const drag_ = boundaryDrag.value;
+    boundaryDrag.value = null;
+    if (drag_ == null || Math.abs(drag_.dx) < 1e-3) {
+        return;
+    }
+    // Re-derive per-winding proportions from the CURRENT conduction sections,
+    // with the dragged boundary shifting width between its two neighbours.
+    // (Same measure the builder itself uses: sum of section widths per winding.)
+    const dims = new Map();
+    for (const section of model.value.sections) {
+        if (section.type !== 'conduction') {
+            continue;
+        }
+        let width = section.rect.width;
+        if (section.name === drag_.boundary.left.name) {
+            width += drag_.dx;
+        }
+        else if (section.name === drag_.boundary.right.name) {
+            width -= drag_.dx;
+        }
+        for (const windingName of section.windings) {
+            dims.set(windingName, (dims.get(windingName) ?? 0) + width / section.windings.length);
+        }
+    }
+    const total = [...dims.values()].reduce((sum, value) => sum + value, 0);
+    if (total <= 0) {
+        return;
+    }
+    const proportions = model.value.windingNames.map((name) => (dims.get(name) ?? 0) / total);
+    emit('resizeProportions', proportions);
+}
 </script>
 
 <template>
@@ -423,6 +525,34 @@ function columnLabel(column) {
                         @mouseleave="tooltip = null"
                         @click="onSectionClick(section)"
                     />
+                    <!-- Section boundary handles: drag to re-distribute proportions -->
+                    <g v-for="boundary in sectionBoundaries" :key="'boundary' + boundary.id">
+                        <rect
+                            :x="boundary.x - boundary.hitWidth / 2"
+                            :y="boundary.y"
+                            :width="boundary.hitWidth"
+                            :height="boundary.height"
+                            fill="transparent"
+                            class="winding-studio-boundary"
+                            :data-cy="dataTestLabel + '-WindingStudio-boundary'"
+                            @pointerdown="startBoundaryDrag(boundary, $event)"
+                            @pointermove="moveBoundaryDrag($event)"
+                            @pointerup="endBoundaryDrag()"
+                            @pointercancel="endBoundaryDrag()"
+                        />
+                        <line
+                            v-if="boundaryDrag != null && boundaryDrag.boundary.id === boundary.id"
+                            :x1="boundary.x + boundaryDrag.dx"
+                            :x2="boundary.x + boundaryDrag.dx"
+                            :y1="boundary.y"
+                            :y2="boundary.y + boundary.height"
+                            stroke="#ffffff"
+                            stroke-width="2"
+                            stroke-dasharray="5 3"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                    </g>
                     <!-- Drop slots: the core legs light up while a chip is dragged -->
                     <g v-if="drag != null">
                         <g v-for="column in model.core.columns" :key="'slot' + column.index">
@@ -577,6 +707,10 @@ function columnLabel(column) {
 }
 .winding-studio-slot {
     cursor: copy;
+}
+.winding-studio-boundary {
+    cursor: col-resize;
+    touch-action: none;
 }
 .winding-studio-slot-label {
     fill: #ffffff;

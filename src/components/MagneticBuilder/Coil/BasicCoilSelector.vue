@@ -445,6 +445,21 @@ export default {
                 })
             }
         },
+        resizeProportionsFromStudio(proportions) {
+            // Winding-studio boundary drag: the studio re-derived the per-winding
+            // proportions from the resized section widths; re-wind with them (the
+            // winder recomputes the real geometry and enforces the true limits).
+            if (this.readOnly || proportions.length !== this.localData.proportionPerWinding.length) {
+                return;
+            }
+            this.localData.proportionPerWinding = proportions.map((value) => roundWithDecimals(value, 0.01));
+            // The wind() no-op hash covers the coil + margins but NOT the
+            // proportions; reset it so the proportion-only change re-winds.
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
+            this.recentChange = true;
+            this.tryToWind();
+        },
         async placeWindingInColumn({ winding, columnIndex }) {
             // Winding-studio drop: place a winding around the given core leg.
             // The intent is winding-level windingWindow; the WASM winder computes
@@ -929,6 +944,7 @@ export default {
                         :editable="!readOnly"
                         :busy="placingWinding"
                         @placeWinding="placeWindingInColumn"
+                        @resizeProportions="resizeProportionsFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
