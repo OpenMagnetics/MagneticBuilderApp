@@ -30,6 +30,22 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    // Number of pinned (hand-drawn) section rectangles the host keeps; shows
+    // the "custom layout (N) ✕" chip whose click emits clearCustomRects.
+    customCount: {
+        type: Number,
+        default: 0,
+    },
+    // Compact pass on/off (emits update:compact). Toggle hidden unless the
+    // host opts in — drawn sections are immune to compaction either way.
+    showCompactToggle: {
+        type: Boolean,
+        default: false,
+    },
+    compact: {
+        type: Boolean,
+        default: true,
+    },
     ferriteColor: {
         type: String,
         default: '#7b7c7d',
@@ -60,7 +76,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -643,6 +659,25 @@ function endTransformDrag() {
                     {{ fitStatus.overflow ? '⚠ does not fit' : '✓ fits' }}<template
                         v-if="fitStatus.worstFill > 0"> · fill {{ (fitStatus.worstFill * 100).toFixed(0) }}%</template>
                 </span>
+                <button
+                    v-if="customCount > 0 && editable"
+                    type="button"
+                    class="winding-studio-chip winding-studio-custom-chip"
+                    :data-cy="dataTestLabel + '-WindingStudio-clear-custom'"
+                    title="Sections you drew are pinned and survive re-winds; click to clear them and return to the automatic layout"
+                    @click="emit('clearCustomRects')"
+                >
+                    custom layout ({{ customCount }}) ✕
+                </button>
+                <label v-if="showCompactToggle && editable" class="winding-studio-toggle" title="Compaction pass on re-winds (drawn sections are never compacted)">
+                    <input
+                        type="checkbox"
+                        :checked="compact"
+                        :data-cy="dataTestLabel + '-WindingStudio-compact'"
+                        @change="emit('update:compact', $event.target.checked)"
+                    />
+                    Compact
+                </label>
                 <label class="winding-studio-toggle">
                     <input v-model="colorByWinding" type="checkbox" />
                     Color by winding
@@ -933,6 +968,10 @@ function endTransformDrag() {
     border-radius: 50%;
     background: var(--chip-color);
     display: inline-block;
+}
+.winding-studio-custom-chip {
+    --chip-color: #ffffff88;
+    cursor: pointer;
 }
 .winding-studio-toggle {
     margin-left: auto;

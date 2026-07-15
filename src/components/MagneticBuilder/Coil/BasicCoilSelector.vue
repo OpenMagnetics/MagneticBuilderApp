@@ -13,6 +13,7 @@ import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals, cleanCoil, ge
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
+import { useWindingStudioStore } from '../../../stores/windingStudio'
 
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
@@ -75,6 +76,7 @@ export default {
         const historyStore = useHistoryStore();
         const taskQueueStore = useTaskQueueStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
+        const windingStudioStore = useWindingStudioStore();
         const showAlignmentOptions = false;
 
         const showInsulationOptions = false;
@@ -147,6 +149,7 @@ export default {
             taskQueueStore,
             historyStore,
             magneticBuilderSettingsStore,
+            windingStudioStore,
             localData,
             forceUpdate,
             showAlignmentOptions,
@@ -460,6 +463,22 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
+        clearCustomLayoutFromStudio() {
+            if (this.readOnly) {
+                return;
+            }
+            this.windingStudioStore.clearCustomSectionRects();
+            this.recentChange = true;
+            this.tryToWind();
+        },
+        setCompactFromStudio(enabled) {
+            if (this.readOnly) {
+                return;
+            }
+            this.windingStudioStore.compactEnabled = enabled;
+            this.recentChange = true;
+            this.tryToWind();
+        },
         resizeMarginsFromStudio({ sectionName, side, value }) {
             // Winding-studio edge drag: the section edge's distance to the window
             // wall IS the margin — same knob the Insulation panel edits. Margins
@@ -495,6 +514,10 @@ export default {
             }
             section.coordinates = coordinates;
             section.dimensions = dimensions;
+            // Pin the drawn rectangle: every subsequent full wind re-imposes it
+            // (the engine applies pins after compaction), so the custom layout
+            // survives turns/wire/proportion/margin edits.
+            this.windingStudioStore.setCustomSectionRect(sectionName, { coordinates, dimensions });
             this.placingWinding = true;
             try {
                 const coreColumns = this.masStore.mas.magnetic.core?.processedDescription?.columns ?? null;
@@ -520,6 +543,8 @@ export default {
                 return;
             }
             this.placingWinding = true;
+            // Moving a winding to another leg invalidates its drawn rectangles.
+            this.windingStudioStore.clearCustomSectionRectsForWinding(winding);
             try {
                 // 1. From now on the engine emits one winding window per wound-column
                 //    edge (idempotent; legacy geometry is byte-identical when nothing
@@ -614,14 +639,24 @@ export default {
             inputCoil["_interlayerInsulationThickness"] = this.localData.interlayerThickness;
             inputCoil["_intersectionInsulationThickness"] = this.localData.intersectionThickness;
             
-            // Include margins in hash computation to detect margin changes even when sectionsDescription doesn't exist yet
+            // Include margins in hash computation to detect margin changes even when sectionsDescription doesn't exist yet.
+            // The winding-studio pins (drawn section rects) and the compact switch also
+            // ride the hash so clearing/toggling them re-winds.
+            const customSectionRects = this.windingStudioStore.customSectionCount > 0
+                ? this.windingStudioStore.customSectionRects
+                : null;
+            const compactEnabled = this.windingStudioStore.compactEnabled;
             const coilWithMargins = {
                 ...this.masStore.mas.magnetic.coil,
-                _margins: margins
+                _margins: margins,
+                _customSectionRects: customSectionRects,
+                _compact: compactEnabled
             };
             const inputCoilWithMargins = {
                 ...inputCoil,
-                _margins: margins
+                _margins: margins,
+                _customSectionRects: customSectionRects,
+                _compact: compactEnabled
             };
             
             const newMagneticCoilHash = generateHash(JSON.stringify(coilWithMargins));
@@ -643,7 +678,7 @@ export default {
                     // Core columns ride along so multi-column placements (winding
                     // studio) can wind lateral-leg frames; no-op for classic coils.
                     const coreColumns = this.masStore.mas.magnetic.core?.processedDescription?.columns ?? null;
-                    this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins, coreColumns).then((coil) => {
+                    this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins, coreColumns, customSectionRects, compactEnabled).then((coil) => {
                         this.taskQueueStore.calculateFillingFactors(coil).then((fillingFactors) => {
                             this.localData.fillingFactors = fillingFactors;
                         })
@@ -995,10 +1030,15 @@ export default {
                         :masStore="masStore"
                         :editable="!readOnly"
                         :busy="placingWinding"
+                        :customCount="windingStudioStore.customSectionCount"
+                        :showCompactToggle="true"
+                        :compact="windingStudioStore.compactEnabled"
                         @placeWinding="placeWindingInColumn"
                         @resizeProportions="resizeProportionsFromStudio"
                         @resizeMargins="resizeMarginsFromStudio"
                         @resizeSectionRect="resizeSectionRectFromStudio"
+                        @clearCustomRects="clearCustomLayoutFromStudio"
+                        @update:compact="setCompactFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"

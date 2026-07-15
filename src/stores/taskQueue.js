@@ -1550,16 +1550,21 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         wound(success = true, dataOrMessage = '') {
         },
 
-        async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins, coreColumns = null) {
+        async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins, coreColumns = null, customSectionRects = null, delimitAndCompact = true) {
             const mkf = await waitForMkf();
             await mkf.ready;
+
+            const hasCustomRects = customSectionRects != null && Object.keys(customSectionRects).length > 0;
 
             // Multi-column placement (winding studio): windings/sections placed in
             // non-main winding windows need the core columns to build their lateral
             // wound-column frames, so pass them through whenever the caller has them
-            // (a no-op for main-column-only coils).
+            // (a no-op for main-column-only coils). Hand-drawn section rectangles
+            // are re-imposed by the engine after compaction, so drawn sections
+            // survive every re-wind; delimitAndCompact switches the compaction pass
+            // for the rest of the coil.
             const result = coreColumns != null
-                ? await mkf.wind_with_columns(JSON.stringify(inputCoil), JSON.stringify(coreColumns), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins))
+                ? await mkf.wind_with_columns(JSON.stringify(inputCoil), JSON.stringify(coreColumns), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins), hasCustomRects ? JSON.stringify(customSectionRects) : "", delimitAndCompact)
                 : await mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
             if (result.startsWith("Exception")) {
@@ -1568,12 +1573,17 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 let coil = JSON.parse(result);
-                // Call delimit_and_compact to compact additional turns for toroidal coils
-                const compactResult = coreColumns != null
-                    ? await mkf.delimit_and_compact_with_columns(JSON.stringify(coil), JSON.stringify(coreColumns))
-                    : await mkf.delimit_and_compact(JSON.stringify(coil));
-                if (!compactResult.startsWith("Exception")) {
-                    coil = JSON.parse(compactResult);
+                // Call delimit_and_compact to compact additional turns for toroidal
+                // coils. Skipped when drawn rectangles exist or compaction is off:
+                // the wind call above already ran (or deliberately skipped) the
+                // compaction, and this standalone pass would move drawn sections.
+                if (!hasCustomRects && delimitAndCompact) {
+                    const compactResult = coreColumns != null
+                        ? await mkf.delimit_and_compact_with_columns(JSON.stringify(coil), JSON.stringify(coreColumns))
+                        : await mkf.delimit_and_compact(JSON.stringify(coil));
+                    if (!compactResult.startsWith("Exception")) {
+                        coil = JSON.parse(compactResult);
+                    }
                 }
                 setTimeout(() => {this.wound(true, coil);}, this.task_standard_response_delay);
                 return coil;
