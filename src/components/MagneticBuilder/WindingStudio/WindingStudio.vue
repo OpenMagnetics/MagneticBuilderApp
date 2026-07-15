@@ -60,7 +60,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -396,6 +396,11 @@ const sectionEdgeHandles = computed(() => {
         if (section.type !== 'conduction' || section.layersOrientation === 'contiguous') {
             continue;
         }
+        if (section.name === selectedSection.value) {
+            // The selected section is in free-transform mode; its edges belong
+            // to the transform handles, not the margin handles.
+            continue;
+        }
         const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
         const hitHeight = Math.min(section.rect.height * 0.25, window.rect.height * 0.06);
         for (const side of ['top', 'bottom']) {
@@ -481,6 +486,115 @@ function endEdgeDrag() {
         value: marginMm / MARGIN_MM,
     });
 }
+
+// ---------------------------------------------------------------------------
+// P2.5: free transform of a SELECTED section — a totally custom rectangle.
+// Dragging any of the four edges resizes it (including the laterals); dragging
+// the body moves it. On release the host writes the new rect into the section
+// and the winder re-flows layers+turns INSIDE it (rewind_layers_and_turns —
+// sections are not recomputed and nothing re-compacts the custom placement).
+// ---------------------------------------------------------------------------
+
+const transformTarget = computed(() => {
+    if (!props.editable || selectedSection.value == null || !model.value.valid) {
+        return null;
+    }
+    const section = model.value.sections.find(
+        (candidate) => candidate.name === selectedSection.value && candidate.type === 'conduction');
+    return section ?? null;
+});
+
+const transformDrag = ref(null); // {mode, section, startX, startY, sx, sy, rect}
+
+const transformRect = computed(() => transformDrag.value?.rect ?? transformTarget.value?.rect ?? null);
+
+function transformThickness() {
+    const rect = transformRect.value;
+    return Math.max(Math.min(rect.width, rect.height) * 0.25, Math.min(rect.width, rect.height, 1.5));
+}
+
+function startTransformDrag(mode, event) {
+    const section = transformTarget.value;
+    if (section == null || props.busy) {
+        return;
+    }
+    const svg = event.currentTarget.ownerSVGElement;
+    const ctm = svg.getScreenCTM();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    transformDrag.value = {
+        mode,
+        section,
+        startX: event.clientX,
+        startY: event.clientY,
+        sx: 1 / ctm.a,
+        sy: 1 / ctm.d,
+        rect: { ...section.rect },
+    };
+}
+
+function moveTransformDrag(event) {
+    const drag_ = transformDrag.value;
+    if (drag_ == null) {
+        return;
+    }
+    const dx = (event.clientX - drag_.startX) * drag_.sx;
+    const dy = (event.clientY - drag_.startY) * drag_.sy;
+    const original = drag_.section.rect;
+    const minWidth = original.width * 0.2;
+    const minHeight = original.height * 0.2;
+    const rect = { ...original };
+    switch (drag_.mode) {
+        case 'move':
+            rect.x = original.x + dx;
+            rect.y = original.y + dy;
+            break;
+        case 'w': {
+            const newX = Math.min(original.x + dx, original.x + original.width - minWidth);
+            rect.width = original.width + (original.x - newX);
+            rect.x = newX;
+            break;
+        }
+        case 'e':
+            rect.width = Math.max(minWidth, original.width + dx);
+            break;
+        case 'n': {
+            const newY = Math.min(original.y + dy, original.y + original.height - minHeight);
+            rect.height = original.height + (original.y - newY);
+            rect.y = newY;
+            break;
+        }
+        case 's':
+            rect.height = Math.max(minHeight, original.height + dy);
+            break;
+    }
+    drag_.rect = rect;
+}
+
+function endTransformDrag() {
+    const drag_ = transformDrag.value;
+    transformDrag.value = null;
+    if (drag_ == null) {
+        return;
+    }
+    const original = drag_.section.rect;
+    const rect = drag_.rect;
+    const unchanged = ['x', 'y', 'width', 'height']
+        .every((key) => Math.abs(rect[key] - original[key]) < 1e-3);
+    if (unchanged) {
+        if (drag_.mode === 'move') {
+            // A plain click on the transform body deselects the section.
+            selectedSection.value = null;
+            emit('sectionSelected', null);
+        }
+        return;
+    }
+    // SVG mm (y flipped) -> physical meters, center-based like MAS sections.
+    emit('resizeSectionRect', {
+        sectionName: drag_.section.name,
+        coordinates: [(rect.x + rect.width / 2) / MARGIN_MM, -(rect.y + rect.height / 2) / MARGIN_MM],
+        dimensions: [rect.width / MARGIN_MM, rect.height / MARGIN_MM],
+    });
+}
 </script>
 
 <template>
@@ -513,7 +627,11 @@ function endEdgeDrag() {
                     >
                         <span class="winding-studio-chip-dot"></span>{{ windingName }}
                     </button>
-                    <span v-if="editable && !busy" class="winding-studio-hint">drag a winding onto a leg</span>
+                    <span v-if="editable && !busy" class="winding-studio-hint">{{
+                        transformTarget != null
+                            ? 'custom rectangle — drag edges to reshape, centre to move, click to deselect'
+                            : 'drag a winding onto a leg · click a section to reshape it'
+                    }}</span>
                     <span v-if="busy" class="winding-studio-hint">winding…</span>
                 </div>
                 <span
@@ -624,6 +742,7 @@ function endEdgeDrag() {
                         stroke-width="1"
                         vector-effect="non-scaling-stroke"
                         class="winding-studio-section"
+                        :data-cy="dataTestLabel + '-WindingStudio-section-' + section.name"
                         @mouseenter="onSectionEnter(section, $event)"
                         @mouseleave="tooltip = null"
                         @click="onSectionClick(section)"
@@ -682,6 +801,43 @@ function endEdgeDrag() {
                             stroke-dasharray="5 3"
                             vector-effect="non-scaling-stroke"
                             pointer-events="none"
+                        />
+                    </g>
+                    <!-- Free transform of the selected section: custom rectangle -->
+                    <g v-if="transformTarget != null && drag == null">
+                        <rect
+                            :x="transformRect.x"
+                            :y="transformRect.y"
+                            :width="transformRect.width"
+                            :height="transformRect.height"
+                            fill="#ffffff10"
+                            stroke="#ffffff"
+                            stroke-width="1.5"
+                            :stroke-dasharray="transformDrag != null ? '6 3' : 'none'"
+                            vector-effect="non-scaling-stroke"
+                            class="winding-studio-transform-move"
+                            :data-cy="dataTestLabel + '-WindingStudio-transform-move'"
+                            @pointerdown="startTransformDrag('move', $event)"
+                            @pointermove="moveTransformDrag($event)"
+                            @pointerup="endTransformDrag()"
+                            @pointercancel="endTransformDrag()"
+                        />
+                        <rect
+                            v-for="side in ['n', 's', 'w', 'e']"
+                            :key="'transform' + side"
+                            :x="side === 'e' ? transformRect.x + transformRect.width - transformThickness() / 2
+                                : side === 'w' ? transformRect.x - transformThickness() / 2 : transformRect.x"
+                            :y="side === 's' ? transformRect.y + transformRect.height - transformThickness() / 2
+                                : side === 'n' ? transformRect.y - transformThickness() / 2 : transformRect.y"
+                            :width="side === 'n' || side === 's' ? transformRect.width : transformThickness()"
+                            :height="side === 'w' || side === 'e' ? transformRect.height : transformThickness()"
+                            fill="transparent"
+                            :class="side === 'n' || side === 's' ? 'winding-studio-transform-ns' : 'winding-studio-transform-ew'"
+                            :data-cy="dataTestLabel + '-WindingStudio-transform-' + side"
+                            @pointerdown="startTransformDrag(side, $event)"
+                            @pointermove="moveTransformDrag($event)"
+                            @pointerup="endTransformDrag()"
+                            @pointercancel="endTransformDrag()"
                         />
                     </g>
                     <!-- Drop slots: the core legs light up while a chip is dragged -->
@@ -845,6 +1001,18 @@ function endEdgeDrag() {
 }
 .winding-studio-edge {
     cursor: row-resize;
+    touch-action: none;
+}
+.winding-studio-transform-move {
+    cursor: move;
+    touch-action: none;
+}
+.winding-studio-transform-ns {
+    cursor: ns-resize;
+    touch-action: none;
+}
+.winding-studio-transform-ew {
+    cursor: ew-resize;
     touch-action: none;
 }
 .winding-studio-slot-label {

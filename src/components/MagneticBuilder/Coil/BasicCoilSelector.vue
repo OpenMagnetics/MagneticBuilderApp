@@ -480,6 +480,38 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
+        async resizeSectionRectFromStudio({ sectionName, coordinates, dimensions }) {
+            // Winding-studio free transform: write the custom rectangle into the
+            // section and re-flow layers+turns INSIDE it. Custom layout note: any
+            // later edit that re-winds (turns, wire, proportions...) recomputes
+            // the sections from the standard knobs and replaces the custom rect.
+            if (this.readOnly || this.placingWinding) {
+                return;
+            }
+            const coil = deepCopy(this.masStore.mas.magnetic.coil);
+            const section = (coil.sectionsDescription ?? []).find((candidate) => candidate.name === sectionName);
+            if (section == null) {
+                return;
+            }
+            section.coordinates = coordinates;
+            section.dimensions = dimensions;
+            this.placingWinding = true;
+            try {
+                const coreColumns = this.masStore.mas.magnetic.core?.processedDescription?.columns ?? null;
+                const rewound = await this.taskQueueStore.rewindLayersAndTurns(coil, coreColumns);
+                const existingBobbin = this.masStore.mas.magnetic.coil.bobbin;
+                this.masStore.mas.magnetic.coil = rewound;
+                this.masStore.mas.magnetic.coil.bobbin = existingBobbin;
+                this.historyStore.unblockAdditions();
+                this.historyStore.addToHistory(this.masStore.mas);
+            }
+            catch (error) {
+                console.error(error);
+            }
+            finally {
+                this.placingWinding = false;
+            }
+        },
         async placeWindingInColumn({ winding, columnIndex }) {
             // Winding-studio drop: place a winding around the given core leg.
             // The intent is winding-level windingWindow; the WASM winder computes
@@ -966,6 +998,7 @@ export default {
                         @placeWinding="placeWindingInColumn"
                         @resizeProportions="resizeProportionsFromStudio"
                         @resizeMargins="resizeMarginsFromStudio"
+                        @resizeSectionRect="resizeSectionRectFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"

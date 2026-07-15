@@ -1580,6 +1580,29 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
         },
 
+        layersAndTurnsRewound(success = true, dataOrMessage = '') {
+        },
+
+        async rewindLayersAndTurns(inputCoil, coreColumns = null) {
+            // Custom-rectangle re-flow (winding studio): layers+turns are re-run
+            // INSIDE the caller-provided section rectangles; sections are NOT
+            // recomputed and nothing re-compacts the custom placement.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.wind_layers_and_turns_with_columns(
+                JSON.stringify(inputCoil),
+                coreColumns != null ? JSON.stringify(coreColumns) : "");
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.layersAndTurnsRewound(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            const coil = JSON.parse(result);
+            setTimeout(() => {this.layersAndTurnsRewound(true, coil);}, this.task_standard_response_delay);
+            return coil;
+        },
+
         planarWound(success = true, dataOrMessage = '') {
         },
 
