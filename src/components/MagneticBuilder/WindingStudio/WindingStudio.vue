@@ -60,7 +60,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -378,6 +378,109 @@ function endBoundaryDrag() {
     const proportions = model.value.windingNames.map((name) => (dims.get(name) ?? 0) / total);
     emit('resizeProportions', proportions);
 }
+
+// ---------------------------------------------------------------------------
+// P2: drag a section's top/bottom edge against the window wall to set margins
+// ---------------------------------------------------------------------------
+
+// Resizing a section along its turns axis IS margin tape in MAS terms: the
+// distance from the winding-window wall to the section edge. Dragging an edge
+// emits the margin; the winder re-spreads/re-packs the turns accordingly.
+const MARGIN_MM = 1000;
+const sectionEdgeHandles = computed(() => {
+    if (!props.editable || !model.value.valid || model.value.windows.length === 0) {
+        return [];
+    }
+    const handles = [];
+    for (const section of model.value.sections) {
+        if (section.type !== 'conduction' || section.layersOrientation === 'contiguous') {
+            continue;
+        }
+        const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
+        const hitHeight = Math.min(section.rect.height * 0.25, window.rect.height * 0.06);
+        for (const side of ['top', 'bottom']) {
+            const edgeY = side === 'top' ? section.rect.y : section.rect.y + section.rect.height;
+            handles.push({
+                id: `${section.name}|${side}`,
+                section,
+                side,
+                window,
+                x: section.rect.x,
+                width: section.rect.width,
+                y: edgeY - hitHeight / 2,
+                hitHeight,
+                edgeY,
+            });
+        }
+    }
+    return handles;
+});
+
+const edgeDrag = ref(null); // {handle, startClientY, dy (mm), scale}
+
+function startEdgeDrag(handle, event) {
+    if (!props.editable || props.busy) {
+        return;
+    }
+    const svg = event.currentTarget.ownerSVGElement;
+    const ctm = svg.getScreenCTM();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    edgeDrag.value = { handle, startClientY: event.clientY, dy: 0, scale: 1 / ctm.d };
+}
+
+function moveEdgeDrag(event) {
+    const drag_ = edgeDrag.value;
+    if (drag_ == null) {
+        return;
+    }
+    const raw = (event.clientY - drag_.startClientY) * drag_.scale;
+    // Clamp: the edge stays between the window wall and 20% of the section's
+    // height from its opposite edge (the winder is the authority on real fit).
+    const { handle } = drag_;
+    const minKeep = handle.section.rect.height * 0.2;
+    let low;
+    let high;
+    if (handle.side === 'top') {
+        low = handle.window.rect.y - handle.edgeY;
+        high = handle.section.rect.y + handle.section.rect.height - minKeep - handle.edgeY;
+    }
+    else {
+        low = handle.section.rect.y + minKeep - handle.edgeY;
+        high = handle.window.rect.y + handle.window.rect.height - handle.edgeY;
+    }
+    drag_.dy = Math.max(low, Math.min(high, raw));
+}
+
+function endEdgeDrag() {
+    const drag_ = edgeDrag.value;
+    edgeDrag.value = null;
+    if (drag_ == null || Math.abs(drag_.dy) < 1e-3) {
+        return;
+    }
+    const { handle } = drag_;
+    const newEdgeY = handle.edgeY + drag_.dy;
+    // Margin = distance from the window wall to the section edge, in meters.
+    // SVG y is flipped, so the smaller-y wall is the physical TOP (topOrLeft).
+    let side;
+    let marginMm;
+    if (handle.side === 'top') {
+        side = 'topOrLeft';
+        marginMm = newEdgeY - handle.window.rect.y;
+    }
+    else {
+        side = 'bottomOrRight';
+        marginMm = handle.window.rect.y + handle.window.rect.height - newEdgeY;
+    }
+    // Snap back to "no margin" when released within a hair of the wall.
+    if (marginMm < 0.05) {
+        marginMm = 0;
+    }
+    emit('resizeMargins', {
+        sectionName: handle.section.name,
+        side,
+        value: marginMm / MARGIN_MM,
+    });
+}
 </script>
 
 <template>
@@ -553,6 +656,34 @@ function endBoundaryDrag() {
                             pointer-events="none"
                         />
                     </g>
+                    <!-- Section edge handles: drag against the window wall to set margins -->
+                    <g v-for="handle in sectionEdgeHandles" :key="'edge' + handle.id">
+                        <rect
+                            :x="handle.x"
+                            :y="handle.y"
+                            :width="handle.width"
+                            :height="handle.hitHeight"
+                            fill="transparent"
+                            class="winding-studio-edge"
+                            :data-cy="dataTestLabel + '-WindingStudio-edge-' + handle.side"
+                            @pointerdown="startEdgeDrag(handle, $event)"
+                            @pointermove="moveEdgeDrag($event)"
+                            @pointerup="endEdgeDrag()"
+                            @pointercancel="endEdgeDrag()"
+                        />
+                        <line
+                            v-if="edgeDrag != null && edgeDrag.handle.id === handle.id"
+                            :x1="handle.x"
+                            :x2="handle.x + handle.width"
+                            :y1="handle.edgeY + edgeDrag.dy"
+                            :y2="handle.edgeY + edgeDrag.dy"
+                            stroke="#ffffff"
+                            stroke-width="2"
+                            stroke-dasharray="5 3"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                    </g>
                     <!-- Drop slots: the core legs light up while a chip is dragged -->
                     <g v-if="drag != null">
                         <g v-for="column in model.core.columns" :key="'slot' + column.index">
@@ -710,6 +841,10 @@ function endBoundaryDrag() {
 }
 .winding-studio-boundary {
     cursor: col-resize;
+    touch-action: none;
+}
+.winding-studio-edge {
+    cursor: row-resize;
     touch-action: none;
 }
 .winding-studio-slot-label {

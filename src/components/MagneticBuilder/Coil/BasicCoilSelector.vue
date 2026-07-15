@@ -460,6 +460,26 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
+        resizeMarginsFromStudio({ sectionName, side, value }) {
+            // Winding-studio edge drag: the section edge's distance to the window
+            // wall IS the margin — same knob the Insulation panel edits. Margins
+            // ride the wind call (and its no-op hash), so tryToWind re-winds.
+            if (this.readOnly) {
+                return;
+            }
+            const sectionIndex = this.conductiveSections.findIndex((section) => section.name === sectionName);
+            if (sectionIndex < 0 || this.localData.dataPerSection[sectionIndex] == null) {
+                return;
+            }
+            if (side === 'topOrLeft') {
+                this.localData.dataPerSection[sectionIndex].topOrLeftMargin = value;
+            }
+            else {
+                this.localData.dataPerSection[sectionIndex].bottomOrRightMargin = value;
+            }
+            this.recentChange = true;
+            this.tryToWind();
+        },
         async placeWindingInColumn({ winding, columnIndex }) {
             // Winding-studio drop: place a winding around the given core leg.
             // The intent is winding-level windingWindow; the WASM winder computes
@@ -945,6 +965,7 @@ export default {
                         :busy="placingWinding"
                         @placeWinding="placeWindingInColumn"
                         @resizeProportions="resizeProportionsFromStudio"
+                        @resizeMargins="resizeMarginsFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
