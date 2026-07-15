@@ -1550,11 +1550,17 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         wound(success = true, dataOrMessage = '') {
         },
 
-        async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins) {
+        async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins, coreColumns = null) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = await mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+            // Multi-column placement (winding studio): windings/sections placed in
+            // non-main winding windows need the core columns to build their lateral
+            // wound-column frames, so pass them through whenever the caller has them
+            // (a no-op for main-column-only coils).
+            const result = coreColumns != null
+                ? await mkf.wind_with_columns(JSON.stringify(inputCoil), JSON.stringify(coreColumns), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins))
+                : await mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.wound(false, result);}, this.task_standard_response_delay);
@@ -1563,7 +1569,9 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             else {
                 let coil = JSON.parse(result);
                 // Call delimit_and_compact to compact additional turns for toroidal coils
-                const compactResult = await mkf.delimit_and_compact(JSON.stringify(coil));
+                const compactResult = coreColumns != null
+                    ? await mkf.delimit_and_compact_with_columns(JSON.stringify(coil), JSON.stringify(coreColumns))
+                    : await mkf.delimit_and_compact(JSON.stringify(coil));
                 if (!compactResult.startsWith("Exception")) {
                     coil = JSON.parse(compactResult);
                 }

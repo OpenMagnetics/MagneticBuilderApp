@@ -79,6 +79,7 @@ export default {
 
         const showInsulationOptions = false;
         const loading = false;
+        const placingWinding = false;
         const blockingRebounds = false;
         const recentChange = false;
         const tryingToSend = false;
@@ -151,6 +152,7 @@ export default {
             showAlignmentOptions,
             showInsulationOptions,
             loading,
+            placingWinding,
             recentChange,
             tryingToSend,
             oldMagneticCoilHash,
@@ -443,6 +445,63 @@ export default {
                 })
             }
         },
+        async placeWindingInColumn({ winding, columnIndex }) {
+            // Winding-studio drop: place a winding around the given core leg.
+            // The intent is winding-level windingWindow; the WASM winder computes
+            // every coordinate on the columns-aware re-wind below.
+            if (this.placingWinding || this.readOnly) {
+                return;
+            }
+            this.placingWinding = true;
+            try {
+                // 1. From now on the engine emits one winding window per wound-column
+                //    edge (idempotent; legacy geometry is byte-identical when nothing
+                //    is placed laterally).
+                const settings = await this.taskQueueStore.getSettings();
+                if (!settings.corePerColumnWindingWindows) {
+                    settings.corePerColumnWindingWindows = true;
+                    await this.taskQueueStore.setSettings(settings);
+                }
+
+                // 2. Reprocess the core so it carries the per-column windows. Flag the
+                //    pending bobbin regeneration so the coreProcessed subscriber does
+                //    not fire an interim wind with the stale placement.
+                this.taskQueueStore.bobbinRegenerationPending = true;
+                const core = await this.taskQueueStore.processCore(deepCopy(this.masStore.mas.magnetic.core));
+                this.masStore.mas.magnetic.core = core;
+
+                // 3. Map the dropped leg to its winding window.
+                const windows = core.processedDescription?.windingWindows ?? [];
+                const windowIndex = windows.findIndex((window) => (window.column ?? 0) === columnIndex);
+                if (windowIndex < 0) {
+                    throw new Error(`No winding window wraps column ${columnIndex} (the core has ${windows.length} windows)`);
+                }
+
+                // 4. Placement intent on the winding.
+                const windingEntry = this.masStore.mas.magnetic.coil.functionalDescription
+                    .find((entry) => entry.name === winding);
+                if (windingEntry == null) {
+                    throw new Error(`Winding ${winding} not found in the functional description`);
+                }
+                windingEntry.windingWindow = windowIndex;
+
+                // 5. Regenerate the bobbin from the reprocessed core (keeps the custom
+                //    thicknesses); its callback re-triggers the wind machinery, which
+                //    now rides the columns-aware path.
+                const bobbin = await this.taskQueueStore.generateBobbinDifferentThicknesses(
+                    this.masStore.mas.magnetic.core,
+                    this.localData.bobbinWallThickness,
+                    this.localData.bobbinColumnThickness);
+                this.masStore.mas.magnetic.coil.bobbin = bobbin;
+            }
+            catch (error) {
+                console.error(error);
+                this.taskQueueStore.bobbinRegenerationPending = false;
+            }
+            finally {
+                this.placingWinding = false;
+            }
+        },
         wind() {
             // Skip winding for toroidal cores or when bobbin is dummy/invalid
             const bobbin = this.masStore.mas.magnetic.coil?.bobbin;
@@ -514,7 +573,10 @@ export default {
                         pattern.push(Number(char) - 1);
                     });
 
-                    this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins).then((coil) => {
+                    // Core columns ride along so multi-column placements (winding
+                    // studio) can wind lateral-leg frames; no-op for classic coils.
+                    const coreColumns = this.masStore.mas.magnetic.core?.processedDescription?.columns ?? null;
+                    this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins, coreColumns).then((coil) => {
                         this.taskQueueStore.calculateFillingFactors(coil).then((fillingFactors) => {
                             this.localData.fillingFactors = fillingFactors;
                         })
@@ -864,6 +926,9 @@ export default {
                     <WindingStudio
                         :dataTestLabel="dataTestLabel"
                         :masStore="masStore"
+                        :editable="!readOnly"
+                        :busy="placingWinding"
+                        @placeWinding="placeWindingInColumn"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
