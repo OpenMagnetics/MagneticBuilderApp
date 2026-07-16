@@ -524,6 +524,9 @@ export default {
             }
             section.coordinates = coordinates;
             section.dimensions = dimensions;
+            // Stale layer count from the previous wind would prevent re-packing
+            // into the new rectangle (wind_by_layers honors it when present).
+            section.numberLayers = null;
             if (margin != null) {
                 section.margin = margin;
                 const sectionIndex = this.conductiveSections.findIndex((candidate) => candidate.name === sectionName);
