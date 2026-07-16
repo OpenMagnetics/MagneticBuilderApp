@@ -52,7 +52,9 @@ const props = defineProps({
     },
     bobbinColor: {
         type: String,
-        default: '#1b1b1b',
+        // The painter's default (Settings::_painterColorBobbin) — the previous
+        // near-black default was invisible against the dark window.
+        default: '#539796',
     },
     copperColor: {
         type: String,
@@ -124,24 +126,40 @@ function marginRects(section) {
     // section.margin = [topOrLeft, bottomOrRight] in meters, along the
     // section's turns axis: overlapping layers stack radially, so the margins
     // sit above/below; contiguous layers stack axially, so they sit left/right.
+    // The tape is drawn filling the WHOLE gap between the section edge and the
+    // winding-window wall (that is what the tape physically does), and clamped
+    // to the window so a hand-resized section never pushes it outside.
     if (section.margin == null || section.type !== 'conduction') {
         return [];
     }
-    const MM = 1000;
+    const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
+    if (window == null) {
+        return [];
+    }
     const rects = [];
     const [before, after] = section.margin;
     const horizontal = section.layersOrientation === 'contiguous';
     if (before > 0) {
         rects.push(horizontal
-            ? { x: section.rect.x - before * MM, y: section.rect.y, width: before * MM, height: section.rect.height }
-            : { x: section.rect.x, y: section.rect.y - before * MM, width: section.rect.width, height: before * MM });
+            ? { x: window.rect.x, y: section.rect.y, width: section.rect.x - window.rect.x, height: section.rect.height }
+            : { x: section.rect.x, y: window.rect.y, width: section.rect.width, height: section.rect.y - window.rect.y });
     }
     if (after > 0) {
         rects.push(horizontal
-            ? { x: section.rect.x + section.rect.width, y: section.rect.y, width: after * MM, height: section.rect.height }
-            : { x: section.rect.x, y: section.rect.y + section.rect.height, width: section.rect.width, height: after * MM });
+            ? { x: section.rect.x + section.rect.width, y: section.rect.y, width: window.rect.x + window.rect.width - (section.rect.x + section.rect.width), height: section.rect.height }
+            : { x: section.rect.x, y: section.rect.y + section.rect.height, width: section.rect.width, height: window.rect.y + window.rect.height - (section.rect.y + section.rect.height) });
     }
-    return rects;
+    return rects
+        .map((rect) => {
+            const x0 = Math.max(rect.x, window.rect.x);
+            const y0 = Math.max(rect.y, window.rect.y);
+            const x1 = Math.min(rect.x + rect.width, window.rect.x + window.rect.width);
+            const y1 = Math.min(rect.y + rect.height, window.rect.y + window.rect.height);
+            return x1 - x0 > 1e-6 && y1 - y0 > 1e-6
+                ? { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }
+                : null;
+        })
+        .filter(Boolean);
 }
 
 function onTurnEnter(turn, event) {
@@ -565,6 +583,39 @@ function transformThickness() {
     return Math.min(Math.max(0.5, smaller * 0.15), smaller * 0.4, 1.2);
 }
 
+// Snap targets for the free transform: the section's window walls and every
+// other conduction section's edges — dragging near one of them sticks to it.
+function snapCandidates(section) {
+    const xs = [];
+    const ys = [];
+    const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
+    if (window != null) {
+        xs.push(window.rect.x, window.rect.x + window.rect.width);
+        ys.push(window.rect.y, window.rect.y + window.rect.height);
+    }
+    for (const other of model.value.sections) {
+        if (other.type !== 'conduction' || other.name === section.name) {
+            continue;
+        }
+        xs.push(other.rect.x, other.rect.x + other.rect.width);
+        ys.push(other.rect.y, other.rect.y + other.rect.height);
+    }
+    return { xs, ys };
+}
+
+function snapTo(value, candidates, tolerance) {
+    let best = null;
+    let bestDistance = tolerance;
+    for (const candidate of candidates) {
+        const distance = Math.abs(candidate - value);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            best = candidate;
+        }
+    }
+    return best;
+}
+
 function startTransformDrag(mode, event) {
     const section = transformTarget.value;
     if (section == null || props.busy) {
@@ -581,6 +632,8 @@ function startTransformDrag(mode, event) {
         sx: 1 / ctm.a,
         sy: 1 / ctm.d,
         rect: { ...section.rect },
+        candidates: snapCandidates(section),
+        guides: { x: null, y: null },
     };
 }
 
@@ -594,31 +647,82 @@ function moveTransformDrag(event) {
     const original = drag_.section.rect;
     const minWidth = original.width * 0.2;
     const minHeight = original.height * 0.2;
+    // Stickiness: ~7 screen px around window walls and other sections' edges.
+    const tolX = 7 * drag_.sx;
+    const tolY = 7 * drag_.sy;
+    const { xs, ys } = drag_.candidates;
+    const guides = { x: null, y: null };
     const rect = { ...original };
     switch (drag_.mode) {
-        case 'move':
+        case 'move': {
             rect.x = original.x + dx;
             rect.y = original.y + dy;
+            const left = snapTo(rect.x, xs, tolX);
+            const right = snapTo(rect.x + rect.width, xs, tolX);
+            if (left != null && (right == null || Math.abs(left - rect.x) <= Math.abs(right - (rect.x + rect.width)))) {
+                guides.x = left;
+                rect.x = left;
+            }
+            else if (right != null) {
+                guides.x = right;
+                rect.x = right - rect.width;
+            }
+            const top = snapTo(rect.y, ys, tolY);
+            const bottom = snapTo(rect.y + rect.height, ys, tolY);
+            if (top != null && (bottom == null || Math.abs(top - rect.y) <= Math.abs(bottom - (rect.y + rect.height)))) {
+                guides.y = top;
+                rect.y = top;
+            }
+            else if (bottom != null) {
+                guides.y = bottom;
+                rect.y = bottom - rect.height;
+            }
             break;
+        }
         case 'w': {
-            const newX = Math.min(original.x + dx, original.x + original.width - minWidth);
+            let newX = Math.min(original.x + dx, original.x + original.width - minWidth);
+            const snapped = snapTo(newX, xs, tolX);
+            if (snapped != null && snapped <= original.x + original.width - minWidth) {
+                guides.x = snapped;
+                newX = snapped;
+            }
             rect.width = original.width + (original.x - newX);
             rect.x = newX;
             break;
         }
-        case 'e':
-            rect.width = Math.max(minWidth, original.width + dx);
+        case 'e': {
+            let newRight = Math.max(original.x + minWidth, original.x + original.width + dx);
+            const snapped = snapTo(newRight, xs, tolX);
+            if (snapped != null && snapped >= original.x + minWidth) {
+                guides.x = snapped;
+                newRight = snapped;
+            }
+            rect.width = newRight - original.x;
             break;
+        }
         case 'n': {
-            const newY = Math.min(original.y + dy, original.y + original.height - minHeight);
+            let newY = Math.min(original.y + dy, original.y + original.height - minHeight);
+            const snapped = snapTo(newY, ys, tolY);
+            if (snapped != null && snapped <= original.y + original.height - minHeight) {
+                guides.y = snapped;
+                newY = snapped;
+            }
             rect.height = original.height + (original.y - newY);
             rect.y = newY;
             break;
         }
-        case 's':
-            rect.height = Math.max(minHeight, original.height + dy);
+        case 's': {
+            let newBottom = Math.max(original.y + minHeight, original.y + original.height + dy);
+            const snapped = snapTo(newBottom, ys, tolY);
+            if (snapped != null && snapped >= original.y + minHeight) {
+                guides.y = snapped;
+                newBottom = snapped;
+            }
+            rect.height = newBottom - original.y;
             break;
+        }
     }
+    drag_.guides = guides;
     drag_.rect = rect;
 }
 
@@ -881,6 +985,32 @@ function endTransformDrag() {
                     </g>
                     <!-- Free transform of the selected section: custom rectangle -->
                     <g v-if="transformTarget != null && drag == null">
+                        <!-- Snap guides: the edge being dragged stuck to a wall or a
+                             neighbouring section's edge -->
+                        <line
+                            v-if="transformDrag?.guides?.x != null"
+                            :x1="transformDrag.guides.x"
+                            :x2="transformDrag.guides.x"
+                            :y1="model.bounds.y"
+                            :y2="model.bounds.y + model.bounds.height"
+                            stroke="#4fd2ff"
+                            stroke-width="1.5"
+                            stroke-dasharray="6 4"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                        <line
+                            v-if="transformDrag?.guides?.y != null"
+                            :x1="model.bounds.x"
+                            :x2="model.bounds.x + model.bounds.width"
+                            :y1="transformDrag.guides.y"
+                            :y2="transformDrag.guides.y"
+                            stroke="#4fd2ff"
+                            stroke-width="1.5"
+                            stroke-dasharray="6 4"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
                         <rect
                             :x="transformRect.x"
                             :y="transformRect.y"

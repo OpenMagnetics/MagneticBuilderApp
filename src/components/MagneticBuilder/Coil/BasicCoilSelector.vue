@@ -1040,6 +1040,7 @@ export default {
                         @clearCustomRects="clearCustomLayoutFromStudio"
                         @update:compact="setCompactFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
+                        :bobbinColor="$styleStore.magneticBuilder.painterColorBobbin || '0x539796'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"
                         :insulationColor="$styleStore.magneticBuilder.painterColorInsulation || '0xfff05b'"
                         :marginColor="$styleStore.magneticBuilder.painterColorMargin || '0xfff05b'"
