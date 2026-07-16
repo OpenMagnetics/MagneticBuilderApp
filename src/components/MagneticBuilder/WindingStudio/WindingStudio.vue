@@ -165,6 +165,16 @@ function onSectionClick(section) {
     emit('sectionSelected', selectedSection.value);
 }
 
+function onTurnClick(turn) {
+    emit('turnSelected', turn.name);
+    // Clicking a turn also toggles its section's selection — turns are the
+    // topmost hit layer, so this is what makes "click a section" work anywhere.
+    const section = model.value.sections.find((candidate) => candidate.name === turn.section);
+    if (section != null) {
+        onSectionClick(section);
+    }
+}
+
 function onSectionEnter(section, event) {
     if (hoveredTurn.value != null) {
         return;
@@ -323,6 +333,11 @@ const sectionBoundaries = computed(() => {
         if (y1 <= y0) {
             continue;
         }
+        // Slim hit zone (grabbable but not click-stealing): the gap itself, or
+        // 15% of the thinner neighbour — floored at 0.6 mm for grabbability but
+        // NEVER more than half the thinner neighbour (a handle wider than the
+        // sections it sits between steals their clicks and hovers).
+        const thinner = Math.min(left.rect.width, right.rect.width);
         boundaries.push({
             id: `${left.name}|${right.name}`,
             left,
@@ -330,7 +345,9 @@ const sectionBoundaries = computed(() => {
             x: (left.rect.x + left.rect.width + right.rect.x) / 2,
             y: y0,
             height: y1 - y0,
-            hitWidth: Math.max(right.rect.x - left.rect.x - left.rect.width, Math.min(left.rect.width, right.rect.width) * 0.3),
+            hitWidth: Math.max(
+                right.rect.x - left.rect.x - left.rect.width,
+                Math.min(Math.max(0.6, thinner * 0.15), thinner * 0.5)),
         });
     }
     return boundaries;
@@ -345,7 +362,8 @@ function startBoundaryDrag(boundary, event) {
     const svg = event.currentTarget.ownerSVGElement;
     const ctm = svg.getScreenCTM();
     event.currentTarget.setPointerCapture(event.pointerId);
-    boundaryDrag.value = { boundary, startClientX: event.clientX, dx: 0, scale: 1 / ctm.a };
+    // ctm kept so a no-movement release can resolve which section was clicked.
+    boundaryDrag.value = { boundary, startClientX: event.clientX, dx: 0, scale: 1 / ctm.a, ctmA: ctm.a, ctmE: ctm.e };
 }
 
 function moveBoundaryDrag(event) {
@@ -362,10 +380,17 @@ function moveBoundaryDrag(event) {
     drag_.dx = Math.max(-maxShrink, Math.min(maxGrow, raw));
 }
 
-function endBoundaryDrag() {
+function endBoundaryDrag(event) {
     const drag_ = boundaryDrag.value;
     boundaryDrag.value = null;
-    if (drag_ == null || Math.abs(drag_.dx) < 1e-3) {
+    if (drag_ == null) {
+        return;
+    }
+    if (Math.abs(drag_.dx) < 0.15) {
+        // Click-through: a press-and-release without movement SELECTS the
+        // nearer of the two sections instead of being swallowed by the handle.
+        const boundaryClientX = drag_.boundary.x * drag_.ctmA + drag_.ctmE;
+        onSectionClick(event != null && event.clientX < boundaryClientX ? drag_.boundary.left : drag_.boundary.right);
         return;
     }
     // Re-derive per-winding proportions from the CURRENT conduction sections,
@@ -418,7 +443,10 @@ const sectionEdgeHandles = computed(() => {
             continue;
         }
         const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
-        const hitHeight = Math.min(section.rect.height * 0.25, window.rect.height * 0.06);
+        // Slim strip: floored at 0.6 mm for grabbability, but NEVER more than
+        // 30% of the section height — a handle taller than its section blankets
+        // the turns and steals the clicks meant to SELECT the section.
+        const hitHeight = Math.min(section.rect.height * 0.3, Math.max(0.6, window.rect.height * 0.03));
         for (const side of ['top', 'bottom']) {
             const edgeY = side === 'top' ? section.rect.y : section.rect.y + section.rect.height;
             handles.push({
@@ -475,7 +503,12 @@ function moveEdgeDrag(event) {
 function endEdgeDrag() {
     const drag_ = edgeDrag.value;
     edgeDrag.value = null;
-    if (drag_ == null || Math.abs(drag_.dy) < 1e-3) {
+    if (drag_ == null) {
+        return;
+    }
+    if (Math.abs(drag_.dy) < 0.15) {
+        // Click-through: select the handle's own section instead of eating the click.
+        onSectionClick(drag_.handle.section);
         return;
     }
     const { handle } = drag_;
@@ -526,7 +559,10 @@ const transformRect = computed(() => transformDrag.value?.rect ?? transformTarge
 
 function transformThickness() {
     const rect = transformRect.value;
-    return Math.max(Math.min(rect.width, rect.height) * 0.25, Math.min(rect.width, rect.height, 1.5));
+    // Slim edges: half of this extends OUTSIDE the rect and must not blanket
+    // the neighbouring sections; never more than 40% of the smaller dimension.
+    const smaller = Math.min(rect.width, rect.height);
+    return Math.min(Math.max(0.5, smaller * 0.15), smaller * 0.4, 1.2);
 }
 
 function startTransformDrag(mode, event) {
@@ -725,48 +761,9 @@ function endTransformDrag() {
                             opacity="0.9"
                         />
                     </template>
-                    <!-- Turns -->
-                    <g v-for="turn in model.turns" :key="turn.name + (turn.isReturn ? '-r' : '')">
-                        <circle
-                            v-if="turn.round"
-                            :cx="turn.rect.x + turn.rect.width / 2"
-                            :cy="turn.rect.y + turn.rect.height / 2"
-                            :r="turn.rect.width / 2"
-                            :fill="turnFill(turn)"
-                            :opacity="turnOpacity(turn)"
-                            :stroke="hoveredTurn === turn.name ? '#ffffff' : 'none'"
-                            stroke-width="1"
-                            vector-effect="non-scaling-stroke"
-                            class="winding-studio-turn"
-                            @mouseenter="onTurnEnter(turn, $event)"
-                            @mouseleave="onTurnLeave()"
-                            @click="emit('turnSelected', turn.name)"
-                        />
-                        <rect
-                            v-else
-                            v-bind="turn.rect"
-                            :fill="turnFill(turn)"
-                            :opacity="turnOpacity(turn)"
-                            :stroke="hoveredTurn === turn.name ? '#ffffff' : 'none'"
-                            stroke-width="1"
-                            vector-effect="non-scaling-stroke"
-                            class="winding-studio-turn"
-                            @mouseenter="onTurnEnter(turn, $event)"
-                            @mouseleave="onTurnLeave()"
-                            @click="emit('turnSelected', turn.name)"
-                        />
-                        <!-- PI-Expert visual language: filled center marks the winding start -->
-                        <circle
-                            v-if="turn.isStart"
-                            :cx="turn.rect.x + turn.rect.width / 2"
-                            :cy="turn.rect.y + turn.rect.height / 2"
-                            :r="turn.rect.width / 6"
-                            fill="#000000"
-                            opacity="0.6"
-                            pointer-events="none"
-                        />
-                    </g>
-                    <!-- Section outlines on top (hover/selection targets) -->
+                    <!-- Section outlines (hover/selection targets). Deliberately UNDER
+                         the handles and turns: hit priority is turns > handles > outline,
+                         so tooltips and drags never steal each other's zones. -->
                     <rect
                         v-for="section in model.sections"
                         :key="'section' + section.name"
@@ -794,8 +791,8 @@ function endTransformDrag() {
                             :data-cy="dataTestLabel + '-WindingStudio-boundary'"
                             @pointerdown="startBoundaryDrag(boundary, $event)"
                             @pointermove="moveBoundaryDrag($event)"
-                            @pointerup="endBoundaryDrag()"
-                            @pointercancel="endBoundaryDrag()"
+                            @pointerup="endBoundaryDrag($event)"
+                            @pointercancel="endBoundaryDrag($event)"
                         />
                         <line
                             v-if="boundaryDrag != null && boundaryDrag.boundary.id === boundary.id"
@@ -835,6 +832,50 @@ function endTransformDrag() {
                             stroke-width="2"
                             stroke-dasharray="5 3"
                             vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                    </g>
+                    <!-- Turns: the TOPMOST hover layer — tooltips are always reachable,
+                         and clicking a turn also selects its section. Handles stay
+                         grabbable in the turn-free zones (outside the section edges and
+                         in the gaps between sections). -->
+                    <g v-for="turn in model.turns" :key="turn.name + (turn.isReturn ? '-r' : '')">
+                        <circle
+                            v-if="turn.round"
+                            :cx="turn.rect.x + turn.rect.width / 2"
+                            :cy="turn.rect.y + turn.rect.height / 2"
+                            :r="turn.rect.width / 2"
+                            :fill="turnFill(turn)"
+                            :opacity="turnOpacity(turn)"
+                            :stroke="hoveredTurn === turn.name ? '#ffffff' : 'none'"
+                            stroke-width="1"
+                            vector-effect="non-scaling-stroke"
+                            class="winding-studio-turn"
+                            @mouseenter="onTurnEnter(turn, $event)"
+                            @mouseleave="onTurnLeave()"
+                            @click="onTurnClick(turn)"
+                        />
+                        <rect
+                            v-else
+                            v-bind="turn.rect"
+                            :fill="turnFill(turn)"
+                            :opacity="turnOpacity(turn)"
+                            :stroke="hoveredTurn === turn.name ? '#ffffff' : 'none'"
+                            stroke-width="1"
+                            vector-effect="non-scaling-stroke"
+                            class="winding-studio-turn"
+                            @mouseenter="onTurnEnter(turn, $event)"
+                            @mouseleave="onTurnLeave()"
+                            @click="onTurnClick(turn)"
+                        />
+                        <!-- PI-Expert visual language: filled center marks the winding start -->
+                        <circle
+                            v-if="turn.isStart"
+                            :cx="turn.rect.x + turn.rect.width / 2"
+                            :cy="turn.rect.y + turn.rect.height / 2"
+                            :r="turn.rect.width / 6"
+                            fill="#000000"
+                            opacity="0.6"
                             pointer-events="none"
                         />
                     </g>
