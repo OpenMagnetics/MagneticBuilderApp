@@ -7,7 +7,7 @@
 //
 // P0 scope: read-only parity view + hover/selection + color-by-winding.
 // Gated by magneticBuilderSettings.enableWindingStudio.
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { buildStudioModel, windingColor } from './geometry.js';
 
 const props = defineProps({
@@ -91,6 +91,16 @@ function cssColor(color) {
 const model = computed(() => buildStudioModel(props.masStore.mas?.magnetic));
 
 const colorByWinding = ref(true);
+// Maximized mode: the SAME component instance teleports to <body> as a
+// full-screen modal (no remount — selection/drag state survives).
+const maximized = ref(false);
+function onKeydown(event) {
+    if (event.key === 'Escape' && maximized.value) {
+        maximized.value = false;
+    }
+}
+onMounted(() => document.addEventListener('keydown', onKeydown));
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown));
 const hoveredWinding = ref(null);
 const hoveredTurn = ref(null);
 const selectedSection = ref(null);
@@ -123,12 +133,11 @@ function turnOpacity(turn) {
 }
 
 function marginRects(section) {
-    // section.margin = [topOrLeft, bottomOrRight] in meters, along the
-    // section's turns axis: overlapping layers stack radially, so the margins
-    // sit above/below; contiguous layers stack axially, so they sit left/right.
-    // The tape is drawn filling the WHOLE gap between the section edge and the
-    // winding-window wall (that is what the tape physically does), and clamped
-    // to the window so a hand-resized section never pushes it outside.
+    // Painter-exact (paint_two_piece_set_margin): the WINDOW-level
+    // sectionsOrientation decides the margin axis — overlapping sections
+    // (radially stacked) carry top/bottom margins, contiguous sections
+    // left/right — and the tape is anchored AT the window wall with its true
+    // margin length. margin = [topOrLeft, bottomOrRight] in meters.
     if (section.margin == null || section.type !== 'conduction') {
         return [];
     }
@@ -138,17 +147,18 @@ function marginRects(section) {
     }
     const rects = [];
     const [before, after] = section.margin;
-    const horizontal = section.layersOrientation === 'contiguous';
+    const overlapping = (window.sectionsOrientation ?? 'overlapping') !== 'contiguous';
     if (before > 0) {
-        rects.push(horizontal
-            ? { x: window.rect.x, y: section.rect.y, width: section.rect.x - window.rect.x, height: section.rect.height }
-            : { x: section.rect.x, y: window.rect.y, width: section.rect.width, height: section.rect.y - window.rect.y });
+        rects.push(overlapping
+            ? { x: section.rect.x, y: window.rect.y, width: section.rect.width, height: before * MARGIN_MM }
+            : { x: window.rect.x, y: section.rect.y, width: before * MARGIN_MM, height: section.rect.height });
     }
     if (after > 0) {
-        rects.push(horizontal
-            ? { x: section.rect.x + section.rect.width, y: section.rect.y, width: window.rect.x + window.rect.width - (section.rect.x + section.rect.width), height: section.rect.height }
-            : { x: section.rect.x, y: section.rect.y + section.rect.height, width: section.rect.width, height: window.rect.y + window.rect.height - (section.rect.y + section.rect.height) });
+        rects.push(overlapping
+            ? { x: section.rect.x, y: window.rect.y + window.rect.height - after * MARGIN_MM, width: section.rect.width, height: after * MARGIN_MM }
+            : { x: window.rect.x + window.rect.width - after * MARGIN_MM, y: section.rect.y, width: after * MARGIN_MM, height: section.rect.height });
     }
+    // Clamp to the window so pathological margins never spill onto the core.
     return rects
         .map((rect) => {
             const x0 = Math.max(rect.x, window.rect.x);
@@ -452,7 +462,7 @@ const sectionEdgeHandles = computed(() => {
     }
     const handles = [];
     for (const section of model.value.sections) {
-        if (section.type !== 'conduction' || section.layersOrientation === 'contiguous') {
+        if (section.type !== 'conduction') {
             continue;
         }
         if (section.name === selectedSection.value) {
@@ -461,6 +471,11 @@ const sectionEdgeHandles = computed(() => {
             continue;
         }
         const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
+        if (window == null || (window.sectionsOrientation ?? 'overlapping') === 'contiguous') {
+            // Contiguous-sections windows carry left/right margins (painter
+            // rule); horizontal margin drags are not implemented yet.
+            continue;
+        }
         // Slim strip: floored at 0.6 mm for grabbability, but NEVER more than
         // 30% of the section height — a handle taller than its section blankets
         // the turns and steals the clicks meant to SELECT the section.
@@ -754,10 +769,13 @@ function endTransformDrag() {
 </script>
 
 <template>
+    <Teleport to="body" :disabled="!maximized">
+    <div v-if="maximized" class="winding-studio-backdrop" @click="maximized = false"></div>
     <div
         class="winding-studio"
+        :class="{ 'winding-studio-maximized': maximized }"
         :data-cy="dataTestLabel + '-WindingStudio'"
-        :style="{ 'background-color': backgroundColor, color: textColor }"
+        :style="{ 'background-color': maximized ? undefined : backgroundColor, color: textColor }"
     >
         <div v-if="!model.valid" class="winding-studio-empty">
             {{ model.reason }}
@@ -765,6 +783,13 @@ function endTransformDrag() {
         <template v-else>
             <div class="winding-studio-toolbar">
                 <span class="winding-studio-title">Winding Studio</span>
+                <button
+                    type="button"
+                    class="winding-studio-maximize"
+                    :data-cy="dataTestLabel + '-WindingStudio-maximize'"
+                    :title="maximized ? 'Restore (Esc)' : 'Maximize'"
+                    @click="maximized = !maximized"
+                >{{ maximized ? '🗗' : '🗖' }}</button>
                 <div class="winding-studio-legend">
                     <button
                         v-for="windingName in model.windingNames"
@@ -1090,6 +1115,7 @@ function endTransformDrag() {
             </Teleport>
         </template>
     </div>
+    </Teleport>
 </template>
 
 <style scoped>
@@ -1115,6 +1141,39 @@ function endTransformDrag() {
 .winding-studio-title {
     font-weight: 600;
     opacity: 0.9;
+}
+.winding-studio-maximize {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    padding: 0.15rem 0.35rem;
+}
+.winding-studio-maximize:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+}
+.winding-studio-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1999;
+}
+.winding-studio-maximized {
+    position: fixed;
+    inset: 1.5rem;
+    z-index: 2000;
+    background: #1d1d1f;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow: auto;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+}
+.winding-studio-maximized .winding-studio-svg {
+    max-height: calc(100vh - 11rem);
 }
 .winding-studio-legend {
     display: flex;

@@ -208,6 +208,7 @@ export function buildWindowViews(coil, core) {
             return {
                 index,
                 column: window.column ?? null,
+                sectionsOrientation: window.sectionsOrientation ?? null,
                 rect: rectFromCenter(window.coordinates[0], window.coordinates[1] ?? 0, window.width, window.height),
             };
         })
