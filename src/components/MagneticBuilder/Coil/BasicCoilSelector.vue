@@ -467,6 +467,16 @@ export default {
             if (this.readOnly) {
                 return;
             }
+            // The margins derived from the drawn rectangles' wall gaps are part
+            // of the custom layout: reset them for the pinned sections so the
+            // automatic placement really comes back.
+            for (const sectionName of Object.keys(this.windingStudioStore.customSectionRects)) {
+                const sectionIndex = this.conductiveSections.findIndex((candidate) => candidate.name === sectionName);
+                if (sectionIndex >= 0 && this.localData.dataPerSection[sectionIndex] != null) {
+                    this.localData.dataPerSection[sectionIndex].topOrLeftMargin = 0;
+                    this.localData.dataPerSection[sectionIndex].bottomOrRightMargin = 0;
+                }
+            }
             this.windingStudioStore.clearCustomSectionRects();
             this.recentChange = true;
             this.tryToWind();
@@ -499,11 +509,11 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
-        async resizeSectionRectFromStudio({ sectionName, coordinates, dimensions }) {
+        async resizeSectionRectFromStudio({ sectionName, coordinates, dimensions, margin = null }) {
             // Winding-studio free transform: write the custom rectangle into the
-            // section and re-flow layers+turns INSIDE it. Custom layout note: any
-            // later edit that re-winds (turns, wire, proportions...) recomputes
-            // the sections from the standard knobs and replaces the custom rect.
+            // section and re-flow layers+turns INSIDE it. The rectangle's gaps to
+            // the window walls arrive as the section's margins (tape), kept in
+            // dataPerSection so they ride every future wind.
             if (this.readOnly || this.placingWinding) {
                 return;
             }
@@ -514,6 +524,14 @@ export default {
             }
             section.coordinates = coordinates;
             section.dimensions = dimensions;
+            if (margin != null) {
+                section.margin = margin;
+                const sectionIndex = this.conductiveSections.findIndex((candidate) => candidate.name === sectionName);
+                if (sectionIndex >= 0 && this.localData.dataPerSection[sectionIndex] != null) {
+                    this.localData.dataPerSection[sectionIndex].topOrLeftMargin = margin[0];
+                    this.localData.dataPerSection[sectionIndex].bottomOrRightMargin = margin[1];
+                }
+            }
             // Pin the drawn rectangle: every subsequent full wind re-imposes it
             // (the engine applies pins after compaction), so the custom layout
             // survives turns/wire/proportion/margin edits.
