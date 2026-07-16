@@ -295,6 +295,118 @@ export function buildTurnViews(coil) {
 }
 
 // ---------------------------------------------------------------------------
+// Toroidal
+// ---------------------------------------------------------------------------
+
+// Top view, mm, centered at the origin, SVG y flipped. MAS toroidal
+// conventions (verified against the winder + painter): the winding window is
+// the inner hole (radius = windingWindows[0].radialHeight); a section is an
+// annular sector with polar coordinates [radial inset from the ring's inner
+// wall toward the center, center angle in degrees CCW from +x] and dimensions
+// [radial band, angular span in degrees]. Turns come as cartesian top-view
+// coordinates (their outer return crossings sit outside the ring).
+
+function polarPoint(radius, angleDegrees) {
+    const angle = (angleDegrees * Math.PI) / 180;
+    return [radius * Math.cos(angle), -radius * Math.sin(angle)];
+}
+
+export function annularSectorPath(innerRadius, outerRadius, startAngle, endAngle) {
+    const span = endAngle - startAngle;
+    if (span >= 360 - 1e-9) {
+        // Full ring: two circles, even-odd.
+        const circle = (r) => `M ${r} 0 A ${r} ${r} 0 1 0 ${-r} 0 A ${r} ${r} 0 1 0 ${r} 0 Z`;
+        return `${circle(outerRadius)} ${circle(innerRadius)}`;
+    }
+    const largeArc = span > 180 ? 1 : 0;
+    const [ox0, oy0] = polarPoint(outerRadius, startAngle);
+    const [ox1, oy1] = polarPoint(outerRadius, endAngle);
+    const [ix0, iy0] = polarPoint(innerRadius, startAngle);
+    const [ix1, iy1] = polarPoint(innerRadius, endAngle);
+    // SVG y is flipped, so increasing math angle sweeps with sweep-flag 0.
+    return `M ${ox0} ${oy0} A ${outerRadius} ${outerRadius} 0 ${largeArc} 0 ${ox1} ${oy1} `
+        + `L ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 ${largeArc} 1 ${ix0} ${iy0} Z`;
+}
+
+function buildToroidalSectionViews(coil, windowRadiusMm) {
+    const sections = coil?.sectionsDescription ?? [];
+    return sections
+        .map((section) => {
+            if (section.coordinates == null || section.dimensions == null) {
+                return null;
+            }
+            const rCenter = windowRadiusMm - section.coordinates[0] * MM;
+            const rBand = section.dimensions[0] * MM;
+            const thetaCenter = section.coordinates[1];
+            const thetaSpan = section.dimensions[1];
+            const rIn = Math.max(0, rCenter - rBand / 2);
+            const rOut = rCenter + rBand / 2;
+            const outerPoint = polarPoint(rOut, thetaCenter);
+            return {
+                name: section.name,
+                type: section.type,
+                windingWindow: section.windingWindow ?? 0,
+                windings: (section.partialWindings ?? []).map((partial) => partial.winding),
+                fillingFactor: section.fillingFactor ?? null,
+                margin: section.margin ?? null,
+                layersOrientation: section.layersOrientation ?? null,
+                polar: { rCenter, rBand, thetaCenter, thetaSpan },
+                path: annularSectorPath(rIn, rOut, thetaCenter - thetaSpan / 2, thetaCenter + thetaSpan / 2),
+                // Bounding rect kept for the shared bounds/tooltip machinery.
+                rect: {
+                    x: Math.min(outerPoint[0], -rOut),
+                    y: Math.min(outerPoint[1], -rOut),
+                    width: rOut * 2,
+                    height: rOut * 2,
+                },
+            };
+        })
+        .filter(Boolean);
+}
+
+function buildToroidalStudioModel(magnetic) {
+    const core = magnetic.core;
+    const coil = magnetic.coil;
+    const processed = core.processedDescription;
+    if (processed == null || (processed.columns ?? []).length === 0) {
+        return { valid: false, reason: 'Core has no processed description yet' };
+    }
+    const outerRadius = (processed.width * MM) / 2;
+    const column = processed.columns[0];
+    const innerRadius = outerRadius - column.width * MM;
+    const windows = processed.windingWindows ?? [];
+    const windowRadius = windows.length > 0 && windows[0].radialHeight != null
+        ? windows[0].radialHeight * MM
+        : innerRadius;
+
+    const sections = buildToroidalSectionViews(coil, windowRadius);
+    const turns = buildTurnViews(coil);
+
+    let extent = outerRadius;
+    for (const turn of turns) {
+        extent = Math.max(extent,
+            Math.abs(turn.rect.x), Math.abs(turn.rect.y),
+            Math.abs(turn.rect.x + turn.rect.width), Math.abs(turn.rect.y + turn.rect.height));
+    }
+    const margin = extent * 0.04;
+    const bounds = { x: -extent - margin, y: -extent - margin, width: 2 * (extent + margin), height: 2 * (extent + margin) };
+
+    return {
+        valid: true,
+        kind: 'toroidal',
+        bounds,
+        core: { ring: { outerRadius, innerRadius }, columns: [], cavities: [], gaps: [], outer: { x: -outerRadius, y: -outerRadius, width: 2 * outerRadius, height: 2 * outerRadius } },
+        bobbin: [],
+        windows: [],
+        windowRadius,
+        sections,
+        layers: [],
+        turns,
+        windingNames: (coil.functionalDescription ?? []).map((winding) => winding.name),
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Whole model
 // ---------------------------------------------------------------------------
 
@@ -306,7 +418,7 @@ export function buildStudioModel(magnetic) {
     }
     const family = core.functionalDescription?.shape?.family ?? core.functionalDescription?.shape?.split?.(' ')?.[0]?.toLowerCase();
     if (family === 't') {
-        return { valid: false, reason: 'Toroidal cores are not supported by the Winding Studio yet' };
+        return buildToroidalStudioModel(magnetic);
     }
     const coreView = buildCoreView(core);
     if (coreView == null) {
@@ -344,6 +456,7 @@ export function buildStudioModel(magnetic) {
 
     return {
         valid: true,
+        kind: 'concentric',
         bounds,
         core: coreView,
         bobbin,

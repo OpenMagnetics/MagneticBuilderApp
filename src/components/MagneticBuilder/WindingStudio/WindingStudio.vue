@@ -8,7 +8,7 @@
 // P0 scope: read-only parity view + hover/selection + color-by-winding.
 // Gated by magneticBuilderSettings.enableWindingStudio.
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
-import { buildStudioModel, windingColor } from './geometry.js';
+import { buildStudioModel, windingColor, annularSectorPath } from './geometry.js';
 
 const props = defineProps({
     dataTestLabel: {
@@ -111,9 +111,13 @@ const viewBox = computed(() => {
     return `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`;
 });
 
-// Core silhouette as one even-odd path: outer rectangle minus window cavities.
+// Core silhouette as one even-odd path: outer rectangle minus window cavities
+// for concentric cores; the ring (top view) for toroids.
 const corePath = computed(() => {
     const core = model.value.core;
+    if (model.value.kind === 'toroidal') {
+        return annularSectorPath(core.ring.innerRadius, core.ring.outerRadius, 0, 360);
+    }
     const rectPath = (r) => `M ${r.x} ${r.y} h ${r.width} v ${r.height} h ${-r.width} Z`;
     return [rectPath(core.outer), ...core.cavities.map(rectPath)].join(' ');
 });
@@ -138,7 +142,8 @@ function marginRects(section) {
     // (radially stacked) carry top/bottom margins, contiguous sections
     // left/right — and the tape is anchored AT the window wall with its true
     // margin length. margin = [topOrLeft, bottomOrRight] in meters.
-    if (section.margin == null || section.type !== 'conduction') {
+    if (section.margin == null || section.type !== 'conduction' || model.value.kind === 'toroidal') {
+        // Toroidal margins are angular spacer wedges — not drawn yet.
         return [];
     }
     const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
@@ -241,7 +246,35 @@ function legendLeave() {
 // truly unwindable inputs.
 const fitStatus = computed(() => {
     const m = model.value;
-    if (!m.valid || m.windows.length === 0 || m.sections.length === 0) {
+    if (!m.valid || m.sections.length === 0) {
+        return null;
+    }
+    if (m.kind === 'toroidal') {
+        // Own turn crossings must stay inside the window hole; returns
+        // legitimately ride outside the ring.
+        let worstFill = 0;
+        let overflow = false;
+        for (const section of m.sections) {
+            if (section.type === 'conduction' && section.fillingFactor != null) {
+                worstFill = Math.max(worstFill, section.fillingFactor);
+            }
+        }
+        for (const turn of m.turns) {
+            if (turn.isReturn) {
+                continue;
+            }
+            const cx = turn.rect.x + turn.rect.width / 2;
+            const cy = turn.rect.y + turn.rect.height / 2;
+            if (Math.hypot(cx, cy) + turn.rect.width / 2 > m.windowRadius + 1e-3) {
+                overflow = true;
+            }
+        }
+        if (worstFill > 1) {
+            overflow = true;
+        }
+        return { overflow, worstFill };
+    }
+    if (m.windows.length === 0) {
         return null;
     }
     const eps = 1e-3; // mm
@@ -284,7 +317,8 @@ const drag = ref(null); // {winding, color, x, y} in client coords
 const dropColumn = ref(null); // column index under the pointer
 
 function startChipDrag(windingName, event) {
-    if (!props.editable || props.busy) {
+    if (!props.editable || props.busy || (model.value.core.columns ?? []).length === 0) {
+        // Toroids have a single wound column — no leg placement to drag to.
         return;
     }
     // No preventDefault: the chips set touch-action: none, and preventing here
@@ -340,7 +374,7 @@ function columnLabel(column) {
 // Dragging one re-distributes the per-winding proportions; the winder recomputes
 // the real geometry on the emitted re-wind.
 const sectionBoundaries = computed(() => {
-    if (!props.editable || !model.value.valid) {
+    if (!props.editable || !model.value.valid || model.value.kind === 'toroidal') {
         return [];
     }
     const conduction = model.value.sections
@@ -457,7 +491,7 @@ function endBoundaryDrag(event) {
 // emits the margin; the winder re-spreads/re-packs the turns accordingly.
 const MARGIN_MM = 1000;
 const sectionEdgeHandles = computed(() => {
-    if (!props.editable || !model.value.valid || model.value.windows.length === 0) {
+    if (!props.editable || !model.value.valid || model.value.kind === 'toroidal' || model.value.windows.length === 0) {
         return [];
     }
     const handles = [];
@@ -741,6 +775,235 @@ function moveTransformDrag(event) {
     drag_.rect = rect;
 }
 
+// ---------------------------------------------------------------------------
+// Toroidal free transform: reshape the selected annular sector — rotate/shift
+// with the body, drag the two angular edges or the two radial edges. Emits the
+// same resizeSectionRect payload with POLAR coordinates/dimensions (the MAS
+// toroidal convention), which the winder re-flows natively.
+// ---------------------------------------------------------------------------
+
+const sectorTarget = computed(() => (model.value.kind === 'toroidal' ? transformTarget.value : null));
+
+const sectorDrag = ref(null); // {mode, ctm, startR, startTheta, orig, live, guides}
+
+const sectorLive = computed(() => {
+    const target = sectorTarget.value;
+    if (target == null) {
+        return null;
+    }
+    if (sectorDrag.value != null) {
+        return sectorDrag.value.live;
+    }
+    const polar = target.polar;
+    return {
+        rIn: Math.max(0, polar.rCenter - polar.rBand / 2),
+        rOut: polar.rCenter + polar.rBand / 2,
+        a0: polar.thetaCenter - polar.thetaSpan / 2,
+        a1: polar.thetaCenter + polar.thetaSpan / 2,
+    };
+});
+
+function sectorHandleSizes() {
+    // Edge hit zones capped at 25% of the band/span (a floor larger than the
+    // sector itself would leave no body to rotate — the thin-section lesson).
+    const live = sectorLive.value;
+    const band = live.rOut - live.rIn;
+    const span = live.a1 - live.a0;
+    const radial = Math.min(1.2, Math.max(0.15, band * 0.25));
+    const angular = Math.min(((1.2 / Math.max(live.rOut, 1)) * 180) / Math.PI, Math.max(1, span * 0.25));
+    return { radial, angular };
+}
+
+function unwrapAngle(theta, reference) {
+    let value = theta;
+    while (value < reference - 180) value += 360;
+    while (value > reference + 180) value -= 360;
+    return value;
+}
+
+function pointerPolar(drag_, event) {
+    const x = (event.clientX - drag_.ctm.e) / drag_.ctm.a;
+    const y = (event.clientY - drag_.ctm.f) / drag_.ctm.d;
+    return { r: Math.hypot(x, y), theta: (Math.atan2(-y, x) * 180) / Math.PI };
+}
+
+function sectorSnapCandidates(section) {
+    const angles = [0, 90, 180, 270];
+    const radii = [model.value.windowRadius];
+    for (const other of model.value.sections) {
+        if (other.type !== 'conduction' || other.name === section.name || other.polar == null) {
+            continue;
+        }
+        angles.push(other.polar.thetaCenter - other.polar.thetaSpan / 2, other.polar.thetaCenter + other.polar.thetaSpan / 2);
+        radii.push(other.polar.rCenter - other.polar.rBand / 2, other.polar.rCenter + other.polar.rBand / 2);
+    }
+    return { angles, radii };
+}
+
+function startSectorDrag(mode, event) {
+    const section = sectorTarget.value;
+    if (section == null || props.busy) {
+        return;
+    }
+    const svg = event.currentTarget.ownerSVGElement;
+    const ctm = svg.getScreenCTM();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const drag_ = {
+        mode,
+        section,
+        ctm: { a: ctm.a, d: ctm.d, e: ctm.e, f: ctm.f },
+        orig: { ...sectorLive.value },
+        live: { ...sectorLive.value },
+        candidates: sectorSnapCandidates(section),
+        guides: { theta: null, r: null },
+        moved: false,
+    };
+    const start = pointerPolar(drag_, event);
+    drag_.startR = start.r;
+    drag_.startTheta = start.theta;
+    sectorDrag.value = drag_;
+}
+
+function snapAngleTo(value, candidates, tolerance) {
+    let best = null;
+    let bestDistance = tolerance;
+    for (const candidate of candidates) {
+        const distance = Math.abs(unwrapAngle(candidate, value) - value);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            best = unwrapAngle(candidate, value);
+        }
+    }
+    return best;
+}
+
+function moveSectorDrag(event) {
+    const drag_ = sectorDrag.value;
+    if (drag_ == null) {
+        return;
+    }
+    const pointer = pointerPolar(drag_, event);
+    const theta = unwrapAngle(pointer.theta, drag_.startTheta);
+    const dTheta = theta - drag_.startTheta;
+    const dR = pointer.r - drag_.startR;
+    if (Math.abs(dTheta) > 0.2 || Math.abs(dR) > 0.05) {
+        drag_.moved = true;
+    }
+    const orig = drag_.orig;
+    const minSpan = Math.max(2, (orig.a1 - orig.a0) * 0.2);
+    const minBand = Math.max(0.1, (orig.rOut - orig.rIn) * 0.2);
+    const maxR = model.value.windowRadius;
+    const tolTheta = 2.5;
+    const tolR = 0.5;
+    const live = { ...orig };
+    const guides = { theta: null, r: null };
+    switch (drag_.mode) {
+        case 'rotate': {
+            live.a0 = orig.a0 + dTheta;
+            live.a1 = orig.a1 + dTheta;
+            const snap0 = snapAngleTo(live.a0, drag_.candidates.angles, tolTheta);
+            const snap1 = snapAngleTo(live.a1, drag_.candidates.angles, tolTheta);
+            if (snap0 != null && (snap1 == null || Math.abs(snap0 - live.a0) <= Math.abs(snap1 - live.a1))) {
+                const shift = snap0 - live.a0;
+                live.a0 += shift;
+                live.a1 += shift;
+                guides.theta = live.a0;
+            }
+            else if (snap1 != null) {
+                const shift = snap1 - live.a1;
+                live.a0 += shift;
+                live.a1 += shift;
+                guides.theta = live.a1;
+            }
+            let rIn = orig.rIn + dR;
+            let rOut = orig.rOut + dR;
+            const shiftLow = Math.max(0, 0.05 - rIn);
+            rIn += shiftLow;
+            rOut += shiftLow;
+            const shiftHigh = Math.max(0, rOut - maxR);
+            rIn -= shiftHigh;
+            rOut -= shiftHigh;
+            const snapOut = snapTo(rOut, drag_.candidates.radii, tolR);
+            if (snapOut != null) {
+                rIn += snapOut - rOut;
+                rOut = snapOut;
+                guides.r = snapOut;
+            }
+            live.rIn = rIn;
+            live.rOut = rOut;
+            break;
+        }
+        case 'a0': {
+            let a0 = unwrapAngle(pointer.theta, orig.a0);
+            const snapped = snapAngleTo(a0, drag_.candidates.angles, tolTheta);
+            if (snapped != null) {
+                a0 = snapped;
+                guides.theta = snapped;
+            }
+            live.a0 = Math.min(a0, orig.a1 - minSpan);
+            break;
+        }
+        case 'a1': {
+            let a1 = unwrapAngle(pointer.theta, orig.a1);
+            const snapped = snapAngleTo(a1, drag_.candidates.angles, tolTheta);
+            if (snapped != null) {
+                a1 = snapped;
+                guides.theta = snapped;
+            }
+            live.a1 = Math.max(a1, orig.a0 + minSpan);
+            break;
+        }
+        case 'rIn': {
+            let rIn = pointer.r;
+            const snapped = snapTo(rIn, drag_.candidates.radii, tolR);
+            if (snapped != null) {
+                rIn = snapped;
+                guides.r = snapped;
+            }
+            live.rIn = Math.max(0.05, Math.min(rIn, orig.rOut - minBand));
+            break;
+        }
+        case 'rOut': {
+            let rOut = pointer.r;
+            const snapped = snapTo(rOut, drag_.candidates.radii, tolR);
+            if (snapped != null) {
+                rOut = snapped;
+                guides.r = snapped;
+            }
+            live.rOut = Math.max(orig.rIn + minBand, Math.min(rOut, maxR));
+            break;
+        }
+    }
+    drag_.guides = guides;
+    drag_.live = live;
+}
+
+function endSectorDrag() {
+    const drag_ = sectorDrag.value;
+    sectorDrag.value = null;
+    if (drag_ == null) {
+        return;
+    }
+    if (!drag_.moved) {
+        if (drag_.mode === 'rotate') {
+            selectedSection.value = null;
+            emit('sectionSelected', null);
+        }
+        return;
+    }
+    const live = drag_.live;
+    const span = Math.min(360, live.a1 - live.a0);
+    let thetaCenter = (live.a0 + live.a1) / 2;
+    thetaCenter = ((thetaCenter % 360) + 360) % 360;
+    const rCenter = (live.rIn + live.rOut) / 2;
+    emit('resizeSectionRect', {
+        sectionName: drag_.section.name,
+        coordinates: [(model.value.windowRadius - rCenter) / MARGIN_MM, thetaCenter],
+        dimensions: [(live.rOut - live.rIn) / MARGIN_MM, span],
+        margin: null,
+    });
+}
+
 function endTransformDrag() {
     const drag_ = transformDrag.value;
     transformDrag.value = null;
@@ -824,8 +1087,12 @@ function endTransformDrag() {
                     </button>
                     <span v-if="editable && !busy" class="winding-studio-hint">{{
                         transformTarget != null
-                            ? 'custom rectangle — drag edges to reshape, centre to move, click to deselect'
-                            : 'drag a winding onto a leg · click a section to reshape it'
+                            ? (model.kind === 'toroidal'
+                                ? 'custom sector — drag edges to reshape, body to rotate, click to deselect'
+                                : 'custom rectangle — drag edges to reshape, centre to move, click to deselect')
+                            : (model.kind === 'toroidal'
+                                ? 'click a section to reshape it'
+                                : 'drag a winding onto a leg · click a section to reshape it')
                     }}</span>
                     <span v-if="busy" class="winding-studio-hint">winding…</span>
                 </div>
@@ -906,22 +1173,38 @@ function endTransformDrag() {
                     </template>
                     <!-- Section outlines (hover/selection targets). Deliberately UNDER
                          the handles and turns: hit priority is turns > handles > outline,
-                         so tooltips and drags never steal each other's zones. -->
-                    <rect
-                        v-for="section in model.sections"
-                        :key="'section' + section.name"
-                        v-bind="section.rect"
-                        fill="transparent"
-                        :stroke="selectedSection === section.name ? '#ffffff' : (section.type === 'conduction' ? '#ffffff55' : 'transparent')"
-                        :stroke-dasharray="selectedSection === section.name ? 'none' : '4 3'"
-                        stroke-width="1"
-                        vector-effect="non-scaling-stroke"
-                        class="winding-studio-section"
-                        :data-cy="dataTestLabel + '-WindingStudio-section-' + section.name"
-                        @mouseenter="onSectionEnter(section, $event)"
-                        @mouseleave="tooltip = null"
-                        @click="onSectionClick(section)"
-                    />
+                         so tooltips and drags never steal each other's zones.
+                         Concentric sections are rectangles; toroidal ones annular sectors. -->
+                    <template v-for="section in model.sections" :key="'section' + section.name">
+                        <path
+                            v-if="model.kind === 'toroidal'"
+                            :d="section.path"
+                            fill="transparent"
+                            :stroke="selectedSection === section.name ? '#ffffff' : (section.type === 'conduction' ? '#ffffff55' : 'transparent')"
+                            :stroke-dasharray="selectedSection === section.name ? 'none' : '4 3'"
+                            stroke-width="1"
+                            vector-effect="non-scaling-stroke"
+                            class="winding-studio-section"
+                            :data-cy="dataTestLabel + '-WindingStudio-section-' + section.name"
+                            @mouseenter="onSectionEnter(section, $event)"
+                            @mouseleave="tooltip = null"
+                            @click="onSectionClick(section)"
+                        />
+                        <rect
+                            v-else
+                            v-bind="section.rect"
+                            fill="transparent"
+                            :stroke="selectedSection === section.name ? '#ffffff' : (section.type === 'conduction' ? '#ffffff55' : 'transparent')"
+                            :stroke-dasharray="selectedSection === section.name ? 'none' : '4 3'"
+                            stroke-width="1"
+                            vector-effect="non-scaling-stroke"
+                            class="winding-studio-section"
+                            :data-cy="dataTestLabel + '-WindingStudio-section-' + section.name"
+                            @mouseenter="onSectionEnter(section, $event)"
+                            @mouseleave="tooltip = null"
+                            @click="onSectionClick(section)"
+                        />
+                    </template>
                     <!-- Section boundary handles: drag to re-distribute proportions -->
                     <g v-for="boundary in sectionBoundaries" :key="'boundary' + boundary.id">
                         <rect
@@ -1022,8 +1305,78 @@ function endTransformDrag() {
                             pointer-events="none"
                         />
                     </g>
+                    <!-- Toroidal free transform: reshape the selected annular sector -->
+                    <g v-if="sectorTarget != null && drag == null">
+                        <line
+                            v-if="sectorDrag?.guides?.theta != null"
+                            x1="0"
+                            y1="0"
+                            :x2="model.bounds.width * Math.cos(sectorDrag.guides.theta * Math.PI / 180)"
+                            :y2="-model.bounds.width * Math.sin(sectorDrag.guides.theta * Math.PI / 180)"
+                            stroke="#4fd2ff"
+                            stroke-width="1.5"
+                            stroke-dasharray="6 4"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                        <circle
+                            v-if="sectorDrag?.guides?.r != null"
+                            cx="0"
+                            cy="0"
+                            :r="sectorDrag.guides.r"
+                            fill="none"
+                            stroke="#4fd2ff"
+                            stroke-width="1.5"
+                            stroke-dasharray="6 4"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                        <path
+                            :d="annularSectorPath(sectorLive.rIn, sectorLive.rOut, sectorLive.a0, sectorLive.a1)"
+                            fill="#ffffff10"
+                            stroke="#ffffff"
+                            stroke-width="1.5"
+                            :stroke-dasharray="sectorDrag != null ? '6 3' : 'none'"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                        <path
+                            :d="annularSectorPath(sectorLive.rIn + sectorHandleSizes().radial, Math.max(sectorLive.rIn + sectorHandleSizes().radial + 0.05, sectorLive.rOut - sectorHandleSizes().radial), sectorLive.a0 + sectorHandleSizes().angular, Math.max(sectorLive.a0 + sectorHandleSizes().angular + 0.5, sectorLive.a1 - sectorHandleSizes().angular))"
+                            fill="transparent"
+                            class="winding-studio-transform-move"
+                            :data-cy="dataTestLabel + '-WindingStudio-sector-rotate'"
+                            @pointerdown="startSectorDrag('rotate', $event)"
+                            @pointermove="moveSectorDrag($event)"
+                            @pointerup="endSectorDrag()"
+                            @pointercancel="endSectorDrag()"
+                        />
+                        <path
+                            v-for="edge in ['a0', 'a1']"
+                            :key="'sector' + edge"
+                            :d="annularSectorPath(sectorLive.rIn, sectorLive.rOut, (edge === 'a0' ? sectorLive.a0 : sectorLive.a1) - sectorHandleSizes().angular, (edge === 'a0' ? sectorLive.a0 : sectorLive.a1) + sectorHandleSizes().angular)"
+                            fill="transparent"
+                            class="winding-studio-transform-ew"
+                            :data-cy="dataTestLabel + '-WindingStudio-sector-' + edge"
+                            @pointerdown="startSectorDrag(edge, $event)"
+                            @pointermove="moveSectorDrag($event)"
+                            @pointerup="endSectorDrag()"
+                            @pointercancel="endSectorDrag()"
+                        />
+                        <path
+                            v-for="edge in ['rIn', 'rOut']"
+                            :key="'sector' + edge"
+                            :d="annularSectorPath(Math.max(0.02, (edge === 'rIn' ? sectorLive.rIn : sectorLive.rOut) - sectorHandleSizes().radial), (edge === 'rIn' ? sectorLive.rIn : sectorLive.rOut) + sectorHandleSizes().radial, sectorLive.a0, sectorLive.a1)"
+                            fill="transparent"
+                            class="winding-studio-transform-ns"
+                            :data-cy="dataTestLabel + '-WindingStudio-sector-' + edge"
+                            @pointerdown="startSectorDrag(edge, $event)"
+                            @pointermove="moveSectorDrag($event)"
+                            @pointerup="endSectorDrag()"
+                            @pointercancel="endSectorDrag()"
+                        />
+                    </g>
                     <!-- Free transform of the selected section: custom rectangle -->
-                    <g v-if="transformTarget != null && drag == null">
+                    <g v-if="transformTarget != null && model.kind !== 'toroidal' && drag == null">
                         <!-- Snap guides: the edge being dragged stuck to a wall or a
                              neighbouring section's edge -->
                         <line
