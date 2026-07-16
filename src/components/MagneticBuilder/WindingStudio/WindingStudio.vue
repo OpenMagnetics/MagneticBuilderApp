@@ -1121,9 +1121,13 @@ function endTransformDrag() {
 <style scoped>
 .winding-studio {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 .winding-studio-empty {
     padding: 1rem;
@@ -1163,17 +1167,27 @@ function endTransformDrag() {
 }
 .winding-studio-maximized {
     position: fixed;
-    inset: 1.5rem;
+    top: 1.5rem;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    width: auto;
     z-index: 2000;
     background: #1d1d1f;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     padding: 1rem;
-    overflow: auto;
+    overflow: hidden;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
 }
+.winding-studio-maximized .winding-studio-plot {
+    flex: 1;
+    min-height: 0;
+}
 .winding-studio-maximized .winding-studio-svg {
-    max-height: calc(100vh - 11rem);
+    width: 100%;
+    height: 100%;
+    max-height: none;
 }
 .winding-studio-legend {
     display: flex;

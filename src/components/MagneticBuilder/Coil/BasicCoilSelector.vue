@@ -1022,7 +1022,7 @@ export default {
             <div class="coil-config-body">
                 <div
                     v-if="magneticBuilderSettingsStore.enableWindingStudio && useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
-                    class="row mb-3"
+                    class="mb-3"
                     :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ' max-height: 50vh;'"
                 >
                     <WindingStudio
