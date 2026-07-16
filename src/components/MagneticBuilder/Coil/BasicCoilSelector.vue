@@ -563,6 +563,32 @@ export default {
             if (this.placingWinding || this.readOnly) {
                 return;
             }
+            // Catalog bobbins are real parts: never silently replace them with a
+            // generated simple bobbin. Dropping on the CENTER leg keeps the part
+            // (window 0 is its window); lateral legs need engine support for
+            // catalog-bobbin + bare-leg geometry and are refused loudly for now.
+            const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
+            const isCatalogBobbin = typeof currentBobbin === 'string'
+                || (currentBobbin != null && currentBobbin !== 'Dummy' && currentBobbin.functionalDescription != null);
+            if (isCatalogBobbin) {
+                const targetColumn = this.masStore.mas.magnetic.core?.processedDescription?.columns?.[columnIndex];
+                if (targetColumn == null || targetColumn.type !== 'central') {
+                    console.error(`[WindingStudio] Cannot place '${winding}' on a lateral leg: this design uses a `
+                        + 'catalog bobbin, and lateral-leg placement with catalog bobbins is not supported yet '
+                        + '(the generated-bobbin replacement would silently discard the real part).');
+                    return;
+                }
+                const windingEntry = this.masStore.mas.magnetic.coil.functionalDescription
+                    .find((entry) => entry.name === winding);
+                if (windingEntry == null) {
+                    return;
+                }
+                this.windingStudioStore.clearCustomSectionRectsForWinding(winding);
+                windingEntry.windingWindow = 0;
+                this.recentChange = true;
+                this.tryToWind();
+                return;
+            }
             this.placingWinding = true;
             // Moving a winding to another leg invalidates its drawn rectangles.
             this.windingStudioStore.clearCustomSectionRectsForWinding(winding);
