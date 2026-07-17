@@ -824,7 +824,9 @@ function unwrapAngle(theta, reference) {
 function pointerPolar(drag_, event) {
     const x = (event.clientX - drag_.ctm.e) / drag_.ctm.a;
     const y = (event.clientY - drag_.ctm.f) / drag_.ctm.d;
-    return { r: Math.hypot(x, y), theta: (Math.atan2(-y, x) * 180) / Math.PI };
+    // Toroidal view maps data y DOWN the screen (painter-matched mirror, see
+    // geometry.js), so the data angle comes straight from screen coordinates.
+    return { r: Math.hypot(x, y), theta: (Math.atan2(y, x) * 180) / Math.PI };
 }
 
 function sectorSnapCandidates(section) {
@@ -1312,7 +1314,7 @@ function endTransformDrag() {
                             x1="0"
                             y1="0"
                             :x2="model.bounds.width * Math.cos(sectorDrag.guides.theta * Math.PI / 180)"
-                            :y2="-model.bounds.width * Math.sin(sectorDrag.guides.theta * Math.PI / 180)"
+                            :y2="model.bounds.width * Math.sin(sectorDrag.guides.theta * Math.PI / 180)"
                             stroke="#4fd2ff"
                             stroke-width="1.5"
                             stroke-dasharray="6 4"

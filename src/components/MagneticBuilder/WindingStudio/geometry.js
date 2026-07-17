@@ -298,17 +298,24 @@ export function buildTurnViews(coil) {
 // Toroidal
 // ---------------------------------------------------------------------------
 
-// Top view, mm, centered at the origin, SVG y flipped. MAS toroidal
-// conventions (verified against the winder + painter): the winding window is
-// the inner hole (radius = windingWindows[0].radialHeight); a section is an
-// annular sector with polar coordinates [radial inset from the ring's inner
-// wall toward the center, center angle in degrees CCW from +x] and dimensions
-// [radial band, angular span in degrees]. Turns come as cartesian top-view
-// coordinates (their outer return crossings sit outside the ring).
+// Top view, mm, centered at the origin. MAS toroidal conventions (verified
+// against the winder + painter): the winding window is the inner hole (radius
+// = windingWindows[0].radialHeight); a section is an annular sector with polar
+// coordinates [radial inset from the ring's inner wall toward the center,
+// center angle in degrees] and dimensions [radial band, angular span in
+// degrees]. Turns come as cartesian top-view coordinates (their outer return
+// crossings sit outside the ring).
+//
+// ORIENTATION: unlike the two-piece cross-section (y flipped, physical y up),
+// the toroidal view maps data y DOWN the screen — because the painter does:
+// MKF's export_svg wraps toroidal SVGs in an extra scale(1,-1) group, so its
+// displayed toroid is the vertical mirror of the raw coordinates. The painter
+// is the display reference, so the studio mirrors the same way; a section at
+// data angle +90deg renders at the bottom in BOTH.
 
 function polarPoint(radius, angleDegrees) {
     const angle = (angleDegrees * Math.PI) / 180;
-    return [radius * Math.cos(angle), -radius * Math.sin(angle)];
+    return [radius * Math.cos(angle), radius * Math.sin(angle)];
 }
 
 export function annularSectorPath(innerRadius, outerRadius, startAngle, endAngle) {
@@ -323,9 +330,10 @@ export function annularSectorPath(innerRadius, outerRadius, startAngle, endAngle
     const [ox1, oy1] = polarPoint(outerRadius, endAngle);
     const [ix0, iy0] = polarPoint(innerRadius, startAngle);
     const [ix1, iy1] = polarPoint(innerRadius, endAngle);
-    // SVG y is flipped, so increasing math angle sweeps with sweep-flag 0.
-    return `M ${ox0} ${oy0} A ${outerRadius} ${outerRadius} 0 ${largeArc} 0 ${ox1} ${oy1} `
-        + `L ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 ${largeArc} 1 ${ix0} ${iy0} Z`;
+    // Data y maps down the screen (painter-matched mirror), so increasing data
+    // angle follows SVG's positive-angle direction: sweep-flag 1 on the way out.
+    return `M ${ox0} ${oy0} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${ox1} ${oy1} `
+        + `L ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix0} ${iy0} Z`;
 }
 
 function buildToroidalSectionViews(coil, windowRadiusMm) {
@@ -380,7 +388,13 @@ function buildToroidalStudioModel(magnetic) {
         : innerRadius;
 
     const sections = buildToroidalSectionViews(coil, windowRadius);
-    const turns = buildTurnViews(coil);
+    // buildTurnViews flips y for the two-piece convention (physical y up); the
+    // toroidal view is painter-matched with data y DOWN, so mirror the glyphs
+    // back around y=0 (see the orientation note above).
+    const turns = buildTurnViews(coil).map((turn) => ({
+        ...turn,
+        rect: { ...turn.rect, y: -(turn.rect.y + turn.rect.height) },
+    }));
 
     let extent = outerRadius;
     for (const turn of turns) {
