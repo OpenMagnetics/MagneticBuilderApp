@@ -8,7 +8,12 @@ import { ref, computed } from 'vue'
 // names like "Primary section 0" repeat across designs, and a stale pin from
 // another magnetic must never apply to this one.
 export const useWindingStudioStore = defineStore("windingStudio", () => {
-    // sectionName -> { coordinates: [x, y], dimensions: [w, h] } in meters.
+    // sectionName -> { coordinates, dimensions, windowShape }. Coordinates and
+    // dimensions follow the winding window the rect was drawn on: cartesian
+    // meters for rectangular windows, [radial m, angle deg] polar for round
+    // (toroidal) ones. windowShape records which, so a pin drawn on one window
+    // geometry is never re-imposed on another (meters reinterpreted as degrees
+    // shrank a section to 0.005deg once — the E-to-T corruption).
     const customSectionRects = ref({});
     // Engine delimit/compact pass on wind. Drawn sections are immune either
     // way; this switches it for the rest of the coil.

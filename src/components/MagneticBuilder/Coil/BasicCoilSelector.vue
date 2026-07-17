@@ -219,6 +219,16 @@ export default {
                 return "width"
             }
         },
+        coreShapeIdentity() {
+            const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
+            if (shape == null) {
+                return "";
+            }
+            if (typeof shape === "string") {
+                return shape;
+            }
+            return `${shape.family ?? ""}|${shape.name ?? ""}`;
+        },
         shortenedNames() {
             const shortenedNames = {}
 
@@ -249,6 +259,31 @@ export default {
         },
     },
     watch: {
+        coreShapeIdentity(newIdentity, oldIdentity) {
+            // A pinned studio rectangle is absolute winding-window geometry, so a
+            // core shape change invalidates it — re-imposing a rect drawn on the
+            // old window mangles the coil (a cartesian-meters rect applied to a
+            // toroid's polar section shrank it to 0.005deg and silently dropped
+            // 38 of 42 turns). Drop the pins and their rect-derived margins.
+            if (oldIdentity === "" || newIdentity === oldIdentity) {
+                return;
+            }
+            if (this.windingStudioStore.customSectionCount === 0) {
+                return;
+            }
+            for (const sectionName of Object.keys(this.windingStudioStore.customSectionRects)) {
+                const sectionIndex = this.conductiveSections.findIndex((candidate) => candidate.name === sectionName);
+                if (sectionIndex >= 0 && this.localData.dataPerSection[sectionIndex] != null) {
+                    this.localData.dataPerSection[sectionIndex].topOrLeftMargin = 0;
+                    this.localData.dataPerSection[sectionIndex].bottomOrRightMargin = 0;
+                }
+            }
+            this.windingStudioStore.clearCustomSectionRects();
+            // The shape-change flow re-winds on its own (bobbin regeneration);
+            // invalidating the hash makes sure that wind isn't no-op'd away.
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
+        },
     },
     mounted () {
         if (this.$stateStore.loadingDesign) {
@@ -446,6 +481,14 @@ export default {
                 windingDimensions.forEach((elem) => {
                     this.localData.proportionPerWinding.push(roundWithDecimals(elem / windingDimensionsTotal, 0.01));
                 })
+                // A winding whose derived proportion rounds to 0 (degenerate or
+                // corrupt sectionsDescription, e.g. a 0.005deg toroidal section)
+                // can never hold its turns: the wind throws "Turns not created"
+                // and the coil panel dies. Fall back to equal proportions so the
+                // coil re-winds from the functional description instead.
+                if (this.localData.proportionPerWinding.some((proportion) => !(proportion > 0))) {
+                    this.resetProportionPerWinding(this.localData);
+                }
             }
         },
         resizeProportionsFromStudio(proportions) {
@@ -537,8 +580,10 @@ export default {
             }
             // Pin the drawn rectangle: every subsequent full wind re-imposes it
             // (the engine applies pins after compaction), so the custom layout
-            // survives turns/wire/proportion/margin edits.
-            this.windingStudioStore.setCustomSectionRect(sectionName, { coordinates, dimensions });
+            // survives turns/wire/proportion/margin edits. The window shape rides
+            // along so the pin only ever applies to the geometry it was drawn on.
+            const windowShape = this.masStore.mas.magnetic.coil?.bobbin?.processedDescription?.windingWindows?.[0]?.shape ?? null;
+            this.windingStudioStore.setCustomSectionRect(sectionName, { coordinates, dimensions, windowShape });
             this.placingWinding = true;
             try {
                 const coreColumns = this.masStore.mas.magnetic.core?.processedDescription?.columns ?? null;
@@ -689,9 +734,23 @@ export default {
             // Include margins in hash computation to detect margin changes even when sectionsDescription doesn't exist yet.
             // The winding-studio pins (drawn section rects) and the compact switch also
             // ride the hash so clearing/toggling them re-winds.
-            const customSectionRects = this.windingStudioStore.customSectionCount > 0
-                ? this.windingStudioStore.customSectionRects
-                : null;
+            // Defense in depth for the shape-change watcher: a pin only rides the
+            // wind when the current winding window has the same shape it was
+            // drawn on. A rect from a rectangular window applied to a round one
+            // (or vice versa) reinterprets meters as degrees and corrupts the coil.
+            const currentWindowShape = bobbin?.processedDescription?.windingWindows?.[0]?.shape ?? null;
+            let customSectionRects = null;
+            if (this.windingStudioStore.customSectionCount > 0) {
+                const matchingRects = {};
+                for (const [sectionName, rect] of Object.entries(this.windingStudioStore.customSectionRects)) {
+                    if (rect.windowShape == null || rect.windowShape === currentWindowShape) {
+                        matchingRects[sectionName] = { coordinates: rect.coordinates, dimensions: rect.dimensions };
+                    }
+                }
+                if (Object.keys(matchingRects).length > 0) {
+                    customSectionRects = matchingRects;
+                }
+            }
             const compactEnabled = this.windingStudioStore.compactEnabled;
             const coilWithMargins = {
                 ...this.masStore.mas.magnetic.coil,
