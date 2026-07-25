@@ -680,6 +680,19 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         bobbinDifferentThicknessesGenerated(success = true, dataOrMessage = '') {
         },
 
+        async materializeBobbin(magnetic) {
+            // Resolve the magnetic's bobbin (typically a by-name catalog part)
+            // into the full processed bobbin object via the engine's database.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const bobbinResult = await mkf.calculate_bobbin_data(JSON.stringify(magnetic));
+            if (bobbinResult.startsWith("Exception")) {
+                throw new Error(bobbinResult);
+            }
+            return JSON.parse(bobbinResult);
+        },
+
         async generateBobbinDifferentThicknesses(core, bobbinWallThickness, bobbinColumnThickness) {
             const mkf = await waitForMkf();
             await mkf.ready;

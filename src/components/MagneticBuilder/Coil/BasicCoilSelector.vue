@@ -9,7 +9,7 @@ import BasicCoilSectionInsulationSelector from './BasicCoilSectionInsulationSele
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import Magnetic2DVisualizer from '/WebSharedComponents/Common/Magnetic2DVisualizer.vue'
 import WindingStudio from '../WindingStudio/WindingStudio.vue'
-import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals, cleanCoil, generateHash } from '/WebSharedComponents/assets/js/utils.js'
+import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals, cleanCoil, generateHash, effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 import { useMagneticBuilderSettingsStore } from '../../../stores/magneticBuilderSettings'
@@ -195,7 +195,7 @@ export default {
         },
         contiguousLabel() {
             try {
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].shape == "rectangular") {
                     return "height";
                 }
                 else {
@@ -208,7 +208,7 @@ export default {
         },
         overlappingLabel() {
             try {
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].shape == "rectangular") {
                     return "width";
                 }
                 else {
@@ -424,8 +424,9 @@ export default {
         },
         getProportionsAndPattern(coil) {
             if (coil.sectionsDescription != null) {
-                const bobbinShape = coil.bobbin.processedDescription.windingWindows[0].shape;
-                const sectionsOrientation = coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
+                const proportionsBobbin = effectiveBobbin(coil.bobbin);
+                const bobbinShape = proportionsBobbin.processedDescription.windingWindows[0].shape;
+                const sectionsOrientation = proportionsBobbin.processedDescription.windingWindows[0].sectionsOrientation;
 
                 let windingDimensions = [];
                 coil.functionalDescription.forEach((winding, windingIndex) => {
@@ -582,7 +583,7 @@ export default {
             // (the engine applies pins after compaction), so the custom layout
             // survives turns/wire/proportion/margin edits. The window shape rides
             // along so the pin only ever applies to the geometry it was drawn on.
-            const windowShape = this.masStore.mas.magnetic.coil?.bobbin?.processedDescription?.windingWindows?.[0]?.shape ?? null;
+            const windowShape = effectiveBobbin(this.masStore.mas.magnetic.coil?.bobbin)?.processedDescription?.windingWindows?.[0]?.shape ?? null;
             this.windingStudioStore.setCustomSectionRect(sectionName, { coordinates, dimensions, windowShape });
             this.placingWinding = true;
             try {
@@ -610,17 +611,18 @@ export default {
             }
             // Catalog bobbins are real parts: never silently replace them with a
             // generated simple bobbin. Dropping on the CENTER leg keeps the part
-            // (window 0 is its window); lateral legs need engine support for
-            // catalog-bobbin + bare-leg geometry and are refused loudly for now.
+            // (its window is merged window 0). Dropping on a LATERAL leg keeps it
+            // too: the leg gets its own generated ad-hoc bobbin and coil.bobbin
+            // becomes the MAS per-column ARRAY [catalogPart, ...lateralParts] —
+            // two items on the BOM. The engine winds the merged windows.
             const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
-            const isCatalogBobbin = typeof currentBobbin === 'string'
-                || (currentBobbin != null && currentBobbin !== 'Dummy' && currentBobbin.functionalDescription != null);
+            const centrePart = Array.isArray(currentBobbin) ? currentBobbin[0] : currentBobbin;
+            const isCatalogBobbin = typeof centrePart === 'string'
+                || (centrePart != null && centrePart !== 'Dummy' && centrePart.functionalDescription != null);
             if (isCatalogBobbin) {
                 const targetColumn = this.masStore.mas.magnetic.core?.processedDescription?.columns?.[columnIndex];
-                if (targetColumn == null || targetColumn.type !== 'central') {
-                    console.error(`[WindingStudio] Cannot place '${winding}' on a lateral leg: this design uses a `
-                        + 'catalog bobbin, and lateral-leg placement with catalog bobbins is not supported yet '
-                        + '(the generated-bobbin replacement would silently discard the real part).');
+                if (targetColumn == null) {
+                    console.error(`[WindingStudio] Column ${columnIndex} not found in the processed core`);
                     return;
                 }
                 const windingEntry = this.masStore.mas.magnetic.coil.functionalDescription
@@ -629,9 +631,14 @@ export default {
                     return;
                 }
                 this.windingStudioStore.clearCustomSectionRectsForWinding(winding);
-                windingEntry.windingWindow = 0;
-                this.recentChange = true;
-                this.tryToWind();
+                if (targetColumn.type === 'central') {
+                    windingEntry.windingWindow = 0;
+                    this.pruneUnusedLateralBobbinParts();
+                    this.recentChange = true;
+                    this.tryToWind();
+                    return;
+                }
+                await this.placeCatalogWindingLaterally(windingEntry, columnIndex);
                 return;
             }
             this.placingWinding = true;
@@ -686,6 +693,131 @@ export default {
                 this.placingWinding = false;
             }
         },
+        async placeCatalogWindingLaterally(windingEntry, columnIndex) {
+            // Lateral drop with a catalog bobbin: keep the catalog part on the
+            // centre leg and give the dropped leg its own generated ad-hoc bobbin
+            // (a second BOM item). MAS models this as the coil.bobbin per-column
+            // array; the engine merges every part's winding windows for the wind.
+            this.placingWinding = true;
+            try {
+                const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
+                let catalogPart = Array.isArray(currentBobbin) ? currentBobbin[0] : currentBobbin;
+                if (typeof catalogPart === 'string' || catalogPart?.processedDescription == null) {
+                    // By-name (or unprocessed) catalog bobbin: materialize the full
+                    // part — only the engine can resolve names / process geometry.
+                    const magneticWithCatalogBobbin = deepCopy(this.masStore.mas.magnetic);
+                    magneticWithCatalogBobbin.coil.bobbin = catalogPart;
+                    catalogPart = await this.taskQueueStore.materializeBobbin(magneticWithCatalogBobbin);
+                }
+                if (catalogPart?.processedDescription == null) {
+                    throw new Error('[WindingStudio] The catalog bobbin has no processedDescription; cannot derive the ad-hoc lateral bobbin');
+                }
+
+                // 1. Engine emits one winding window per wound-column edge.
+                const settings = await this.taskQueueStore.getSettings();
+                if (!settings.corePerColumnWindingWindows) {
+                    settings.corePerColumnWindingWindows = true;
+                    await this.taskQueueStore.setSettings(settings);
+                }
+
+                // 2. Reprocess the core so it carries the per-column windows. Flag
+                //    the pending bobbin regeneration so the coreProcessed subscriber
+                //    does not fire an interim wind with the stale placement.
+                this.taskQueueStore.bobbinRegenerationPending = true;
+                const core = await this.taskQueueStore.processCore(deepCopy(this.masStore.mas.magnetic.core));
+                this.masStore.mas.magnetic.core = core;
+
+                // 3. Ad-hoc lateral part: generate the simple bobbin for the whole
+                //    core with the catalog part's own thicknesses, then keep only
+                //    the dropped column's window(s) — each carries its column edge,
+                //    which is what the winder follows.
+                const wallThickness = catalogPart.processedDescription.wallThickness;
+                const columnThickness = catalogPart.processedDescription.columnThickness;
+                if (wallThickness == null || columnThickness == null) {
+                    throw new Error('[WindingStudio] The catalog bobbin has no wall/column thickness; cannot derive the ad-hoc lateral bobbin');
+                }
+                const generated = await this.taskQueueStore.generateBobbinDifferentThicknesses(core, wallThickness, columnThickness);
+                const lateralWindows = (generated.processedDescription?.windingWindows ?? [])
+                    .filter((window) => (window.column ?? 0) === columnIndex);
+                if (lateralWindows.length === 0) {
+                    throw new Error(`[WindingStudio] The generated bobbin has no winding window for column ${columnIndex}`);
+                }
+                const lateralPart = {
+                    ...generated,
+                    processedDescription: { ...generated.processedDescription, windingWindows: lateralWindows },
+                };
+
+                // 4. Assemble the per-column array (replacing any existing part for
+                //    this column) and point the winding at the part's first window
+                //    in the merged (concatenated) window order the engine builds.
+                const parts = Array.isArray(currentBobbin) ? [...currentBobbin] : [catalogPart];
+                parts[0] = catalogPart;
+                let partIndex = parts.findIndex((part, index) => index > 0
+                    && (part.processedDescription?.windingWindows ?? []).some((window) => (window.column ?? 0) === columnIndex));
+                if (partIndex < 0) {
+                    parts.push(lateralPart);
+                    partIndex = parts.length - 1;
+                }
+                else {
+                    parts[partIndex] = lateralPart;
+                }
+                let mergedWindowIndex = 0;
+                for (let index = 0; index < partIndex; index++) {
+                    mergedWindowIndex += (parts[index].processedDescription?.windingWindows ?? []).length;
+                }
+                windingEntry.windingWindow = mergedWindowIndex;
+                this.masStore.mas.magnetic.coil.bobbin = parts;
+                this.pruneUnusedLateralBobbinParts();
+                // The generateBobbinDifferentThicknesses callback clears the pending
+                // flag and triggers the wind with the assembled array.
+            }
+            catch (error) {
+                console.error(error);
+                this.taskQueueStore.bobbinRegenerationPending = false;
+            }
+            finally {
+                this.placingWinding = false;
+            }
+        },
+        pruneUnusedLateralBobbinParts() {
+            // Per-column bobbin housekeeping: drop ad-hoc lateral parts no winding
+            // references any more (an unused part would be a phantom BOM item) and
+            // remap every winding's merged window index. Collapses back to the
+            // plain catalog scalar when only the centre part remains.
+            const bobbin = this.masStore.mas.magnetic.coil.bobbin;
+            if (!Array.isArray(bobbin)) {
+                return;
+            }
+            const windowCounts = bobbin.map((part) => (part.processedDescription?.windingWindows ?? []).length);
+            const partStart = [];
+            let cursor = 0;
+            windowCounts.forEach((count) => { partStart.push(cursor); cursor += count; });
+            const partOfWindow = (windowIndex) => {
+                for (let index = bobbin.length - 1; index >= 0; index--) {
+                    if (windowIndex >= partStart[index]) {
+                        return index;
+                    }
+                }
+                return 0;
+            };
+            const windings = this.masStore.mas.magnetic.coil.functionalDescription;
+            const referencedParts = new Set([0]);
+            windings.forEach((entry) => { referencedParts.add(partOfWindow(entry.windingWindow ?? 0)); });
+            if (referencedParts.size === bobbin.length) {
+                return;
+            }
+            const keptIndices = bobbin.map((part, index) => index).filter((index) => referencedParts.has(index));
+            const newStart = new Map();
+            let newCursor = 0;
+            keptIndices.forEach((oldIndex) => { newStart.set(oldIndex, newCursor); newCursor += windowCounts[oldIndex]; });
+            windings.forEach((entry) => {
+                const oldWindow = entry.windingWindow ?? 0;
+                const oldPart = partOfWindow(oldWindow);
+                entry.windingWindow = newStart.get(oldPart) + (oldWindow - partStart[oldPart]);
+            });
+            const keptParts = keptIndices.map((oldIndex) => bobbin[oldIndex]);
+            this.masStore.mas.magnetic.coil.bobbin = keptParts.length === 1 ? keptParts[0] : keptParts;
+        },
         wind() {
             // Skip winding for toroidal cores or when bobbin is dummy/invalid
             const bobbin = this.masStore.mas.magnetic.coil?.bobbin;
@@ -738,7 +870,7 @@ export default {
             // wind when the current winding window has the same shape it was
             // drawn on. A rect from a rectangular window applied to a round one
             // (or vice versa) reinterprets meters as degrees and corrupts the coil.
-            const currentWindowShape = bobbin?.processedDescription?.windingWindows?.[0]?.shape ?? null;
+            const currentWindowShape = effectiveBobbin(bobbin)?.processedDescription?.windingWindows?.[0]?.shape ?? null;
             let customSectionRects = null;
             if (this.windingStudioStore.customSectionCount > 0) {
                 const matchingRects = {};
@@ -851,17 +983,18 @@ export default {
             if (!this.blockingRebounds) {
                 try {
                     if (magnetic.coil.bobbin != "" && magnetic.coil.bobbin != "Dummy") {
-                        if (magnetic.coil.bobbin.processedDescription != null) {
-                            if (magnetic.coil.bobbin.processedDescription.windingWindows != null) {
-                                if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment != null) {
-                                    this.localData.sectionsAlignment = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment;
+                        const localDataBobbin = effectiveBobbin(magnetic.coil.bobbin);
+                        if (localDataBobbin.processedDescription != null) {
+                            if (localDataBobbin.processedDescription.windingWindows != null) {
+                                if (localDataBobbin.processedDescription.windingWindows[0].sectionsAlignment != null) {
+                                    this.localData.sectionsAlignment = localDataBobbin.processedDescription.windingWindows[0].sectionsAlignment;
                                 }
-                                if (magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation != null) {
-                                    this.localData.sectionsOrientation = magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation;
+                                if (localDataBobbin.processedDescription.windingWindows[0].sectionsOrientation != null) {
+                                    this.localData.sectionsOrientation = localDataBobbin.processedDescription.windingWindows[0].sectionsOrientation;
                                 }
-                                if (magnetic.coil.bobbin.processedDescription.wallThickness != null && magnetic.coil.bobbin.processedDescription.columnThickness != null) {
-                                    this.localData.bobbinWallThickness = magnetic.coil.bobbin.processedDescription.wallThickness;
-                                    this.localData.bobbinColumnThickness = magnetic.coil.bobbin.processedDescription.columnThickness;
+                                if (localDataBobbin.processedDescription.wallThickness != null && localDataBobbin.processedDescription.columnThickness != null) {
+                                    this.localData.bobbinWallThickness = localDataBobbin.processedDescription.wallThickness;
+                                    this.localData.bobbinColumnThickness = localDataBobbin.processedDescription.columnThickness;
                                 }
                             }
                         }
@@ -960,16 +1093,21 @@ export default {
             }
         },
         assignCoilData() {
-            if (this.masStore.mas.magnetic.coil.bobbin.processedDescription == null) {
-                this.masStore.mas.magnetic.coil.bobbin.processedDescription = {};
+            // Per-column array form: the alignment/orientation knobs belong to the
+            // centre part's window (element 0), never to the Array object itself.
+            const coilDataBobbin = Array.isArray(this.masStore.mas.magnetic.coil.bobbin)
+                ? this.masStore.mas.magnetic.coil.bobbin[0]
+                : this.masStore.mas.magnetic.coil.bobbin;
+            if (coilDataBobbin.processedDescription == null) {
+                coilDataBobbin.processedDescription = {};
             }
-            if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows == null) {
-                this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows = [];
-                this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows.push({});
+            if (coilDataBobbin.processedDescription.windingWindows == null) {
+                coilDataBobbin.processedDescription.windingWindows = [];
+                coilDataBobbin.processedDescription.windingWindows.push({});
             }
 
-            this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsAlignment = this.localData.sectionsAlignment;
-            this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation = this.localData.sectionsOrientation;
+            coilDataBobbin.processedDescription.windingWindows[0].sectionsAlignment = this.localData.sectionsAlignment;
+            coilDataBobbin.processedDescription.windingWindows[0].sectionsOrientation = this.localData.sectionsOrientation;
 
             // Update margins in the coil's sectionsDescription
             if (this.masStore.mas.magnetic.coil.sectionsDescription != null) {
@@ -1047,6 +1185,13 @@ export default {
 
             // Check if thickness actually changed from current bobbin to avoid infinite loop
             const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
+            if (Array.isArray(currentBobbin)) {
+                // Per-column bobbins (catalog centre part + ad-hoc lateral parts):
+                // regenerating a single simple bobbin here would silently discard
+                // the catalog part. The centre part's thickness is the part's own.
+                console.error('[BasicCoilSelector] Bobbin thickness cannot be edited on a per-column bobbin set: the centre part is a real catalog bobbin.');
+                return;
+            }
             if (currentBobbin && currentBobbin !== "Dummy" && currentBobbin.processedDescription) {
                 const currentWall = currentBobbin.processedDescription.wallThickness;
                 const currentColumn = currentBobbin.processedDescription.columnThickness;

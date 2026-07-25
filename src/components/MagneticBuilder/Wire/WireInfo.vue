@@ -1,6 +1,7 @@
 <script setup>
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
+import { effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 </script>
@@ -79,16 +80,16 @@ export default {
         },
         fitsOuterDimensionsWidth() {
             if (this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].width != null) {
-                    if (this.outerDimensions[0] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].width) {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].width != null) {
+                    if (this.outerDimensions[0] < effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].width) {
                         return true;
                     }
                     else {
                         return false;
                     }
                 }
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].radialHeight != null) {
-                    if (this.outerDimensions[0] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].radialHeight / 2) {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].radialHeight != null) {
+                    if (this.outerDimensions[0] < effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].radialHeight / 2) {
                         return true;
                     }
                     else {
@@ -100,16 +101,16 @@ export default {
         },
         fitsOuterDimensionsHeight() {
             if (this.masStore.mas.magnetic.coil.bobbin != "Dummy") {
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height != null) {
-                    if (this.outerDimensions[1] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].height) {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].height != null) {
+                    if (this.outerDimensions[1] < effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].height) {
                         return true;
                     }
                     else {
                         return false;
                     }
                 }
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].radialHeight != null) {
-                    if (this.outerDimensions[0] < this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].radialHeight / 2) {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].radialHeight != null) {
+                    if (this.outerDimensions[0] < effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].radialHeight / 2) {
                         return true;
                     }
                     else {

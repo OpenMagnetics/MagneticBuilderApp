@@ -7,6 +7,8 @@
 // If the studio and the WASM painter ever disagree visually, the painter is
 // the reference and this module is the bug.
 
+import { effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js';
+
 const MM = 1000;
 
 function rectFromCenter(cx, cy, width, height) {
@@ -136,7 +138,7 @@ function findColumnAt(columns, x) {
 // the wound column plus top/bottom walls. Faithful enough for the studio; the
 // painter remains the reference for print-quality drawings.
 export function buildBobbinView(coil, coreView) {
-    const bobbin = coil?.bobbin;
+    const bobbin = effectiveBobbin(coil?.bobbin);
     const processed = typeof bobbin === 'object' ? bobbin?.processedDescription : null;
     if (processed == null || coreView == null) {
         return [];
@@ -198,7 +200,8 @@ export function buildBobbinView(coil, coreView) {
 export function buildWindowViews(coil, core) {
     // Prefer the bobbin windows (that is where sections actually live); fall
     // back to the core ones so the studio still draws around a "Dummy" bobbin.
-    const bobbinProcessed = typeof coil?.bobbin === 'object' ? coil.bobbin?.processedDescription : null;
+    const mergedBobbin = effectiveBobbin(coil?.bobbin);
+    const bobbinProcessed = typeof mergedBobbin === 'object' ? mergedBobbin?.processedDescription : null;
     const windows = bobbinProcessed?.windingWindows ?? core?.processedDescription?.windingWindows ?? [];
     return windows
         .map((window, index) => {
