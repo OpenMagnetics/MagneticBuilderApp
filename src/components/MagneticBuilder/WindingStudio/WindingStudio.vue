@@ -1525,9 +1525,18 @@ function endTransformDrag() {
                     {{ fitStatus.overflow ? '⚠ does not fit' : '✓ fits' }}<template
                         v-if="fitStatus.worstFill > 0"> · fill {{ (fitStatus.worstFill * 100).toFixed(0) }}%</template>
                 </span>
-                <!-- Per-SECTION layout gear: lives in the toolbar (never inside
-                     the SVG — an in-plot gear intercepted the rotate/edge drags
-                     twice); only while a section is selected. -->
+                <!-- Layout gears live in the toolbar (never inside the SVG — an
+                     in-plot gear intercepted the rotate/edge drags twice): one
+                     chip per winding window, plus the selected section's. -->
+                <button
+                    v-for="window in (editable && model.kind !== 'toroidal' ? model.windows : [])"
+                    :key="'window-gear' + window.index"
+                    type="button"
+                    class="winding-studio-chip winding-studio-custom-chip"
+                    :data-cy="dataTestLabel + '-WindingStudio-window-gear-' + window.index"
+                    :title="'Sections layout of winding window ' + window.index"
+                    @click="openWindowMenu(window, $event)"
+                >⚙ {{ model.windows.length > 1 ? 'Window ' + window.index : 'Window' }}</button>
                 <button
                     v-if="editable && transformTarget != null"
                     type="button"
@@ -1947,23 +1956,6 @@ function endTransformDrag() {
                             @pointercancel="endTransformDrag()"
                         />
                     </g>
-                    <!-- Per-window layout gear: sections orientation + alignment -->
-                    <g v-if="editable && model.kind !== 'toroidal' && drag == null">
-                        <!-- Gears sit ABOVE the window (over the bobbin/core band,
-                             which has no interactive elements) so they never
-                             intercept the in-window handles; per-column windows can
-                             SHARE a region, so they row up by index. -->
-                        <text
-                            v-for="window in model.windows"
-                            :key="'gear' + window.index"
-                            :x="window.rect.x + Math.min(2.4, window.rect.height * 0.14) * (0.2 + window.index * 1.3)"
-                            :y="window.rect.y - Math.min(2.4, window.rect.height * 0.14) * 0.35"
-                            class="winding-studio-window-gear"
-                            :style="{ fontSize: Math.min(2.4, window.rect.height * 0.14) + 'px' }"
-                            :data-cy="dataTestLabel + '-WindingStudio-window-gear-' + window.index"
-                            @click="openWindowMenu(window, $event)"
-                        >⚙</text>
-                    </g>
                     <!-- Drop slots: the core legs light up while a chip is dragged -->
                     <g v-if="drag != null">
                         <g v-for="column in model.core.columns" :key="'slot' + column.index">
@@ -2377,14 +2369,6 @@ function endTransformDrag() {
 }
 .winding-studio-menu-field select option {
     color: #000000;
-}
-.winding-studio-window-gear {
-    fill: #ffffff;
-    opacity: 0.55;
-    cursor: pointer;
-}
-.winding-studio-window-gear:hover {
-    opacity: 1;
 }
 .winding-studio-busy {
     position: absolute;
