@@ -255,6 +255,21 @@ export function buildWindowViews(coil, core) {
         .filter(Boolean);
 }
 
+// MAS section margin comes in two schema shapes: the engine emits the
+// 2-number array, the Insulation panel writes the marginInfo object
+// ({topOrLeftWidth, bottomOrRightWidth}). The view model normalizes to
+// [topOrLeft, bottomOrRight] so the studio ALWAYS draws margin tape
+// regardless of who set it.
+function resolveMarginPair(margin) {
+    if (margin == null) {
+        return null;
+    }
+    if (Array.isArray(margin)) {
+        return [margin[0] ?? 0, margin[1] ?? 0];
+    }
+    return [margin.topOrLeftWidth ?? 0, margin.bottomOrRightWidth ?? 0];
+}
+
 export function buildSectionViews(coil) {
     const sections = coil?.sectionsDescription ?? [];
     return sections
@@ -268,7 +283,7 @@ export function buildSectionViews(coil) {
                 windingWindow: section.windingWindow ?? 0,
                 windings: (section.partialWindings ?? []).map((partial) => partial.winding),
                 fillingFactor: section.fillingFactor ?? null,
-                margin: section.margin ?? null,
+                margin: resolveMarginPair(section.margin),
                 layersOrientation: section.layersOrientation ?? null,
                 windingStyle: section.windingStyle ?? null,
                 rect: rectFromCenter(section.coordinates[0], section.coordinates[1], section.dimensions[0], section.dimensions[1]),
@@ -429,7 +444,7 @@ function buildToroidalSectionViews(coil, windowRadiusMm) {
                 windingWindow: section.windingWindow ?? 0,
                 windings: (section.partialWindings ?? []).map((partial) => partial.winding),
                 fillingFactor: section.fillingFactor ?? null,
-                margin: section.margin ?? null,
+                margin: resolveMarginPair(section.margin),
                 layersOrientation: section.layersOrientation ?? null,
                 windingStyle: section.windingStyle ?? null,
                 polar: { rCenter, rBand, thetaCenter, thetaSpan },
