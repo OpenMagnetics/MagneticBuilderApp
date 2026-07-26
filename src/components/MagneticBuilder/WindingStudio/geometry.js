@@ -540,6 +540,29 @@ export function buildStudioModel(magnetic) {
     const turns = buildTurnViews(coil);
     const bobbin = buildBobbinView(coil, coreView);
 
+    // Single-window coils carry NO far-side crossings in the MAS — several
+    // physics models interpret additionalCoordinates as real conductor
+    // positions, so the engine deliberately does not emit the center-leg
+    // mirror there. The mirror is pure DISPLAY geometry: synthesize the
+    // shadowed far-side glyphs here (multi-window coils get theirs from the
+    // engine, whose consumers are gated for that data).
+    const bobbinWindows = effectiveBobbin(coil?.bobbin)?.processedDescription?.windingWindows ?? [];
+    if (bobbinWindows.length <= 1) {
+        const mirrors = [];
+        for (const turn of turns) {
+            if (turn.isReturn) {
+                continue;
+            }
+            mirrors.push({
+                ...turn,
+                isStart: false,
+                isReturn: true,
+                rect: { ...turn.rect, x: -(turn.rect.x + turn.rect.width) },
+            });
+        }
+        turns.push(...mirrors);
+    }
+
     // View bounds: the core silhouette UNION all drawn content. Lateral-leg
     // loops cross the section plane outside the core (their outer crossing),
     // so turns can legitimately sit beyond the silhouette.
