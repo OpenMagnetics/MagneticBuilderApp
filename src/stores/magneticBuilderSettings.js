@@ -9,7 +9,11 @@ export const useMagneticBuilderSettingsStore = defineStore("magneticBuilderSetti
     const enableCustomize = ref(true);
     const enableGraphs = ref(false);
     const enableContextMenu = ref(false);
-    
+    // Winding Studio (interactive cross-section editor). Feature-flagged:
+    // default off; the whole feature is removable by deleting the
+    // WindingStudio/ folder and the few call sites guarded by this flag.
+    const enableWindingStudio = ref(false);
+
     // Track if simulation data is outdated (persists across component remounts)
     const coilDataOutdated = ref(false);
     const coreDataOutdated = ref(false);
@@ -23,6 +27,7 @@ export const useMagneticBuilderSettingsStore = defineStore("magneticBuilderSetti
         this.enableCustomize = true;
         this.enableGraphs = true;
         this.enableContextMenu = false;
+        this.enableWindingStudio = false;
         this.coilDataOutdated = false;
         this.coreDataOutdated = false;
         this.wireDataOutdated = false;
@@ -36,6 +41,7 @@ export const useMagneticBuilderSettingsStore = defineStore("magneticBuilderSetti
         enableCustomize,
         enableGraphs,
         enableContextMenu,
+        enableWindingStudio,
         coilDataOutdated,
         coreDataOutdated,
         wireDataOutdated,

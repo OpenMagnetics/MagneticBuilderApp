@@ -31,32 +31,34 @@ function getRestrictedShapeFamilies() {
 //
 // We never silently downgrade — on failure we throw with the full quicktype
 // error message (which includes the offending field path).
+// Sentry cleaner. Recursively strips object keys whose value is
+// `null`, `"null"`, or `undefined`. Quicktype's optional fields are
+// decoded as `u(undefined, ...)` and reject explicit `null`. We do NOT
+// strip empty arrays or empty objects: required array fields (e.g.
+// `outputs`) must remain present even when empty. Mutates its argument —
+// callers pass a throwaway deep copy.
+function stripNulls(v) {
+    if (Array.isArray(v)) {
+        for (const item of v) stripNulls(item);
+        return v;
+    }
+    if (v && typeof v === 'object') {
+        for (const k of Object.keys(v)) {
+            const val = v[k];
+            if (val === null || val === 'null' || val === undefined) {
+                delete v[k];
+            } else {
+                stripNulls(val);
+            }
+        }
+    }
+    return v;
+}
+
 function masSentry(where, obj, kind = 'Mas') {
     const fn = MasConvert['to' + kind];
     if (typeof fn !== 'function') {
         throw new Error(`[MAS sentry @ ${where}] Unknown sentry kind "${kind}" (no Convert.to${kind} in MAS.ts)`);
-    }
-    // Sentry-local cleaner. Recursively strips object keys whose value is
-    // `null`, `"null"`, or `undefined`. Quicktype's optional fields are
-    // decoded as `u(undefined, ...)` and reject explicit `null`. We do NOT
-    // strip empty arrays or empty objects: required array fields (e.g.
-    // `outputs`) must remain present even when empty.
-    function stripNulls(v) {
-        if (Array.isArray(v)) {
-            for (const item of v) stripNulls(item);
-            return v;
-        }
-        if (v && typeof v === 'object') {
-            for (const k of Object.keys(v)) {
-                const val = v[k];
-                if (val === null || val === 'null' || val === undefined) {
-                    delete v[k];
-                } else {
-                    stripNulls(val);
-                }
-            }
-        }
-        return v;
     }
     try {
         const cleaned = stripNulls(JSON.parse(JSON.stringify(obj)));
@@ -66,6 +68,36 @@ function masSentry(where, obj, kind = 'Mas') {
         // eslint-disable-next-line no-console
         console.error(msg);
         throw new Error(msg);
+    }
+}
+
+// Quarantine schema-invalid outputs in a MAS the WASM handed back. MKF's
+// mas_autocomplete recomputes outputs, and on an inconsistent coil it can
+// emit a windingLosses missing its required total (MKF #246). If that lands
+// in the mas store, every later sentry-guarded whole-Mas call fails —
+// including the simulate that would replace the bad outputs — and the coil
+// panel wedges on the sentry error. Outputs are always recomputed live, so
+// drop them, but only when they are provably the problem: document invalid
+// with them, valid without.
+function quarantineInvalidReturnedOutputs(where, mas) {
+    if (!Array.isArray(mas?.outputs) || mas.outputs.length === 0) {
+        return mas;
+    }
+    try {
+        MasConvert.toMas(JSON.stringify(stripNulls(JSON.parse(JSON.stringify(mas)))));
+        return mas;
+    } catch (originalError) {
+        try {
+            const probe = stripNulls(JSON.parse(JSON.stringify(mas)));
+            probe.outputs = [];
+            MasConvert.toMas(JSON.stringify(probe));
+        } catch (stillInvalid) {
+            return mas;
+        }
+        // eslint-disable-next-line no-console
+        console.warn(`[MAS sentry @ ${where}] WASM returned schema-invalid outputs — dropping them (simulation recomputes all outputs). Validation error: ${originalError.message}`);
+        mas.outputs = [];
+        return mas;
     }
 }
 
@@ -165,7 +197,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const sanitized = result.replace(/([{,\[:][ \t]*)(-?)\.(\d)/g, '$1$2' + '0.$3');
             let masResult;
             try {
-                masResult = JSON.parse(sanitized);
+                masResult = quarantineInvalidReturnedOutputs('masAutocomplete', JSON.parse(sanitized));
             } catch (parseErr) {
                 // eslint-disable-next-line no-console
                 console.error('[taskQueue] masAutocomplete: JSON.parse still failed after sanitization. First 500 chars of WASM output:', result.substring(0, 500));
@@ -646,6 +678,44 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         bobbinDifferentThicknessesGenerated(success = true, dataOrMessage = '') {
+        },
+
+        async plotMagneticField(magnetic, operatingPoint) {
+            // Painter H-field map (SVG document) for the winding-studio overlay.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.plot_magnetic_field(JSON.stringify(magnetic), JSON.stringify(operatingPoint));
+            if (!result.startsWith('<')) {
+                throw new Error(result);
+            }
+            return result;
+        },
+
+        async calculateAutoProportions(coil) {
+            // The engine's automatic per-winding proportions (wire-area based) —
+            // what wind() uses when none are given. Backs the studio Auto-fit.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.calculate_proportion_per_winding_based_on_wires(JSON.stringify(coil));
+            if (result.startsWith("Exception")) {
+                throw new Error(result);
+            }
+            return JSON.parse(result);
+        },
+
+        async materializeBobbin(magnetic) {
+            // Resolve the magnetic's bobbin (typically a by-name catalog part)
+            // into the full processed bobbin object via the engine's database.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const bobbinResult = await mkf.calculate_bobbin_data(JSON.stringify(magnetic));
+            if (bobbinResult.startsWith("Exception")) {
+                throw new Error(bobbinResult);
+            }
+            return JSON.parse(bobbinResult);
         },
 
         async generateBobbinDifferentThicknesses(core, bobbinWallThickness, bobbinColumnThickness) {
@@ -1461,7 +1531,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             // MAS sentry — validate before WASM round-trip. Catches schema
             // drift at the boundary with the exact bad field, not deep in C++.
-            masSentry('simulate', mas, 'Mas');
+            // Validate exactly what is sent: inputs + magnetic. Outputs never
+            // cross this boundary, and validating them wedged the panel — stale
+            // invalid outputs in the store blocked the very simulate call whose
+            // result would have replaced them.
+            masSentry('simulate', mas.inputs, 'Inputs');
+            masSentry('simulate', mas.magnetic, 'Magnetic');
 
             // Send the WASM the same null-stripped payload the sentry validates.
             // MKF's autocomplete emits explicit `null` for absent optionals, but
@@ -1550,11 +1625,22 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         wound(success = true, dataOrMessage = '') {
         },
 
-        async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins) {
+        async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins, coreColumns = null, customSectionRects = null, delimitAndCompact = true) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = await mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
+            const hasCustomRects = customSectionRects != null && Object.keys(customSectionRects).length > 0;
+
+            // Multi-column placement (winding studio): windings/sections placed in
+            // non-main winding windows need the core columns to build their lateral
+            // wound-column frames, so pass them through whenever the caller has them
+            // (a no-op for main-column-only coils). Hand-drawn section rectangles
+            // are re-imposed by the engine after compaction, so drawn sections
+            // survive every re-wind; delimitAndCompact switches the compaction pass
+            // for the rest of the coil.
+            const result = coreColumns != null
+                ? await mkf.wind_with_columns(JSON.stringify(inputCoil), JSON.stringify(coreColumns), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins), hasCustomRects ? JSON.stringify(customSectionRects) : "", delimitAndCompact)
+                : await mkf.wind(JSON.stringify(inputCoil), repetitions, JSON.stringify(proportionPerWinding), JSON.stringify(pattern), JSON.stringify(margins));
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.wound(false, result);}, this.task_standard_response_delay);
@@ -1562,14 +1648,44 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 let coil = JSON.parse(result);
-                // Call delimit_and_compact to compact additional turns for toroidal coils
-                const compactResult = await mkf.delimit_and_compact(JSON.stringify(coil));
-                if (!compactResult.startsWith("Exception")) {
-                    coil = JSON.parse(compactResult);
+                // Call delimit_and_compact to compact additional turns for toroidal
+                // coils. Skipped when drawn rectangles exist or compaction is off:
+                // the wind call above already ran (or deliberately skipped) the
+                // compaction, and this standalone pass would move drawn sections.
+                if (!hasCustomRects && delimitAndCompact) {
+                    const compactResult = coreColumns != null
+                        ? await mkf.delimit_and_compact_with_columns(JSON.stringify(coil), JSON.stringify(coreColumns))
+                        : await mkf.delimit_and_compact(JSON.stringify(coil));
+                    if (!compactResult.startsWith("Exception")) {
+                        coil = JSON.parse(compactResult);
+                    }
                 }
                 setTimeout(() => {this.wound(true, coil);}, this.task_standard_response_delay);
                 return coil;
             }
+        },
+
+        layersAndTurnsRewound(success = true, dataOrMessage = '') {
+        },
+
+        async rewindLayersAndTurns(inputCoil, coreColumns = null) {
+            // Custom-rectangle re-flow (winding studio): layers+turns are re-run
+            // INSIDE the caller-provided section rectangles; sections are NOT
+            // recomputed and nothing re-compacts the custom placement.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.wind_layers_and_turns_with_columns(
+                JSON.stringify(inputCoil),
+                coreColumns != null ? JSON.stringify(coreColumns) : "");
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.layersAndTurnsRewound(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            const coil = JSON.parse(result);
+            setTimeout(() => {this.layersAndTurnsRewound(true, coil);}, this.task_standard_response_delay);
+            return coil;
         },
 
         planarWound(success = true, dataOrMessage = '') {
