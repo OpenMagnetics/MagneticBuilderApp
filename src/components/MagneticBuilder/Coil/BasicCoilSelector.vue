@@ -708,6 +708,44 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
+        async autoFitFromStudio() {
+            // Winding-studio Auto-fit: drop the hand-drawn rectangles (they pin
+            // geometry and would defeat the automatic layout) and re-derive the
+            // per-winding proportions from the wires — the engine's own default
+            // when none are given — then re-wind with the selected sections
+            // distribution (orientation/alignment/pattern/repetitions kept).
+            if (this.readOnly) {
+                return;
+            }
+            for (const sectionName of Object.keys(this.windingStudioStore.customSectionRects)) {
+                const sectionIndex = this.conductiveSections.findIndex((candidate) => candidate.name === sectionName);
+                if (sectionIndex >= 0 && this.localData.dataPerSection[sectionIndex] != null) {
+                    this.localData.dataPerSection[sectionIndex].topOrLeftMargin = 0;
+                    this.localData.dataPerSection[sectionIndex].bottomOrRightMargin = 0;
+                }
+            }
+            this.windingStudioStore.clearCustomSectionRects();
+            try {
+                const coil = deepCopy(this.masStore.mas.magnetic.coil);
+                coil.functionalDescription?.forEach((winding) => {
+                    if (winding.wire == null || winding.wire === "") winding.wire = "Dummy";
+                });
+                const proportions = await this.taskQueueStore.calculateAutoProportions(coil);
+                if (proportions.length !== this.localData.proportionPerWinding.length) {
+                    throw new Error(`Auto proportions came back with ${proportions.length} entries for ${this.localData.proportionPerWinding.length} windings`);
+                }
+                this.localData.proportionPerWinding = proportions.map((value) => roundWithDecimals(value, 0.01));
+            }
+            catch (error) {
+                console.error(error);
+                return;
+            }
+            this._studioGestureKey = 'studio:auto-fit';
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
+            this.recentChange = true;
+            this.tryToWind();
+        },
         setWindowLayoutFromStudio({ windowIndex, sectionsOrientation, sectionsAlignment }) {
             // Winding-studio per-window gear: write the layout into THAT window's
             // bobbin entry (array-aware: merged index → owning part) and re-wind.
@@ -1506,6 +1544,7 @@ export default {
                         @requestFieldOverlay="requestFieldOverlayFromStudio"
                         @setWindowLayout="setWindowLayoutFromStudio"
                         @setSectionLayout="setSectionLayoutFromStudio"
+                        @autoFit="autoFitFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :bobbinColor="$styleStore.magneticBuilder.painterColorBobbin || '0x539796'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"

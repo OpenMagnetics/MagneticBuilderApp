@@ -692,6 +692,19 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             return result;
         },
 
+        async calculateAutoProportions(coil) {
+            // The engine's automatic per-winding proportions (wire-area based) —
+            // what wind() uses when none are given. Backs the studio Auto-fit.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.calculate_proportion_per_winding_based_on_wires(JSON.stringify(coil));
+            if (result.startsWith("Exception")) {
+                throw new Error(result);
+            }
+            return JSON.parse(result);
+        },
+
         async materializeBobbin(magnetic) {
             // Resolve the magnetic's bobbin (typically a by-name catalog part)
             // into the full processed bobbin object via the engine's database.

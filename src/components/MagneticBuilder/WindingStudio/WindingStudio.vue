@@ -91,7 +91,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact', 'interleaveWinding', 'requestFieldOverlay', 'setWindowLayout', 'setSectionLayout']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact', 'interleaveWinding', 'requestFieldOverlay', 'setWindowLayout', 'setSectionLayout', 'autoFit']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -1525,6 +1525,15 @@ function endTransformDrag() {
                     {{ fitStatus.overflow ? '⚠ does not fit' : '✓ fits' }}<template
                         v-if="fitStatus.worstFill > 0"> · fill {{ (fitStatus.worstFill * 100).toFixed(0) }}%</template>
                 </span>
+                <button
+                    v-if="editable"
+                    type="button"
+                    class="winding-studio-chip winding-studio-custom-chip"
+                    :disabled="busy"
+                    :data-cy="dataTestLabel + '-WindingStudio-autofit'"
+                    title="Re-wind automatically with the selected sections distribution: drops the drawn rectangles and re-derives the per-winding proportions from the wires"
+                    @click="emit('autoFit')"
+                >Auto fit</button>
                 <!-- Layout gears live in the toolbar (never inside the SVG — an
                      in-plot gear intercepted the rotate/edge drags twice): one
                      chip per winding window, plus the selected section's. -->

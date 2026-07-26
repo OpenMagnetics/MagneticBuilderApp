@@ -149,9 +149,34 @@ export function buildBobbinView(coil, coreView) {
         return [];
     }
 
+    const windows = processed.windingWindows ?? [];
+    // Prefer the WOUND GROUP regions: when a lateral winding shares a window
+    // region with the main winding's annulus, the engine splits the region
+    // between them (split_shared_window_groups) — each duct then spans its
+    // group's half instead of the full window. Coils without groups (or with
+    // polar ones) fall back to the windows.
+    const groupRegions = (coil?.groupsDescription ?? [])
+        .filter((group) => group.coordinateSystem !== 'polar'
+            && group.coordinates != null && group.dimensions != null
+            && (group.partialWindings?.length ?? 0) > 0)
+        .map((group) => ({
+            coordinates: group.coordinates,
+            width: group.dimensions[0],
+            height: group.dimensions[1],
+            column: windows[group.windingWindow ?? 0]?.column ?? 0,
+        }));
+    const regions = groupRegions.length > 0
+        ? groupRegions
+        : windows.map((window) => ({
+            coordinates: window.coordinates,
+            width: window.width,
+            height: window.height,
+            column: window.column ?? 0,
+        }));
+
     const parts = [];
     const seen = new Set();
-    for (const window of processed.windingWindows ?? []) {
+    for (const window of regions) {
         if (window.coordinates == null || window.width == null || window.height == null) {
             continue;
         }
@@ -165,7 +190,7 @@ export function buildBobbinView(coil, coreView) {
         // The wall sits between the window and the column it wraps: the wound
         // column is the nearest one on the window's own side (main column for
         // window 0, the lateral leg for lateral windows).
-        const columnIndex = window.column ?? 0;
+        const columnIndex = window.column;
         const column = coreView.columns[columnIndex] ?? coreView.columns[0];
         const columnCenterX = column.rect.x + column.rect.width / 2;
         const windowCenterX = rect.x + rect.width / 2;
