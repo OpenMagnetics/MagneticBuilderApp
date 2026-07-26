@@ -161,8 +161,11 @@ export default {
             oldMagneticCoilHash,
             oldInputsCoilHash,
             subscriptions,
+            fieldOverlaySvg: null,
             _windTimer: null,
             _reboundsTimer: null,
+            _fieldOverlayInFlight: false,
+            _studioGestureKey: null,
         }
     },
     computed: {
@@ -502,6 +505,7 @@ export default {
             this.localData.proportionPerWinding = proportions.map((value) => roundWithDecimals(value, 0.01));
             // The wind() no-op hash covers the coil + margins but NOT the
             // proportions; reset it so the proportion-only change re-winds.
+            this._studioGestureKey = 'studio:proportions';
             this.oldMagneticCoilHash = null;
             this.oldInputsCoilHash = null;
             this.recentChange = true;
@@ -550,6 +554,126 @@ export default {
             else {
                 this.localData.dataPerSection[sectionIndex].bottomOrRightMargin = value;
             }
+            this._studioGestureKey = `studio:margin:${sectionName}:${side}`;
+            this.recentChange = true;
+            this.tryToWind();
+        },
+        interleaveFromStudio({ source, target, mode }) {
+            // Winding-studio chip-on-winding drop: {interleave, swap, clear}
+            // drive the SAME pattern/repetitions knobs the Alignment panel edits
+            // (PI Expert's gesture). The winder recomputes the real sections.
+            if (this.readOnly) {
+                return;
+            }
+            const windings = this.masStore.mas.magnetic.coil.functionalDescription;
+            const names = windings.map((winding) => winding.name);
+            const sourceIndex = names.indexOf(source);
+            const targetIndex = names.indexOf(target);
+            if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
+                return;
+            }
+            const naturalOrder = names.map((name, index) => String(index + 1));
+            // Base order: unique digits of the current pattern; a stale/partial
+            // pattern falls back to the natural order.
+            let order = [...new Set((this.localData.pattern || '').split(''))]
+                .filter((digit) => naturalOrder.includes(digit));
+            if (order.length !== names.length) {
+                order = [...naturalOrder];
+            }
+            const sourceDigit = String(sourceIndex + 1);
+            const targetDigit = String(targetIndex + 1);
+            if (mode === 'clear') {
+                this.localData.pattern = naturalOrder.join('');
+                this.localData.repetitions = 1;
+            }
+            else if (mode === 'swap') {
+                const sourcePosition = order.indexOf(sourceDigit);
+                const targetPosition = order.indexOf(targetDigit);
+                [order[sourcePosition], order[targetPosition]] = [order[targetPosition], order[sourcePosition]];
+                this.localData.pattern = order.join('');
+            }
+            else if (mode === 'interleave') {
+                // Adjacency + one more repetition: P S at reps 2 is the classic
+                // P S P S sandwich. Capped by the smallest turn count (a section
+                // needs at least one turn) and a practical ceiling of 8.
+                order = order.filter((digit) => digit !== sourceDigit);
+                order.splice(order.indexOf(targetDigit) + 1, 0, sourceDigit);
+                this.localData.pattern = order.join('');
+                const minTurns = Math.min(...windings.map((winding) => winding.numberTurns ?? 1));
+                const repetitionsCap = Math.max(1, Math.min(8, minTurns));
+                this.localData.repetitions = Math.min(repetitionsCap, (this.localData.repetitions ?? 1) + 1);
+            }
+            else {
+                return;
+            }
+            // Pattern/repetitions ride the wind call as args, not the coil hash;
+            // reset it so the change definitely re-winds.
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
+            this.recentChange = true;
+            this.tryToWind();
+        },
+        async requestFieldOverlayFromStudio() {
+            // Winding-studio field toggle: the painter's H-field SVG rendered as
+            // a background layer. Needs a wound coil and an operating point.
+            const magnetic = this.masStore.mas.magnetic;
+            const operatingPoint = this.masStore.mas.inputs?.operatingPoints?.[this.operatingPointIndex ?? 0];
+            if (magnetic?.coil?.turnsDescription == null || operatingPoint == null) {
+                this.fieldOverlaySvg = null;
+                return;
+            }
+            if (this._fieldOverlayInFlight) {
+                return;
+            }
+            this._fieldOverlayInFlight = true;
+            try {
+                this.fieldOverlaySvg = await this.taskQueueStore.plotMagneticField(magnetic, operatingPoint);
+            }
+            catch (error) {
+                this.fieldOverlaySvg = null;
+                console.error(error);
+            }
+            finally {
+                this._fieldOverlayInFlight = false;
+            }
+        },
+        setWindowLayoutFromStudio({ windowIndex, sectionsOrientation, sectionsAlignment }) {
+            // Winding-studio per-window gear: write the layout into THAT window's
+            // bobbin entry (array-aware: merged index → owning part) and re-wind.
+            if (this.readOnly) {
+                return;
+            }
+            const bobbin = this.masStore.mas.magnetic.coil.bobbin;
+            let targetWindow = null;
+            if (Array.isArray(bobbin)) {
+                let cursor = 0;
+                for (const part of bobbin) {
+                    const partWindows = part.processedDescription?.windingWindows ?? [];
+                    if (windowIndex < cursor + partWindows.length) {
+                        targetWindow = partWindows[windowIndex - cursor];
+                        break;
+                    }
+                    cursor += partWindows.length;
+                }
+            }
+            else if (typeof bobbin === 'object' && bobbin != null) {
+                targetWindow = bobbin.processedDescription?.windingWindows?.[windowIndex] ?? null;
+            }
+            if (targetWindow == null) {
+                console.error(`[WindingStudio] No bobbin window ${windowIndex} to set the layout on`);
+                return;
+            }
+            targetWindow.sectionsOrientation = sectionsOrientation;
+            targetWindow.sectionsAlignment = sectionsAlignment;
+            if (windowIndex === 0) {
+                // Keep the legacy window-0 knobs (Alignment panel + assignCoilData)
+                // in sync, or the next wind would write the old values back.
+                this.localData.sectionsOrientation = sectionsOrientation;
+                this.localData.sectionsAlignment = sectionsAlignment;
+            }
+            this._studioGestureKey = `studio:window:${windowIndex}`;
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
             this.recentChange = true;
             this.tryToWind();
         },
@@ -593,7 +717,9 @@ export default {
                 this.masStore.mas.magnetic.coil = rewound;
                 this.masStore.mas.magnetic.coil.bobbin = existingBobbin;
                 this.historyStore.unblockAdditions();
-                this.historyStore.addToHistory(this.masStore.mas);
+                // Coalesced: successive reshapes of the same section collapse
+                // into one undo step (the pre-gesture state stays one step back).
+                this.historyStore.addToHistory(this.masStore.mas, `studio:rect:${sectionName}`);
             }
             catch (error) {
                 console.error(error);
@@ -934,7 +1060,10 @@ export default {
                         // Unblock FIRST so addToHistory succeeds — during initial
                         // mount and file import, history is blocked until this point.
                         this.historyStore.unblockAdditions();
-                        this.historyStore.addToHistory(this.masStore.mas);
+                        // Studio gestures pass a key so a flurry of re-winds from
+                        // one drag coalesces into a single undo step.
+                        this.historyStore.addToHistory(this.masStore.mas, this._studioGestureKey);
+                        this._studioGestureKey = null;
                         this.tryingToSend = false;
                     })
                     .catch(error => {
@@ -1284,12 +1413,16 @@ export default {
                         :customCount="windingStudioStore.customSectionCount"
                         :showCompactToggle="true"
                         :compact="windingStudioStore.compactEnabled"
+                        :fieldOverlay="fieldOverlaySvg"
                         @placeWinding="placeWindingInColumn"
                         @resizeProportions="resizeProportionsFromStudio"
                         @resizeMargins="resizeMarginsFromStudio"
                         @resizeSectionRect="resizeSectionRectFromStudio"
                         @clearCustomRects="clearCustomLayoutFromStudio"
                         @update:compact="setCompactFromStudio"
+                        @interleaveWinding="interleaveFromStudio"
+                        @requestFieldOverlay="requestFieldOverlayFromStudio"
+                        @setWindowLayout="setWindowLayoutFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :bobbinColor="$styleStore.magneticBuilder.painterColorBobbin || '0x539796'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"

@@ -212,6 +212,7 @@ export function buildWindowViews(coil, core) {
                 index,
                 column: window.column ?? null,
                 sectionsOrientation: window.sectionsOrientation ?? null,
+                sectionsAlignment: window.sectionsAlignment ?? null,
                 rect: rectFromCenter(window.coordinates[0], window.coordinates[1] ?? 0, window.width, window.height),
             };
         })
@@ -256,10 +257,27 @@ export function buildLayerViews(coil) {
         .filter(Boolean);
 }
 
+// Litz wire cross-sections render as a strand bundle instead of a plain disc.
+// Wire objects carry type; by-name wires are recognized by the DB's 'Litz '
+// naming convention (display-only heuristic — no physics rides on it).
+function litzWindingNames(coil) {
+    const names = new Set();
+    for (const winding of coil?.functionalDescription ?? []) {
+        const wire = winding.wire;
+        const isLitz = (typeof wire === 'object' && wire?.type === 'litz')
+            || (typeof wire === 'string' && wire.toLowerCase().startsWith('litz'));
+        if (isLitz) {
+            names.add(winding.name);
+        }
+    }
+    return names;
+}
+
 export function buildTurnViews(coil) {
     const turns = coil?.turnsDescription ?? [];
     const views = [];
     const firstTurnSeen = new Set();
+    const litzWindings = litzWindingNames(coil);
     for (const turn of turns) {
         if (turn.coordinates == null || turn.dimensions == null) {
             continue;
@@ -277,6 +295,7 @@ export function buildTurnViews(coil) {
             layer: turn.layer ?? null,
             round,
             isStart,
+            litz: litzWindings.has(turn.winding),
         };
         views.push({
             ...base,
@@ -319,6 +338,19 @@ export function buildTurnViews(coil) {
 function polarPoint(radius, angleDegrees) {
     const angle = (angleDegrees * Math.PI) / 180;
     return [radius * Math.cos(angle), radius * Math.sin(angle)];
+}
+
+// Chord-based wound-distance → angle, mirroring MKF's wound_distance_to_angle
+// (2·asin(d/2r) in degrees). Returns null when the distance cannot fit.
+export function woundDistanceToAngleDeg(distanceMm, radiusMm) {
+    if (radiusMm <= 0) {
+        return null;
+    }
+    const ratio = distanceMm / 2 / radiusMm;
+    if (ratio > 1) {
+        return null;
+    }
+    return (2 * Math.asin(ratio) * 180) / Math.PI;
 }
 
 export function annularSectorPath(innerRadius, outerRadius, startAngle, endAngle) {
@@ -408,6 +440,10 @@ function buildToroidalStudioModel(magnetic) {
     const margin = extent * 0.04;
     const bounds = { x: -extent - margin, y: -extent - margin, width: 2 * (extent + margin), height: 2 * (extent + margin) };
 
+    // Margin wedges need the window-level orientation (contiguous → angular
+    // spacers at the sector edges; overlapping → radial bands).
+    const bobbinWindow = effectiveBobbin(coil?.bobbin)?.processedDescription?.windingWindows?.[0] ?? null;
+
     return {
         valid: true,
         kind: 'toroidal',
@@ -416,6 +452,7 @@ function buildToroidalStudioModel(magnetic) {
         bobbin: [],
         windows: [],
         windowRadius,
+        sectionsOrientation: bobbinWindow?.sectionsOrientation ?? null,
         sections,
         layers: [],
         turns,

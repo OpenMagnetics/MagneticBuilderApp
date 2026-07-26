@@ -7,8 +7,8 @@
 //
 // P0 scope: read-only parity view + hover/selection + color-by-winding.
 // Gated by magneticBuilderSettings.enableWindingStudio.
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
-import { buildStudioModel, windingColor, annularSectorPath } from './geometry.js';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { buildStudioModel, windingColor, annularSectorPath, woundDistanceToAngleDeg } from './geometry.js';
 
 const props = defineProps({
     dataTestLabel: {
@@ -76,9 +76,16 @@ const props = defineProps({
         type: String,
         default: '#ffffff',
     },
+    // Painter plot_magnetic_field SVG (whole document) computed by the host on
+    // 'requestFieldOverlay'; null while unavailable/computing. Rendered as a
+    // pointer-events:none background layer aligned via the painter's px scale.
+    fieldOverlay: {
+        type: String,
+        default: null,
+    },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact', 'interleaveWinding', 'requestFieldOverlay', 'setWindowLayout']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -133,6 +140,11 @@ function turnOpacity(turn) {
     if (hoveredWinding.value != null && turn.winding !== hoveredWinding.value) {
         return 0.25;
     }
+    if (fieldImage.value != null && hoveredWinding.value == null) {
+        // Field overlay active: the painter image carries the visible turns;
+        // the studio glyphs stay as near-invisible interaction targets.
+        return turn.isReturn ? 0.08 : 0.12;
+    }
     return turn.isReturn ? 0.55 : 1.0;
 }
 
@@ -175,6 +187,23 @@ function marginRects(section) {
                 : null;
         })
         .filter(Boolean);
+}
+
+// Litz bundle icon: a center strand plus a ring of six, scaled to the glyph.
+function litzStrands(turn) {
+    const radius = turn.rect.width / 2;
+    const cx = turn.rect.x + radius;
+    const cy = turn.rect.y + turn.rect.height / 2;
+    const strands = [{ cx, cy, r: radius * 0.2 }];
+    for (let k = 0; k < 6; k++) {
+        const angle = (k * Math.PI) / 3;
+        strands.push({
+            cx: cx + Math.cos(angle) * radius * 0.52,
+            cy: cy + Math.sin(angle) * radius * 0.52,
+            r: radius * 0.2,
+        });
+    }
+    return strands;
 }
 
 function onTurnEnter(turn, event) {
@@ -315,15 +344,20 @@ const fitStatus = computed(() => {
 
 const drag = ref(null); // {winding, color, x, y} in client coords
 const dropColumn = ref(null); // column index under the pointer
+const dropWinding = ref(null); // OTHER winding under the pointer (interleave target)
+const plotEl = ref(null);
+// {source, target, x, y} — the {interleave, swap, clear} menu after a
+// chip-on-winding drop (PI Expert's gesture). Plot-relative coords.
+const interleaveMenu = ref(null);
 
 function startChipDrag(windingName, event) {
-    if (!props.editable || props.busy || (model.value.core.columns ?? []).length === 0) {
-        // Toroids have a single wound column — no leg placement to drag to.
+    if (!props.editable || props.busy) {
         return;
     }
     // No preventDefault: the chips set touch-action: none, and preventing here
     // trips Chrome's passive-listener warning.
     event.currentTarget.setPointerCapture(event.pointerId);
+    interleaveMenu.value = null;
     drag.value = {
         winding: windingName,
         color: windingColor(model.value.windingNames, windingName),
@@ -331,6 +365,7 @@ function startChipDrag(windingName, event) {
         y: event.clientY,
     };
     dropColumn.value = null;
+    dropWinding.value = null;
 }
 
 function moveChipDrag(event) {
@@ -339,10 +374,18 @@ function moveChipDrag(event) {
     }
     drag.value.x = event.clientX;
     drag.value.y = event.clientY;
-    // The chip holds pointer capture, so hit-test geometrically.
+    // The chip holds pointer capture, so hit-test geometrically. Leg slots
+    // (only rendered mid-drag) take priority; otherwise a turn/section of a
+    // DIFFERENT winding is an interleave target.
     const under = document.elementFromPoint(event.clientX, event.clientY);
     const slot = under?.closest?.('[data-studio-column]');
     dropColumn.value = slot != null ? Number(slot.getAttribute('data-studio-column')) : null;
+    if (dropColumn.value != null) {
+        dropWinding.value = null;
+        return;
+    }
+    const windingTarget = under?.closest?.('[data-studio-winding]')?.getAttribute('data-studio-winding') ?? null;
+    dropWinding.value = windingTarget != null && windingTarget !== drag.value.winding ? windingTarget : null;
 }
 
 function endChipDrag() {
@@ -350,12 +393,267 @@ function endChipDrag() {
         return;
     }
     const placement = dropColumn.value;
+    const target = dropWinding.value;
     const windingName = drag.value.winding;
+    const dropX = drag.value.x;
+    const dropY = drag.value.y;
     drag.value = null;
+    dropColumn.value = null;
+    dropWinding.value = null;
     if (placement != null) {
         emit('placeWinding', { winding: windingName, columnIndex: placement });
+        return;
     }
-    dropColumn.value = null;
+    if (target != null) {
+        const plotBounds = plotEl.value?.getBoundingClientRect();
+        interleaveMenu.value = {
+            source: windingName,
+            target,
+            x: plotBounds != null ? Math.max(0, Math.min(dropX - plotBounds.left, plotBounds.width - 180)) : 0,
+            y: plotBounds != null ? Math.max(0, dropY - plotBounds.top) : 0,
+        };
+    }
+}
+
+function pickInterleaveAction(mode) {
+    const menu = interleaveMenu.value;
+    interleaveMenu.value = null;
+    if (menu == null) {
+        return;
+    }
+    emit('interleaveWinding', { source: menu.source, target: menu.target, mode });
+}
+
+// ---------------------------------------------------------------------------
+// P3: field-map overlay — the painter's plot_magnetic_field SVG as an aligned,
+// pointer-events:none background layer. The painter draws at a fixed px scale
+// (Constants coilPainterScale = 30000 px/m = 30 px/mm) with the same center
+// and y convention as the studio, so its viewBox maps to studio mm by /30.
+// ---------------------------------------------------------------------------
+
+const PAINTER_PX_PER_MM = 30;
+const showField = ref(false);
+let fieldTimer = null;
+
+const fieldImage = computed(() => {
+    if (!showField.value || props.fieldOverlay == null) {
+        return null;
+    }
+    const match = props.fieldOverlay.match(/viewBox="([^"]+)"/);
+    if (match == null) {
+        return null;
+    }
+    const [x, y, width, height] = match[1].trim().split(/\s+/).map(Number);
+    if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) {
+        return null;
+    }
+    return {
+        href: 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(props.fieldOverlay))),
+        x: x / PAINTER_PX_PER_MM,
+        y: y / PAINTER_PX_PER_MM,
+        width: width / PAINTER_PX_PER_MM,
+        height: height / PAINTER_PX_PER_MM,
+    };
+});
+
+// Request (and re-request after every re-wind) while the overlay is visible.
+watch(() => (showField.value ? model.value : null), (current) => {
+    if (current == null) {
+        return;
+    }
+    if (fieldTimer) {
+        clearTimeout(fieldTimer);
+    }
+    fieldTimer = setTimeout(() => emit('requestFieldOverlay'), 400);
+});
+onBeforeUnmount(() => {
+    if (fieldTimer) {
+        clearTimeout(fieldTimer);
+    }
+});
+
+// ---------------------------------------------------------------------------
+// P3: toroidal margin wedges — the angular spacers (contiguous layouts) or
+// radial bands (overlapping) the margins occupy, mirrored from the painter's
+// paint_toroidal_margin geometry (margin = wound distance, chord convention).
+// ---------------------------------------------------------------------------
+
+function toroidalMarginWedges(section) {
+    if (model.value.kind !== 'toroidal' || section.type !== 'conduction'
+        || section.margin == null || section.polar == null) {
+        return [];
+    }
+    const [before, after] = section.margin;
+    const polar = section.polar;
+    const rIn = Math.max(0, polar.rCenter - polar.rBand / 2);
+    const rOut = polar.rCenter + polar.rBand / 2;
+    const a0 = polar.thetaCenter - polar.thetaSpan / 2;
+    const a1 = polar.thetaCenter + polar.thetaSpan / 2;
+    const wedges = [];
+    if ((model.value.sectionsOrientation ?? 'contiguous') === 'overlapping') {
+        if (before > 0) {
+            wedges.push(annularSectorPath(rOut, rOut + before * MARGIN_MM, a0, a1));
+        }
+        if (after > 0) {
+            wedges.push(annularSectorPath(Math.max(0, rIn - after * MARGIN_MM), rIn, a0, a1));
+        }
+    }
+    else {
+        const beforeAngle = before > 0 ? woundDistanceToAngleDeg(before * MARGIN_MM, polar.rCenter) : null;
+        const afterAngle = after > 0 ? woundDistanceToAngleDeg(after * MARGIN_MM, polar.rCenter) : null;
+        if (beforeAngle != null && beforeAngle > 0.01) {
+            wedges.push(annularSectorPath(rIn, rOut, a0 - beforeAngle, a0));
+        }
+        if (afterAngle != null && afterAngle > 0.01) {
+            wedges.push(annularSectorPath(rIn, rOut, a1, a1 + afterAngle));
+        }
+    }
+    return wedges;
+}
+
+// ---------------------------------------------------------------------------
+// P3: drag the angular boundary between two adjacent toroidal sectors to
+// re-distribute the per-winding proportions (the concentric boundary drag's
+// polar sibling).
+// ---------------------------------------------------------------------------
+
+const sectorBoundaries = computed(() => {
+    if (!props.editable || !model.value.valid || model.value.kind !== 'toroidal') {
+        return [];
+    }
+    const conduction = model.value.sections
+        .filter((section) => section.type === 'conduction' && section.polar != null)
+        .sort((a, b) => (a.polar.thetaCenter - a.polar.thetaSpan / 2) - (b.polar.thetaCenter - b.polar.thetaSpan / 2));
+    const boundaries = [];
+    for (let i = 0; i + 1 < conduction.length; i++) {
+        const left = conduction[i];
+        const right = conduction[i + 1];
+        if (left.windings.join() === right.windings.join()) {
+            continue;
+        }
+        const leftEnd = left.polar.thetaCenter + left.polar.thetaSpan / 2;
+        const rightStart = right.polar.thetaCenter - right.polar.thetaSpan / 2;
+        const rIn = Math.max(
+            left.polar.rCenter - left.polar.rBand / 2,
+            right.polar.rCenter - right.polar.rBand / 2,
+            0);
+        const rOut = Math.min(
+            left.polar.rCenter + left.polar.rBand / 2,
+            right.polar.rCenter + right.polar.rBand / 2);
+        if (rOut <= rIn) {
+            continue;
+        }
+        const smallerSpan = Math.min(left.polar.thetaSpan, right.polar.thetaSpan);
+        const hitSpan = Math.max(rightStart - leftEnd, Math.min(Math.max(1.5, smallerSpan * 0.15), smallerSpan * 0.25));
+        boundaries.push({
+            id: `${left.name}|${right.name}`,
+            left,
+            right,
+            theta: (leftEnd + rightStart) / 2,
+            rIn,
+            rOut,
+            hitSpan,
+        });
+    }
+    return boundaries;
+});
+
+const sectorBoundaryDrag = ref(null); // {boundary, ctm, startTheta, dTheta}
+
+function startSectorBoundaryDrag(boundary, event) {
+    if (!props.editable || props.busy) {
+        return;
+    }
+    const svg = event.currentTarget.ownerSVGElement;
+    const ctm = svg.getScreenCTM();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const drag_ = {
+        boundary,
+        ctm: { a: ctm.a, d: ctm.d, e: ctm.e, f: ctm.f },
+        dTheta: 0,
+    };
+    drag_.startTheta = pointerPolar(drag_, event).theta;
+    sectorBoundaryDrag.value = drag_;
+}
+
+function moveSectorBoundaryDrag(event) {
+    const drag_ = sectorBoundaryDrag.value;
+    if (drag_ == null) {
+        return;
+    }
+    const theta = unwrapAngle(pointerPolar(drag_, event).theta, drag_.startTheta);
+    const raw = theta - drag_.startTheta;
+    // Neither sector may shrink below 20% of its span (the winder enforces the
+    // true limits on the re-wind).
+    const maxGrow = drag_.boundary.right.polar.thetaSpan * 0.8;
+    const maxShrink = drag_.boundary.left.polar.thetaSpan * 0.8;
+    drag_.dTheta = Math.max(-maxShrink, Math.min(maxGrow, raw));
+}
+
+function endSectorBoundaryDrag() {
+    const drag_ = sectorBoundaryDrag.value;
+    sectorBoundaryDrag.value = null;
+    if (drag_ == null || Math.abs(drag_.dTheta) < 0.4) {
+        return;
+    }
+    // Same measure as the concentric boundary drag, in angular spans.
+    const spans = new Map();
+    for (const section of model.value.sections) {
+        if (section.type !== 'conduction' || section.polar == null) {
+            continue;
+        }
+        let span = section.polar.thetaSpan;
+        if (section.name === drag_.boundary.left.name) {
+            span += drag_.dTheta;
+        }
+        else if (section.name === drag_.boundary.right.name) {
+            span -= drag_.dTheta;
+        }
+        for (const windingName of section.windings) {
+            spans.set(windingName, (spans.get(windingName) ?? 0) + span / section.windings.length);
+        }
+    }
+    const total = [...spans.values()].reduce((sum, value) => sum + value, 0);
+    if (total <= 0) {
+        return;
+    }
+    emit('resizeProportions', model.value.windingNames.map((name) => (spans.get(name) ?? 0) / total));
+}
+
+// ---------------------------------------------------------------------------
+// P3: per-window sections layout (orientation + alignment) — a gear on each
+// winding window opens a small panel; applying emits setWindowLayout for the
+// host to write into that window's bobbin entry and re-wind.
+// ---------------------------------------------------------------------------
+
+const windowMenu = ref(null); // {windowIndex, sectionsOrientation, sectionsAlignment, x, y}
+
+function openWindowMenu(window, event) {
+    if (!props.editable || props.busy) {
+        return;
+    }
+    interleaveMenu.value = null;
+    const plotBounds = plotEl.value?.getBoundingClientRect();
+    windowMenu.value = {
+        windowIndex: window.index,
+        sectionsOrientation: window.sectionsOrientation ?? 'overlapping',
+        sectionsAlignment: window.sectionsAlignment ?? 'inner or top',
+        x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 220)) : 0,
+        y: plotBounds != null ? Math.max(0, event.clientY - plotBounds.top) : 0,
+    };
+}
+
+function applyWindowMenu() {
+    const menu = windowMenu.value;
+    windowMenu.value = null;
+    if (menu == null) {
+        return;
+    }
+    emit('setWindowLayout', {
+        windowIndex: menu.windowIndex,
+        sectionsOrientation: menu.sectionsOrientation,
+        sectionsAlignment: menu.sectionsAlignment,
+    });
 }
 
 function columnLabel(column) {
@@ -1126,12 +1424,21 @@ function endTransformDrag() {
                     />
                     Compact
                 </label>
-                <label class="winding-studio-toggle">
+                <label class="winding-studio-toggle" title="Magnetic field map (painter) behind the cross-section">
+                    <input
+                        v-model="showField"
+                        type="checkbox"
+                        :data-cy="dataTestLabel + '-WindingStudio-field'"
+                    />
+                    Field
+                </label>
+                <span v-if="showField && fieldImage == null" class="winding-studio-hint">computing field…</span>
+                <label class="winding-studio-toggle" style="margin-left: 0;">
                     <input v-model="colorByWinding" type="checkbox" />
                     Color by winding
                 </label>
             </div>
-            <div class="winding-studio-plot">
+            <div ref="plotEl" class="winding-studio-plot">
                 <svg
                     :viewBox="viewBox"
                     preserveAspectRatio="xMidYMid meet"
@@ -1153,25 +1460,51 @@ function endTransformDrag() {
                         v-bind="part"
                         :fill="cssColor(bobbinColor)"
                     />
+                    <!-- Field-map overlay: the painter image replaces the passive
+                         decoration (margins/insulation) and carries the visible
+                         turns; the studio glyphs above stay as interaction targets. -->
+                    <image
+                        v-if="fieldImage != null"
+                        :href="fieldImage.href"
+                        :x="fieldImage.x"
+                        :y="fieldImage.y"
+                        :width="fieldImage.width"
+                        :height="fieldImage.height"
+                        preserveAspectRatio="none"
+                        pointer-events="none"
+                        :data-cy="dataTestLabel + '-WindingStudio-field-overlay'"
+                    />
                     <!-- Margins -->
-                    <template v-for="section in model.sections">
-                        <rect
-                            v-for="(marginRect, index) in marginRects(section)"
-                            :key="section.name + 'margin' + index"
-                            v-bind="marginRect"
-                            :fill="cssColor(marginColor)"
-                            opacity="0.8"
-                        />
+                    <template v-if="fieldImage == null">
+                        <template v-for="section in model.sections">
+                            <rect
+                                v-for="(marginRect, index) in marginRects(section)"
+                                :key="section.name + 'margin' + index"
+                                v-bind="marginRect"
+                                :fill="cssColor(marginColor)"
+                                opacity="0.8"
+                            />
+                            <path
+                                v-for="(wedgePath, index) in toroidalMarginWedges(section)"
+                                :key="section.name + 'wedge' + index"
+                                :d="wedgePath"
+                                :fill="cssColor(marginColor)"
+                                opacity="0.8"
+                                pointer-events="none"
+                            />
+                        </template>
                     </template>
                     <!-- Insulation layers -->
-                    <template v-for="layer in model.layers">
-                        <rect
-                            v-if="layer.type === 'insulation'"
-                            :key="layer.name"
-                            v-bind="layer.rect"
-                            :fill="cssColor(insulationColor)"
-                            opacity="0.9"
-                        />
+                    <template v-if="fieldImage == null">
+                        <template v-for="layer in model.layers">
+                            <rect
+                                v-if="layer.type === 'insulation'"
+                                :key="layer.name"
+                                v-bind="layer.rect"
+                                :fill="cssColor(insulationColor)"
+                                opacity="0.9"
+                            />
+                        </template>
                     </template>
                     <!-- Section outlines (hover/selection targets). Deliberately UNDER
                          the handles and turns: hit priority is turns > handles > outline,
@@ -1188,6 +1521,7 @@ function endTransformDrag() {
                             vector-effect="non-scaling-stroke"
                             class="winding-studio-section"
                             :data-cy="dataTestLabel + '-WindingStudio-section-' + section.name"
+                            :data-studio-winding="section.type === 'conduction' && section.windings.length > 0 ? section.windings[0] : null"
                             @mouseenter="onSectionEnter(section, $event)"
                             @mouseleave="tooltip = null"
                             @click="onSectionClick(section)"
@@ -1202,6 +1536,7 @@ function endTransformDrag() {
                             vector-effect="non-scaling-stroke"
                             class="winding-studio-section"
                             :data-cy="dataTestLabel + '-WindingStudio-section-' + section.name"
+                            :data-studio-winding="section.type === 'conduction' && section.windings.length > 0 ? section.windings[0] : null"
                             @mouseenter="onSectionEnter(section, $event)"
                             @mouseleave="tooltip = null"
                             @click="onSectionClick(section)"
@@ -1232,6 +1567,29 @@ function endTransformDrag() {
                             stroke-width="2"
                             stroke-dasharray="5 3"
                             vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                    </g>
+                    <!-- Toroidal sector boundaries: drag the angular gap between two
+                         adjacent sectors to re-distribute the proportions -->
+                    <g v-for="boundary in sectorBoundaries" :key="'sectorboundary' + boundary.id">
+                        <path
+                            :d="annularSectorPath(boundary.rIn, boundary.rOut, boundary.theta - boundary.hitSpan / 2, boundary.theta + boundary.hitSpan / 2)"
+                            fill="transparent"
+                            class="winding-studio-boundary"
+                            :data-cy="dataTestLabel + '-WindingStudio-sector-boundary'"
+                            :data-theta="boundary.theta"
+                            :data-r-mid="(boundary.rIn + boundary.rOut) / 2"
+                            @pointerdown="startSectorBoundaryDrag(boundary, $event)"
+                            @pointermove="moveSectorBoundaryDrag($event)"
+                            @pointerup="endSectorBoundaryDrag()"
+                            @pointercancel="endSectorBoundaryDrag()"
+                        />
+                        <path
+                            v-if="sectorBoundaryDrag != null && sectorBoundaryDrag.boundary.id === boundary.id"
+                            :d="annularSectorPath(boundary.rIn, boundary.rOut, boundary.theta + sectorBoundaryDrag.dTheta - 0.2, boundary.theta + sectorBoundaryDrag.dTheta + 0.2)"
+                            fill="#ffffff"
+                            opacity="0.9"
                             pointer-events="none"
                         />
                     </g>
@@ -1279,6 +1637,7 @@ function endTransformDrag() {
                             stroke-width="1"
                             vector-effect="non-scaling-stroke"
                             class="winding-studio-turn"
+                            :data-studio-winding="turn.winding"
                             @mouseenter="onTurnEnter(turn, $event)"
                             @mouseleave="onTurnLeave()"
                             @click="onTurnClick(turn)"
@@ -1292,10 +1651,27 @@ function endTransformDrag() {
                             stroke-width="1"
                             vector-effect="non-scaling-stroke"
                             class="winding-studio-turn"
+                            :data-studio-winding="turn.winding"
                             @mouseenter="onTurnEnter(turn, $event)"
                             @mouseleave="onTurnLeave()"
                             @click="onTurnClick(turn)"
                         />
+                        <!-- Litz cross-section: a strand bundle on top of the disc -->
+                        <g
+                            v-if="turn.litz && turn.round"
+                            :opacity="turnOpacity(turn) * 0.45"
+                            pointer-events="none"
+                        >
+                            <circle
+                                v-for="(strand, strandIndex) in litzStrands(turn)"
+                                :key="'strand' + strandIndex"
+                                class="winding-studio-litz-strand"
+                                :cx="strand.cx"
+                                :cy="strand.cy"
+                                :r="strand.r"
+                                fill="#000000"
+                            />
+                        </g>
                         <!-- PI-Expert visual language: filled center marks the winding start -->
                         <circle
                             v-if="turn.isStart"
@@ -1440,6 +1816,23 @@ function endTransformDrag() {
                             @pointercancel="endTransformDrag()"
                         />
                     </g>
+                    <!-- Per-window layout gear: sections orientation + alignment -->
+                    <g v-if="editable && model.kind !== 'toroidal' && drag == null">
+                        <!-- Gears sit ABOVE the window (over the bobbin/core band,
+                             which has no interactive elements) so they never
+                             intercept the in-window handles; per-column windows can
+                             SHARE a region, so they row up by index. -->
+                        <text
+                            v-for="window in model.windows"
+                            :key="'gear' + window.index"
+                            :x="window.rect.x + Math.min(2.4, window.rect.height * 0.14) * (0.2 + window.index * 1.3)"
+                            :y="window.rect.y - Math.min(2.4, window.rect.height * 0.14) * 0.35"
+                            class="winding-studio-window-gear"
+                            :style="{ fontSize: Math.min(2.4, window.rect.height * 0.14) + 'px' }"
+                            :data-cy="dataTestLabel + '-WindingStudio-window-gear-' + window.index"
+                            @click="openWindowMenu(window, $event)"
+                        >⚙</text>
+                    </g>
                     <!-- Drop slots: the core legs light up while a chip is dragged -->
                     <g v-if="drag != null">
                         <g v-for="column in model.core.columns" :key="'slot' + column.index">
@@ -1470,6 +1863,68 @@ function endTransformDrag() {
                     :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
                 >
                     <div v-for="line in tooltip.lines" :key="line">{{ line }}</div>
+                </div>
+                <!-- Interleave menu: chip dropped on another winding -->
+                <div
+                    v-if="interleaveMenu != null"
+                    class="winding-studio-menu"
+                    :style="{ left: interleaveMenu.x + 'px', top: interleaveMenu.y + 'px' }"
+                    :data-cy="dataTestLabel + '-WindingStudio-interleave-menu'"
+                >
+                    <div class="winding-studio-menu-title">{{ interleaveMenu.source }} ⇄ {{ interleaveMenu.target }}</div>
+                    <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-interleave-interleave'"
+                        @click="pickInterleaveAction('interleave')"
+                    >Interleave</button>
+                    <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-interleave-swap'"
+                        @click="pickInterleaveAction('swap')"
+                    >Swap order</button>
+                    <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-interleave-clear'"
+                        @click="pickInterleaveAction('clear')"
+                    >Clear interleaving</button>
+                    <button type="button" class="winding-studio-menu-cancel" @click="interleaveMenu = null">Cancel</button>
+                </div>
+                <!-- Per-window layout panel -->
+                <div
+                    v-if="windowMenu != null"
+                    class="winding-studio-menu"
+                    :style="{ left: windowMenu.x + 'px', top: windowMenu.y + 'px' }"
+                    :data-cy="dataTestLabel + '-WindingStudio-window-menu'"
+                >
+                    <div class="winding-studio-menu-title">Window {{ windowMenu.windowIndex }} layout</div>
+                    <label class="winding-studio-menu-field">
+                        Sections
+                        <select
+                            v-model="windowMenu.sectionsOrientation"
+                            :data-cy="dataTestLabel + '-WindingStudio-window-orientation'"
+                        >
+                            <option value="overlapping">overlapping</option>
+                            <option value="contiguous">contiguous</option>
+                        </select>
+                    </label>
+                    <label class="winding-studio-menu-field">
+                        Alignment
+                        <select
+                            v-model="windowMenu.sectionsAlignment"
+                            :data-cy="dataTestLabel + '-WindingStudio-window-alignment'"
+                        >
+                            <option value="inner or top">inner or top</option>
+                            <option value="centered">centered</option>
+                            <option value="outer or bottom">outer or bottom</option>
+                            <option value="spread">spread</option>
+                        </select>
+                    </label>
+                    <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-window-apply'"
+                        @click="applyWindowMenu()"
+                    >Apply</button>
+                    <button type="button" class="winding-studio-menu-cancel" @click="windowMenu = null">Cancel</button>
                 </div>
                 <div v-if="busy" class="winding-studio-busy">winding…</div>
             </div>
@@ -1671,6 +2126,66 @@ function endTransformDrag() {
     fill: #ffffff;
     pointer-events: none;
     font-weight: 600;
+}
+.winding-studio-menu {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: rgba(0, 0, 0, 0.92);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+    z-index: 20;
+    min-width: 10rem;
+}
+.winding-studio-menu-title {
+    font-weight: 600;
+    opacity: 0.85;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+}
+.winding-studio-menu button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    padding: 0.2rem 0.4rem;
+}
+.winding-studio-menu button:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.08);
+}
+.winding-studio-menu-cancel {
+    opacity: 0.6;
+}
+.winding-studio-menu-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.winding-studio-menu-field select {
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 0.1rem 0.2rem;
+}
+.winding-studio-menu-field select option {
+    color: #000000;
+}
+.winding-studio-window-gear {
+    fill: #ffffff;
+    opacity: 0.55;
+    cursor: pointer;
+}
+.winding-studio-window-gear:hover {
+    opacity: 1;
 }
 .winding-studio-busy {
     position: absolute;

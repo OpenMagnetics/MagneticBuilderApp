@@ -680,6 +680,18 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         bobbinDifferentThicknessesGenerated(success = true, dataOrMessage = '') {
         },
 
+        async plotMagneticField(magnetic, operatingPoint) {
+            // Painter H-field map (SVG document) for the winding-studio overlay.
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.plot_magnetic_field(JSON.stringify(magnetic), JSON.stringify(operatingPoint));
+            if (!result.startsWith('<')) {
+                throw new Error(result);
+            }
+            return result;
+        },
+
         async materializeBobbin(magnetic) {
             // Resolve the magnetic's bobbin (typically a by-name catalog part)
             // into the full processed bobbin object via the engine's database.
