@@ -21,6 +21,22 @@ export const useWindingStudioStore = defineStore("windingStudio", () => {
 
     const customSectionCount = computed(() => Object.keys(customSectionRects.value).length);
 
+    // Winding-style overrides: winding name -> 'windByConsecutiveParallels'
+    // (multifilar bundle) or 'windByConsecutiveTurns' (each parallel wound
+    // separately). Rides the wind call as _windingStyle; absent = engine
+    // heuristic decides. Not persisted, same reasoning as the pins.
+    const windingStyleOverrides = ref({});
+
+    function setWindingStyleOverride(windingName, style) {
+        if (style == null) {
+            const { [windingName]: dropped, ...kept } = windingStyleOverrides.value;
+            windingStyleOverrides.value = kept;
+        }
+        else {
+            windingStyleOverrides.value = { ...windingStyleOverrides.value, [windingName]: style };
+        }
+    }
+
     function setCustomSectionRect(sectionName, rect) {
         customSectionRects.value = { ...customSectionRects.value, [sectionName]: rect };
     }
@@ -48,5 +64,7 @@ export const useWindingStudioStore = defineStore("windingStudio", () => {
         setCustomSectionRect,
         clearCustomSectionRects,
         clearCustomSectionRectsForWinding,
+        windingStyleOverrides,
+        setWindingStyleOverride,
     }
 })

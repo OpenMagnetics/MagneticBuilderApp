@@ -83,9 +83,15 @@ const props = defineProps({
         type: String,
         default: null,
     },
+    // Active winding-style overrides (winding name → windByConsecutive*),
+    // kept by the host; shown as the current choice in the section menu.
+    windingStyleOverrides: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact', 'interleaveWinding', 'requestFieldOverlay', 'setWindowLayout']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact', 'interleaveWinding', 'requestFieldOverlay', 'setWindowLayout', 'setSectionLayout']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -424,6 +430,34 @@ function pickInterleaveAction(mode) {
     emit('interleaveWinding', { source: menu.source, target: menu.target, mode });
 }
 
+// N-filar grouping state for the interleave menu: are the two windings
+// already marked as wound together (bifilar)?
+function windingsAreGrouped(sourceName, targetName) {
+    const meta = model.value.windings?.find((winding) => winding.name === sourceName);
+    return meta != null && meta.woundWith.includes(targetName);
+}
+
+// The engine's grouping constraints (it throws loudly on violation): windings
+// wound together must share parallels, isolation side and wire. Pre-checked
+// here so the menu can explain WHY instead of failing the wind.
+function groupingBlockReason(sourceName, targetName) {
+    const source = model.value.windings?.find((winding) => winding.name === sourceName);
+    const target = model.value.windings?.find((winding) => winding.name === targetName);
+    if (source == null || target == null) {
+        return 'winding not found';
+    }
+    if (source.numberParallels !== target.numberParallels) {
+        return 'needs the same number of parallels on both windings';
+    }
+    if (source.isolationSide !== target.isolationSide) {
+        return 'needs the same isolation side on both windings';
+    }
+    if (JSON.stringify(source.wire) !== JSON.stringify(target.wire)) {
+        return 'needs the same wire on both windings';
+    }
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // P3: field-map overlay — the painter's plot_magnetic_field SVG as an aligned,
 // pointer-events:none background layer. The painter draws at a fixed px scale
@@ -626,6 +660,23 @@ function endSectorBoundaryDrag() {
 // host to write into that window's bobbin entry and re-wind.
 // ---------------------------------------------------------------------------
 
+// Cosmetic alignment labels: the MAS enum values ('innerOrTop' / 'outer or
+// bottom') are written so the C++ covers every case, but users think in the
+// concrete direction. Overlapping sections stack radially, so their alignment
+// runs vertically (top/bottom); contiguous sections stack along the window,
+// so it runs radially (inner/outer) — same reading on toroids. The enum
+// VALUES are never changed; only the option text shown to the user.
+function alignmentLabel(value, orientation) {
+    const vertical = (orientation ?? 'overlapping') === 'overlapping';
+    if (value === 'innerOrTop') {
+        return vertical ? 'top' : 'inner';
+    }
+    if (value === 'outerOrBottom') {
+        return vertical ? 'bottom' : 'outer';
+    }
+    return value;
+}
+
 const windowMenu = ref(null); // {windowIndex, sectionsOrientation, sectionsAlignment, x, y}
 
 function openWindowMenu(window, event) {
@@ -637,7 +688,7 @@ function openWindowMenu(window, event) {
     windowMenu.value = {
         windowIndex: window.index,
         sectionsOrientation: window.sectionsOrientation ?? 'overlapping',
-        sectionsAlignment: window.sectionsAlignment ?? 'inner or top',
+        sectionsAlignment: window.sectionsAlignment ?? 'innerOrTop',
         x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 220)) : 0,
         y: plotBounds != null ? Math.max(0, event.clientY - plotBounds.top) : 0,
     };
@@ -655,6 +706,75 @@ function applyWindowMenu() {
         sectionsAlignment: menu.sectionsAlignment,
     });
 }
+
+// ---------------------------------------------------------------------------
+// P3: per-SECTION layout gear — turns alignment + layers orientation of the
+// selected section only (the dataPerSection knobs). Shown only while a
+// section is selected.
+// ---------------------------------------------------------------------------
+
+const sectionMenu = ref(null); // {sectionName, turnsAlignment, layersOrientation, x, y}
+
+function openSectionMenu(event) {
+    const target = transformTarget.value;
+    if (target == null || props.busy) {
+        return;
+    }
+    windowMenu.value = null;
+    interleaveMenu.value = null;
+    const firstConductionLayer = model.value.layers.find(
+        (layer) => layer.type === 'conduction' && layer.section === target.name);
+    const windingMeta = model.value.windings?.find((winding) => winding.name === target.windings[0]) ?? null;
+    const plotBounds = plotEl.value?.getBoundingClientRect();
+    sectionMenu.value = {
+        sectionName: target.name,
+        turnsAlignment: firstConductionLayer?.turnsAlignment ?? 'centered',
+        layersOrientation: target.layersOrientation ?? 'overlapping',
+        // Parallels style: only meaningful with more than one parallel. The
+        // select shows the active OVERRIDE ('' = the engine heuristic decides;
+        // the section's current style is displayed alongside).
+        windingName: windingMeta?.name ?? null,
+        numberParallels: windingMeta?.numberParallels ?? 1,
+        currentWindingStyle: target.windingStyle ?? null,
+        windingStyle: (windingMeta != null && props.windingStyleOverrides[windingMeta.name]) || '',
+        x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 220)) : 0,
+        y: plotBounds != null ? Math.max(0, event.clientY - plotBounds.top) : 0,
+    };
+}
+
+function applySectionMenu() {
+    const menu = sectionMenu.value;
+    sectionMenu.value = null;
+    if (menu == null) {
+        return;
+    }
+    emit('setSectionLayout', {
+        sectionName: menu.sectionName,
+        turnsAlignment: menu.turnsAlignment,
+        layersOrientation: menu.layersOrientation,
+        windingName: menu.windingName,
+        windingStyle: menu.windingStyle === '' ? null : menu.windingStyle,
+    });
+}
+
+// Click-outside: gear menus APPLY their pending changes (the user's explicit
+// request); the interleave menu — a choice, not a form — just closes.
+function onDocumentPointerDown(event) {
+    if (event.target?.closest?.('.winding-studio-menu')) {
+        return;
+    }
+    if (windowMenu.value != null) {
+        applyWindowMenu();
+    }
+    if (sectionMenu.value != null) {
+        applySectionMenu();
+    }
+    if (interleaveMenu.value != null) {
+        interleaveMenu.value = null;
+    }
+}
+onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown, true));
+onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPointerDown, true));
 
 function columnLabel(column) {
     if (column.type === 'central') {
@@ -1405,6 +1525,17 @@ function endTransformDrag() {
                     {{ fitStatus.overflow ? '⚠ does not fit' : '✓ fits' }}<template
                         v-if="fitStatus.worstFill > 0"> · fill {{ (fitStatus.worstFill * 100).toFixed(0) }}%</template>
                 </span>
+                <!-- Per-SECTION layout gear: lives in the toolbar (never inside
+                     the SVG — an in-plot gear intercepted the rotate/edge drags
+                     twice); only while a section is selected. -->
+                <button
+                    v-if="editable && transformTarget != null"
+                    type="button"
+                    class="winding-studio-chip winding-studio-custom-chip"
+                    :data-cy="dataTestLabel + '-WindingStudio-section-gear'"
+                    :title="'Layout of ' + transformTarget.name"
+                    @click="openSectionMenu($event)"
+                >⚙ {{ transformTarget.name }}</button>
                 <button
                     v-if="customCount > 0 && editable"
                     type="button"
@@ -1433,7 +1564,7 @@ function endTransformDrag() {
                     Field
                 </label>
                 <span v-if="showField && fieldImage == null" class="winding-studio-hint">computing field…</span>
-                <label class="winding-studio-toggle" style="margin-left: 0;">
+                <label class="winding-studio-toggle">
                     <input v-model="colorByWinding" type="checkbox" />
                     Color by winding
                 </label>
@@ -1887,6 +2018,21 @@ function endTransformDrag() {
                         :data-cy="dataTestLabel + '-WindingStudio-interleave-clear'"
                         @click="pickInterleaveAction('clear')"
                     >Clear interleaving</button>
+                    <button
+                        v-if="!windingsAreGrouped(interleaveMenu.source, interleaveMenu.target)"
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-interleave-group'"
+                        :disabled="groupingBlockReason(interleaveMenu.source, interleaveMenu.target) != null"
+                        :title="groupingBlockReason(interleaveMenu.source, interleaveMenu.target)
+                            ?? 'Wind both windings simultaneously, sharing sections and layers (bifilar/multifilar)'"
+                        @click="pickInterleaveAction('group')"
+                    >Wind together (bifilar)</button>
+                    <button
+                        v-else
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-interleave-ungroup'"
+                        @click="pickInterleaveAction('ungroup')"
+                    >Stop winding together</button>
                     <button type="button" class="winding-studio-menu-cancel" @click="interleaveMenu = null">Cancel</button>
                 </div>
                 <!-- Per-window layout panel -->
@@ -1913,9 +2059,9 @@ function endTransformDrag() {
                             v-model="windowMenu.sectionsAlignment"
                             :data-cy="dataTestLabel + '-WindingStudio-window-alignment'"
                         >
-                            <option value="inner or top">inner or top</option>
+                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', windowMenu.sectionsOrientation) }}</option>
                             <option value="centered">centered</option>
-                            <option value="outer or bottom">outer or bottom</option>
+                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', windowMenu.sectionsOrientation) }}</option>
                             <option value="spread">spread</option>
                         </select>
                     </label>
@@ -1925,6 +2071,58 @@ function endTransformDrag() {
                         @click="applyWindowMenu()"
                     >Apply</button>
                     <button type="button" class="winding-studio-menu-cancel" @click="windowMenu = null">Cancel</button>
+                </div>
+                <!-- Per-section layout panel (selected section only) -->
+                <div
+                    v-if="sectionMenu != null"
+                    class="winding-studio-menu"
+                    :style="{ left: sectionMenu.x + 'px', top: sectionMenu.y + 'px' }"
+                    :data-cy="dataTestLabel + '-WindingStudio-section-menu'"
+                >
+                    <div class="winding-studio-menu-title">{{ sectionMenu.sectionName }}</div>
+                    <label class="winding-studio-menu-field">
+                        Layers
+                        <select
+                            v-model="sectionMenu.layersOrientation"
+                            :data-cy="dataTestLabel + '-WindingStudio-section-layers-orientation'"
+                        >
+                            <option value="overlapping">overlapping</option>
+                            <option value="contiguous">contiguous</option>
+                        </select>
+                    </label>
+                    <label class="winding-studio-menu-field">
+                        Turns
+                        <select
+                            v-model="sectionMenu.turnsAlignment"
+                            :data-cy="dataTestLabel + '-WindingStudio-section-turns-alignment'"
+                        >
+                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', sectionMenu.layersOrientation) }}</option>
+                            <option value="centered">centered</option>
+                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', sectionMenu.layersOrientation) }}</option>
+                            <option value="spread">spread</option>
+                        </select>
+                    </label>
+                    <label
+                        v-if="sectionMenu.windingName != null && sectionMenu.numberParallels > 1"
+                        class="winding-studio-menu-field"
+                        :title="'How the ' + sectionMenu.numberParallels + ' parallels of ' + sectionMenu.windingName + ' are laid'"
+                    >
+                        Parallels
+                        <select
+                            v-model="sectionMenu.windingStyle"
+                            :data-cy="dataTestLabel + '-WindingStudio-section-winding-style'"
+                        >
+                            <option value="">auto{{ sectionMenu.currentWindingStyle != null ? (' (' + (sectionMenu.currentWindingStyle === 'windByConsecutiveParallels' ? 'multifilar' : 'turn by turn') + ')') : '' }}</option>
+                            <option value="windByConsecutiveParallels">multifilar — together</option>
+                            <option value="windByConsecutiveTurns">turn by turn — split</option>
+                        </select>
+                    </label>
+                    <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-section-apply'"
+                        @click="applySectionMenu()"
+                    >Apply</button>
+                    <button type="button" class="winding-studio-menu-cancel" @click="sectionMenu = null">Cancel</button>
                 </div>
                 <div v-if="busy" class="winding-studio-busy">winding…</div>
             </div>
@@ -1962,13 +2160,15 @@ function endTransformDrag() {
 .winding-studio-toolbar {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.15rem 0.5rem;
     flex-wrap: wrap;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.3;
 }
 .winding-studio-title {
     font-weight: 600;
     opacity: 0.9;
+    font-size: 0.8rem;
 }
 .winding-studio-maximize {
     background: transparent;
@@ -2021,13 +2221,13 @@ function endTransformDrag() {
 .winding-studio-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.25rem;
     border: 1px solid var(--chip-color);
     border-radius: 1rem;
     background: transparent;
     color: inherit;
-    padding: 0.05rem 0.5rem;
-    font-size: 0.8rem;
+    padding: 0 0.45rem;
+    font-size: 0.75rem;
     cursor: default;
 }
 .winding-studio-chip-dot {
@@ -2042,10 +2242,9 @@ function endTransformDrag() {
     cursor: pointer;
 }
 .winding-studio-toggle {
-    margin-left: auto;
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.25rem;
     cursor: pointer;
     opacity: 0.85;
 }
@@ -2081,13 +2280,13 @@ function endTransformDrag() {
     touch-action: none;
 }
 .winding-studio-hint {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     opacity: 0.6;
     font-style: italic;
 }
 .winding-studio-fit {
-    font-size: 0.8rem;
-    padding: 0.05rem 0.5rem;
+    font-size: 0.75rem;
+    padding: 0 0.45rem;
     border-radius: 1rem;
     border: 1px solid transparent;
 }
@@ -2211,6 +2410,8 @@ function endTransformDrag() {
     padding: 0.05rem 0.5rem;
     font-size: 0.8rem;
     pointer-events: none;
-    z-index: 1000;
+    /* Above the maximized modal (z 2000) so chip drags — including the
+       interleave gesture — stay visible in full-screen mode too. */
+    z-index: 3000;
 }
 </style>

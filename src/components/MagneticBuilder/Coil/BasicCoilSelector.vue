@@ -572,6 +572,53 @@ export default {
             if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
                 return;
             }
+            if (mode === 'group' || mode === 'ungroup') {
+                // N-filar grouping (bifilar/multifilar): windings marked as
+                // wound together share sections and layers. MAS convention is
+                // MUTUAL — every member's woundWith lists the other members
+                // (same as the wizards' coil groups).
+                if (mode === 'group') {
+                    // Mirror the engine's loud constraints (same parallels /
+                    // isolation side / wire) so an invalid group never lands in
+                    // the MAS in the first place.
+                    const sourceWinding = windings[sourceIndex];
+                    const targetWinding = windings[targetIndex];
+                    if (sourceWinding.numberParallels !== targetWinding.numberParallels
+                        || sourceWinding.isolationSide !== targetWinding.isolationSide
+                        || JSON.stringify(sourceWinding.wire) !== JSON.stringify(targetWinding.wire)) {
+                        console.error(`[WindingStudio] Cannot wind '${source}' together with '${target}': the engine requires the same number of parallels, isolation side and wire on every grouped winding.`);
+                        return;
+                    }
+                    const members = new Set([
+                        source, target,
+                        ...(windings[sourceIndex].woundWith ?? []),
+                        ...(windings[targetIndex].woundWith ?? []),
+                    ]);
+                    for (const winding of windings) {
+                        if (members.has(winding.name)) {
+                            winding.woundWith = [...members].filter((name) => name !== winding.name);
+                        }
+                    }
+                }
+                else {
+                    for (const winding of windings) {
+                        if (winding.name === source) {
+                            delete winding.woundWith;
+                        }
+                        else if (winding.woundWith != null) {
+                            winding.woundWith = winding.woundWith.filter((name) => name !== source);
+                            if (winding.woundWith.length === 0) {
+                                delete winding.woundWith;
+                            }
+                        }
+                    }
+                }
+                this.oldMagneticCoilHash = null;
+                this.oldInputsCoilHash = null;
+                this.recentChange = true;
+                this.tryToWind();
+                return;
+            }
             const naturalOrder = names.map((name, index) => String(index + 1));
             // Base order: unique digits of the current pattern; a stale/partial
             // pattern falls back to the natural order.
@@ -636,6 +683,30 @@ export default {
             finally {
                 this._fieldOverlayInFlight = false;
             }
+        },
+        setSectionLayoutFromStudio({ sectionName, turnsAlignment, layersOrientation, windingName = null, windingStyle = null }) {
+            // Winding-studio per-section gear: the SAME dataPerSection knobs the
+            // Alignment panel edits per conduction section; they ride the wind
+            // call as the per-section _turnsAlignment/_layersOrientation maps.
+            // The parallels style is a WINDING-level override riding _windingStyle.
+            if (this.readOnly) {
+                return;
+            }
+            const sectionIndex = this.conductiveSections.findIndex((section) => section.name === sectionName);
+            if (sectionIndex < 0 || this.localData.dataPerSection[sectionIndex] == null) {
+                console.error(`[WindingStudio] No section '${sectionName}' to set the layout on`);
+                return;
+            }
+            this.localData.dataPerSection[sectionIndex].turnsAlignment = turnsAlignment;
+            this.localData.dataPerSection[sectionIndex].layersOrientation = layersOrientation;
+            if (windingName != null) {
+                this.windingStudioStore.setWindingStyleOverride(windingName, windingStyle);
+            }
+            this._studioGestureKey = `studio:section-layout:${sectionName}`;
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
+            this.recentChange = true;
+            this.tryToWind();
         },
         setWindowLayoutFromStudio({ windowIndex, sectionsOrientation, sectionsAlignment }) {
             // Winding-studio per-window gear: write the layout into THAT window's
@@ -1010,16 +1081,26 @@ export default {
                 }
             }
             const compactEnabled = this.windingStudioStore.compactEnabled;
+            // Winding-style overrides (studio parallels knob) ride the wind and
+            // the no-op hash so changing one re-winds.
+            const windingStyleOverrides = Object.keys(this.windingStudioStore.windingStyleOverrides).length > 0
+                ? { ...this.windingStudioStore.windingStyleOverrides }
+                : null;
+            if (windingStyleOverrides != null) {
+                inputCoil["_windingStyle"] = windingStyleOverrides;
+            }
             const coilWithMargins = {
                 ...this.masStore.mas.magnetic.coil,
                 _margins: margins,
                 _customSectionRects: customSectionRects,
+                _windingStyle: windingStyleOverrides,
                 _compact: compactEnabled
             };
             const inputCoilWithMargins = {
                 ...inputCoil,
                 _margins: margins,
                 _customSectionRects: customSectionRects,
+                _windingStyle: windingStyleOverrides,
                 _compact: compactEnabled
             };
             
@@ -1414,6 +1495,7 @@ export default {
                         :showCompactToggle="true"
                         :compact="windingStudioStore.compactEnabled"
                         :fieldOverlay="fieldOverlaySvg"
+                        :windingStyleOverrides="windingStudioStore.windingStyleOverrides"
                         @placeWinding="placeWindingInColumn"
                         @resizeProportions="resizeProportionsFromStudio"
                         @resizeMargins="resizeMarginsFromStudio"
@@ -1423,6 +1505,7 @@ export default {
                         @interleaveWinding="interleaveFromStudio"
                         @requestFieldOverlay="requestFieldOverlayFromStudio"
                         @setWindowLayout="setWindowLayoutFromStudio"
+                        @setSectionLayout="setSectionLayoutFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :bobbinColor="$styleStore.magneticBuilder.painterColorBobbin || '0x539796'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"

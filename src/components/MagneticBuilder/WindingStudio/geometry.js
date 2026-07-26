@@ -234,6 +234,7 @@ export function buildSectionViews(coil) {
                 fillingFactor: section.fillingFactor ?? null,
                 margin: section.margin ?? null,
                 layersOrientation: section.layersOrientation ?? null,
+                windingStyle: section.windingStyle ?? null,
                 rect: rectFromCenter(section.coordinates[0], section.coordinates[1], section.dimensions[0], section.dimensions[1]),
             };
         })
@@ -251,6 +252,7 @@ export function buildLayerViews(coil) {
                 name: layer.name,
                 type: layer.type,
                 section: layer.section ?? null,
+                turnsAlignment: layer.turnsAlignment ?? null,
                 rect: rectFromCenter(layer.coordinates[0], layer.coordinates[1], layer.dimensions[0], layer.dimensions[1]),
             };
         })
@@ -393,6 +395,7 @@ function buildToroidalSectionViews(coil, windowRadiusMm) {
                 fillingFactor: section.fillingFactor ?? null,
                 margin: section.margin ?? null,
                 layersOrientation: section.layersOrientation ?? null,
+                windingStyle: section.windingStyle ?? null,
                 polar: { rCenter, rBand, thetaCenter, thetaSpan },
                 path: annularSectorPath(rIn, rOut, thetaCenter - thetaSpan / 2, thetaCenter + thetaSpan / 2),
                 // Bounding rect kept for the shared bounds/tooltip machinery.
@@ -457,6 +460,7 @@ function buildToroidalStudioModel(magnetic) {
         layers: [],
         turns,
         windingNames: (coil.functionalDescription ?? []).map((winding) => winding.name),
+        windings: buildWindingMeta(coil),
     };
 }
 
@@ -519,7 +523,20 @@ export function buildStudioModel(magnetic) {
         layers,
         turns,
         windingNames,
+        windings: buildWindingMeta(coil),
     };
+}
+
+// Winding-level metadata the gestures need: N-filar grouping + parallels +
+// the fields the engine's grouping constraints compare.
+function buildWindingMeta(coil) {
+    return (coil.functionalDescription ?? []).map((winding) => ({
+        name: winding.name,
+        woundWith: winding.woundWith ?? [],
+        numberParallels: winding.numberParallels ?? 1,
+        isolationSide: winding.isolationSide ?? null,
+        wire: winding.wire ?? null,
+    }));
 }
 
 // Distinguishable, color-blind-friendly winding palette (Okabe-Ito, minus black).
