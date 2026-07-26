@@ -578,6 +578,32 @@ export function buildStudioModel(magnetic) {
     };
 }
 
+// Wire identity for the grouping constraints: a wire given by NAME and the
+// same wire as a full object are the SAME wire (the engine resolves names
+// before comparing), and object key order must not matter.
+function normalizeForComparison(value) {
+    if (Array.isArray(value)) {
+        return value.map(normalizeForComparison);
+    }
+    if (value != null && typeof value === 'object') {
+        return Object.fromEntries(Object.keys(value).sort().map((key) => [key, normalizeForComparison(value[key])]));
+    }
+    return value;
+}
+
+export function wiresEqual(a, b) {
+    const identity = (wire) => {
+        if (typeof wire === 'string') {
+            return 'name:' + wire;
+        }
+        if (wire?.name != null) {
+            return 'name:' + wire.name;
+        }
+        return JSON.stringify(normalizeForComparison(wire ?? null));
+    };
+    return identity(a) === identity(b);
+}
+
 // Winding-level metadata the gestures need: N-filar grouping + parallels +
 // the fields the engine's grouping constraints compare.
 function buildWindingMeta(coil) {

@@ -9,6 +9,7 @@ import BasicCoilSectionInsulationSelector from './BasicCoilSectionInsulationSele
 import BasicCoilSectionAlignmentSelector from './BasicCoilSectionAlignmentSelector.vue'
 import Magnetic2DVisualizer from '/WebSharedComponents/Common/Magnetic2DVisualizer.vue'
 import WindingStudio from '../WindingStudio/WindingStudio.vue'
+import { wiresEqual } from '../WindingStudio/geometry.js'
 import { toTitleCase, checkAndFixMas, deepCopy, roundWithDecimals, cleanCoil, generateHash, effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js'
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
@@ -578,15 +579,16 @@ export default {
                 // MUTUAL — every member's woundWith lists the other members
                 // (same as the wizards' coil groups).
                 if (mode === 'group') {
-                    // Mirror the engine's loud constraints (same parallels /
-                    // isolation side / wire) so an invalid group never lands in
-                    // the MAS in the first place.
+                    // Mirror the engine's loud constraints (same parallels and
+                    // wire) so an invalid group never lands in the MAS. The
+                    // isolation side is NOT a constraint: wound-together
+                    // windings have no barrier between them, so their sides
+                    // JOIN (unified to the senior member's side below).
                     const sourceWinding = windings[sourceIndex];
                     const targetWinding = windings[targetIndex];
                     if (sourceWinding.numberParallels !== targetWinding.numberParallels
-                        || sourceWinding.isolationSide !== targetWinding.isolationSide
-                        || JSON.stringify(sourceWinding.wire) !== JSON.stringify(targetWinding.wire)) {
-                        console.error(`[WindingStudio] Cannot wind '${source}' together with '${target}': the engine requires the same number of parallels, isolation side and wire on every grouped winding.`);
+                        || !wiresEqual(sourceWinding.wire, targetWinding.wire)) {
+                        console.error(`[WindingStudio] Cannot wind '${source}' together with '${target}': the engine requires the same number of parallels and wire on every grouped winding.`);
                         return;
                     }
                     const members = new Set([
@@ -594,9 +596,11 @@ export default {
                         ...(windings[sourceIndex].woundWith ?? []),
                         ...(windings[targetIndex].woundWith ?? []),
                     ]);
+                    const seniorSide = windings.find((winding) => members.has(winding.name)).isolationSide;
                     for (const winding of windings) {
                         if (members.has(winding.name)) {
                             winding.woundWith = [...members].filter((name) => name !== winding.name);
+                            winding.isolationSide = seniorSide;
                         }
                     }
                 }
@@ -726,9 +730,8 @@ export default {
                 const first = members[0];
                 for (const member of members.slice(1)) {
                     if (member.numberParallels !== first.numberParallels
-                        || member.isolationSide !== first.isolationSide
-                        || JSON.stringify(member.wire) !== JSON.stringify(first.wire)) {
-                        console.error(`[WindingStudio] Cannot wind [${group.join(', ')}] together: the engine requires the same number of parallels, isolation side and wire on every grouped winding.`);
+                        || !wiresEqual(member.wire, first.wire)) {
+                        console.error(`[WindingStudio] Cannot wind [${group.join(', ')}] together: the engine requires the same number of parallels and wire on every grouped winding.`);
                         return;
                     }
                 }
@@ -737,6 +740,10 @@ export default {
                 const group = groups.find((candidate) => candidate.includes(winding.name));
                 if (group != null) {
                     winding.woundWith = group.filter((name) => name !== winding.name);
+                    // No barrier between wound-together windings: their
+                    // isolation sides JOIN, unified to the senior (first
+                    // functionalDescription) member's side.
+                    winding.isolationSide = windings.find((candidate) => group.includes(candidate.name)).isolationSide;
                 }
                 else {
                     delete winding.woundWith;
@@ -876,6 +883,13 @@ export default {
                 this.placingWinding = false;
             }
         },
+        windingGroupEntries(windingEntry) {
+            // Wound-together partners move as one: a leg placement applied to
+            // any member applies to the whole group.
+            const partners = windingEntry.woundWith ?? [];
+            return [windingEntry, ...this.masStore.mas.magnetic.coil.functionalDescription
+                .filter((candidate) => partners.includes(candidate.name))];
+        },
         async placeWindingInColumn({ winding, columnIndex }) {
             // Winding-studio drop: place a winding around the given core leg.
             // The intent is winding-level windingWindow; the WASM winder computes
@@ -904,9 +918,13 @@ export default {
                 if (windingEntry == null) {
                     return;
                 }
-                this.windingStudioStore.clearCustomSectionRectsForWinding(winding);
+                for (const member of this.windingGroupEntries(windingEntry)) {
+                    this.windingStudioStore.clearCustomSectionRectsForWinding(member.name);
+                }
                 if (targetColumn.type === 'central') {
-                    windingEntry.windingWindow = 0;
+                    for (const member of this.windingGroupEntries(windingEntry)) {
+                        member.windingWindow = 0;
+                    }
                     this.pruneUnusedLateralBobbinParts();
                     this.recentChange = true;
                     this.tryToWind();
@@ -942,13 +960,18 @@ export default {
                     throw new Error(`No winding window wraps column ${columnIndex} (the core has ${windows.length} windows)`);
                 }
 
-                // 4. Placement intent on the winding.
+                // 4. Placement intent on the winding — and on its whole
+                //    wound-together group (partners share sections, so they
+                //    move between legs as one).
                 const windingEntry = this.masStore.mas.magnetic.coil.functionalDescription
                     .find((entry) => entry.name === winding);
                 if (windingEntry == null) {
                     throw new Error(`Winding ${winding} not found in the functional description`);
                 }
-                windingEntry.windingWindow = windowIndex;
+                for (const member of this.windingGroupEntries(windingEntry)) {
+                    member.windingWindow = windowIndex;
+                    this.windingStudioStore.clearCustomSectionRectsForWinding(member.name);
+                }
 
                 // 5. Regenerate the bobbin from the reprocessed core (keeps the custom
                 //    thicknesses); its callback re-triggers the wind machinery, which
@@ -1039,7 +1062,9 @@ export default {
                 for (let index = 0; index < partIndex; index++) {
                     mergedWindowIndex += (parts[index].processedDescription?.windingWindows ?? []).length;
                 }
-                windingEntry.windingWindow = mergedWindowIndex;
+                for (const member of this.windingGroupEntries(windingEntry)) {
+                    member.windingWindow = mergedWindowIndex;
+                }
                 this.masStore.mas.magnetic.coil.bobbin = parts;
                 this.pruneUnusedLateralBobbinParts();
                 // The generateBobbinDifferentThicknesses callback clears the pending

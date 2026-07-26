@@ -8,7 +8,7 @@
 // P0 scope: read-only parity view + hover/selection + color-by-winding.
 // Gated by magneticBuilderSettings.enableWindingStudio.
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import { buildStudioModel, windingColor, annularSectorPath, woundDistanceToAngleDeg } from './geometry.js';
+import { buildStudioModel, windingColor, annularSectorPath, woundDistanceToAngleDeg, wiresEqual } from './geometry.js';
 
 const props = defineProps({
     dataTestLabel: {
@@ -440,8 +440,10 @@ function windingsAreGrouped(sourceName, targetName) {
 }
 
 // The engine's grouping constraints (it throws loudly on violation): windings
-// wound together must share parallels, isolation side and wire. Pre-checked
-// here so the menu can explain WHY instead of failing the wind.
+// wound together must share parallels and wire. Pre-checked here so the menu
+// can explain WHY instead of failing the wind. Isolation side is NOT a
+// blocker: winding two windings together means there is no barrier between
+// them, so grouping JOINS their isolation sides (the host unifies them).
 function groupingBlockReason(sourceName, targetName) {
     const source = model.value.windings?.find((winding) => winding.name === sourceName);
     const target = model.value.windings?.find((winding) => winding.name === targetName);
@@ -451,10 +453,7 @@ function groupingBlockReason(sourceName, targetName) {
     if (source.numberParallels !== target.numberParallels) {
         return 'needs the same number of parallels on both windings';
     }
-    if (source.isolationSide !== target.isolationSide) {
-        return 'needs the same isolation side on both windings';
-    }
-    if (JSON.stringify(source.wire) !== JSON.stringify(target.wire)) {
+    if (!wiresEqual(source.wire, target.wire)) {
         return 'needs the same wire on both windings';
     }
     return null;
@@ -873,6 +872,31 @@ function groupRowTurnsWarning(row) {
     return turns.length > 1 && new Set(turns).size > 1
         ? 'different turn counts — center-tap halves are usually symmetric'
         : null;
+}
+
+// Cross-side grouping joins the members onto ONE isolation side (no barrier
+// between wound-together windings) — announced, not blocked.
+function groupRowSideJoinNotice(row) {
+    const sides = row
+        .map((name) => model.value.windings?.find((winding) => winding.name === name)?.isolationSide)
+        .filter((value) => value != null);
+    if (sides.length > 1 && new Set(sides).size > 1) {
+        return `isolation sides join: all become '${sides[0]}'`;
+    }
+    return null;
+}
+
+// Disabled toggles cannot show tooltips in most browsers — surface the
+// blocking reasons as visible row text instead.
+function groupRowBlockReasons(row) {
+    if (row.length === 0) {
+        return [];
+    }
+    return (model.value.windingNames ?? [])
+        .filter((name) => !row.includes(name))
+        .map((name) => ({ name, reason: groupEligibilityReason(name, row) }))
+        .filter((entry) => entry.reason != null)
+        .map((entry) => `${entry.name}: ${entry.reason}`);
 }
 
 function applyGroupsMenu() {
@@ -2195,10 +2219,14 @@ function endTransformDrag() {
                         type="button"
                         :data-cy="dataTestLabel + '-WindingStudio-interleave-group'"
                         :disabled="groupingBlockReason(interleaveMenu.source, interleaveMenu.target) != null"
-                        :title="groupingBlockReason(interleaveMenu.source, interleaveMenu.target)
-                            ?? 'Wind both windings simultaneously, sharing sections and layers (bifilar/multifilar)'"
+                        title="Wind both windings simultaneously, sharing sections and layers (bifilar/multifilar); different isolation sides JOIN"
                         @click="pickInterleaveAction('group')"
                     >Wind together (bifilar)</button>
+                    <div
+                        v-if="!windingsAreGrouped(interleaveMenu.source, interleaveMenu.target)
+                            && groupingBlockReason(interleaveMenu.source, interleaveMenu.target) != null"
+                        class="winding-studio-group-warning winding-studio-group-blocked"
+                    >🚫 {{ groupingBlockReason(interleaveMenu.source, interleaveMenu.target) }}</div>
                     <button
                         v-else
                         type="button"
@@ -2233,6 +2261,12 @@ function endTransformDrag() {
                             @click="toggleGroupMembership(rowIndex, windingName)"
                         >{{ windingName }}</button>
                         <div v-if="groupRowTurnsWarning(row) != null" class="winding-studio-group-warning">⚠ {{ groupRowTurnsWarning(row) }}</div>
+                        <div v-if="groupRowSideJoinNotice(row) != null" class="winding-studio-group-warning">⚠ {{ groupRowSideJoinNotice(row) }}</div>
+                        <div
+                            v-for="reasonLine in groupRowBlockReasons(row)"
+                            :key="'blocked' + reasonLine"
+                            class="winding-studio-group-warning winding-studio-group-blocked"
+                        >🚫 {{ reasonLine }}</div>
                     </div>
                     <button
                         type="button"
@@ -2626,6 +2660,9 @@ function endTransformDrag() {
     font-size: 0.68rem;
     color: #ffd166;
     opacity: 0.9;
+}
+.winding-studio-group-blocked {
+    color: #ff8b8b;
 }
 .winding-studio-busy {
     position: absolute;
