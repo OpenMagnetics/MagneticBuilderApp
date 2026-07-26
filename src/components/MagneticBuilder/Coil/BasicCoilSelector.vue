@@ -708,6 +708,45 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
+        setWindingGroupsFromStudio(groups) {
+            // Winding-studio groups editor: the partition of windings into
+            // wound-together (bifilar) groups, written as MUTUAL woundWith
+            // lists (wizard convention). The engine constraints are re-checked
+            // defensively — an invalid group must never land in the MAS.
+            if (this.readOnly) {
+                return;
+            }
+            const windings = this.masStore.mas.magnetic.coil.functionalDescription;
+            for (const group of groups) {
+                const members = group.map((name) => windings.find((winding) => winding.name === name));
+                if (members.some((member) => member == null)) {
+                    console.error(`[WindingStudio] Unknown winding in group [${group.join(', ')}]`);
+                    return;
+                }
+                const first = members[0];
+                for (const member of members.slice(1)) {
+                    if (member.numberParallels !== first.numberParallels
+                        || member.isolationSide !== first.isolationSide
+                        || JSON.stringify(member.wire) !== JSON.stringify(first.wire)) {
+                        console.error(`[WindingStudio] Cannot wind [${group.join(', ')}] together: the engine requires the same number of parallels, isolation side and wire on every grouped winding.`);
+                        return;
+                    }
+                }
+            }
+            for (const winding of windings) {
+                const group = groups.find((candidate) => candidate.includes(winding.name));
+                if (group != null) {
+                    winding.woundWith = group.filter((name) => name !== winding.name);
+                }
+                else {
+                    delete winding.woundWith;
+                }
+            }
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
+            this.recentChange = true;
+            this.tryToWind();
+        },
         async autoFitFromStudio() {
             // Winding-studio Auto-fit: drop the hand-drawn rectangles (they pin
             // geometry and would defeat the automatic layout) and re-derive the
@@ -1545,6 +1584,7 @@ export default {
                         @setWindowLayout="setWindowLayoutFromStudio"
                         @setSectionLayout="setSectionLayoutFromStudio"
                         @autoFit="autoFitFromStudio"
+                        @setWindingGroups="setWindingGroupsFromStudio"
                         :ferriteColor="$styleStore.magneticBuilder.painterColorFerrite || '0x7b7c7d'"
                         :bobbinColor="$styleStore.magneticBuilder.painterColorBobbin || '0x539796'"
                         :copperColor="$styleStore.magneticBuilder.painterColorCopper || '0xb87333'"

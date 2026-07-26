@@ -91,7 +91,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact', 'interleaveWinding', 'requestFieldOverlay', 'setWindowLayout', 'setSectionLayout', 'autoFit']);
+const emit = defineEmits(['sectionSelected', 'turnSelected', 'placeWinding', 'resizeProportions', 'resizeMargins', 'resizeSectionRect', 'clearCustomRects', 'update:compact', 'interleaveWinding', 'requestFieldOverlay', 'setWindowLayout', 'setSectionLayout', 'autoFit', 'setWindingGroups']);
 
 function cssColor(color) {
     // Style-store colors arrive as '0xRRGGBB'; SVG wants '#RRGGBB'.
@@ -669,16 +669,26 @@ function endSectorBoundaryDrag() {
 // alignment is inner/outer while the turns inside the (vertical) layers align
 // top/bottom; both swap for contiguous. The enum VALUES are never changed;
 // only the option text shown to the user.
-function alignmentLabel(value, orientation, axis) {
+// invertRadial: windows wound around a LATERAL leg are reflected so the
+// winding hugs its leg — what the enum calls 'inner' physically lands on the
+// leg (outer) side there, so the radial labels swap.
+function alignmentLabel(value, orientation, axis, invertRadial = false) {
     const overlapping = (orientation ?? 'overlapping') === 'overlapping';
     const vertical = axis === 'turns' ? overlapping : !overlapping;
     if (value === 'innerOrTop') {
-        return vertical ? 'top' : 'inner';
+        return vertical ? 'top' : (invertRadial ? 'outer' : 'inner');
     }
     if (value === 'outerOrBottom') {
-        return vertical ? 'bottom' : 'outer';
+        return vertical ? 'bottom' : (invertRadial ? 'inner' : 'outer');
     }
     return value;
+}
+
+// Does this winding window wrap a lateral leg (placements reflected)?
+function windowWrapsLateralLeg(windowIndex) {
+    const window = model.value.windows.find((candidate) => candidate.index === windowIndex);
+    const column = model.value.core.columns?.[window?.column ?? 0];
+    return column?.type === 'lateral';
 }
 
 const windowMenu = ref(null); // {windowIndex, sectionsOrientation, sectionsAlignment, x, y}
@@ -692,6 +702,7 @@ function openWindowMenu(window, event) {
     windowMenu.value = {
         windowIndex: window.index,
         label: windowLabel(window),
+        lateralWound: windowWrapsLateralLeg(window.index),
         sectionsOrientation: window.sectionsOrientation ?? 'overlapping',
         sectionsAlignment: window.sectionsAlignment ?? 'innerOrTop',
         x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 220)) : 0,
@@ -740,6 +751,7 @@ function openSectionMenu(event) {
         // the section's current style is displayed alongside).
         windingName: windingMeta?.name ?? null,
         numberParallels: windingMeta?.numberParallels ?? 1,
+        lateralWound: windowWrapsLateralLeg(target.windingWindow ?? 0),
         currentWindingStyle: target.windingStyle ?? null,
         windingStyle: (windingMeta != null && props.windingStyleOverrides[windingMeta.name]) || '',
         x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 220)) : 0,
@@ -762,6 +774,116 @@ function applySectionMenu() {
     });
 }
 
+// ---------------------------------------------------------------------------
+// P3: winding GROUPS editor — the partition of windings into wound-together
+// (bifilar/multifilar) groups, e.g. center-tapped halves. One winding belongs
+// to at most one group, which is exactly what the mutual woundWith lists
+// express. The chip-drop gesture stays the quick pairwise path; this panel is
+// where the whole partition is seen and managed.
+// ---------------------------------------------------------------------------
+
+const GROUP_LINK_COLORS = ['#ffd166', '#06d6a0', '#4fd2ff', '#ef476f'];
+
+const groupsMenu = ref(null); // {rows: [[names...], ...], x, y}
+
+// Current partition from the mutual woundWith lists (union of links).
+const windingGroups = computed(() => {
+    const windings = model.value.windings ?? [];
+    const assigned = new Set();
+    const groups = [];
+    for (const winding of windings) {
+        if (assigned.has(winding.name) || winding.woundWith.length === 0) {
+            continue;
+        }
+        const members = [winding.name];
+        assigned.add(winding.name);
+        const queue = [...winding.woundWith];
+        while (queue.length > 0) {
+            const name = queue.pop();
+            if (assigned.has(name)) {
+                continue;
+            }
+            const meta = windings.find((candidate) => candidate.name === name);
+            if (meta == null) {
+                continue;
+            }
+            members.push(name);
+            assigned.add(name);
+            queue.push(...meta.woundWith);
+        }
+        if (members.length > 1) {
+            groups.push(members);
+        }
+    }
+    return groups;
+});
+
+function windingGroupIndex(windingName) {
+    return windingGroups.value.findIndex((group) => group.includes(windingName));
+}
+
+// Engine constraints for wound-together windings: same wire, same number of
+// parallels, same isolation side. Returns the blocking reason or null.
+function groupEligibilityReason(windingName, memberNames) {
+    const others = memberNames.filter((name) => name !== windingName);
+    if (others.length === 0) {
+        return null;
+    }
+    return groupingBlockReason(windingName, others[0]);
+}
+
+function openGroupsMenu(event) {
+    if (!props.editable || props.busy) {
+        return;
+    }
+    windowMenu.value = null;
+    sectionMenu.value = null;
+    interleaveMenu.value = null;
+    const plotBounds = plotEl.value?.getBoundingClientRect();
+    groupsMenu.value = {
+        rows: windingGroups.value.map((group) => [...group]),
+        x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 260)) : 0,
+        y: plotBounds != null ? Math.max(0, event.clientY - plotBounds.top) : 0,
+    };
+}
+
+// Rows shown in the editor: the working groups plus one trailing empty row to
+// start a new group in.
+const groupsMenuRows = computed(() => (groupsMenu.value == null ? [] : [...groupsMenu.value.rows, []]));
+
+function toggleGroupMembership(rowIndex, windingName) {
+    const menu = groupsMenu.value;
+    if (menu == null) {
+        return;
+    }
+    const rows = menu.rows.map((row) => row.filter((name) => name !== windingName));
+    if (!(menu.rows[rowIndex] ?? []).includes(windingName)) {
+        while (rows.length <= rowIndex) {
+            rows.push([]);
+        }
+        rows[rowIndex].push(windingName);
+    }
+    menu.rows = rows.filter((row) => row.length > 0);
+}
+
+function groupRowTurnsWarning(row) {
+    const turns = row
+        .map((name) => model.value.windings?.find((winding) => winding.name === name)?.numberTurns)
+        .filter((value) => value != null);
+    return turns.length > 1 && new Set(turns).size > 1
+        ? 'different turn counts — center-tap halves are usually symmetric'
+        : null;
+}
+
+function applyGroupsMenu() {
+    const menu = groupsMenu.value;
+    groupsMenu.value = null;
+    if (menu == null) {
+        return;
+    }
+    emit('setWindingGroups', menu.rows.filter((row) => row.length > 1));
+}
+
 // Click-outside: gear menus APPLY their pending changes (the user's explicit
 // request); the interleave menu — a choice, not a form — just closes.
 function onDocumentPointerDown(event) {
@@ -774,6 +896,9 @@ function onDocumentPointerDown(event) {
     if (sectionMenu.value != null) {
         applySectionMenu();
     }
+    if (groupsMenu.value != null) {
+        applyGroupsMenu();
+    }
     if (interleaveMenu.value != null) {
         interleaveMenu.value = null;
     }
@@ -782,7 +907,14 @@ onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown, 
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPointerDown, true));
 
 function columnLabel(column) {
+    const laterals = (model.value.core.columns ?? []).filter((candidate) => candidate.type === 'lateral');
     if (column.type === 'central') {
+        // U-style cores have ONE lateral: their 'central' column is simply the
+        // other leg — name both by side. (Toroids never reach the leg UI.)
+        if (laterals.length === 1) {
+            const lateralCenterX = laterals[0].rect.x + laterals[0].rect.width / 2;
+            return column.rect.x + column.rect.width / 2 <= lateralCenterX ? 'Left leg' : 'Right leg';
+        }
         return 'Center leg';
     }
     return column.rect.x + column.rect.width / 2 < 0 ? 'Left leg' : 'Right leg';
@@ -1510,8 +1642,14 @@ function endTransformDrag() {
                         type="button"
                         class="winding-studio-chip"
                         :class="{ 'winding-studio-chip-draggable': editable && !busy }"
-                        :style="{ '--chip-color': windingColor(model.windingNames, windingName) }"
+                        :style="{
+                            '--chip-color': windingColor(model.windingNames, windingName),
+                            borderBottom: windingGroupIndex(windingName) >= 0
+                                ? '2px solid ' + GROUP_LINK_COLORS[windingGroupIndex(windingName) % GROUP_LINK_COLORS.length]
+                                : undefined,
+                        }"
                         :data-cy="dataTestLabel + '-WindingStudio-chip-' + windingName"
+                        :title="windingGroupIndex(windingName) >= 0 ? 'Wound together with ' + windingGroups[windingGroupIndex(windingName)].filter((name) => name !== windingName).join(', ') : null"
                         @mouseenter="legendHover(windingName)"
                         @mouseleave="legendLeave()"
                         @pointerdown="startChipDrag(windingName, $event)"
@@ -1519,7 +1657,10 @@ function endTransformDrag() {
                         @pointerup="endChipDrag()"
                         @pointercancel="endChipDrag()"
                     >
-                        <span class="winding-studio-chip-dot"></span>{{ windingName }}
+                        <span class="winding-studio-chip-dot"></span>{{ windingName }}<span
+                            v-if="windingGroupIndex(windingName) >= 0"
+                            class="winding-studio-chip-link"
+                        >⛓</span>
                     </button>
                     <span v-if="editable && !busy" class="winding-studio-hint">{{
                         transformTarget != null
@@ -1541,6 +1682,15 @@ function endTransformDrag() {
                     {{ fitStatus.overflow ? '⚠ does not fit' : '✓ fits' }}<template
                         v-if="fitStatus.worstFill > 0"> · fill {{ (fitStatus.worstFill * 100).toFixed(0) }}%</template>
                 </span>
+                <button
+                    v-if="editable && model.windingNames.length > 1"
+                    type="button"
+                    class="winding-studio-chip winding-studio-custom-chip"
+                    :disabled="busy"
+                    :data-cy="dataTestLabel + '-WindingStudio-groups'"
+                    title="Windings wound together (bifilar/multifilar, e.g. center-tapped halves) share sections and layers"
+                    @click="openGroupsMenu($event)"
+                >⛓ Groups</button>
                 <button
                     v-if="editable"
                     type="button"
@@ -2057,6 +2207,40 @@ function endTransformDrag() {
                     >Stop winding together</button>
                     <button type="button" class="winding-studio-menu-cancel" @click="interleaveMenu = null">Cancel</button>
                 </div>
+                <!-- Winding groups editor: the wound-together partition -->
+                <div
+                    v-if="groupsMenu != null"
+                    class="winding-studio-menu"
+                    :style="{ left: groupsMenu.x + 'px', top: groupsMenu.y + 'px' }"
+                    :data-cy="dataTestLabel + '-WindingStudio-groups-menu'"
+                >
+                    <div class="winding-studio-menu-title">Wound together (bifilar groups)</div>
+                    <div
+                        v-for="(row, rowIndex) in groupsMenuRows"
+                        :key="'group-row' + rowIndex"
+                        class="winding-studio-group-row"
+                    >
+                        <span class="winding-studio-group-label">{{ rowIndex < groupsMenu.rows.length ? 'Group ' + (rowIndex + 1) : 'New group' }}</span>
+                        <button
+                            v-for="windingName in model.windingNames"
+                            :key="'group' + rowIndex + windingName"
+                            type="button"
+                            class="winding-studio-group-toggle"
+                            :class="{ 'winding-studio-group-toggle-on': row.includes(windingName) }"
+                            :disabled="!row.includes(windingName) && groupEligibilityReason(windingName, row) != null"
+                            :title="groupEligibilityReason(windingName, row) ?? null"
+                            :data-cy="dataTestLabel + '-WindingStudio-group-' + rowIndex + '-' + windingName"
+                            @click="toggleGroupMembership(rowIndex, windingName)"
+                        >{{ windingName }}</button>
+                        <div v-if="groupRowTurnsWarning(row) != null" class="winding-studio-group-warning">⚠ {{ groupRowTurnsWarning(row) }}</div>
+                    </div>
+                    <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-WindingStudio-groups-apply'"
+                        @click="applyGroupsMenu()"
+                    >Apply</button>
+                    <button type="button" class="winding-studio-menu-cancel" @click="groupsMenu = null">Cancel</button>
+                </div>
                 <!-- Per-window layout panel -->
                 <div
                     v-if="windowMenu != null"
@@ -2081,9 +2265,9 @@ function endTransformDrag() {
                             v-model="windowMenu.sectionsAlignment"
                             :data-cy="dataTestLabel + '-WindingStudio-window-alignment'"
                         >
-                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', windowMenu.sectionsOrientation, 'sections') }}</option>
+                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', windowMenu.sectionsOrientation, 'sections', windowMenu.lateralWound) }}</option>
                             <option value="centered">centered</option>
-                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', windowMenu.sectionsOrientation, 'sections') }}</option>
+                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', windowMenu.sectionsOrientation, 'sections', windowMenu.lateralWound) }}</option>
                             <option value="spread">spread</option>
                         </select>
                     </label>
@@ -2118,9 +2302,9 @@ function endTransformDrag() {
                             v-model="sectionMenu.turnsAlignment"
                             :data-cy="dataTestLabel + '-WindingStudio-section-turns-alignment'"
                         >
-                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', sectionMenu.layersOrientation, 'turns') }}</option>
+                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', sectionMenu.layersOrientation, 'turns', sectionMenu.lateralWound) }}</option>
                             <option value="centered">centered</option>
-                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', sectionMenu.layersOrientation, 'turns') }}</option>
+                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', sectionMenu.layersOrientation, 'turns', sectionMenu.lateralWound) }}</option>
                             <option value="spread">spread</option>
                         </select>
                     </label>
@@ -2404,6 +2588,44 @@ function endTransformDrag() {
 }
 .winding-studio-menu-field select option {
     color: #000000;
+}
+.winding-studio-chip-link {
+    margin-left: 0.2rem;
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+.winding-studio-group-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    padding: 0.1rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.winding-studio-group-label {
+    opacity: 0.65;
+    min-width: 4.5rem;
+    font-size: 0.72rem;
+}
+.winding-studio-group-toggle {
+    border-radius: 1rem !important;
+    padding: 0 0.45rem !important;
+    opacity: 0.7;
+}
+.winding-studio-group-toggle-on {
+    border-color: #ffd166 !important;
+    background: rgba(255, 209, 102, 0.15) !important;
+    opacity: 1;
+}
+.winding-studio-group-toggle:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.winding-studio-group-warning {
+    flex-basis: 100%;
+    font-size: 0.68rem;
+    color: #ffd166;
+    opacity: 0.9;
 }
 .winding-studio-busy {
     position: absolute;

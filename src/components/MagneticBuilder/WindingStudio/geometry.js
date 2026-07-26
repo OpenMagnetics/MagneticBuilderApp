@@ -585,6 +585,7 @@ function buildWindingMeta(coil) {
         name: winding.name,
         woundWith: winding.woundWith ?? [],
         numberParallels: winding.numberParallels ?? 1,
+        numberTurns: winding.numberTurns ?? null,
         isolationSide: winding.isolationSide ?? null,
         wire: winding.wire ?? null,
     }));
