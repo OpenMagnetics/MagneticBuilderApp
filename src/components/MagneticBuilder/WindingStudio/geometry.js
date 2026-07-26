@@ -196,8 +196,9 @@ export function buildBobbinView(coil, coreView) {
         const windowCenterX = rect.x + rect.width / 2;
         const wallOnLeft = columnCenterX < windowCenterX;
 
+        const regionParts = [];
         if (columnThickness > 0) {
-            parts.push({
+            regionParts.push({
                 x: wallOnLeft ? rect.x - columnThickness * MM : rect.x + rect.width,
                 y: rect.y - wallThickness * MM,
                 width: columnThickness * MM,
@@ -206,12 +207,22 @@ export function buildBobbinView(coil, coreView) {
         }
         if (wallThickness > 0) {
             for (const side of [-1, 1]) {
-                parts.push({
+                regionParts.push({
                     x: rect.x,
                     y: side < 0 ? rect.y - wallThickness * MM : rect.y + rect.height,
                     width: rect.width,
                     height: wallThickness * MM,
                 });
+            }
+        }
+        parts.push(...regionParts);
+        // A CENTRAL-column winding is an annulus: its bobbin physically crosses
+        // the section plane on the far side of the center leg too. Draw that
+        // half mirrored, marked as the passive (shadowed, non-interactive) side
+        // — same convention as the turns' return crossings.
+        if (column?.type === 'central') {
+            for (const part of regionParts) {
+                parts.push({ ...part, x: -(part.x + part.width), mirror: true });
             }
         }
     }

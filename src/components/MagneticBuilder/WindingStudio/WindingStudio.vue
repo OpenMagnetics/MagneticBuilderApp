@@ -151,7 +151,9 @@ function turnOpacity(turn) {
         // the studio glyphs stay as near-invisible interaction targets.
         return turn.isReturn ? 0.08 : 0.12;
     }
-    return turn.isReturn ? 0.55 : 1.0;
+    // Return crossings keep near-full opacity but render through the shadow
+    // filter (darker) — the passive far side of the winding.
+    return turn.isReturn ? 0.85 : 1.0;
 }
 
 function marginRects(section) {
@@ -660,14 +662,16 @@ function endSectorBoundaryDrag() {
 // host to write into that window's bobbin entry and re-wind.
 // ---------------------------------------------------------------------------
 
-// Cosmetic alignment labels: the MAS enum values ('innerOrTop' / 'outer or
-// bottom') are written so the C++ covers every case, but users think in the
-// concrete direction. Overlapping sections stack radially, so their alignment
-// runs vertically (top/bottom); contiguous sections stack along the window,
-// so it runs radially (inner/outer) — same reading on toroids. The enum
-// VALUES are never changed; only the option text shown to the user.
-function alignmentLabel(value, orientation) {
-    const vertical = (orientation ?? 'overlapping') === 'overlapping';
+// Cosmetic alignment labels: the MAS enum values ('innerOrTop' /
+// 'outerOrBottom') are written so the C++ covers every case, but users think
+// in the concrete direction — and the SECTIONS alignment runs on the OPPOSITE
+// axis to the TURNS alignment. Overlapping sections stack radially, so their
+// alignment is inner/outer while the turns inside the (vertical) layers align
+// top/bottom; both swap for contiguous. The enum VALUES are never changed;
+// only the option text shown to the user.
+function alignmentLabel(value, orientation, axis) {
+    const overlapping = (orientation ?? 'overlapping') === 'overlapping';
+    const vertical = axis === 'turns' ? overlapping : !overlapping;
     if (value === 'innerOrTop') {
         return vertical ? 'top' : 'inner';
     }
@@ -687,6 +691,7 @@ function openWindowMenu(window, event) {
     const plotBounds = plotEl.value?.getBoundingClientRect();
     windowMenu.value = {
         windowIndex: window.index,
+        label: windowLabel(window),
         sectionsOrientation: window.sectionsOrientation ?? 'overlapping',
         sectionsAlignment: window.sectionsAlignment ?? 'innerOrTop',
         x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 220)) : 0,
@@ -781,6 +786,17 @@ function columnLabel(column) {
         return 'Center leg';
     }
     return column.rect.x + column.rect.width / 2 < 0 ? 'Left leg' : 'Right leg';
+}
+
+// Windows are an implementation detail; users think in COLUMNS. Label each
+// window gear by the leg its window wraps (schema default: no column edge →
+// the main column).
+function windowLabel(window) {
+    const column = model.value.core.columns?.[window.column ?? 0] ?? model.value.core.columns?.[0];
+    if (column == null) {
+        return 'Window ' + window.index;
+    }
+    return columnLabel(column);
 }
 
 // ---------------------------------------------------------------------------
@@ -1543,9 +1559,9 @@ function endTransformDrag() {
                     type="button"
                     class="winding-studio-chip winding-studio-custom-chip"
                     :data-cy="dataTestLabel + '-WindingStudio-window-gear-' + window.index"
-                    :title="'Sections layout of winding window ' + window.index"
+                    :title="'Sections layout of the ' + windowLabel(window).toLowerCase() + ' winding window'"
                     @click="openWindowMenu(window, $event)"
-                >⚙ {{ model.windows.length > 1 ? 'Window ' + window.index : 'Window' }}</button>
+                >⚙ {{ windowLabel(window) }}</button>
                 <button
                     v-if="editable && transformTarget != null"
                     type="button"
@@ -1602,12 +1618,17 @@ function endTransformDrag() {
                         v-bind="gap"
                         :fill="backgroundColor === 'transparent' ? '#000000' : backgroundColor"
                     />
-                    <!-- Bobbin -->
+                    <!-- Bobbin (mirror parts are the annulus' passive far side) -->
                     <rect
                         v-for="(part, index) in model.bobbin"
                         :key="'bobbin' + index"
-                        v-bind="part"
+                        :x="part.x"
+                        :y="part.y"
+                        :width="part.width"
+                        :height="part.height"
                         :fill="cssColor(bobbinColor)"
+                        :class="part.mirror ? 'winding-studio-shadow' : null"
+                        :pointer-events="part.mirror ? 'none' : null"
                     />
                     <!-- Field-map overlay: the painter image replaces the passive
                          decoration (margins/insulation) and carries the visible
@@ -1785,7 +1806,7 @@ function endTransformDrag() {
                             :stroke="hoveredTurn === turn.name ? '#ffffff' : 'none'"
                             stroke-width="1"
                             vector-effect="non-scaling-stroke"
-                            class="winding-studio-turn"
+                            :class="['winding-studio-turn', turn.isReturn ? 'winding-studio-shadow' : null]"
                             :data-studio-winding="turn.winding"
                             @mouseenter="onTurnEnter(turn, $event)"
                             @mouseleave="onTurnLeave()"
@@ -1799,7 +1820,7 @@ function endTransformDrag() {
                             :stroke="hoveredTurn === turn.name ? '#ffffff' : 'none'"
                             stroke-width="1"
                             vector-effect="non-scaling-stroke"
-                            class="winding-studio-turn"
+                            :class="['winding-studio-turn', turn.isReturn ? 'winding-studio-shadow' : null]"
                             :data-studio-winding="turn.winding"
                             @mouseenter="onTurnEnter(turn, $event)"
                             @mouseleave="onTurnLeave()"
@@ -2043,7 +2064,7 @@ function endTransformDrag() {
                     :style="{ left: windowMenu.x + 'px', top: windowMenu.y + 'px' }"
                     :data-cy="dataTestLabel + '-WindingStudio-window-menu'"
                 >
-                    <div class="winding-studio-menu-title">Window {{ windowMenu.windowIndex }} layout</div>
+                    <div class="winding-studio-menu-title">{{ windowMenu.label }} layout</div>
                     <label class="winding-studio-menu-field">
                         Sections
                         <select
@@ -2060,9 +2081,9 @@ function endTransformDrag() {
                             v-model="windowMenu.sectionsAlignment"
                             :data-cy="dataTestLabel + '-WindingStudio-window-alignment'"
                         >
-                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', windowMenu.sectionsOrientation) }}</option>
+                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', windowMenu.sectionsOrientation, 'sections') }}</option>
                             <option value="centered">centered</option>
-                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', windowMenu.sectionsOrientation) }}</option>
+                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', windowMenu.sectionsOrientation, 'sections') }}</option>
                             <option value="spread">spread</option>
                         </select>
                     </label>
@@ -2097,9 +2118,9 @@ function endTransformDrag() {
                             v-model="sectionMenu.turnsAlignment"
                             :data-cy="dataTestLabel + '-WindingStudio-section-turns-alignment'"
                         >
-                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', sectionMenu.layersOrientation) }}</option>
+                            <option value="innerOrTop">{{ alignmentLabel('innerOrTop', sectionMenu.layersOrientation, 'turns') }}</option>
                             <option value="centered">centered</option>
-                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', sectionMenu.layersOrientation) }}</option>
+                            <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', sectionMenu.layersOrientation, 'turns') }}</option>
                             <option value="spread">spread</option>
                         </select>
                     </label>
@@ -2260,6 +2281,11 @@ function endTransformDrag() {
 }
 .winding-studio-turn {
     cursor: pointer;
+}
+/* The passive far side of a winding (return crossings, mirrored bobbin
+   half): darker/shadowed so the interactive side reads as primary. */
+.winding-studio-shadow {
+    filter: brightness(0.55);
 }
 .winding-studio-section {
     cursor: pointer;
