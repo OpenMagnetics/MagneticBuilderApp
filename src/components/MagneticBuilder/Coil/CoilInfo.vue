@@ -111,6 +111,13 @@ export default {
         windingDoesNotFit() {
             const f = this.fillingFactors;
             if (f == null) return false;
+            // ABT #245: the engine now decides this and reports it as windingFits, so
+            // the displayed areaFillingFactor can be the true area fraction instead of
+            // doubling as an overfill ratio (a degenerate section used to make it read
+            // 6077 % for a winding that was 2.35 % full).
+            if (f.windingFits != null) return !f.windingFits;
+            // Older embedded engines (consumer apps ship their own WASM) do not send
+            // windingFits — fall back to the pre-#245 test, which gave the same verdict.
             if (f.areaFillingFactor > 1) return true;
             if (this.sectionsOrientation == 'contiguous' && f.contiguousFillingFactor > 1) return true;
             if (this.sectionsOrientation == 'overlapping' && f.overlappingFillingFactor > 1) return true;

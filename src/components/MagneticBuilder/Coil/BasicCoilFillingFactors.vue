@@ -31,6 +31,10 @@ export default {
         windingDoesNotFit() {
             const f = this.data?.fillingFactors;
             if (f == null) return false;
+            // ABT #245: the engine reports the verdict as windingFits, leaving
+            // areaFillingFactor free to be the true area fraction.
+            if (f.windingFits != null) return !f.windingFits;
+            // Older embedded engines do not send windingFits — pre-#245 test, same verdict.
             if (f.areaFillingFactor > 1) return true;
             if (this.data.sectionsOrientation == 'contiguous' && f.contiguousFillingFactor > 1) return true;
             if (this.data.sectionsOrientation == 'overlapping' && f.overlappingFillingFactor > 1) return true;
