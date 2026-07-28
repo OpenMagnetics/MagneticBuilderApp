@@ -213,6 +213,9 @@ export interface InsulationRequirements {
  *
  * Differential-mode (leakage) inductance in Henries.
  *
+ * DC resistance of the threaded conductor in Ohms (usually negligible; present when the
+ * datasheet states it). nominal = typical value, maximum = datasheet max.
+ *
  * Body diameter in metres (for cylindrical parts).
  *
  * Body height in metres.
@@ -666,7 +669,8 @@ export interface ProcessedWaveform {
     effectiveFrequency?: number;
     label:               WaveformLabel;
     /**
-     * The most-negative value of the waveform (always <= 0 for bipolar signals)
+     * The minimum value of the waveform (<= 0 for bipolar signals; may be positive for
+     * DC-biased/unipolar signals that never cross zero)
      */
     negativePeak?: number;
     /**
@@ -686,7 +690,8 @@ export interface ProcessedWaveform {
      */
     phase?: number;
     /**
-     * The maximum positive value of the waveform
+     * The maximum value of the waveform (>= 0 for bipolar signals; may be negative for
+     * negatively-biased signals that never cross zero)
      */
     positivePeak?: number;
     /**
@@ -2832,20 +2837,30 @@ export interface CoreShape {
  * The family of a magnetic shape
  */
 export enum CoreShapeFamily {
+    Block = "block",
     C = "c",
     Drum = "drum",
+    Ds = "ds",
     E = "e",
     Ec = "ec",
+    Eer = "eer",
+    Ef = "ef",
     Efd = "efd",
     Ei = "ei",
     El = "el",
     Elp = "elp",
     Ep = "ep",
+    Epc = "epc",
+    Epq = "epq",
+    Ept = "ept",
+    Epw = "epw",
     Epx = "epx",
     Eq = "eq",
     Er = "er",
     Etd = "etd",
     H = "h",
+    Hs = "hs",
+    Lep = "lep",
     Lp = "lp",
     P = "p",
     PlanarE = "planarE",
@@ -2856,6 +2871,7 @@ export enum CoreShapeFamily {
     Pqi = "pqi",
     Rm = "rm",
     Rod = "rod",
+    Rs = "rs",
     T = "t",
     U = "u",
     UI = "ui",
@@ -2877,6 +2893,7 @@ export enum MagneticCircuit {
  */
 export enum CoreType {
     ClosedShape = "closedShape",
+    OpenShape = "openShape",
     PieceAndPlate = "pieceAndPlate",
     Toroidal = "toroidal",
     TwoPieceSet = "twoPieceSet",
@@ -3198,10 +3215,22 @@ export interface MagneticDatasheetApplication {
  * Datasheet electrical characteristics of a common-mode choke.
  *
  * Datasheet electrical characteristics of a chip bead (ferrite bead).
+ *
+ * Datasheet electrical characteristics of a clamp-on / cable ferrite core (a 1-port
+ * common-mode suppression core the cable is threaded through: clip-on ferrites, cable
+ * rings, split/snap-on cores). Electrically a 1-port impedance like a chip bead, but a
+ * distinct part class — retrofit/threaded onto a cable rather than reflow-soldered. Per the
+ * array-of-configurations idiom, a datasheet that publishes |Z| for several pass counts
+ * contributes one entry per pass count, discriminated by numberTurns; the toroid/ring
+ * geometry (inner/outer diameter, height) and ferrite material live in the shared core
+ * description, not here.
  */
 export interface MagneticDatasheetElectrical {
     /**
      * DC resistance in Ohms. nominal = typical value, maximum = datasheet max.
+     *
+     * DC resistance of the threaded conductor in Ohms (usually negligible; present when the
+     * datasheet states it). nominal = typical value, maximum = datasheet max.
      */
     dcResistance?: DimensionWithTolerance;
     /**
@@ -3210,6 +3239,9 @@ export interface MagneticDatasheetElectrical {
      * Common-mode impedance vs. frequency points.
      *
      * Impedance vs. frequency points, optionally parameterised by DC bias current.
+     *
+     * Common-mode impedance vs. frequency points for this pass count, optionally parameterised
+     * by DC bias current (impedancePoint.current) for the bias-derating curve.
      */
     impedancePoints?: DatasheetImpedancePoint[];
     /**
@@ -3236,12 +3268,32 @@ export interface MagneticDatasheetElectrical {
     /**
      * Label of this connection configuration as given in the datasheet (e.g. '4 x current
      * compensated', '4 turns'). Omit for a part with a single configuration.
+     *
+     * Label of this connection configuration as given in the datasheet (e.g. '1 turn', '2
+     * turns', 'single pass'). Omit for a part with a single configuration.
      */
     name?: string;
     /**
      * Effective number of turns for this connection configuration.
+     *
+     * Number of cable passes through the core for this configuration's |Z| curve (1 = single
+     * pass). Datasheets that tabulate 1/2/3-turn impedance contribute one electrical entry per
+     * turn count.
      */
     numberTurns?: number;
+    /**
+     * Rated-current table qualified by temperature-rise criterion. Preferred over the bare
+     * ratedCurrents array because it carries the ΔT basis, enabling apples-to-apples
+     * cross-manufacturer comparison. Omit when the datasheet states only an unqualified
+     * rating.
+     *
+     * Rated-current table qualified by temperature-rise criterion (per element for a bead
+     * array). Preferred over the bare ratedCurrents array because it carries the ΔT basis,
+     * enabling apples-to-apples cross-manufacturer comparison — bead vendors rate '1 A'
+     * anywhere from a 10 K to a 40 K rise. Omit when the datasheet states only an unqualified
+     * rating.
+     */
+    ratedCurrentPoints?: DatasheetRatedCurrent[];
     /**
      * Rated DC current, as a single-entry array.
      *
@@ -3253,12 +3305,19 @@ export interface MagneticDatasheetElectrical {
      *
      * Rated DC current per element (one entry per element of a bead array; a single-entry array
      * for a single bead).
+     *
+     * Rated DC current in Amperes (one entry per conductor; a single-entry array for a single
+     * cable). Above this the core's impedance derates through partial saturation.
      */
     ratedCurrents?: number[];
     /**
      * Peak saturation current in Amperes (I_sat from datasheet). A single unqualified I_sat;
      * when the datasheet states I_sat at explicit inductance-drop criteria, use
      * saturationCurrents instead (or in addition).
+     *
+     * Peak saturation current in Amperes (I_sat from datasheet). For a current-compensated
+     * common-mode choke this is the bias (differential/unbalance) current at which the core
+     * saturates, as specified by the manufacturer.
      */
     saturationCurrentPeak?: number;
     /**
@@ -3320,6 +3379,8 @@ export interface MagneticDatasheetElectrical {
     commonModeFilter?: CommonModeFilter;
     /**
      * Tolerance on the impedance values, expressed as a percentage (e.g. 20 means +/-20%).
+     *
+     * Tolerance on the impedance values, expressed as a percentage (e.g. 25 means +/-25%).
      */
     impedanceTolerance?: number;
     /**
@@ -3338,6 +3399,17 @@ export interface MagneticDatasheetElectrical {
      * Resistance vs. frequency points, optionally parameterised by DC bias current.
      */
     resistancePoints?: DatasheetResistancePoint[];
+    /**
+     * Largest cable / bundle outer diameter in metres that fits through the core (the
+     * inner-diameter fit limit) — a primary selection parameter for a cable core.
+     */
+    maximumCableOuterDiameter?: number;
+    /**
+     * How the core is fitted to the cable: a closed 'solidRing' the cable is threaded through
+     * at build, a hinged 'snapOn' clip that opens for retrofit, a two-piece 'split' core, or a
+     * 'screwable' housing. Distinguishes retrofit-installable clamps from build-time rings.
+     */
+    mountingForm?: MountingForm;
 }
 
 /**
@@ -3406,6 +3478,18 @@ export interface DatasheetInductancePoint {
 }
 
 /**
+ * How the core is fitted to the cable: a closed 'solidRing' the cable is threaded through
+ * at build, a hinged 'snapOn' clip that opens for retrofit, a two-piece 'split' core, or a
+ * 'screwable' housing. Distinguishes retrofit-installable clamps from build-time rings.
+ */
+export enum MountingForm {
+    Screwable = "screwable",
+    SnapOn = "snapOn",
+    SolidRing = "solidRing",
+    Split = "split",
+}
+
+/**
  * Number of pulses vs. maximum pulse current point from the datasheet.
  */
 export interface DatasheetNumberPulsesPoint {
@@ -3441,6 +3525,30 @@ export interface DatasheetPulsePoint {
      * single-winding parts.
      */
     winding?: string;
+}
+
+/**
+ * Rated current stated at a specific temperature-rise criterion — one row of a datasheet's
+ * rated-current table. Manufacturer-agnostic: a vendor that quotes the rating at several
+ * self-heating criteria (e.g. Würth IR1 at ΔT=20 K and IR2 at ΔT=40 K) contributes one
+ * entry per criterion; a vendor that quotes a single unqualified rating keeps using the
+ * plain ratedCurrents array.
+ */
+export interface DatasheetRatedCurrent {
+    /**
+     * Rated DC current in Amperes at the stated temperature rise.
+     */
+    current: number;
+    /**
+     * Ambient reference temperature in degrees Celsius, when the datasheet states it.
+     */
+    temperature?: number;
+    /**
+     * Self-heating criterion: the temperature rise above ambient, in K, at which this current
+     * is rated. Vendors range from 10 K to 40 K for the same '1 A' class of part, so
+     * cross-manufacturer comparison is only valid on a common basis.
+     */
+    temperatureRise: number;
 }
 
 /**
@@ -3514,6 +3622,7 @@ export interface DatasheetSaturationCurrent {
 }
 
 export enum ElectricalSubtype {
+    CableCore = "cableCore",
     ChipBead = "chipBead",
     CommonModeChoke = "commonModeChoke",
     CoupledInductor = "coupledInductor",
@@ -5286,6 +5395,7 @@ const typeMap: any = {
         { json: "maximumImpedance", js: "maximumImpedance", typ: u(undefined, 3.14) },
         { json: "name", js: "name", typ: u(undefined, "") },
         { json: "numberTurns", js: "numberTurns", typ: u(undefined, 3.14) },
+        { json: "ratedCurrentPoints", js: "ratedCurrentPoints", typ: u(undefined, a(r("DatasheetRatedCurrent"))) },
         { json: "ratedCurrents", js: "ratedCurrents", typ: u(undefined, a(3.14)) },
         { json: "saturationCurrentPeak", js: "saturationCurrentPeak", typ: u(undefined, 3.14) },
         { json: "saturationCurrents", js: "saturationCurrents", typ: u(undefined, a(r("DatasheetSaturationCurrent"))) },
@@ -5305,6 +5415,8 @@ const typeMap: any = {
         { json: "pulsePoints", js: "pulsePoints", typ: u(undefined, a(r("DatasheetPulsePoint"))) },
         { json: "reactancePoints", js: "reactancePoints", typ: u(undefined, a(r("DatasheetReactancePoint"))) },
         { json: "resistancePoints", js: "resistancePoints", typ: u(undefined, a(r("DatasheetResistancePoint"))) },
+        { json: "maximumCableOuterDiameter", js: "maximumCableOuterDiameter", typ: u(undefined, 3.14) },
+        { json: "mountingForm", js: "mountingForm", typ: u(undefined, r("MountingForm")) },
     ], false),
     "CommonModeFilter": o([
         { json: "attenuation", js: "attenuation", typ: u(undefined, 3.14) },
@@ -5331,6 +5443,11 @@ const typeMap: any = {
         { json: "pulseCurrent", js: "pulseCurrent", typ: 3.14 },
         { json: "pulseLength", js: "pulseLength", typ: 3.14 },
         { json: "winding", js: "winding", typ: u(undefined, "") },
+    ], false),
+    "DatasheetRatedCurrent": o([
+        { json: "current", js: "current", typ: 3.14 },
+        { json: "temperature", js: "temperature", typ: u(undefined, 3.14) },
+        { json: "temperatureRise", js: "temperatureRise", typ: 3.14 },
     ], false),
     "DatasheetReactancePoint": o([
         { json: "current", js: "current", typ: u(undefined, 3.14) },
@@ -5894,20 +6011,30 @@ const typeMap: any = {
         "tdg",
     ],
     "CoreShapeFamily": [
+        "block",
         "c",
         "drum",
+        "ds",
         "e",
         "ec",
+        "eer",
+        "ef",
         "efd",
         "ei",
         "el",
         "elp",
         "ep",
+        "epc",
+        "epq",
+        "ept",
+        "epw",
         "epx",
         "eq",
         "er",
         "etd",
         "h",
+        "hs",
+        "lep",
         "lp",
         "p",
         "planarE",
@@ -5918,6 +6045,7 @@ const typeMap: any = {
         "pqi",
         "rm",
         "rod",
+        "rs",
         "t",
         "u",
         "ui",
@@ -5930,6 +6058,7 @@ const typeMap: any = {
     ],
     "CoreType": [
         "closedShape",
+        "openShape",
         "pieceAndPlate",
         "toroidal",
         "twoPieceSet",
@@ -5946,7 +6075,14 @@ const typeMap: any = {
         "central",
         "lateral",
     ],
+    "MountingForm": [
+        "screwable",
+        "snapOn",
+        "solidRing",
+        "split",
+    ],
     "ElectricalSubtype": [
+        "cableCore",
         "chipBead",
         "commonModeChoke",
         "coupledInductor",
