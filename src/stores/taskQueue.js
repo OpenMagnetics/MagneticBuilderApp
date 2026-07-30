@@ -20,6 +20,19 @@ function getRestrictedShapeFamilies() {
     }
 }
 
+// ABT #359: families MKF supports but the web UI does not surface yet — defined ONCE,
+// matched EXACTLY (the old inline `.includes("h")` substring checks collaterally hid any
+// family whose code contains an 'h', and the same 5-term condition was pasted five times).
+// pqi/ut/ui/h await their UI work; the drum-era families (drum, drumRing, drumSemishielded)
+// and molded await the 3D/preview path (MVB.js drawing + WASM bump) — unhide them there.
+const UI_HIDDEN_SHAPE_FAMILIES = new Set([
+    'pqi', 'ut', 'ui', 'h',
+    'drum', 'drumRing', 'drumSemishielded', 'molded',
+]);
+function isShapeFamilyHiddenInUi(shapeFamily) {
+    return UI_HIDDEN_SHAPE_FAMILIES.has(shapeFamily);
+}
+
 // MAS sentry. Validates an outgoing payload against the generated MAS schema
 // (via quicktype's `Convert.to*`) before we hand it to the WASM. Loud failure
 // here is far cheaper to diagnose than a generic "Input JSON does not conform
@@ -334,8 +347,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
-                if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                    !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                if (!isShapeFamilyHiddenInUi(shapeFamily)) {
                     if (wiringTechnology == null || wiringTechnology?.toLowerCase() === 'wound' || shapeFamily.toLowerCase() !== 't') {
                         if (allowed != null && !allowed.includes(shapeFamily.toLowerCase())) continue;
                         coreShapeFamilies.push(shapeFamily);
@@ -359,8 +371,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             const coreShapeFamilSubtypesArr = toArray(await mkf.get_shape_family_subtypes(family));
             for (const shapeFamilySubtype of coreShapeFamilSubtypesArr) {
-                if (!shapeFamilySubtype.includes("pqi") && !shapeFamilySubtype.includes("ut") &&
-                    !shapeFamilySubtype.includes("ui") && !shapeFamilySubtype.includes("h") && !shapeFamilySubtype.includes("drum")) {
+                if (!isShapeFamilyHiddenInUi(shapeFamilySubtype)) {
                     availableFamilySubtypes.push(shapeFamilySubtype);
                 }
             }
@@ -410,8 +421,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
-                if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                    !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                if (!isShapeFamilyHiddenInUi(shapeFamily)) {
                     // Exclude toroidal cores (T family) when in Planar/Printed mode
                     const isToroidal = shapeFamily.toLowerCase() === 't';
                     const isPlanarMode = mas.inputs.designRequirements.wiringTechnology != null &&
@@ -429,8 +439,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 const coreShapeNamesArr = toArray(await mkf.get_available_core_shapes_by_manufacturer(onlyManufacturer));
 
                 coreShapeFamilies.forEach((shapeFamily) => {
-                    if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                        !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                    if (!isShapeFamilyHiddenInUi(shapeFamily)) {
 
 
                         coreShapeNames[shapeFamily] = [];
@@ -451,8 +460,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 for (const shapeFamily of coreShapeFamilies) {
-                    if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                        !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                    if (!isShapeFamilyHiddenInUi(shapeFamily)) {
                         coreShapeNames[shapeFamily] = [];
                         // Pass the family name exactly as get_available_core_shape_families
                         // returned it. The CoreShapeFamily enum is case-sensitive
