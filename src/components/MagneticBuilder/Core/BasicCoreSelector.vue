@@ -341,7 +341,26 @@ export default {
             }
         },
         getMaterialNames() {
-            this.taskQueueStore.getCoreMaterials(this.onlyManufacturer).then((coreMaterialNames) => {
+            // Power/filter designs need core losses, so only offer materials the
+            // engine has a loss model for — a loss-less pick used to end in
+            // MODEL_NOT_AVAILABLE on every loss-dependent step. CMC flows keep the
+            // full list: interference-suppression materials (Vitroperm, R-series,
+            // 1K107, …) are characterised by complex permeability only (ABT #401).
+            const application = this.$stateStore.getCurrentApplication();
+            const requireLossModel =
+                application != this.$stateStore.SupportedApplications.CommonModeChoke &&
+                application != this.$stateStore.SupportedApplications.CommonModeChokeCatalog;
+            this.taskQueueStore.getCoreMaterials(this.onlyManufacturer, requireLossModel).then((coreMaterialNames) => {
+                if (requireLossModel && (this.onlyManufacturer == null || this.onlyManufacturer == '')) {
+                    // Drop manufacturers left with no offerable material (e.g.
+                    // Vacuumschmelze, whose catalog here is Vitroperm-only) so the
+                    // manufacturer dropdown cannot lead to an empty material list.
+                    for (const manufacturer of Object.keys(coreMaterialNames)) {
+                        if (coreMaterialNames[manufacturer].length === 0) {
+                            delete coreMaterialNames[manufacturer];
+                        }
+                    }
+                }
                 this.coreMaterialNames = coreMaterialNames;
                 this.coreMaterialManufacturers = Object.keys(coreMaterialNames);
             })

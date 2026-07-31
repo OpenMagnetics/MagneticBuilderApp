@@ -492,7 +492,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         coreMaterialsGotten(success = true, dataOrMessage = '') {
         },
 
-        async getCoreMaterials(onlyManufacturer) {
+        async getCoreMaterials(onlyManufacturer, requireLossModel = false) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
@@ -509,7 +509,14 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             for (const manufacturer of coreMaterialManufacturers) {
                 coreMaterialNames[manufacturer] = []
                 if (!(onlyManufacturer != '' && onlyManufacturer != null && manufacturer != onlyManufacturer)) {
-                    const coreMaterialNamesArr = toArray(await mkf.get_available_core_materials(manufacturer));
+                    // requireLossModel: power/filter designs must only offer materials
+                    // whose core losses the engine can compute — a material without any
+                    // loss method throws MODEL_NOT_AVAILABLE on every loss-dependent
+                    // step. CMC flows pass false: interference-suppression materials
+                    // are characterised by complex permeability only (ABT #401).
+                    const coreMaterialNamesArr = toArray(requireLossModel
+                        ? await mkf.get_available_core_materials_with_loss_model(manufacturer)
+                        : await mkf.get_available_core_materials(manufacturer));
                     for (const materialName of coreMaterialNamesArr) {
                         coreMaterialNames[manufacturer].push(materialName);
                     }
