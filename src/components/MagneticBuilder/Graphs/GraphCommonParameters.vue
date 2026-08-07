@@ -386,10 +386,15 @@ export default {
 }
 .gcp-cell :deep(.dim-value-row) {
     width: 100% !important;
-}
-/* Value input takes the remaining width; unit sizes to its content so
- * "kHz"/"MHz" never clip. */
-.gcp-cell :deep(.dim-value-row-has-unit) {
-    grid-template-columns: 1fr auto !important;
+    /* .dim-row is a COLUMN here, so Dimension's own `flex: 1 1 0` puts the
+     * flex-basis on the HEIGHT: with no free space to grow into, the value row
+     * resolves to height 0 and Dimension's `overflow: hidden` clips the input
+     * out of existence — the field renders as a bare label. (Before
+     * WebSharedComponents@b0bcf4b the overflow was visible, so the input still
+     * painted outside its 0-height box and the bug was invisible.) An auto
+     * basis restores the control's own height; the clip guard is only needed
+     * for the shared one-row layout, not for this stacked one. */
+    flex: 0 0 auto !important;
+    overflow: visible !important;
 }
 </style>
