@@ -249,6 +249,9 @@ export function buildWindowViews(coil, core) {
                 column: window.column ?? null,
                 sectionsOrientation: window.sectionsOrientation ?? null,
                 sectionsAlignment: window.sectionsAlignment ?? null,
+                // U/Z: how consecutive layers are wound in this window. Null means
+                // unset, which the engine reads as Z.
+                windingOrder: window.windingOrder ?? null,
                 rect: rectFromCenter(window.coordinates[0], window.coordinates[1] ?? 0, window.width, window.height),
             };
         })

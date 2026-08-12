@@ -690,7 +690,7 @@ function windowWrapsLateralLeg(windowIndex) {
     return column?.type === 'lateral';
 }
 
-const windowMenu = ref(null); // {windowIndex, sectionsOrientation, sectionsAlignment, x, y}
+const windowMenu = ref(null); // {windowIndex, sectionsOrientation, sectionsAlignment, windingOrder, x, y}
 
 function openWindowMenu(window, event) {
     if (!props.editable || props.busy) {
@@ -704,6 +704,8 @@ function openWindowMenu(window, event) {
         lateralWound: windowWrapsLateralLeg(window.index),
         sectionsOrientation: window.sectionsOrientation ?? 'overlapping',
         sectionsAlignment: window.sectionsAlignment ?? 'innerOrTop',
+        // Unset reads as Z in the engine, so show Z rather than an empty picker.
+        windingOrder: window.windingOrder ?? 'Z',
         x: plotBounds != null ? Math.max(0, Math.min(event.clientX - plotBounds.left, plotBounds.width - 220)) : 0,
         y: plotBounds != null ? Math.max(0, event.clientY - plotBounds.top) : 0,
     };
@@ -719,6 +721,7 @@ function applyWindowMenu() {
         windowIndex: menu.windowIndex,
         sectionsOrientation: menu.sectionsOrientation,
         sectionsAlignment: menu.sectionsAlignment,
+        windingOrder: menu.windingOrder,
     });
 }
 
@@ -2303,6 +2306,17 @@ function endTransformDrag() {
                             <option value="centered">centered</option>
                             <option value="outerOrBottom">{{ alignmentLabel('outerOrBottom', windowMenu.sectionsOrientation, 'sections', windowMenu.lateralWound) }}</option>
                             <option value="spread">spread</option>
+                        </select>
+                    </label>
+                    <label class="winding-studio-menu-field">
+                        Winding order
+                        <select
+                            v-model="windowMenu.windingOrder"
+                            :data-cy="dataTestLabel + '-WindingStudio-window-winding-order'"
+                            title="Z winds every layer in the same direction with a return wire; U alternates direction every layer (back-and-forth)"
+                        >
+                            <option value="Z">Z — same direction, return wire</option>
+                            <option value="U">U — alternating (back-and-forth)</option>
                         </select>
                     </label>
                     <button

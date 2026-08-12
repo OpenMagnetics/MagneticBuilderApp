@@ -792,7 +792,7 @@ export default {
             this.recentChange = true;
             this.tryToWind();
         },
-        setWindowLayoutFromStudio({ windowIndex, sectionsOrientation, sectionsAlignment }) {
+        setWindowLayoutFromStudio({ windowIndex, sectionsOrientation, sectionsAlignment, windingOrder = null }) {
             // Winding-studio per-window gear: write the layout into THAT window's
             // bobbin entry (array-aware: merged index → owning part) and re-wind.
             if (this.readOnly) {
@@ -820,6 +820,14 @@ export default {
             }
             targetWindow.sectionsOrientation = sectionsOrientation;
             targetWindow.sectionsAlignment = sectionsAlignment;
+            if (windingOrder != null) {
+                // U/Z lives on the same window entry as the two above, and the engine
+                // resolves it per section as the section's own windingOrder, else this
+                // one, else Z. It changes the WIND, not the drawing: U reverses every
+                // other layer, so the turns move — which is why it goes through the
+                // same re-wind as the rest of this panel.
+                targetWindow.windingOrder = windingOrder;
+            }
             if (windowIndex === 0) {
                 // Keep the legacy window-0 knobs (Alignment panel + assignCoilData)
                 // in sync, or the next wind would write the old values back.
