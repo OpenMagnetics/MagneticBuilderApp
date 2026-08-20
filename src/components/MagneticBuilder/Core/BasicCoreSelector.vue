@@ -497,6 +497,20 @@ export default {
                 };
 
                 this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.masStore.coreAdviserWeights, settings).then(async (magnetic) => {
+                    // ABT #790: a zero-candidate advise RESOLVES with an empty
+                    // magnetic (shape ""), and assigning it left the panel on
+                    // "Select a core first" with no explanation — the button
+                    // just looked dead. Route it to the same visible message
+                    // the rejection path already has, and assign nothing.
+                    const advisedShape = magnetic?.core?.functionalDescription?.shape;
+                    const advisedShapeName = typeof advisedShape === 'string' ? advisedShape : advisedShape?.name;
+                    if (!advisedShapeName) {
+                        this.errorMessage = "No core can be advised for these requirements. Try another core-advise mode in Settings, or relax the requirements.";
+                        this.loading = false;
+                        this.$emit('coreProcessed', false, 'core adviser returned no candidate');
+                        setTimeout(() => {this.errorMessage = ""}, 10000);
+                        return;
+                    }
                     this.masStore.mas.magnetic.core = magnetic.core;
                     
                     // Generate bobbin first
