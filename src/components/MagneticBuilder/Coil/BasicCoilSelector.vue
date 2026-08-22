@@ -1654,7 +1654,7 @@ export default {
                          :enableTemperaturePlot="enableTemperaturePlot"
                          @plotModeChange="$emit('plotModeChange', $event)"
                          @swapIncludeFringing="$emit('swapIncludeFringing', $event)"
-                        @errorInImage="$emit('errorInImage')"
+                        @errorInImage="$emit('errorInImage', $event)"
                         :loadingGif="$settingsStore.loadingGif"
                     />
                 </div>

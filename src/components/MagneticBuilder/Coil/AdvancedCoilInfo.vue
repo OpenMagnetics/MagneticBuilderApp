@@ -904,6 +904,12 @@ export default {
             return matrix;
         },
         
+        // Web bug report #176. Mirrors what the host's Actions-panel Close does, so
+        // both routes out of this view go through the same store action.
+        closeAdvancedView() {
+            this.$stateStore.closeCoilAdvancedInfo();
+        },
+
         // Winding selection methods
         initializeWindingSelection() {
             // Called on: new design, wizard usage, MAS load
@@ -966,6 +972,27 @@ export default {
 
 <template>
     <div class="advancedcoil-wrapper">
+        <!-- Web bug report #176: "Once entering Advanced parasitics you get stuck
+             there with no apparent way out". The exit existed, but only as a red
+             Close in the host's left Actions panel, which nobody associates with
+             leaving this view. Give the view its own way out. -->
+        <div class="advancedcoil-topbar">
+            <div class="advancedcoil-topbar-title">
+                <i class="pi pi-volume-up"></i>
+                <span>Advanced Parasitics</span>
+            </div>
+            <button
+                type="button"
+                class="advancedcoil-back-btn"
+                data-cy="AdvancedCoilInfo-close-button"
+                title="Back to the coil builder"
+                @click="closeAdvancedView"
+            >
+                <i class="pi pi-arrow-left"></i>
+                <span>Back to Coil</span>
+            </button>
+        </div>
+
         <div class="advancedcoil-grid" :class="{ 'advancedcoil-dimmed': !dataUptoDate }">
             <!-- Left Column: Resistance -->
             <div class="advancedcoil-card">
@@ -1392,6 +1419,41 @@ export default {
 </template>
 
 <style scoped>
+.advancedcoil-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.advancedcoil-topbar-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: rgba(var(--p-white-rgb), 0.92);
+}
+
+.advancedcoil-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--p-primary-rgb), 0.55);
+    background: rgba(var(--p-primary-rgb), 0.12);
+    color: var(--p-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.advancedcoil-back-btn:hover {
+    background: rgba(var(--p-primary-rgb), 0.22);
+}
+
 .advancedcoil-wrapper {
     /* No top padding: align the parasitics cards with the normal MB config cards
        (same vertical start). The grid gap handles inter-card spacing. */
