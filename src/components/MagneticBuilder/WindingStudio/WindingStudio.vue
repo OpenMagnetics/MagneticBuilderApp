@@ -8,7 +8,8 @@
 // P0 scope: read-only parity view + hover/selection + color-by-winding.
 // Gated by magneticBuilderSettings.enableWindingStudio.
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import { buildStudioModel, windingColor, annularSectorPath, woundDistanceToAngleDeg, wiresEqual } from './geometry.js';
+import { buildStudioModel, buildConnectionViews, windingColor, annularSectorPath, woundDistanceToAngleDeg, wiresEqual } from './geometry.js';
+import { waitForMkf } from '/WebSharedComponents/assets/js/mkfRuntime';
 
 const props = defineProps({
     dataTestLabel: {
@@ -102,6 +103,64 @@ function cssColor(color) {
 }
 
 const model = computed(() => buildStudioModel(props.masStore.mas?.magnetic));
+
+// ABT #849 (Alf, 2026-08-22): CONNECTIONS — terminals and the links between layers/sections.
+// Unlike everything else in this component, they are NOT in the MAS: MKF derives them from the
+// wound coil (Coil::get_connection_reserved_spaces), and putting them in the MAS would only let
+// them go stale. So they arrive through one WASM call, get_connection_layout, and are rendered
+// from that. The call also reports whether MKF actually APPLIED the connection blocking; when it
+// did not, the markers are drawn dashed exactly as the C++ painter does, because an undisplaced
+// layout must never look like a real one.
+const showConnections = ref(true);
+const connectionLayout = ref(null);
+const connectionsPending = ref(false);
+let connectionRequestId = 0;
+
+async function fetchConnectionLayout() {
+    const magnetic = props.masStore.mas?.magnetic;
+    if (magnetic == null || !showConnections.value) {
+        connectionLayout.value = null;
+        return;
+    }
+    // Last request wins: the MAS changes on every edit and these calls are not instant.
+    const requestId = ++connectionRequestId;
+    connectionsPending.value = true;
+    try {
+        const mkf = await waitForMkf();
+        const raw = await mkf.get_connection_layout(JSON.stringify(magnetic));
+        if (requestId !== connectionRequestId) return;   // superseded
+        connectionLayout.value = JSON.parse(raw);
+    }
+    catch (error) {
+        if (requestId !== connectionRequestId) return;
+        // Surfaced, not swallowed: no connections is a legitimate state (ideal winding), a failed
+        // call is not, and silently drawing nothing would look identical to both.
+        console.error('WindingStudio: get_connection_layout failed', error);
+        connectionLayout.value = { error: String(error) };
+    }
+    finally {
+        if (requestId === connectionRequestId) connectionsPending.value = false;
+    }
+}
+
+const connections = computed(() => buildConnectionViews(connectionLayout.value));
+
+watch(
+    () => [props.masStore.mas?.magnetic, showConnections.value],
+    () => { fetchConnectionLayout(); },
+    { deep: true, immediate: true },
+);
+
+// The painter's own two colours (PainterImpl paint_coil_connections): blue for a transition
+// between layers/sections, magenta for a terminal lead.
+function connectionFill(marker) {
+    return marker.isTerminal ? '#FF00FF' : '#1E88E5';
+}
+function connectionTitle(marker) {
+    const ends = marker.toTurn ? `${marker.fromTurn} \u2192 ${marker.toTurn}` : marker.fromTurn;
+    const length = marker.routedLength != null ? ` — ${(marker.routedLength * 1000).toFixed(2)} mm` : '';
+    return `${marker.winding} parallel ${marker.parallel} · ${marker.kind}\n${ends}${length}`;
+}
 
 const colorByWinding = ref(true);
 // Maximized mode: the SAME component instance teleports to <body> as a
@@ -1736,7 +1795,7 @@ function endTransformDrag() {
                     type="button"
                     class="winding-studio-chip winding-studio-custom-chip"
                     :data-cy="dataTestLabel + '-WindingStudio-window-gear-' + window.index"
-                    :title="'Sections layout of the ' + windowLabel(window).toLowerCase() + ' winding window'"
+                    :title="'Sections layout and winding order (U/Z) of the ' + windowLabel(window).toLowerCase() + ' winding window'"
                     @click="openWindowMenu(window, $event)"
                 >⚙ {{ windowLabel(window) }}</button>
                 <button
@@ -1779,6 +1838,19 @@ function endTransformDrag() {
                     <input v-model="colorByWinding" type="checkbox" />
                     Color by winding
                 </label>
+                <label class="winding-studio-toggle">
+                    <input
+                        v-model="showConnections"
+                        type="checkbox"
+                        :data-cy="dataTestLabel + '-WindingStudio-connections'"
+                    />
+                    Connections
+                </label>
+                <span v-if="showConnections && connectionsPending" class="winding-studio-hint">computing connections…</span>
+                <span
+                    v-else-if="showConnections && connections.markers.length > 0 && connections.declined"
+                    class="winding-studio-hint"
+                >MKF declined the connection blocking — turns are NOT displaced around these routes</span>
             </div>
             <div ref="plotEl" class="winding-studio-plot">
                 <svg
@@ -1967,6 +2039,41 @@ function endTransformDrag() {
                             vector-effect="non-scaling-stroke"
                             pointer-events="none"
                         />
+                    </g>
+                    <!-- Connections (ABT #849): terminal leads and the links between layers and
+                         sections, straight from MKF's own routing (get_connection_layout). Drawn
+                         BELOW the turns so the turn layer keeps its hover/click primacy, and with
+                         the C++ painter's colours so the Studio and the 2D visualizer read the
+                         same. Dashed red when MKF declined the blocking — an undisplaced layout
+                         must never look like a real one. -->
+                    <g v-if="showConnections && connections.markers.length > 0" class="winding-studio-connections">
+                        <polyline
+                            v-for="route in connections.routes"
+                            :key="'route-' + route.key"
+                            :points="route.points"
+                            fill="none"
+                            stroke="#ffffff"
+                            stroke-width="0.6"
+                            stroke-opacity="0.35"
+                            vector-effect="non-scaling-stroke"
+                            pointer-events="none"
+                        />
+                        <rect
+                            v-for="marker in connections.markers"
+                            :key="'conn-' + marker.key"
+                            v-bind="marker.rect"
+                            :transform="marker.rotation ? `rotate(${marker.rotation} ${marker.pivotX} ${marker.pivotY})` : null"
+                            :fill="connections.declined ? 'none' : connectionFill(marker)"
+                            :opacity="connections.declined ? 0.85 : 0.5"
+                            :stroke="connections.declined ? '#FF0000' : 'none'"
+                            :stroke-dasharray="connections.declined ? '6 4' : null"
+                            stroke-width="1"
+                            vector-effect="non-scaling-stroke"
+                            :data-studio-winding="marker.winding"
+                            pointer-events="none"
+                        >
+                            <title>{{ connectionTitle(marker) }}</title>
+                        </rect>
                     </g>
                     <!-- Turns: the TOPMOST hover layer — tooltips are always reachable,
                          and clicking a turn also selects its section. Handles stay

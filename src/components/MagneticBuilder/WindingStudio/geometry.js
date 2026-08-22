@@ -522,6 +522,76 @@ function buildToroidalStudioModel(magnetic) {
 // Whole model
 // ---------------------------------------------------------------------------
 
+// ABT #849 (Alf, 2026-08-22): the CONNECTIONS layer — terminals, inter-layer links and
+// inter-section runs — as Studio views. The data comes from MKF (libMKF's
+// get_connection_layout), never from geometry recomputed here: the routing rules live in
+// Coil::get_connection_reserved_spaces and duplicating them in JS is exactly how the 2D and
+// 3D views used to disagree. This function only maps the engine's frame onto the Studio's.
+//
+// What is skipped, matching the C++ painter one-for-one:
+//   * markers naming a LAYER — those are LAYER_SQUEEZE book-keeping (the slot a crossed layer
+//     gives up); they carry no copper and the painter does not draw them either;
+//   * FRONT_YZ markers — the out-of-plane part of a return, which this XY view cannot show.
+export function buildConnectionViews(layout) {
+    if (layout == null || layout.error != null) {
+        return { markers: [], routes: [], blockingApplied: true, realWinding: false };
+    }
+    const markers = [];
+    for (const space of layout.markers ?? []) {
+        if (space.layer != null && space.layer !== '') continue;   // squeeze: no copper
+        if (space.plane === 'FRONT_YZ') continue;                  // out of this projection
+        const coordinates = space.coordinates ?? [];
+        const dimensions = space.dimensions ?? [];
+        if (coordinates.length < 2 || dimensions.length < 2) continue;
+        const rect = rectFromCenter(coordinates[0], coordinates[1], dimensions[0], dimensions[1]);
+        markers.push({
+            key: `${space.winding}|${space.parallel}|${space.kind}|${space.fromTurn}|${space.toTurn}|${rect.x.toFixed(6)}|${rect.y.toFixed(6)}`,
+            winding: space.winding,
+            parallel: space.parallel ?? 0,
+            section: space.section ?? null,
+            kind: space.kind,
+            isTerminal: !!space.isTerminal,
+            fromTurn: space.fromTurn ?? '',
+            toTurn: space.toTurn ?? '',
+            routedLength: space.routedLength ?? null,
+            rect,
+            // The painter rotates about the rectangle's centre and negates the angle because the
+            // y axis is flipped in SVG; the same holds here (rectFromCenter flips y).
+            rotation: -(space.rotation ?? 0),
+            pivotX: coordinates[0] * MM,
+            pivotY: -coordinates[1] * MM,
+        });
+    }
+    const routes = [];
+    for (const route of layout.routes ?? []) {
+        const waypoints = (route.waypoints ?? []).filter((p) => Array.isArray(p) && p.length >= 2);
+        if (waypoints.length < 2) continue;
+        routes.push({
+            key: `${route.winding}|${route.parallel}|${route.fromTurn}|${route.toTurn}|${route.kind}`,
+            winding: route.winding,
+            parallel: route.parallel ?? 0,
+            kind: route.kind,
+            fromTurn: route.fromTurn ?? '',
+            toTurn: route.toTurn ?? '',
+            routedLength: route.routedLength ?? null,
+            points: waypoints.map((p) => `${p[0] * MM},${-p[1] * MM}`).join(' '),
+        });
+    }
+    const realWinding = !!layout.realWinding;
+    return {
+        markers,
+        routes,
+        realWinding,
+        // DECLINED means real winding was asked for and MKF did NOT apply the connection
+        // blocking: the markers exist but the turns were never displaced around them, so this is
+        // not a layout the winder could make. Exactly the C++ painter's test (PainterImpl
+        // paint_coil_connections): with real winding OFF the markers are the ordinary blocking
+        // model and nothing is declined, so the condition must include the flag -- reading
+        // blockingApplied alone dashed every ideal-winding view in red.
+        declined: realWinding && layout.blockingApplied === false,
+    };
+}
+
 export function buildStudioModel(magnetic) {
     const core = magnetic?.core;
     const coil = magnetic?.coil;
