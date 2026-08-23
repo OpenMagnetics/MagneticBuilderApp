@@ -1,8 +1,12 @@
 // To parse this data:
 //
-//   import { Convert, Mas } from "./file";
+//   import { Convert, Mas, Inputs, Magnetic, Coil, Wire } from "./file";
 //
 //   const mas = Convert.toMas(json);
+//   const inputs = Convert.toInputs(json);
+//   const magnetic = Convert.toMagnetic(json);
+//   const coil = Convert.toCoil(json);
+//   const wire = Convert.toWire(json);
 //
 // These functions will throw an error if the JSON doesn't
 // match the expected interface, even if the JSON is valid.
@@ -14,11 +18,11 @@ export interface Mas {
     /**
      * The description of the inputs that can be used to design a Magnetic
      */
-    inputs: Inputs;
+    inputs: InputsClass;
     /**
      * The description of a magnetic
      */
-    magnetic: Magnetic;
+    magnetic: MagneticClass;
     /**
      * The description of the outputs that are produced after designing a Magnetic
      */
@@ -28,7 +32,7 @@ export interface Mas {
 /**
  * The description of the inputs that can be used to design a Magnetic
  */
-export interface Inputs {
+export interface InputsClass {
     /**
      * Data describing the design requirements
      */
@@ -750,11 +754,11 @@ export interface Waveform {
 /**
  * The description of a magnetic
  */
-export interface Magnetic {
+export interface MagneticClass {
     /**
      * Data describing the coil
      */
-    coil?: Coil;
+    coil?: CoilClass;
     /**
      * Data describing the magnetic core.
      */
@@ -767,7 +771,7 @@ export interface Magnetic {
      * Manufacturer information for the magnetic. Extends the shared manufacturerInfo with a
      * datasheetInfo block for catalogue-level data.
      */
-    manufacturerInfo?: MagneticManufacturerInfo;
+    manufacturerInfo?: PurpleMagneticManufacturerInfo;
     /**
      * Human-readable name/reference of this magnetic component (e.g. the design or part label).
      */
@@ -783,7 +787,7 @@ export interface Magnetic {
  *
  * The description of a magnetic coil
  */
-export interface Coil {
+export interface CoilClass {
     /**
      * Bobbin(s) for this coil. Scalar (single Bobbin object or name) describes a single bobbin
      * (typically around the centre column). Array describes per-column bobbins for multi-column
@@ -1449,7 +1453,7 @@ export interface CoilFunctionalDescription {
      * assumed. Overridable per group and per section
      */
     windingWindow?: number;
-    wire:           Wire | string;
+    wire:           WireDataOrNameUnionObject | string;
     /**
      * List of winding names that are wound together with this winding.
      */
@@ -1515,7 +1519,7 @@ export enum Direction {
  * stays invisible to code generators so the shared wireType enum keeps generating as
  * WireType).
  */
-export interface Wire {
+export interface WireDataOrNameUnionObject {
     /**
      * The conducting diameter of the wire, in m
      */
@@ -2113,8 +2117,17 @@ export interface CoreFunctionalDescription {
     /**
      * The lists of gaps in the magnetic core
      */
-    gapping:  CoreGap[];
-    material: CoreMaterial | string;
+    gapping: CoreGap[];
+    /**
+     * The material(s) the core is made of. A single material (by record or by name) for the
+     * overwhelming majority of cores. A LIST when the assembly genuinely comprises pieces of
+     * different grades that the analytical models must treat separately — e.g. a shielded drum
+     * whose closing ring is a different ferrite from the drum (ABT #576). Order is significant:
+     * the FIRST entry is the primary piece (the drum / the wound piece), subsequent entries are
+     * the closing pieces in the order the magnetic circuit crosses them. A one-element list
+     * means the same thing as the bare form.
+     */
+    material: Array<CoreMaterial | string> | CoreMaterial | string;
     /**
      * The number of stacked cores
      */
@@ -2268,6 +2281,15 @@ export interface CoreMaterial {
      */
     permeability: Permeabilities;
     /**
+     * Relative permittivity of the material. Ferrites (MnZn grades in particular) have a very
+     * large, frequency-dependent permittivity that, together with the permeability, sets the
+     * in-material electromagnetic wavelength lambda = c / (f * sqrt(mu' * eps')) and therefore
+     * the onset of dimensional effects (dimensional resonance) and the effective usable
+     * bandwidth of a given core size. Optional; primarily relevant to high-frequency (MHz)
+     * modelling and to tools that account for displacement current.
+     */
+    permittivity?: Permittivities;
+    /**
      * Manufacturer recommended operating conditions for this material
      */
     recommendations?: CoreMaterialRecommendations;
@@ -2386,6 +2408,7 @@ export enum MaterialComposition {
     FeNIMo = "FeNiMo",
     FeSi = "FeSi",
     FeSiAl = "FeSiAl",
+    FeSiCR = "FeSiCr",
     Iron = "iron",
     MgZn = "MgZn",
     MnZn = "MnZn",
@@ -2620,6 +2643,55 @@ export interface TemperatureFactor {
 export interface ComplexPermeabilityData {
     imaginary: PermeabilityPoint[] | PermeabilityPoint;
     real:      PermeabilityPoint[] | PermeabilityPoint;
+}
+
+/**
+ * Relative permittivity of the material. Ferrites (MnZn grades in particular) have a very
+ * large, frequency-dependent permittivity that, together with the permeability, sets the
+ * in-material electromagnetic wavelength lambda = c / (f * sqrt(mu' * eps')) and therefore
+ * the onset of dimensional effects (dimensional resonance) and the effective usable
+ * bandwidth of a given core size. Optional; primarily relevant to high-frequency (MHz)
+ * modelling and to tools that account for displacement current.
+ */
+export interface Permittivities {
+    /**
+     * Complex relative permittivity (eps' + j*eps''), following the same sign convention as
+     * complex permeability above: the imaginary part is stored as a positive loss magnitude.
+     * Used for dimensional-effect and displacement-current modelling at high frequency.
+     */
+    complex?: ComplexPermittivityData;
+}
+
+/**
+ * Complex relative permittivity (eps' + j*eps''), following the same sign convention as
+ * complex permeability above: the imaginary part is stored as a positive loss magnitude.
+ * Used for dimensional-effect and displacement-current modelling at high frequency.
+ */
+export interface ComplexPermittivityData {
+    imaginary: PermittivityPoint[] | PermittivityPoint;
+    real:      PermittivityPoint[] | PermittivityPoint;
+}
+
+/**
+ * data for describing one point of permittivity
+ */
+export interface PermittivityPoint {
+    /**
+     * Frequency of the electric field, in Hz
+     */
+    frequency?: number;
+    /**
+     * temperature for the field value, in Celsius
+     */
+    temperature?: number;
+    /**
+     * tolerance for the field value
+     */
+    tolerance?: number;
+    /**
+     * Relative permittivity value (dimensionless)
+     */
+    value: number;
 }
 
 /**
@@ -3092,7 +3164,7 @@ export interface EffectiveParameters {
  * datasheetInfo; families do NOT allOf-extend this (incompatible with
  * additionalProperties:false).
  */
-export interface MagneticManufacturerInfo {
+export interface PurpleMagneticManufacturerInfo {
     /**
      * All values extracted directly from the component datasheet, organised by domain.
      */
@@ -4429,7 +4501,7 @@ export interface WindingWindowCurrentDensityFieldOutput {
      */
     methodUsed: string;
     origin:     ResultOrigin;
-    wires:      Array<Wire | string>;
+    wires:      Array<WireDataOrNameUnionObject | string>;
 }
 
 /**
@@ -4546,6 +4618,241 @@ export interface ComplexFieldPoint {
     turnLength?: number;
 }
 
+/**
+ * The description of the inputs that can be used to design a Magnetic
+ */
+export interface Inputs {
+    /**
+     * Data describing the design requirements
+     */
+    designRequirements: DesignRequirements;
+    /**
+     * Data describing the operating points
+     */
+    operatingPoints: OperatingPoint[];
+}
+
+/**
+ * The description of a magnetic
+ */
+export interface Magnetic {
+    /**
+     * Data describing the coil
+     */
+    coil?: CoilClass;
+    /**
+     * Data describing the magnetic core.
+     */
+    core?: MagneticCore;
+    /**
+     * The lists of distributors of the magnetic
+     */
+    distributorsInfo?: DistributorInfo[];
+    /**
+     * Manufacturer information for the magnetic. Extends the shared manufacturerInfo with a
+     * datasheetInfo block for catalogue-level data.
+     */
+    manufacturerInfo?: FluffyMagneticManufacturerInfo;
+    /**
+     * Human-readable name/reference of this magnetic component (e.g. the design or part label).
+     */
+    name?: string;
+    /**
+     * The rotation of the magnetic, by default the winding column goes vertical
+     */
+    rotation?: number[];
+}
+
+/**
+ * Manufacturer information for the magnetic. Extends the shared manufacturerInfo with a
+ * datasheetInfo block for catalogue-level data.
+ *
+ * Shared manufacturer-info fields. Each component family builds its OWN closed
+ * manufacturerInfo by $ref-ing these field definitions (by JSON pointer) and adding its
+ * datasheetInfo; families do NOT allOf-extend this (incompatible with
+ * additionalProperties:false).
+ */
+export interface FluffyMagneticManufacturerInfo {
+    /**
+     * All values extracted directly from the component datasheet, organised by domain.
+     */
+    datasheetInfo?: DatasheetInfo;
+    /**
+     * URL to manufacturer datasheet
+     */
+    datasheetUrl?: string;
+    /**
+     * Description of the part per its manufacturer
+     */
+    description?: string;
+    /**
+     * Manufacturer product family / product-line name (e.g. 'CoolMOS C7', 'WE-MAPI').
+     */
+    family?: string;
+    /**
+     * Manufacturer name
+     */
+    name: string;
+    /**
+     * Manufacturer order code
+     */
+    orderCode?: string;
+    /**
+     * Manufacturer part number
+     */
+    reference?: string;
+    /**
+     * Manufacturer product series within the family.
+     */
+    series?: string;
+    /**
+     * SPICE simulation model for this component
+     */
+    spiceModel?: { [key: string]: any };
+    /**
+     * Production status
+     */
+    status?: Status;
+    [property: string]: any;
+}
+
+/**
+ * The description of a magnetic coil
+ */
+export interface Coil {
+    /**
+     * Bobbin(s) for this coil. Scalar (single Bobbin object or name) describes a single bobbin
+     * (typically around the centre column). Array describes per-column bobbins for multi-column
+     * magnetics (e.g. 3-phase transformers). Convention A: bobbins[i] is mounted on
+     * core.columns[i] (index 0 = centre/main column).
+     */
+    bobbin: Array<Bobbin | string> | Bobbin | string;
+    /**
+     * Coil data described in functional terms (the windings, per IEV 151-13-17), in a form
+     * suitable for purely magnetic analytical models.
+     */
+    functionalDescription: CoilFunctionalDescription[];
+    /**
+     * Coil data at the group level. A group may define a PCB or distinct winding windows.
+     */
+    groupsDescription?: Group[];
+    /**
+     * The data from the coil at the layer level, in a way that can be used by more advanced
+     * analytical and finite element models
+     */
+    layersDescription?: Layer[];
+    /**
+     * Coil data at the section level, suitable for more advanced analytical and finite-element
+     * models.
+     */
+    sectionsDescription?: Section[];
+    /**
+     * The data from the coil at the turn level, in a way that can be used by the most advanced
+     * analytical and finite element models
+     */
+    turnsDescription?: Turn[];
+}
+
+/**
+ * The description of a magnet wire
+ *
+ * The description of a solid round magnet wire Discriminator: this file matches ONLY
+ * documents with type='round' (enforced by the if/required/else:false conditional, which
+ * stays invisible to code generators so the shared wireType enum keeps generating as
+ * WireType).
+ *
+ * The description of a basic magnet wire
+ *
+ * The description of a solid foil magnet wire Discriminator: this file matches ONLY
+ * documents with type='foil' (enforced by the if/required/else:false conditional, which
+ * stays invisible to code generators so the shared wireType enum keeps generating as
+ * WireType).
+ *
+ * The description of a solid rectangular magnet wire Discriminator: this file matches ONLY
+ * documents with type='rectangular' (enforced by the if/required/else:false conditional,
+ * which stays invisible to code generators so the shared wireType enum keeps generating as
+ * WireType).
+ *
+ * The description of a stranded litz magnet wire Discriminator: this file matches ONLY
+ * documents with type='litz' (enforced by the if/required/else:false conditional, which
+ * stays invisible to code generators so the shared wireType enum keeps generating as
+ * WireType).
+ *
+ * The description of a solid planar magnet wire Discriminator: this file matches ONLY
+ * documents with type='planar' (enforced by the if/required/else:false conditional, which
+ * stays invisible to code generators so the shared wireType enum keeps generating as
+ * WireType).
+ */
+export interface Wire {
+    /**
+     * The conducting diameter of the wire, in m
+     */
+    conductingDiameter?: DimensionWithTolerance;
+    material?:           WireMaterial | string;
+    /**
+     * The outer diameter of the wire, in m
+     *
+     * The outer diameter of the wire. Unit: m.
+     */
+    outerDiameter?: DimensionWithTolerance;
+    coating?:       InsulationWireCoating | string;
+    /**
+     * The conducting area of the wire, in m². Used for some rectangular shapes where the area
+     * is smaller than expected due to rounded corners
+     */
+    conductingArea?:   DimensionWithTolerance;
+    manufacturerInfo?: ManufacturerInfo;
+    /**
+     * The name of wire
+     */
+    name?: string;
+    /**
+     * The number of conductors in the wire
+     */
+    numberConductors?: number;
+    /**
+     * The standard of wire
+     */
+    standard?: WireStandard;
+    /**
+     * Name according to the standard of wire
+     */
+    standardName?: string;
+    type:          WireType;
+    /**
+     * The conducting height of the wire, in m
+     */
+    conductingHeight?: DimensionWithTolerance;
+    /**
+     * The conducting width of the wire, in m
+     */
+    conductingWidth?: DimensionWithTolerance;
+    /**
+     * The outer height of the wire, in m
+     */
+    outerHeight?: DimensionWithTolerance;
+    /**
+     * The outer width of the wire, in m
+     */
+    outerWidth?: DimensionWithTolerance;
+    /**
+     * The radius of the edge, in case of rectangular wire, in m
+     */
+    edgeRadius?: DimensionWithTolerance;
+    /**
+     * The wire used as strands
+     */
+    strand?: WireRound | string;
+    /**
+     * Length of one full twist of the litz bundle along the wire axis. Unit: m. Vendors quote
+     * this in mm or as 'lay length'; convert to metres before serialisation. No international
+     * standard exists for litz construction; this field captures the most commonly published
+     * vendor parameter.
+     */
+    twistPitch?: DimensionWithTolerance;
+    [property: string]: any;
+}
+
 // Converts JSON strings to/from your types
 // and asserts the results of JSON.parse at runtime
 export class Convert {
@@ -4561,16 +4868,32 @@ export class Convert {
         return cast(JSON.parse(json), r("Inputs"));
     }
 
+    public static inputsToJson(value: Inputs): string {
+        return JSON.stringify(uncast(value, r("Inputs")), null, 2);
+    }
+
     public static toMagnetic(json: string): Magnetic {
         return cast(JSON.parse(json), r("Magnetic"));
+    }
+
+    public static magneticToJson(value: Magnetic): string {
+        return JSON.stringify(uncast(value, r("Magnetic")), null, 2);
     }
 
     public static toCoil(json: string): Coil {
         return cast(JSON.parse(json), r("Coil"));
     }
 
+    public static coilToJson(value: Coil): string {
+        return JSON.stringify(uncast(value, r("Coil")), null, 2);
+    }
+
     public static toWire(json: string): Wire {
         return cast(JSON.parse(json), r("Wire"));
+    }
+
+    public static wireToJson(value: Wire): string {
+        return JSON.stringify(uncast(value, r("Wire")), null, 2);
     }
 }
 
@@ -4728,11 +5051,11 @@ function r(name: string) {
 
 const typeMap: any = {
     "Mas": o([
-        { json: "inputs", js: "inputs", typ: r("Inputs") },
-        { json: "magnetic", js: "magnetic", typ: r("Magnetic") },
+        { json: "inputs", js: "inputs", typ: r("InputsClass") },
+        { json: "magnetic", js: "magnetic", typ: r("MagneticClass") },
         { json: "outputs", js: "outputs", typ: a(r("Outputs")) },
     ], false),
-    "Inputs": o([
+    "InputsClass": o([
         { json: "designRequirements", js: "designRequirements", typ: r("DesignRequirements") },
         { json: "operatingPoints", js: "operatingPoints", typ: a(r("OperatingPoint")) },
     ], false),
@@ -4859,15 +5182,15 @@ const typeMap: any = {
         { json: "ancillaryLabel", js: "ancillaryLabel", typ: u(undefined, r("WaveformLabel")) },
         { json: "time", js: "time", typ: u(undefined, a(3.14)) },
     ], false),
-    "Magnetic": o([
-        { json: "coil", js: "coil", typ: u(undefined, r("Coil")) },
+    "MagneticClass": o([
+        { json: "coil", js: "coil", typ: u(undefined, r("CoilClass")) },
         { json: "core", js: "core", typ: u(undefined, r("MagneticCore")) },
         { json: "distributorsInfo", js: "distributorsInfo", typ: u(undefined, a(r("DistributorInfo"))) },
-        { json: "manufacturerInfo", js: "manufacturerInfo", typ: u(undefined, r("MagneticManufacturerInfo")) },
+        { json: "manufacturerInfo", js: "manufacturerInfo", typ: u(undefined, r("PurpleMagneticManufacturerInfo")) },
         { json: "name", js: "name", typ: u(undefined, "") },
         { json: "rotation", js: "rotation", typ: u(undefined, a(3.14)) },
     ], false),
-    "Coil": o([
+    "CoilClass": o([
         { json: "bobbin", js: "bobbin", typ: u(a(u(r("Bobbin"), "")), r("Bobbin"), "") },
         { json: "functionalDescription", js: "functionalDescription", typ: a(r("CoilFunctionalDescription")) },
         { json: "groupsDescription", js: "groupsDescription", typ: u(undefined, a(r("Group"))) },
@@ -5003,7 +5326,7 @@ const typeMap: any = {
         { json: "numberParallels", js: "numberParallels", typ: 0 },
         { json: "numberTurns", js: "numberTurns", typ: 0 },
         { json: "windingWindow", js: "windingWindow", typ: u(undefined, 0) },
-        { json: "wire", js: "wire", typ: u(r("Wire"), "") },
+        { json: "wire", js: "wire", typ: u(r("WireDataOrNameUnionObject"), "") },
         { json: "woundWith", js: "woundWith", typ: u(undefined, a("")) },
     ], false),
     "ConnectionElement": o([
@@ -5013,7 +5336,7 @@ const typeMap: any = {
         { json: "pinName", js: "pinName", typ: u(undefined, "") },
         { json: "type", js: "type", typ: u(undefined, r("ConnectionType")) },
     ], false),
-    "Wire": o([
+    "WireDataOrNameUnionObject": o([
         { json: "conductingDiameter", js: "conductingDiameter", typ: u(undefined, r("DimensionWithTolerance")) },
         { json: "material", js: "material", typ: u(undefined, u(r("WireMaterial"), "")) },
         { json: "outerDiameter", js: "outerDiameter", typ: u(undefined, r("DimensionWithTolerance")) },
@@ -5152,7 +5475,7 @@ const typeMap: any = {
     "CoreFunctionalDescription": o([
         { json: "coating", js: "coating", typ: u(undefined, u(r("CoreCoating"), "")) },
         { json: "gapping", js: "gapping", typ: a(r("CoreGap")) },
-        { json: "material", js: "material", typ: u(r("CoreMaterial"), "") },
+        { json: "material", js: "material", typ: u(a(u(r("CoreMaterial"), "")), r("CoreMaterial"), "") },
         { json: "numberStacks", js: "numberStacks", typ: u(undefined, 0) },
         { json: "shape", js: "shape", typ: u(r("CoreShape"), "") },
         { json: "type", js: "type", typ: r("CoreType") },
@@ -5189,6 +5512,7 @@ const typeMap: any = {
         { json: "materialComposition", js: "materialComposition", typ: u(undefined, r("MaterialComposition")) },
         { json: "name", js: "name", typ: "" },
         { json: "permeability", js: "permeability", typ: r("Permeabilities") },
+        { json: "permittivity", js: "permittivity", typ: u(undefined, r("Permittivities")) },
         { json: "recommendations", js: "recommendations", typ: u(undefined, r("CoreMaterialRecommendations")) },
         { json: "remanence", js: "remanence", typ: u(undefined, a(r("BhCycleElement"))) },
         { json: "resistivity", js: "resistivity", typ: a(r("ResistivityPoint")) },
@@ -5265,6 +5589,19 @@ const typeMap: any = {
     "ComplexPermeabilityData": o([
         { json: "imaginary", js: "imaginary", typ: u(a(r("PermeabilityPoint")), r("PermeabilityPoint")) },
         { json: "real", js: "real", typ: u(a(r("PermeabilityPoint")), r("PermeabilityPoint")) },
+    ], false),
+    "Permittivities": o([
+        { json: "complex", js: "complex", typ: u(undefined, r("ComplexPermittivityData")) },
+    ], false),
+    "ComplexPermittivityData": o([
+        { json: "imaginary", js: "imaginary", typ: u(a(r("PermittivityPoint")), r("PermittivityPoint")) },
+        { json: "real", js: "real", typ: u(a(r("PermittivityPoint")), r("PermittivityPoint")) },
+    ], false),
+    "PermittivityPoint": o([
+        { json: "frequency", js: "frequency", typ: u(undefined, 3.14) },
+        { json: "temperature", js: "temperature", typ: u(undefined, 3.14) },
+        { json: "tolerance", js: "tolerance", typ: u(undefined, 3.14) },
+        { json: "value", js: "value", typ: 3.14 },
     ], false),
     "CoreMaterialRecommendations": o([
         { json: "maximumFrequency", js: "maximumFrequency", typ: u(undefined, 3.14) },
@@ -5363,7 +5700,7 @@ const typeMap: any = {
         { json: "effectiveVolume", js: "effectiveVolume", typ: 3.14 },
         { json: "minimumArea", js: "minimumArea", typ: 3.14 },
     ], false),
-    "MagneticManufacturerInfo": o([
+    "PurpleMagneticManufacturerInfo": o([
         { json: "datasheetInfo", js: "datasheetInfo", typ: u(undefined, r("DatasheetInfo")) },
         { json: "datasheetUrl", js: "datasheetUrl", typ: u(undefined, "") },
         { json: "description", js: "description", typ: u(undefined, "") },
@@ -5681,7 +6018,7 @@ const typeMap: any = {
         { json: "fieldPerFrequency", js: "fieldPerFrequency", typ: a(r("Field")) },
         { json: "methodUsed", js: "methodUsed", typ: "" },
         { json: "origin", js: "origin", typ: r("ResultOrigin") },
-        { json: "wires", js: "wires", typ: a(u(r("Wire"), "")) },
+        { json: "wires", js: "wires", typ: a(u(r("WireDataOrNameUnionObject"), "")) },
     ], false),
     "Field": o([
         { json: "data", js: "data", typ: a(r("FieldPoint")) },
@@ -5717,6 +6054,58 @@ const typeMap: any = {
         { json: "turnIndex", js: "turnIndex", typ: u(undefined, 0) },
         { json: "turnLength", js: "turnLength", typ: u(undefined, 3.14) },
     ], false),
+    "Inputs": o([
+        { json: "designRequirements", js: "designRequirements", typ: r("DesignRequirements") },
+        { json: "operatingPoints", js: "operatingPoints", typ: a(r("OperatingPoint")) },
+    ], false),
+    "Magnetic": o([
+        { json: "coil", js: "coil", typ: u(undefined, r("CoilClass")) },
+        { json: "core", js: "core", typ: u(undefined, r("MagneticCore")) },
+        { json: "distributorsInfo", js: "distributorsInfo", typ: u(undefined, a(r("DistributorInfo"))) },
+        { json: "manufacturerInfo", js: "manufacturerInfo", typ: u(undefined, r("FluffyMagneticManufacturerInfo")) },
+        { json: "name", js: "name", typ: u(undefined, "") },
+        { json: "rotation", js: "rotation", typ: u(undefined, a(3.14)) },
+    ], false),
+    "FluffyMagneticManufacturerInfo": o([
+        { json: "datasheetInfo", js: "datasheetInfo", typ: u(undefined, r("DatasheetInfo")) },
+        { json: "datasheetUrl", js: "datasheetUrl", typ: u(undefined, "") },
+        { json: "description", js: "description", typ: u(undefined, "") },
+        { json: "family", js: "family", typ: u(undefined, "") },
+        { json: "name", js: "name", typ: "" },
+        { json: "orderCode", js: "orderCode", typ: u(undefined, "") },
+        { json: "reference", js: "reference", typ: u(undefined, "") },
+        { json: "series", js: "series", typ: u(undefined, "") },
+        { json: "spiceModel", js: "spiceModel", typ: u(undefined, m("any")) },
+        { json: "status", js: "status", typ: u(undefined, r("Status")) },
+    ], "any"),
+    "Coil": o([
+        { json: "bobbin", js: "bobbin", typ: u(a(u(r("Bobbin"), "")), r("Bobbin"), "") },
+        { json: "functionalDescription", js: "functionalDescription", typ: a(r("CoilFunctionalDescription")) },
+        { json: "groupsDescription", js: "groupsDescription", typ: u(undefined, a(r("Group"))) },
+        { json: "layersDescription", js: "layersDescription", typ: u(undefined, a(r("Layer"))) },
+        { json: "sectionsDescription", js: "sectionsDescription", typ: u(undefined, a(r("Section"))) },
+        { json: "turnsDescription", js: "turnsDescription", typ: u(undefined, a(r("Turn"))) },
+    ], false),
+    "Wire": o([
+        { json: "conductingDiameter", js: "conductingDiameter", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "material", js: "material", typ: u(undefined, u(r("WireMaterial"), "")) },
+        { json: "outerDiameter", js: "outerDiameter", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "coating", js: "coating", typ: u(undefined, u(r("InsulationWireCoating"), "")) },
+        { json: "conductingArea", js: "conductingArea", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "manufacturerInfo", js: "manufacturerInfo", typ: u(undefined, r("ManufacturerInfo")) },
+        { json: "name", js: "name", typ: u(undefined, "") },
+        { json: "numberConductors", js: "numberConductors", typ: u(undefined, 0) },
+        { json: "standard", js: "standard", typ: u(undefined, r("WireStandard")) },
+        { json: "standardName", js: "standardName", typ: u(undefined, "") },
+        { json: "type", js: "type", typ: r("WireType") },
+        { json: "conductingHeight", js: "conductingHeight", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "conductingWidth", js: "conductingWidth", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "outerHeight", js: "outerHeight", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "outerWidth", js: "outerWidth", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "edgeRadius", js: "edgeRadius", typ: u(undefined, r("DimensionWithTolerance")) },
+        { json: "strand", js: "strand", typ: u(undefined, u(r("WireRound"), "")) },
+        { json: "twistPitch", js: "twistPitch", typ: u(undefined, r("DimensionWithTolerance")) },
+    ], "any"),
     "CTI": [
         "groupI",
         "groupII",
@@ -5989,6 +6378,7 @@ const typeMap: any = {
         "FeNiMo",
         "FeSi",
         "FeSiAl",
+        "FeSiCr",
         "iron",
         "MgZn",
         "MnZn",
