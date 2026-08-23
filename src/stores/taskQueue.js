@@ -2181,19 +2181,26 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         strayCapacitanceCalculated(success = true, dataOrMessage = '') {
         },
 
-        async calculateStrayCapacitance(coil, operatingPoint, modelsData = {}) {
+        // ABT #848 follow-up: takes the MAGNETIC, not the coil. The engine's turn-to-core
+        // network needs the core, and this binding used to be handed a bare coil, so the
+        // panel was structurally unable to see it and disagreed with the impedance sweep by
+        // construction. A bare coil still works (the binding detects it), so no caller
+        // breaks, but pass the magnetic when you have one.
+        async calculateStrayCapacitance(magneticOrCoil, operatingPoint, modelsData = {}) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
+            const coil = magneticOrCoil?.coil ?? magneticOrCoil;
             console.log('📤 Sending to calculate_stray_capacitance:', {
                 coilKeys: Object.keys(coil),
                 turnsCount: coil.turnsDescription?.length || 0,
                 layersCount: coil.layersDescription?.length || 0,
                 windingsCount: coil.functionalDescription?.length || 0,
+                hasCore: !!magneticOrCoil?.core,
                 hasOperatingPoint: !!operatingPoint
             });
 
-            const result = await mkf.calculate_stray_capacitance(JSON.stringify(coil), JSON.stringify(operatingPoint), JSON.stringify(modelsData));
+            const result = await mkf.calculate_stray_capacitance(JSON.stringify(magneticOrCoil), JSON.stringify(operatingPoint), JSON.stringify(modelsData));
 
             if (result.startsWith("Exception")) {
                 console.error('❌ calculate_stray_capacitance Exception:', result);
@@ -2210,11 +2217,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         maxwellCapacitanceMatrixCalculated(success = true, dataOrMessage = '') {
         },
 
-        async calculateMaxwellCapacitanceMatrix(coil, modelsData = {}) {
+        async calculateMaxwellCapacitanceMatrix(magneticOrCoil, modelsData = {}) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = await mkf.calculate_maxwell_capacitance_matrix(JSON.stringify(coil), JSON.stringify(modelsData));
+            const result = await mkf.calculate_maxwell_capacitance_matrix(JSON.stringify(magneticOrCoil), JSON.stringify(modelsData));
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.maxwellCapacitanceMatrixCalculated(false, result);}, this.task_standard_response_delay);
@@ -2230,11 +2237,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         capacitanceMatrixCalculated(success = true, dataOrMessage = '') {
         },
 
-        async calculateCapacitanceMatrix(coil, modelsData = {}) {
+        async calculateCapacitanceMatrix(magneticOrCoil, modelsData = {}) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = await mkf.calculate_capacitance_matrix(JSON.stringify(coil), JSON.stringify(modelsData));
+            const result = await mkf.calculate_capacitance_matrix(JSON.stringify(magneticOrCoil), JSON.stringify(modelsData));
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.capacitanceMatrixCalculated(false, result);}, this.task_standard_response_delay);

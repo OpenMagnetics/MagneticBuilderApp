@@ -811,8 +811,14 @@ export default {
                             } else {
                                 try {
                                     console.log('[AdvancedCoilInfo] Calculating full capacitance data...');
+                                    // ABT #848 follow-up: hand the MAGNETIC, not the coil.
+                                    // The turn-to-core network is most of the winding-to-core
+                                    // capacitance, and without the core the panel could not
+                                    // see it at all — it disagreed with the impedance sweep by
+                                    // construction. Falls back to the coil if there is no
+                                    // magnetic, which is what the binding accepts anyway.
                                     const capacitanceData = await this.taskQueueStore.calculateStrayCapacitance(
-                                        coil,
+                                        this.masStore.mas?.magnetic ?? coil,
                                         operatingPoint,
                                         modelsData
                                     );
