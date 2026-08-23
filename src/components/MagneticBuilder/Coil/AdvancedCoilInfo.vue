@@ -1151,6 +1151,21 @@ export default {
                     <i class="pi pi-wifi"></i>
                     <span>Stray Capacitance</span>
                 </div>
+                <!-- These are STATIC network capacitances. The capacitance implied by a
+                     self-resonance on the impedance curve is a different quantity and is
+                     smaller: along a winding the voltage distribution weights each
+                     turn-to-turn contribution by (dV/V)^2, so a distributed inter-turn
+                     capacitance contributes far less than its static value (a uniform
+                     single layer contributes about a third). A static-to-effective ratio
+                     of a few times is expected for a multi-layer winding and is not a
+                     disagreement between the two. Saying so here because I read the two
+                     numbers side by side and assumed one was wrong. -->
+                <div class="advancedcoil-hint advancedcoil-hint-note">
+                    <i class="pi pi-info-circle"></i>
+                    Static network capacitances. The effective capacitance at self-resonance
+                    is smaller — the voltage along the winding weights each contribution by
+                    (&Delta;V/V)&sup2;. Use the impedance sweep for resonance behaviour.
+                </div>
                 <div class="advancedcoil-card-body">
                     <div class="advancedcoil-plot">
                         <Magnetic2DVisualizer 
@@ -1425,6 +1440,13 @@ export default {
 </template>
 
 <style scoped>
+.advancedcoil-hint-note {
+    display: block;
+    padding: 0.4rem 0.75rem 0;
+    line-height: 1.4;
+    opacity: 0.8;
+}
+
 .advancedcoil-topbar {
     display: flex;
     align-items: center;
