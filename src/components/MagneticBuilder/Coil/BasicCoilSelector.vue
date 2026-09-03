@@ -842,10 +842,21 @@ export default {
                 </div>
             </div>
             <div class="coil-config-body">
+                <!-- min-height, not just max-height: Magnetic2DVisualizer sizes its drawing
+                     FROM this box, and this box was sized BY its content, so a portrait core
+                     collapsed the row to the drawing's own intrinsic height and the drawing
+                     was then "scaled" to the size it already was (measured: a 50 x 83 SVG in
+                     a 524 x 91 row). Landscape cores never showed it, taking the visualizer's
+                     100%-width branch instead. A real height breaks the circularity.
+
+                     It has to be `height`, not `min-height`: the visualizer's own box is
+                     height:100%, and a percentage height resolves against the parent's
+                     DEFINITE height — min-height does not make one, so height:100% fell back
+                     to auto and the row collapsed to its content exactly as before. -->
                 <div
                     v-if="useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
                     class="row mb-3"
-                    :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ' max-height: 50vh;'"
+                    :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ' height: 260px; max-height: 50vh;'"
                 >
                      <Magnetic2DVisualizer
                          :modelValue="masStore.mas"
