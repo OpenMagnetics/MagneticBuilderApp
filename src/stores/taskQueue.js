@@ -5,6 +5,30 @@ import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
 import { useSettingsStore } from './settings'
 
+// Families the selectors hide. These are shapes the builder has no editor or
+// renderer for, so offering them would produce a core nobody can finish. The
+// list was inline and duplicated in five places, which is how `drumRing` came
+// to be filtered out of the family list while still being indexed as a key.
+const HIDDEN_SHAPE_FAMILY_TOKENS = ["pqi", "ut", "ui", "h", "drum"];
+
+// A family is hidden only if it is not the family of the part being edited.
+// The part's own family is a FACT about the part, not a catalogue choice: a
+// catalogued drumRing inductor is a drumRing whether or not the builder would
+// offer that family to someone starting from scratch. Hiding it left the user
+// looking at a core with no family and no shape, and — because the custom-shape
+// branch below then indexed a key that was never created — threw
+// "Cannot read properties of undefined (reading 'unshift')", which rejected
+// getCoreShapes entirely and emptied BOTH dropdowns rather than just one.
+function isHiddenShapeFamily(shapeFamily, currentFamily = null) {
+    if (currentFamily != null && shapeFamily === currentFamily) return false;
+    return HIDDEN_SHAPE_FAMILY_TOKENS.some((token) => shapeFamily.includes(token));
+}
+
+// The shape family of the MAS being edited, or null when there is none yet.
+function shapeFamilyOf(mas) {
+    return mas?.magnetic?.core?.functionalDescription?.shape?.family ?? null;
+}
+
 // Returns the restricted shape-family whitelist (lowercase) if set in
 // magneticBuilderSettings, or null when no restriction applies. Defensive
 // against the field being absent in older persisted settings blobs.
@@ -292,19 +316,21 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         coreShapeFamiliesGotten(success = true, dataOrMessage = '') {
         },
 
-        async getCoreShapeFamilies(wiringTechnology=null) {
+        async getCoreShapeFamilies(wiringTechnology=null, mas=null) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
             let coreShapeFamilies = [];
             const allowed = getRestrictedShapeFamilies();
+            // Never hide the family of the part being edited (see isHiddenShapeFamily).
+            const currentFamily = shapeFamilyOf(mas);
 
             const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
-                if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                    !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                if (!isHiddenShapeFamily(shapeFamily, currentFamily)) {
                     if (wiringTechnology == null || wiringTechnology?.toLowerCase() === 'wound' || shapeFamily.toLowerCase() !== 't') {
-                        if (allowed != null && !allowed.includes(shapeFamily.toLowerCase())) continue;
+                        if (allowed != null && shapeFamily !== currentFamily &&
+                            !allowed.includes(shapeFamily.toLowerCase())) continue;
                         coreShapeFamilies.push(shapeFamily);
                     }
                 }
@@ -374,17 +400,18 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             let coreShapeFamilies = [];
             const coreShapeNames = {};
             const allowed = getRestrictedShapeFamilies();
+            const currentFamily = shapeFamilyOf(mas);
 
             const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
-                if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                    !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                if (!isHiddenShapeFamily(shapeFamily, currentFamily)) {
                     // Exclude toroidal cores (T family) when in Planar/Printed mode
                     const isToroidal = shapeFamily.toLowerCase() === 't';
                     const isPlanarMode = mas.inputs.designRequirements.wiringTechnology != null &&
                                          mas.inputs.designRequirements.wiringTechnology?.toLowerCase() !== 'wound';
                     if (!(isToroidal && isPlanarMode)) {
-                        if (allowed != null && !allowed.includes(shapeFamily.toLowerCase())) continue;
+                        if (allowed != null && shapeFamily !== currentFamily &&
+                            !allowed.includes(shapeFamily.toLowerCase())) continue;
                         coreShapeFamilies.push(shapeFamily);
                     }
                 }
@@ -396,8 +423,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 const coreShapeNamesArr = toArray(await mkf.get_available_core_shapes_by_manufacturer(onlyManufacturer));
 
                 coreShapeFamilies.forEach((shapeFamily) => {
-                    if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                        !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                    if (!isHiddenShapeFamily(shapeFamily, currentFamily)) {
 
 
                         coreShapeNames[shapeFamily] = [];
@@ -418,8 +444,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
             else {
                 for (const shapeFamily of coreShapeFamilies) {
-                    if (!shapeFamily.includes("pqi") && !shapeFamily.includes("ut") &&
-                        !shapeFamily.includes("ui") && !shapeFamily.includes("h") && !shapeFamily.includes("drum")) {
+                    if (!isHiddenShapeFamily(shapeFamily, currentFamily)) {
                         coreShapeNames[shapeFamily] = [];
                         // Pass the family name exactly as get_available_core_shape_families
                         // returned it. The CoreShapeFamily enum is case-sensitive
@@ -442,7 +467,15 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
 
             if (mas.magnetic.core.functionalDescription.shape.type == "custom") {
-                coreShapeNames[mas.magnetic.core.functionalDescription.shape.family].unshift(mas.magnetic.core.functionalDescription.shape.name);
+                const family = mas.magnetic.core.functionalDescription.shape.family;
+                // currentFamily is never hidden, so this key exists for every family
+                // the engine enumerates. It can still be absent if the engine does not
+                // know the family at all — an inline custom shape is still a real part,
+                // so list it under its own family rather than dropping it.
+                if (coreShapeNames[family] == null) {
+                    coreShapeNames[family] = [];
+                }
+                coreShapeNames[family].unshift(mas.magnetic.core.functionalDescription.shape.name);
             }
             setTimeout(() => {this.coreShapesGotten(true, coreShapeNames);}, this.task_standard_response_delay);
             return coreShapeNames;
