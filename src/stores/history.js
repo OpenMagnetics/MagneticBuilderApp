@@ -29,7 +29,16 @@ export const useHistoryStore = defineStore("history", () => {
         }
     }
 
-    function addToHistory(mas) {
+    // Gesture coalescing: successive states from ONE user gesture (a winding-
+    // studio drag re-winding several times, a placement flip-flop) collapse
+    // into a single undo step. Callers pass a stable gestureKey; consecutive
+    // adds with the same key within the window REPLACE the last entry, so
+    // back() lands on the pre-gesture state in one step.
+    const GESTURE_COALESCE_WINDOW_MS = 5000;
+    let lastGestureKey = null;
+    let lastGestureTime = 0;
+
+    function addToHistory(mas, gestureKey = null) {
         if (blockingRebounds) {
             return
         }
@@ -44,12 +53,25 @@ export const useHistoryStore = defineStore("history", () => {
             JSON.stringify(this.masHistory[this.historyPointer]) === JSON.stringify(mas)) {
             return
         }
-        // Discard any redo entries beyond the current pointer
-        if (this.historyPointer < this.masHistory.length - 1) {
-            this.masHistory.length = this.historyPointer + 1;
+        const now = Date.now();
+        const coalesce = gestureKey != null
+            && gestureKey === lastGestureKey
+            && now - lastGestureTime < GESTURE_COALESCE_WINDOW_MS
+            && this.historyPointer >= 1
+            && this.historyPointer === this.masHistory.length - 1;
+        lastGestureKey = gestureKey;
+        lastGestureTime = now;
+        if (coalesce) {
+            this.masHistory[this.historyPointer] = deepCopy(mas);
         }
-        this.masHistory.push(deepCopy(mas));
-        this.historyPointer = this.masHistory.length - 1;
+        else {
+            // Discard any redo entries beyond the current pointer
+            if (this.historyPointer < this.masHistory.length - 1) {
+                this.masHistory.length = this.historyPointer + 1;
+            }
+            this.masHistory.push(deepCopy(mas));
+            this.historyPointer = this.masHistory.length - 1;
+        }
         blockingRebounds = true;
         if (reboundsTimer) clearTimeout(reboundsTimer);
         reboundsTimer = setTimeout(() => {
@@ -63,6 +85,8 @@ export const useHistoryStore = defineStore("history", () => {
         this.masHistory = [];
         blockingRebounds = false;
         blockingAdditions = false;
+        lastGestureKey = null;
+        lastGestureTime = 0;
         if (reboundsTimer) clearTimeout(reboundsTimer);
         if (additionsTimer) clearTimeout(additionsTimer);
         reboundsTimer = null;
@@ -70,6 +94,8 @@ export const useHistoryStore = defineStore("history", () => {
     }
 
     function back() {
+        // Navigating breaks any gesture chain: the next edit must be a NEW step.
+        lastGestureKey = null;
         if (this.historyPointer > 0) {
             this.historyPointer -= 1;
         }
@@ -83,6 +109,7 @@ export const useHistoryStore = defineStore("history", () => {
     }
 
     function forward() {
+        lastGestureKey = null;
         if (this.historyPointer < this.masHistory.length - 1) {
             this.historyPointer += 1;
         }

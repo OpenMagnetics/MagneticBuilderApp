@@ -341,7 +341,26 @@ export default {
             }
         },
         getMaterialNames() {
-            this.taskQueueStore.getCoreMaterials(this.onlyManufacturer).then((coreMaterialNames) => {
+            // Power/filter designs need core losses, so only offer materials the
+            // engine has a loss model for — a loss-less pick used to end in
+            // MODEL_NOT_AVAILABLE on every loss-dependent step. CMC flows keep the
+            // full list: interference-suppression materials (Vitroperm, R-series,
+            // 1K107, …) are characterised by complex permeability only (ABT #401).
+            const application = this.$stateStore.getCurrentApplication();
+            const requireLossModel =
+                application != this.$stateStore.SupportedApplications.CommonModeChoke &&
+                application != this.$stateStore.SupportedApplications.CommonModeChokeCatalog;
+            this.taskQueueStore.getCoreMaterials(this.onlyManufacturer, requireLossModel).then((coreMaterialNames) => {
+                if (requireLossModel && (this.onlyManufacturer == null || this.onlyManufacturer == '')) {
+                    // Drop manufacturers left with no offerable material (e.g.
+                    // Vacuumschmelze, whose catalog here is Vitroperm-only) so the
+                    // manufacturer dropdown cannot lead to an empty material list.
+                    for (const manufacturer of Object.keys(coreMaterialNames)) {
+                        if (coreMaterialNames[manufacturer].length === 0) {
+                            delete coreMaterialNames[manufacturer];
+                        }
+                    }
+                }
                 this.coreMaterialNames = coreMaterialNames;
                 this.coreMaterialManufacturers = Object.keys(coreMaterialNames);
             })
@@ -457,7 +476,15 @@ export default {
         },
         adviseCore() {
             if (this.masStore.mas.inputs.operatingPoints.length > 0) {
-                this.$settingsStore.adviserSettings.coreAdviseMode = "standard cores";
+                // ABT #153: respect the user's configured core-advise mode
+                // (Settings -> adviserSettings.coreAdviseMode). This used to be
+                // hardcoded to "standard cores", overriding the user's choice —
+                // so the Core Advise button could return zero candidates for
+                // designs that only the "available cores" catalogue serves
+                // (e.g. PFC boost inductors -> powder toroids), with no way for
+                // the user to switch. The spread below already carries
+                // coreAdviseMode from adviserSettings, and taskQueue.adviseCore
+                // sanitises a non-string value defensively.
 
                 // Use magneticBuilderSettings (where the UI toggles write)
                 // instead of adviserSettings (which is never updated by the UI)
@@ -470,6 +497,20 @@ export default {
                 };
 
                 this.taskQueueStore.adviseCore(this.masStore.mas.inputs, this.masStore.coreAdviserWeights, settings).then(async (magnetic) => {
+                    // ABT #790: a zero-candidate advise RESOLVES with an empty
+                    // magnetic (shape ""), and assigning it left the panel on
+                    // "Select a core first" with no explanation — the button
+                    // just looked dead. Route it to the same visible message
+                    // the rejection path already has, and assign nothing.
+                    const advisedShape = magnetic?.core?.functionalDescription?.shape;
+                    const advisedShapeName = typeof advisedShape === 'string' ? advisedShape : advisedShape?.name;
+                    if (!advisedShapeName) {
+                        this.errorMessage = "No core can be advised for these requirements. Try another core-advise mode in Settings, or relax the requirements.";
+                        this.loading = false;
+                        this.$emit('coreProcessed', false, 'core adviser returned no candidate');
+                        setTimeout(() => {this.errorMessage = ""}, 10000);
+                        return;
+                    }
                     this.masStore.mas.magnetic.core = magnetic.core;
                     
                     // Generate bobbin first

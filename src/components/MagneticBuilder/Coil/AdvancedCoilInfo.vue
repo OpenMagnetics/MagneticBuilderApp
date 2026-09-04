@@ -157,8 +157,10 @@ export default {
             
             const tripoleData = this.fullCapacitanceData.tripoleCapacitancePerWinding[primary]?.[secondary];
             if (!tripoleData) return null;
-            
-            console.log('[AdvancedCoilInfo] Using MKF 3-capacitor model for', primary, '-', secondary, tripoleData);
+            // NOTE: no console.log here — this is a computed and must stay pure.
+            // The global console interceptor pushes into a reactive store that the
+            // ConsolePanel renders, so logging from a computed mutates a reactive
+            // dep during render → "Maximum recursive updates exceeded".
             const C1 = tripoleData.C1 || tripoleData.c1 || 0;
             const C2 = tripoleData.C2 || tripoleData.c2 || 0;
             const C3 = tripoleData.C3 || tripoleData.c3 || 0;
@@ -183,8 +185,7 @@ export default {
             
             const sixCapData = this.fullCapacitanceData.sixCapacitorNetworkPerWinding[primary]?.[secondary];
             if (!sixCapData) return null;
-            
-            console.log('[AdvancedCoilInfo] Using MKF 6-capacitor model for', primary, '-', secondary, sixCapData);
+            // No console.log — computed must stay pure (see threeCapacitorModel).
             const C1 = sixCapData.C1 || sixCapData.c1 || 0;
             const C2 = sixCapData.C2 || sixCapData.c2 || 0;
             const C3 = sixCapData.C3 || sixCapData.c3 || 0;
@@ -810,8 +811,14 @@ export default {
                             } else {
                                 try {
                                     console.log('[AdvancedCoilInfo] Calculating full capacitance data...');
+                                    // ABT #848 follow-up: hand the MAGNETIC, not the coil.
+                                    // The turn-to-core network is most of the winding-to-core
+                                    // capacitance, and without the core the panel could not
+                                    // see it at all — it disagreed with the impedance sweep by
+                                    // construction. Falls back to the coil if there is no
+                                    // magnetic, which is what the binding accepts anyway.
                                     const capacitanceData = await this.taskQueueStore.calculateStrayCapacitance(
-                                        coil,
+                                        this.masStore.mas?.magnetic ?? coil,
                                         operatingPoint,
                                         modelsData
                                     );
@@ -903,6 +910,12 @@ export default {
             return matrix;
         },
         
+        // Web bug report #176. Mirrors what the host's Actions-panel Close does, so
+        // both routes out of this view go through the same store action.
+        closeAdvancedView() {
+            this.$stateStore.closeCoilAdvancedInfo();
+        },
+
         // Winding selection methods
         initializeWindingSelection() {
             // Called on: new design, wizard usage, MAS load
@@ -965,6 +978,27 @@ export default {
 
 <template>
     <div class="advancedcoil-wrapper">
+        <!-- Web bug report #176: "Once entering Advanced parasitics you get stuck
+             there with no apparent way out". The exit existed, but only as a red
+             Close in the host's left Actions panel, which nobody associates with
+             leaving this view. Give the view its own way out. -->
+        <div class="advancedcoil-topbar">
+            <div class="advancedcoil-topbar-title">
+                <i class="pi pi-volume-up"></i>
+                <span>Advanced Parasitics</span>
+            </div>
+            <button
+                type="button"
+                class="advancedcoil-back-btn"
+                data-cy="AdvancedCoilInfo-close-button"
+                title="Back to the coil builder"
+                @click="closeAdvancedView"
+            >
+                <i class="pi pi-arrow-left"></i>
+                <span>Back to Coil</span>
+            </button>
+        </div>
+
         <div class="advancedcoil-grid" :class="{ 'advancedcoil-dimmed': !dataUptoDate }">
             <!-- Left Column: Resistance -->
             <div class="advancedcoil-card">
@@ -1116,6 +1150,21 @@ export default {
                 <div class="advancedcoil-card-header">
                     <i class="pi pi-wifi"></i>
                     <span>Stray Capacitance</span>
+                </div>
+                <!-- These are STATIC network capacitances. The capacitance implied by a
+                     self-resonance on the impedance curve is a different quantity and is
+                     smaller: along a winding the voltage distribution weights each
+                     turn-to-turn contribution by (dV/V)^2, so a distributed inter-turn
+                     capacitance contributes far less than its static value (a uniform
+                     single layer contributes about a third). A static-to-effective ratio
+                     of a few times is expected for a multi-layer winding and is not a
+                     disagreement between the two. Saying so here because I read the two
+                     numbers side by side and assumed one was wrong. -->
+                <div class="advancedcoil-hint advancedcoil-hint-note">
+                    <i class="pi pi-info-circle"></i>
+                    Static network capacitances. The effective capacitance at self-resonance
+                    is smaller — the voltage along the winding weights each contribution by
+                    (&Delta;V/V)&sup2;. Use the impedance sweep for resonance behaviour.
                 </div>
                 <div class="advancedcoil-card-body">
                     <div class="advancedcoil-plot">
@@ -1391,8 +1440,52 @@ export default {
 </template>
 
 <style scoped>
+.advancedcoil-hint-note {
+    display: block;
+    padding: 0.4rem 0.75rem 0;
+    line-height: 1.4;
+    opacity: 0.8;
+}
+
+.advancedcoil-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.advancedcoil-topbar-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: rgba(var(--p-white-rgb), 0.92);
+}
+
+.advancedcoil-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--p-primary-rgb), 0.55);
+    background: rgba(var(--p-primary-rgb), 0.12);
+    color: var(--p-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.advancedcoil-back-btn:hover {
+    background: rgba(var(--p-primary-rgb), 0.22);
+}
+
 .advancedcoil-wrapper {
-    padding: 0.5rem 0;
+    /* No top padding: align the parasitics cards with the normal MB config cards
+       (same vertical start). The grid gap handles inter-card spacing. */
+    padding: 0;
 }
 
 .advancedcoil-grid {

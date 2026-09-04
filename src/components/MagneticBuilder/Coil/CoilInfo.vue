@@ -1,5 +1,5 @@
 <script setup>
-import { removeTrailingZeroes, deepCopy, isMobile } from '/WebSharedComponents/assets/js/utils.js'
+import { removeTrailingZeroes, deepCopy, isMobile, effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import WindingSelector from '../Common/WindingSelector.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
@@ -52,6 +52,7 @@ export default {
         const lastSimulatedMagnetics = "";
         const lastSimulatedModels = "";
         const dataUptoDate = false;
+        const simulationError = '';
         const subscriptions = [];
 
         return {
@@ -66,6 +67,7 @@ export default {
             lastSimulatedMagnetics,
             lastSimulatedModels,
             dataUptoDate,
+            simulationError,
             subscriptions,
             _simTimer: null,
             _waitTimer: null,
@@ -77,7 +79,7 @@ export default {
         },
         contiguousLabel() {
             try {
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].shape == "rectangular") {
                     return "height";
                 }
                 else {
@@ -90,7 +92,7 @@ export default {
         },
         overlappingLabel() {
             try {
-                if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].shape == "rectangular") {
+                if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].shape == "rectangular") {
                     return "width";
                 }
                 else {
@@ -100,6 +102,26 @@ export default {
             catch (e) {
                 return "width";
             }
+        },
+        // Fill factor above 100 % means the winding physically cannot fit this
+        // core. The tinted number alone proved too subtle: the Core "Advise"
+        // button keeps the existing wire while swapping the core, and shipped
+        // designs ended up at >200 % with only an orange digit as feedback
+        // (ABT #147).
+        windingDoesNotFit() {
+            const f = this.fillingFactors;
+            if (f == null) return false;
+            // ABT #245: the engine now decides this and reports it as windingFits, so
+            // the displayed areaFillingFactor can be the true area fraction instead of
+            // doubling as an overfill ratio (a degenerate section used to make it read
+            // 6077 % for a winding that was 2.35 % full).
+            if (f.windingFits != null) return !f.windingFits;
+            // Older embedded engines (consumer apps ship their own WASM) do not send
+            // windingFits — fall back to the pre-#245 test, which gave the same verdict.
+            if (f.areaFillingFactor > 1) return true;
+            if (this.sectionsOrientation == 'contiguous' && f.contiguousFillingFactor > 1) return true;
+            if (this.sectionsOrientation == 'overlapping' && f.overlappingFillingFactor > 1) return true;
+            return false;
         },
     },
     watch: {
@@ -250,9 +272,16 @@ export default {
             }
 
             if (outputs[this.operatingPointIndex].inductance.leakageInductance?.leakageInductancePerWinding) {
-                for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length - 1; windingIndex++) {
-                    const leakageInductance = outputs[this.operatingPointIndex].inductance.leakageInductance.leakageInductancePerWinding[windingIndex].nominal;
-                    this.outputsData.leakageInductancePerWinding.push(leakageInductance);
+                const perWinding = outputs[this.operatingPointIndex].inductance.leakageInductance.leakageInductancePerWinding;
+                const numberWindings = this.masStore.mas.magnetic.coil.functionalDescription.length;
+                // The engine emits a winding-indexed array (N entries, 0 at the primary slot);
+                // outputs saved by older versions carry a legacy secondaries-only (N-1) shape.
+                const windingIndexed = perWinding.length === numberWindings;
+                for (let windingIndex = 1; windingIndex < numberWindings; windingIndex++) {
+                    const entry = perWinding[windingIndexed ? windingIndex : windingIndex - 1];
+                    if (entry != null) {
+                        this.outputsData.leakageInductancePerWinding.push(entry.nominal);
+                    }
                 }
             }
             for (let windingIndex = 0; windingIndex < this.masStore.mas.magnetic.coil.functionalDescription.length; windingIndex++) {
@@ -320,13 +349,21 @@ export default {
                         this.masStore.mas.outputs = deepCopy(mas.outputs);
                         this.loading = false;
                         this.dataUptoDate = true;
+                        this.simulationError = '';
                     })
                     .catch(error => {
+                        // Show the real MKF error in the panel — a console-only
+                        // error made simulation failures look like a silent hang.
+                        this.simulationError = error?.message || String(error);
+                        this.dataUptoDate = false;
                         console.error('[CoilInfo] Simulation error:', error);
                         this.loading = false;
                     });
                 }
                 else {
+                    // Inputs match the last successful simulation — the shown
+                    // values are valid, so any lingering error is stale.
+                    this.simulationError = '';
                     this.dataUptoDate = true;
                     this.loading = false;
                 }
@@ -353,6 +390,11 @@ export default {
         </div>
 
         <div class="coilinfo-body">
+            <h6
+                v-if="simulationError"
+                :data-cy="dataTestLabel + '-CoilInfo-SimulationError'"
+                class="text-danger my-2"
+            >{{ simulationError }}</h6>
             <img
                 :data-cy="dataTestLabel + '-BasicCoilInfo-loading'"
                 v-if="loading"
@@ -526,6 +568,15 @@ export default {
                         />
                     </div>
                 </div>
+
+                <label
+                    v-if="windingDoesNotFit"
+                    :data-cy="dataTestLabel + '-WindingDoesNotFit-warning'"
+                    class="coilinfo-nofit-warning"
+                    :style="{ color: $styleStore.magneticBuilder.inputLabelDangerBgColor }"
+                >
+                    Winding does not fit this core (fill factor above 100 %). Advise a new wire or pick a larger core.
+                </label>
 
                 <div class="coilinfo-winding-bar">
                     <WindingSelector
@@ -897,6 +948,15 @@ export default {
     line-height: 1.25 !important;
 }
 
+.coilinfo-nofit-warning {
+    display: block;
+    grid-column: 1 / -1;
+    width: 100%;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+}
 .coilinfo-winding-bar {
     margin: 0.5rem 0;
 }

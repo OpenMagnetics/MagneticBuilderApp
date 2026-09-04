@@ -426,8 +426,13 @@ export default {
                             this.masStore.mas.magnetic.coil.turnsDescription = coil.turnsDescription ?? null;
                             // Propagate bobbin sectionsOrientation so subsequent wind() calls
                             // inherit CONTIGUOUS for CMC toroids instead of resetting to OVERLAPPING
-                            const srcWw = coil.bobbin?.processedDescription?.windingWindows?.[0];
-                            const dstWw = this.masStore.mas.magnetic.coil.bobbin?.processedDescription?.windingWindows?.[0];
+                            // Per-column array bobbins: window 0 lives on the centre part.
+                            const srcBobbin = Array.isArray(coil.bobbin) ? coil.bobbin[0] : coil.bobbin;
+                            const dstBobbin = Array.isArray(this.masStore.mas.magnetic.coil.bobbin)
+                                ? this.masStore.mas.magnetic.coil.bobbin[0]
+                                : this.masStore.mas.magnetic.coil.bobbin;
+                            const srcWw = srcBobbin?.processedDescription?.windingWindows?.[0];
+                            const dstWw = dstBobbin?.processedDescription?.windingWindows?.[0];
                             if (srcWw?.sectionsOrientation && dstWw) {
                                 dstWw.sectionsOrientation = srcWw.sectionsOrientation;
                             }

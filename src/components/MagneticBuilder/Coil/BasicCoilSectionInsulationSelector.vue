@@ -1,6 +1,6 @@
 <script setup>
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
-import { toTitleCase, checkAndFixMas, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { toTitleCase, checkAndFixMas, deepCopy, effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js'
 import SectionSelector from './SectionSelector.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
@@ -57,7 +57,7 @@ export default {
             return s ? `${s.topOrLeftMargin}|${s.bottomOrRightMargin}` : '';
         },
         topOrLeftMarginTooltip() {
-            if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
+            if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
                 return tooltipsMagneticBuilder.leftMargin;
             }
             else {
@@ -65,7 +65,7 @@ export default {
             }
         },
         bottomOrRightMarginTooltip() {
-            if (this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
+            if (effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].sectionsOrientation == 'contiguous') {
                 return tooltipsMagneticBuilder.rightMargin;
             }
             else {
@@ -107,7 +107,7 @@ export default {
         },
         topOrInnerMarginUpdated(sectionIndex) {
             if (!this.blockingRebounds) {
-                const isMarginHorizontal = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
+                const isMarginHorizontal = effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
 
                 this.taskQueueStore.checkIfFits(this.masStore.mas.magnetic.coil.bobbin, this.data.dataPerSection[sectionIndex].topOrLeftMargin, isMarginHorizontal).then((fits) => {
                     if (fits) {
@@ -125,7 +125,7 @@ export default {
         },
         bottomOrOuterMarginUpdated(sectionIndex) {
             if (!this.blockingRebounds) {
-                const isMarginHorizontal = this.masStore.mas.magnetic.coil.bobbin.processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
+                const isMarginHorizontal = effectiveBobbin(this.masStore.mas.magnetic.coil.bobbin).processedDescription.windingWindows[0].sectionsOrientation == "contiguous";
                 this.taskQueueStore.checkIfFits(this.masStore.mas.magnetic.coil.bobbin, this.data.dataPerSection[sectionIndex].topOrLeftMargin, isMarginHorizontal).then((fits) => {
                     if (fits) {
                         this.$emit('marginUpdated', sectionIndex);
