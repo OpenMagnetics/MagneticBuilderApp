@@ -5,21 +5,14 @@ import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
 import { useSettingsStore } from './settings'
 
-// Families the selectors hide. These are shapes the builder has no editor or
-// renderer for, so offering them would produce a core nobody can finish. The
-// list was inline and duplicated in five places, which is how `drumRing` came
-// to be filtered out of the family list while still being indexed as a key.
+// Families the selectors hide: shapes the builder has no editor or renderer for,
+// so offering them would produce a core nobody can finish.
 //
-// Matching is by SUBSTRING, so one token can hide a whole group: "drum" used to
-// take drum, drumRing and drumSemishielded with it. Those three are off the list
-// now — they have MKF geometry classes, MVB++ 3D shapes and a 2D painter, and the
-// catalogue is full of parts that use them, so hiding the families while showing
-// the parts was the inconsistency, not the other way round.
-//
-// "h" is kept for documentation only: the family list now comes from
-// get_supported_core_shape_families(), and H (like BLOCK) is not a family the
-// engine can build, so it can no longer reach this filter at all.
-const HIDDEN_SHAPE_FAMILY_TOKENS = ["pqi", "ut", "ui", "h"];
+// Matched EXACTLY, never as a substring. Substring matching hid families nobody
+// listed twice over: the token "drum" took drumRing and drumSemishielded with it,
+// and "h" — meant for the H family — silently took drumSemishielded too, because
+// the name contains an h. A family is hidden only if it is named here.
+const HIDDEN_SHAPE_FAMILIES = new Set(["pqi", "ut", "ui", "h"]);
 
 // A family is hidden only if it is not the family of the part being edited.
 // The part's own family is a FACT about the part, not a catalogue choice: a
@@ -31,7 +24,7 @@ const HIDDEN_SHAPE_FAMILY_TOKENS = ["pqi", "ut", "ui", "h"];
 // getCoreShapes entirely and emptied BOTH dropdowns rather than just one.
 function isHiddenShapeFamily(shapeFamily, currentFamily = null) {
     if (currentFamily != null && shapeFamily === currentFamily) return false;
-    return HIDDEN_SHAPE_FAMILY_TOKENS.some((token) => shapeFamily.includes(token));
+    return HIDDEN_SHAPE_FAMILIES.has(shapeFamily);
 }
 
 // The shape family of the MAS being edited, or null when there is none yet.
