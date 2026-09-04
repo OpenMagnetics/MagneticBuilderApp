@@ -9,7 +9,17 @@ import { useSettingsStore } from './settings'
 // renderer for, so offering them would produce a core nobody can finish. The
 // list was inline and duplicated in five places, which is how `drumRing` came
 // to be filtered out of the family list while still being indexed as a key.
-const HIDDEN_SHAPE_FAMILY_TOKENS = ["pqi", "ut", "ui", "h", "drum"];
+//
+// Matching is by SUBSTRING, so one token can hide a whole group: "drum" used to
+// take drum, drumRing and drumSemishielded with it. Those three are off the list
+// now — they have MKF geometry classes, MVB++ 3D shapes and a 2D painter, and the
+// catalogue is full of parts that use them, so hiding the families while showing
+// the parts was the inconsistency, not the other way round.
+//
+// "h" is kept for documentation only: the family list now comes from
+// get_supported_core_shape_families(), and H (like BLOCK) is not a family the
+// engine can build, so it can no longer reach this filter at all.
+const HIDDEN_SHAPE_FAMILY_TOKENS = ["pqi", "ut", "ui", "h"];
 
 // A family is hidden only if it is not the family of the part being edited.
 // The part's own family is a FACT about the part, not a catalogue choice: a
@@ -325,7 +335,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             // Never hide the family of the part being edited (see isHiddenShapeFamily).
             const currentFamily = shapeFamilyOf(mas);
 
-            const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
+            // The families the ENGINE can build, not the ones the shape database happens to
+            // carry. get_available_core_shape_families() answers the second question, so a
+            // buildable family that ships no bare-core record — MOLDED and DRUM_SEMISHIELDED,
+            // whose construction is reconstructed per part rather than sold as a core — never
+            // reached the dropdown, and there was no way to select one for a custom shape.
+            const coreShapeFamiliesArr = toArray(await mkf.get_supported_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
                 if (!isHiddenShapeFamily(shapeFamily, currentFamily)) {
                     if (wiringTechnology == null || wiringTechnology?.toLowerCase() === 'wound' || shapeFamily.toLowerCase() !== 't') {
@@ -402,7 +417,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const allowed = getRestrictedShapeFamilies();
             const currentFamily = shapeFamilyOf(mas);
 
-            const coreShapeFamiliesArr = toArray(await mkf.get_available_core_shape_families());
+            // The families the ENGINE can build, not the ones the shape database happens to
+            // carry. get_available_core_shape_families() answers the second question, so a
+            // buildable family that ships no bare-core record — MOLDED and DRUM_SEMISHIELDED,
+            // whose construction is reconstructed per part rather than sold as a core — never
+            // reached the dropdown, and there was no way to select one for a custom shape.
+            const coreShapeFamiliesArr = toArray(await mkf.get_supported_core_shape_families());
             for (const shapeFamily of coreShapeFamiliesArr) {
                 if (!isHiddenShapeFamily(shapeFamily, currentFamily)) {
                     // Exclude toroidal cores (T family) when in Planar/Printed mode
