@@ -77,6 +77,16 @@ export default {
             type: Boolean,
             default: false,
         },
+        /**
+         * Bumped by the parent to open the "all shapes" table (the button lives
+         * in the Core Configuration header, ABT #1072). A counter, not a
+         * boolean: this component is <script setup>, so its instance is closed
+         * to $refs, and a prop survives the dialog closing itself.
+         */
+        openTableRequest: {
+            type: Number,
+            default: 0,
+        },
     },
     data() {
         const taskQueueStore = useTaskQueueStore();
@@ -110,6 +120,11 @@ export default {
         }
     },
     watch: {
+        openTableRequest(count) {
+            if (count > 0) {
+                this.coreShapeTableVisible = true;
+            }
+        },
         wiringTechnology(newVal, oldVal) {
             // When wiringTechnology changes, reload core shapes to filter appropriately
             // (e.g., exclude toroidal cores when in Planar mode)
@@ -337,81 +352,19 @@ export default {
                     :textColor="$styleStore.magneticBuilder.inputTextColor"
                 />
 
-                <div
-                    v-if="!readOnly"
-                    class="core-shape-table-btn-wrapper"
-                    v-tooltip="'Open core shape table'"
-                >
-                    <button
-                        :style="$styleStore.magneticBuilder.tableButton"
-                        class="shape-table-btn"
-                        @click="coreShapeTableVisible = true"
-                        >
-                        <i class="pi pi-table"></i>
-                    </button>
-                </div>
             </div>
     </div>
 </template>
 
 <style scoped>
-/* Shape <select> + "open core-shape table" button on the SAME row,
- * button flush against the select's right edge, not overlapping it. */
 .core-shape-input-group {
-    position: relative;
     display: flex;
     align-items: stretch;
     width: 100%;
 }
 
-/* The ElementFromList wrapper takes the full row width. The button is
- * absolute-positioned over the row's right edge: only the dropdown
- * inside the value column needs to shrink by the button's width. */
 .core-shape-input-group :deep(.core-shape-row) {
     flex: 1 1 auto;
     min-width: 0;
-}
-/* Shrink the dropdown (and only the dropdown) inside the value column so
- * it doesn't slide under the absolute-positioned table button. */
-.core-shape-input-group :deep(.core-shape-row .p-select),
-.core-shape-input-group :deep(.core-shape-row select.efl-select) {
-    width: calc(100% - 2.25rem) !important;
-    max-width: calc(100% - 2.25rem) !important;
-    margin-right: 2.25rem !important;
-}
-
-/* The button is absolute-positioned against `.core-shape-input-group`
- * (relative parent), pinned to the right edge and vertically centered
- * over the select's row inside the ElementFromList. */
-.core-shape-table-btn-wrapper {
-    position: absolute;
-    right: 8px;             /* shim: align button right edge with the other
-                               dropdowns (Family / Mfg / Material), which end
-                               8px inside the value column's right border */
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    z-index: 2;
-    padding: 0;
-}
-
-.shape-table-btn {
-    height: 1.75rem;
-    width: 1.75rem;
-    padding: 0;
-    background-color: transparent;
-    color: var(--p-primary);
-    border: 0;
-    border-radius: var(--p-border-radius);
-    font-family: var(--p-font-family);
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-}
-
-.shape-table-btn:hover {
-    background-color: rgba(var(--p-primary-rgb), 0.15);
-    color: var(--p-white);
 }
 </style>

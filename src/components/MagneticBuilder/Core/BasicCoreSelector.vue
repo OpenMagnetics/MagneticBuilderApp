@@ -7,6 +7,7 @@ import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights, defaultUngappedGapping } from '/WebSharedComponents/assets/js/defaults.js'
 import CoreInfo from './CoreInfo.vue'
 import CoreShapeSelector from './CoreShapeSelector.vue'
+import CoreMaterialTableModal, { buildMaterialRow } from './CoreMaterialTableModal.vue'
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 
@@ -75,6 +76,11 @@ export default {
         const coreMaterialNames = {};
         const localData = {};
         const onlyManufacturer = null;
+        // Material table (ABT #1072): engine summary rows, resolved once per session.
+        const coreMaterialSummaryRows = null;
+        const coreMaterialTableVisible = false;
+        const shapeTableOpenRequest = 0;
+        const coreMaterialTableLoading = false;
 
         if (this.masStore.coreAdviserWeights == null) {
             this.masStore.coreAdviserWeights = coreAdviserWeights;
@@ -92,6 +98,10 @@ export default {
             historyStore,
             localData,
             onlyManufacturer,
+            coreMaterialSummaryRows,
+            coreMaterialTableVisible,
+            shapeTableOpenRequest,
+            coreMaterialTableLoading,
             coreMaterialManufacturers,
             coreMaterialNames,
             errorMessage,
@@ -106,6 +116,13 @@ export default {
         }
     },
     computed: {
+        offerableMaterialRows() {
+            if (this.coreMaterialSummaryRows == null) return [];
+            return this.coreMaterialSummaryRows.filter((row) => {
+                const names = this.coreMaterialNames[row.manufacturer];
+                return names != null && names.includes(row.name);
+            });
+        },
         isCoreIncomplete() {
             // Returns true while shape OR material is missing — used to highlight
             // the "Advise" button in danger color so the user knows it's the
@@ -402,6 +419,38 @@ export default {
                 });
             }
         },
+        openShapeTable() {
+            this.shapeTableOpenRequest += 1;
+        },
+        /**
+         * Material table (ABT #1072): every offerable material with its
+         * properties resolved by the engine. "Offerable" is the same list the
+         * dropdowns use (loss-model requirement, manufacturer restriction).
+         */
+        async openMaterialTable() {
+            this.coreMaterialTableVisible = true;
+            if (this.coreMaterialSummaryRows == null) {
+                this.coreMaterialTableLoading = true;
+                try {
+                    const summary = await this.taskQueueStore.getCoreMaterialsSummary();
+                    this.coreMaterialSummaryRows = summary.map((row) => buildMaterialRow(row));
+                }
+                finally {
+                    this.coreMaterialTableLoading = false;
+                }
+            }
+        },
+        coreMaterialSelected(row) {
+            this.localData.materialManufacturer = row.manufacturer;
+            this.localData.material = row.name;
+            if (this.localData.shape == '' || this.localData.shape == null) {
+                // No shape yet: keep the choice; shapeUpdated() completes the core
+                // through checkAndFixMas once a shape is picked.
+                this.masStore.mas.magnetic.core.functionalDescription.material = row.name;
+                return;
+            }
+            this.materialUpdated(row.name);
+        },
         materialUpdated(value) {
             this.changeMadeByUser = true;
             
@@ -558,6 +607,13 @@ export default {
 
 <template>
     <div class="container">
+        <CoreMaterialTableModal
+            v-model:visible="coreMaterialTableVisible"
+            :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
+            :coreMaterialData="offerableMaterialRows"
+            :loading="coreMaterialTableLoading"
+            @coreMaterialSelected="coreMaterialSelected"
+        />
         <div
             class="core-config-panel"
             :style="{ '--core-config-value-font-size': $styleStore.magneticBuilder.inputFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputFontSize?.fontSize }"
@@ -567,8 +623,30 @@ export default {
                     <i class="pi pi-box"></i>
                     <span>Core Configuration</span>
                 </div>
-                <div v-if="enableAdvise && enableSubmenu && !readOnly" class="core-config-header-right">
+                <div v-if="!readOnly" class="core-config-header-right">
                     <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-Core-ShapeTable-button'"
+                        class="core-config-header-btn core-config-header-btn-secondary"
+                        v-tooltip="'Browse every core shape in a table: filter and order by size, effective area, window area…'"
+                        @click="openShapeTable"
+                    >
+                        <i class="pi pi-table"></i>
+                        <span>Shapes</span>
+                    </button>
+                    <button
+                        type="button"
+                        :data-cy="dataTestLabel + '-Core-MaterialTable-button'"
+                        class="core-config-header-btn core-config-header-btn-secondary"
+                        :disabled="coreMaterialManufacturers.length === 0"
+                        v-tooltip="'Browse every core material in a table: filter and order by permeability, saturation, losses…'"
+                        @click="openMaterialTable"
+                    >
+                        <i class="pi pi-table"></i>
+                        <span>Materials</span>
+                    </button>
+                    <button
+                        v-if="enableAdvise && enableSubmenu"
                         type="button"
                         :disabled="loading"
                         :data-cy="dataTestLabel + '-Core-Advise-button'"
@@ -604,6 +682,7 @@ export default {
                 <div class="core-config-grid">
                     <div class="core-config-cell core-config-cell-wide">
                         <CoreShapeSelector
+                            :openTableRequest="shapeTableOpenRequest"
                             :dataTestLabel="dataTestLabel + '-AdvancedCoreInfo'"
                             :readOnly="readOnly"
                             :masStore="masStore"
@@ -738,6 +817,11 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* Three header buttons (Shapes / Materials / Advise, ABT #1072) do not fit
+     * beside the title in a narrow column: let them wrap under it instead of
+     * squeezing the title onto two lines. */
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
     padding: 0.6rem 0.9rem;
     background: rgba(120, 120, 120, 0.1);
     border-bottom: 1px solid rgba(120, 120, 120, 0.15);
@@ -751,6 +835,7 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    white-space: nowrap;
 }
 
 .core-config-header-left i {
@@ -762,6 +847,7 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    margin-left: auto;
 }
 
 .core-config-header-btn {
@@ -787,6 +873,16 @@ export default {
 .core-config-header-btn:not(:disabled):hover {
     filter: brightness(1.12);
     transform: translateY(-1px);
+}
+
+.core-config-header-btn-secondary {
+    background: transparent;
+    color: var(--p-primary);
+    border: 1px solid rgb(var(--p-primary-rgb) / 0.45);
+}
+
+.core-config-header-btn-secondary:not(:disabled):hover {
+    background: rgb(var(--p-primary-rgb) / 0.12);
 }
 
 .core-config-header-btn-primary {

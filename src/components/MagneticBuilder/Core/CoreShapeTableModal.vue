@@ -258,7 +258,7 @@ export default {
         color: var(--p-gray-100);
         background-color: var(--p-dark);
         border-bottom: 1px solid var(--p-gray-700);
-        padding: 0.45rem 0.6rem;
+        padding: 0.45rem 0.5rem;
         font-size: 0.85rem;
         white-space: nowrap;
         transition: background-color 0.15s;

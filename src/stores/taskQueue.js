@@ -555,6 +555,23 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             return coreMaterialNames;
         },
 
+        /**
+         * Catalogue summary of every core material for the material table
+         * (ABT #1072): properties resolved by the engine at 25 °C / 100 °C and
+         * losses at the datasheet reference point (100 kHz, 100 mT, 100 °C).
+         * SI units; a property the record lacks is null with the reason in
+         * `missing`.
+         */
+        async getCoreMaterialsSummary() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+            const result = await mkf.get_core_materials_summary(25, 100, 100000, 0.1, 100);
+            if (result.startsWith('Exception')) {
+                throw new Error(result);
+            }
+            return JSON.parse(result);
+        },
+
         coreLossesCalculated(success = true, dataOrMessage = '') {
         },
 
