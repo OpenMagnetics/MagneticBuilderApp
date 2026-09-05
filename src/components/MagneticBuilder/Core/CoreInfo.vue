@@ -391,6 +391,26 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
+                    <div class="coreinfo-cell" v-if="coreTemperatureDependantParametersData.mass != null && !Number.isNaN(coreTemperatureDependantParametersData.mass)">
+                        <DimensionReadOnly 
+                            v-tooltip="tooltipsMagneticBuilder.coreMass"
+                            class="text-left"
+                            :name="'Mass'"
+                            :unit="'g'"
+                            :power="1"
+                            :dataTestLabel="dataTestLabel + '-Mass'"
+                            :numberDecimals="1"
+                            :value="coreTemperatureDependantParametersData.mass * 1000"
+                            :disableShortenLabels="true"
+                            :labelWidthProportionClass="'col-3'"
+                            :valueWidthProportionClass="'col-9'"
+                            :valueFontSize="$styleStore.magneticBuilder.infoValueFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                    </div>
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.permeance"

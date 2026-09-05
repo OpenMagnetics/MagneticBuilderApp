@@ -12,7 +12,7 @@ import CoreMaterialTableModal, { buildMaterialRow } from './CoreMaterialTableMod
 import { useHistoryStore } from '../../../stores/history'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 
-import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { deepCopy, formatDimension } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 </script>
 
@@ -481,12 +481,9 @@ export default {
          * Gap for the required magnetizing inductance with the turns as they are.
          * Keeps the gap kind the core has (spacer if any additive gap, else ground).
          *
-         * The engine is asked for the SMALL-SIGNAL gap (operating points stripped):
-         * with an operating point, MKF's gap search re-evaluates the material
-         * permeability under the DC bias through a fixed-point iteration that
-         * diverges near the B-H knee and collapses to the residual gap for any
-         * target above ~20 µH on a 15-turn P 11/7 (ABT #1093). The bias-aware
-         * inductance is what Core Info shows afterwards, so the user still sees it.
+         * The engine solves the gap under the DC bias of the first operating
+         * point on the material's magnetisation curve (ABT #1093); a bias the
+         * material cannot carry is refused with its message, shown as the error.
          */
         async adjustGapToInductance() {
             if (!this.canAdjustGapToInductance || this.adjustingToInductance) return;
@@ -495,10 +492,9 @@ export default {
             try {
                 const core = deepCopy(this.masStore.mas.magnetic.core);
                 const gappingType = (core.functionalDescription.gapping || []).some((gap) => gap.type == 'additive') ? 'Spacer' : 'Ground';
-                const smallSignalInputs = deepCopy(this.masStore.mas.inputs);
-                smallSignalInputs.operatingPoints = [];
+                const biased = (this.masStore.mas.inputs.operatingPoints?.length ?? 0) > 0;
                 const gappedCore = await this.taskQueueStore.calculateGappingFromNumberTurnsAndInductance(
-                    core, this.masStore.mas.magnetic.coil, smallSignalInputs, gappingType, 6, this.inductanceModelsData());
+                    core, this.masStore.mas.magnetic.coil, deepCopy(this.masStore.mas.inputs), gappingType, 6, this.inductanceModelsData());
                 this.masStore.mas.magnetic.core.functionalDescription.gapping = gappedCore.functionalDescription.gapping;
                 this.$emit('gappingUpdated');
                 this.$emit('coreProcessingStarted');
@@ -510,7 +506,8 @@ export default {
                 this.$nextTick(() => { this.updatingLocalData = false; });
                 this.$emit('coreProcessed');
                 const longest = Math.max(...processedCore.functionalDescription.gapping.map((gap) => gap.length));
-                this.showInfo(`Gap set to ${(longest * 1e3).toFixed(3)} mm (${gappingType.toLowerCase()}) for ${this.primaryTurns} turns and ${(this.requiredMagnetizingInductance * 1e6).toPrecision(3)} µH small-signal`);
+                const shown = formatDimension(longest);
+                this.showInfo(`Gap set to ${shown.label} ${shown.unit} (${gappingType.toLowerCase()}) for ${this.primaryTurns} turns and ${(this.requiredMagnetizingInductance * 1e6).toPrecision(3)} µH${biased ? ' at the first operating point' : ' small-signal'}`);
             }
             catch (error) {
                 this.showError('Could not find a gap for the required inductance: ' + error.message);
