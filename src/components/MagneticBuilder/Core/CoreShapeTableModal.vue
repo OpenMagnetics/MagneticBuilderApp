@@ -2,6 +2,7 @@
 import Dialog from 'primevue/dialog'
 import FilterableDataTable from '/WebSharedComponents/Common/FilterableDataTable.vue'
 import { removeTrailingZeroes } from '/WebSharedComponents/assets/js/utils.js'
+import { unitSystem } from '/WebSharedComponents/assets/js/units.js'
 </script>
 
 <script>
@@ -14,7 +15,18 @@ import { removeTrailingZeroes } from '/WebSharedComponents/assets/js/utils.js'
  *   - ordering is numeric, not lexicographic ("9 mm" < "10 mm"),
  *   - the per-column min/max filters compare against the value on screen.
  * The unit is in the column title, not the cell, to keep cells short.
+ * Rows arrive in mm / mm² / mm³ / mm⁴; under the imperial unit system
+ * (ABT #1099) they are shown in in / in² / in³ / in⁴ — converted per row so
+ * ordering and the range filters work in the unit on screen.
  */
+const MM_PER_INCH = 25.4;
+const LENGTH_COLUMNS = {
+    width: 1, height: 1, depth: 1, effectiveLength: 1,
+    effectiveArea: 2, minimumArea: 2, windowArea: 2,
+    effectiveVolume: 3,
+    areaProduct: 4,
+};
+const UNIT_LABELS = { si: ['mm', 'mm²', 'mm³', 'mm⁴'], imperial: ['in', 'in²', 'in³', 'in⁴'] };
 
 function escapeHtml(text) {
     return String(text)
@@ -24,11 +36,13 @@ function escapeHtml(text) {
         .replace(/"/g, '&quot;');
 }
 
-function renderNumber(data, type) {
-    if (type === 'display') {
-        return removeTrailingZeroes(data, 2);
-    }
-    return data;
+function renderNumber(decimals) {
+    return (data, type) => {
+        if (type === 'display') {
+            return removeTrailingZeroes(data, decimals);
+        }
+        return data;
+    };
 }
 
 export default {
@@ -51,6 +65,35 @@ export default {
         visible: { type: Boolean, default: false },
     },
     data() {
+        return {
+            tableOptions: {
+                lengthChange: true,
+                info: true,
+                paginate: true,
+                pageLength: 15,
+                lengthMenu: [10, 15, 25, 50, 100],
+                order: [[0, 'asc']],
+            },
+        }
+    },
+    computed: {
+        activeUnitSystem() {
+            return unitSystem();
+        },
+        /** Rows in the unit system on screen (mm-based rows converted when imperial). */
+        displayRows() {
+            if (this.activeUnitSystem !== 'imperial') return this.coreShapeData;
+            return this.coreShapeData.map((row) => {
+                const converted = { ...row };
+                for (const [key, power] of Object.entries(LENGTH_COLUMNS)) {
+                    converted[key] = row[key] / Math.pow(MM_PER_INCH, power);
+                }
+                return converted;
+            });
+        },
+        coreShapeColumns() {
+        const u = UNIT_LABELS[this.activeUnitSystem] ?? UNIT_LABELS.si;
+        const num = renderNumber(this.activeUnitSystem === 'imperial' ? 4 : 2);
         const coreShapeColumns = [
             {
                 data: 'name',
@@ -69,15 +112,15 @@ export default {
                 },
             },
             { data: 'familyLabel', title: 'Family', type: 'string' },
-            { data: 'width', title: 'Width (mm)', render: renderNumber },
-            { data: 'height', title: 'Height (mm)', render: renderNumber },
-            { data: 'depth', title: 'Depth (mm)', render: renderNumber },
-            { data: 'effectiveLength', title: 'Eff. Length (mm)', render: renderNumber },
-            { data: 'effectiveArea', title: 'Eff. Area Ae (mm²)', render: renderNumber },
-            { data: 'minimumArea', title: 'Min. Area (mm²)', render: renderNumber },
-            { data: 'effectiveVolume', title: 'Eff. Volume (mm³)', render: renderNumber },
-            { data: 'windowArea', title: 'Window Area Aw (mm²)', render: renderNumber },
-            { data: 'areaProduct', title: 'Area Product Ae·Aw (mm⁴)', render: renderNumber },
+            { data: 'width', title: `Width (${u[0]})`, render: num },
+            { data: 'height', title: `Height (${u[0]})`, render: num },
+            { data: 'depth', title: `Depth (${u[0]})`, render: num },
+            { data: 'effectiveLength', title: `Eff. Length (${u[0]})`, render: num },
+            { data: 'effectiveArea', title: `Eff. Area Ae (${u[1]})`, render: num },
+            { data: 'minimumArea', title: `Min. Area (${u[1]})`, render: num },
+            { data: 'effectiveVolume', title: `Eff. Volume (${u[2]})`, render: num },
+            { data: 'windowArea', title: `Window Area Aw (${u[1]})`, render: num },
+            { data: 'areaProduct', title: `Area Product Ae·Aw (${u[3]})`, render: num },
             {
                 data: null,
                 title: '',
@@ -89,19 +132,8 @@ export default {
                 defaultContent: '<span class="shape-select-btn" title="Use this shape"><i class="pi pi-arrow-right"></i></span>',
             },
         ];
-        return {
-            coreShapeColumns,
-            tableOptions: {
-                lengthChange: true,
-                info: true,
-                paginate: true,
-                pageLength: 15,
-                lengthMenu: [10, 15, 25, 50, 100],
-                order: [[0, 'asc']],
-            },
-        }
-    },
-    computed: {
+        return coreShapeColumns;
+        },
         /** Display label of the current family, as shown in the Family column. */
         currentFamilyLabel() {
             if (!this.shapeFamily) return null;
@@ -147,7 +179,8 @@ export default {
         <div class="px-2 py-2 shape-table-wrapper" :data-cy="dataTestLabel + '-ShapeTable'">
             <FilterableDataTable
                 ref="coreShapeTable"
-                :data="coreShapeData"
+                :key="activeUnitSystem"
+                :data="displayRows"
                 :columns="coreShapeColumns"
                 :options="tableOptions"
                 :columnFilters="true"

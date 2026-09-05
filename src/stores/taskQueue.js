@@ -830,11 +830,36 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         coreAdvised(success = true, dataOrMessage = '') {
         },
 
+        /** Core-material manufacturers known to the engine (sorted). */
+        async getCoreManufacturers() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+            return toArray(await mkf.get_available_core_manufacturers()).sort();
+        },
+
         async adviseCore(inputs, coreAdviserWeights, adviserSettings) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
             const settings = JSON.parse(await mkf.get_settings());
+
+            // Preferred core manufacturer (ABT #1099): the adviser searches that
+            // maker's materials first (a tiebreak in MKF, never a gate — with
+            // no match it evaluates every material and says so). The engine's
+            // own defaults are remembered from the first call so clearing the
+            // preference restores them rather than a value guessed here.
+            if (this._engineDefaultPreferredManufacturers == null) {
+                if (!('preferredCoreMaterialFerriteManufacturer' in settings) || !('preferredCoreMaterialPowderManufacturer' in settings)) {
+                    throw new Error('Engine settings do not expose preferredCoreMaterial*Manufacturer: libMKF is older than the preferred-manufacturer feature (ABT #1099)');
+                }
+                this._engineDefaultPreferredManufacturers = {
+                    ferrite: settings.preferredCoreMaterialFerriteManufacturer,
+                    powder: settings.preferredCoreMaterialPowderManufacturer,
+                };
+            }
+            const preferredManufacturer = useSettingsStore().userPreferences?.preferredCoreManufacturer ?? null;
+            settings.preferredCoreMaterialFerriteManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.ferrite;
+            settings.preferredCoreMaterialPowderManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.powder;
 
             // CMC topology → force toroidal, no distributed gaps (winding goes around).
             const isCmc = inputs?.designRequirements?.topology?.toLowerCase() === 'commonmodechoke';

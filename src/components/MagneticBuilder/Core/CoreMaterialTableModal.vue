@@ -2,6 +2,7 @@
 import Dialog from 'primevue/dialog'
 import FilterableDataTable from '/WebSharedComponents/Common/FilterableDataTable.vue'
 import { removeTrailingZeroes } from '/WebSharedComponents/assets/js/utils.js'
+import { unitSystem } from '/WebSharedComponents/assets/js/units.js'
 </script>
 
 <script>
@@ -104,6 +105,31 @@ export default {
         visible: { type: Boolean, default: false },
     },
     data() {
+        return {
+            tableOptions: {
+                lengthChange: true,
+                info: true,
+                paginate: true,
+                pageLength: 15,
+                lengthMenu: [10, 15, 25, 50, 100],
+                order: [[1, 'asc'], [0, 'asc']],
+            },
+        }
+    },
+    computed: {
+        activeUnitSystem() {
+            return unitSystem();
+        },
+        /** Rows on screen: Curie temperature in °F under the imperial system (ABT #1099). */
+        displayRows() {
+            if (this.activeUnitSystem !== 'imperial') return this.coreMaterialData;
+            return this.coreMaterialData.map((row) => ({
+                ...row,
+                curieTemperature: row.curieTemperature == null ? null : row.curieTemperature * 9 / 5 + 32,
+            }));
+        },
+        coreMaterialColumns() {
+        const temperatureUnit = this.activeUnitSystem === 'imperial' ? '°F' : '°C';
         const coreMaterialColumns = [
             {
                 data: 'name',
@@ -128,7 +154,7 @@ export default {
             { data: 'initialPermeabilityB', title: 'Permeability @100 °C', render: renderNumber(0) },
             { data: 'saturationA', title: 'Bsat @25 °C (mT)', render: renderNumber(0) },
             { data: 'saturationB', title: 'Bsat @100 °C (mT)', render: renderNumber(0) },
-            { data: 'curieTemperature', title: 'Curie Temp. (°C)', render: renderNumber(0) },
+            { data: 'curieTemperature', title: `Curie Temp. (${temperatureUnit})`, render: renderNumber(0) },
             { data: 'resistivityA', title: 'Resistivity @25 °C (Ω·m)', render: renderNumber(2) },
             { data: 'volumetricLossesReference', title: 'Losses @100 kHz, 100 mT, 100 °C (kW/m³)', render: renderNumber(1) },
             {
@@ -142,17 +168,8 @@ export default {
                 defaultContent: '<span class="material-select-btn" title="Use this material"><i class="pi pi-arrow-right"></i></span>',
             },
         ];
-        return {
-            coreMaterialColumns,
-            tableOptions: {
-                lengthChange: true,
-                info: true,
-                paginate: true,
-                pageLength: 15,
-                lengthMenu: [10, 15, 25, 50, 100],
-                order: [[1, 'asc'], [0, 'asc']],
-            },
-        }
+        return coreMaterialColumns;
+        },
     },
     methods: {
         selectCoreMaterial(data) {
@@ -186,7 +203,8 @@ export default {
             <FilterableDataTable
                 v-else
                 ref="coreMaterialTable"
-                :data="coreMaterialData"
+                :key="activeUnitSystem"
+                :data="displayRows"
                 :columns="coreMaterialColumns"
                 :options="tableOptions"
                 :columnFilters="true"
