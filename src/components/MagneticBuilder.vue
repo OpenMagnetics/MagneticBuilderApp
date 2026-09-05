@@ -75,6 +75,9 @@ export default {
     },
     data() {
         const historyStore = useHistoryStore();
+        // Settle recorder (ABT #1084): quiet time before a burst of design
+        // changes counts as settled.
+        const SETTLE_MS = 1500;
         const taskQueueStore = useTaskQueueStore();
         const magneticBuilderSettingsStore = useMagneticBuilderSettingsStore();
         const magneticBuilt = false;
@@ -82,6 +85,10 @@ export default {
         this.$settingsStore.magneticBuilderSettings.autoRedraw = true;
 
         return {
+            SETTLE_MS,
+            settleTimer: null,
+            burstStartedAt: null,
+            stopSettleWatch: null,
             magneticBuilderSettingsStore,
             taskQueueStore,
             magneticBuilt,
@@ -136,8 +143,9 @@ export default {
 
         this.magneticBuilt = this.isMagneticBuilt();
         // Block history during initial mount — intermediate states (processCore,
-        // bobbin regen, winding) won't create entries. The first wind() completion
-        // will unblock and save the fully-built state as the first history entry.
+        // bobbin regen, winding) won't create entries. The settle recorder below
+        // (or the first wind() completion) lifts the block and saves the
+        // fully-built state as the first history entry.
         this.historyStore.blockAdditions();
         this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "addToHistory") {
@@ -145,6 +153,38 @@ export default {
                 this.$emit("canContinue", this.magneticBuilt);
             }
         }));
+
+        // ABT #1084 — settle recorder. Edits used to reach the history only
+        // through a wind() completion, so a design without a wound coil (core
+        // shape / material / gap / stacks edits before a wire exists) was never
+        // recorded and Undo stayed dark. Now every burst of changes to the
+        // design is recorded once it has been quiet for SETTLE_MS: the entry
+        // holds the SETTLED state (after autocomplete, bobbin, wind), and
+        // replaces an entry the SAME burst already made (e.g. wind's own add)
+        // so one gesture stays one undo step, and never touches an entry from
+        // an earlier burst. Timed blocks (after undo/redo) are respected —
+        // lifting them would truncate the redo stack.
+        this.settleTimer = null;
+        this.stopSettleWatch = this.$watch(
+            () => this.masStore.mas,
+            () => {
+                if (this.settleTimer) {
+                    clearTimeout(this.settleTimer);
+                }
+                else {
+                    this.burstStartedAt = Date.now();
+                }
+                this.settleTimer = setTimeout(() => {
+                    this.settleTimer = null;
+                    if (this.historyStore.isBlockedTimed()) return;
+                    if (this.historyStore.isBlockedIndefinitely()) {
+                        this.historyStore.unblockAdditions();
+                    }
+                    this.historyStore.addToHistory(this.masStore.mas, null, { coalesceIfAddedAfter: this.burstStartedAt });
+                }, this.SETTLE_MS);
+            },
+            { deep: true }
+        );
 
         // Notify components that builder is ready with existing design
         // This triggers visualizers and simulations to refresh
@@ -156,6 +196,8 @@ export default {
 
     },
     beforeUnmount() {
+        if (this.settleTimer) clearTimeout(this.settleTimer);
+        if (this.stopSettleWatch) this.stopSettleWatch();
         // Capture the builder state once, as the user leaves the builder, rather
         // than on every edit. Tied to the session_id, this gives one clean
         // "final builder state" row that pairs with the later design_report.
