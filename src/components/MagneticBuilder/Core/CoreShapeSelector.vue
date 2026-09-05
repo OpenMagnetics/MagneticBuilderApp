@@ -1,13 +1,66 @@
 <script setup>
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import { useHistoryStore } from '../../../stores/history'
-import { deepCopy, formatDimension, formatArea, formatVolume, removeTrailingZeroes } from '/WebSharedComponents/assets/js/utils.js'
+import { deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import CoreShapeTableModal from './CoreShapeTableModal.vue'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 </script>
 
 <script>
+/**
+ * Human label of a MAS core shape family. Planar families are camelCase
+ * ("planarE", "planarEL", "planarER"); a plain toUpperCase() makes them an
+ * unreadable "PLANARE", so they render as "Planar E" etc.
+ */
+export function shapeFamilyLabel(shapeFamily) {
+    return /^planar/i.test(shapeFamily)
+        ? 'Planar ' + shapeFamily.slice(6).toUpperCase()
+        : shapeFamily.toUpperCase();
+}
+
+function requireNumber(value, what, shapeName) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error(`Core shape "${shapeName}" has no ${what} in its processed description`);
+    }
+    return value;
+}
+
+/**
+ * One row of the core shape table (CoreShapeTableModal) from a processed
+ * core JSON. Every numeric field is a plain number in the unit the table's
+ * column title names (mm, mm², mm³, mm⁴), so the table can order and
+ * range-filter them numerically. `family` stays the raw MAS enum value
+ * (it is what the selector applies); `familyLabel` is what the table shows.
+ */
+export function buildShapeRow(core) {
+    const shape = core.functionalDescription.shape;
+    const processed = core.processedDescription;
+    const effective = processed.effectiveParameters;
+    const name = shape.name;
+    const windingWindow = processed.windingWindows[0];
+    if (windingWindow == null) {
+        throw new Error(`Core shape "${name}" has no winding window in its processed description`);
+    }
+    const effectiveArea = requireNumber(effective.effectiveArea, 'effective area', name) * 1e6;
+    const windowArea = requireNumber(windingWindow.area, 'winding window area', name) * 1e6;
+    return {
+        name,
+        aliases: Array.isArray(shape.aliases) ? shape.aliases.filter((alias) => alias !== name) : [],
+        family: shape.family,
+        familyLabel: shapeFamilyLabel(shape.family),
+        width: requireNumber(processed.width, 'width', name) * 1e3,
+        height: requireNumber(processed.height, 'height', name) * 1e3,
+        depth: requireNumber(processed.depth, 'depth', name) * 1e3,
+        effectiveLength: requireNumber(effective.effectiveLength, 'effective length', name) * 1e3,
+        effectiveArea,
+        minimumArea: requireNumber(effective.minimumArea, 'minimum area', name) * 1e6,
+        effectiveVolume: requireNumber(effective.effectiveVolume, 'effective volume', name) * 1e9,
+        windowArea,
+        areaProduct: effectiveArea * windowArea,
+    };
+}
+
 
 export default {
     emits: ["update"],
@@ -117,13 +170,8 @@ export default {
                     const success = args[0];
                     if (args[0]) {
                         this.coreShapeNames = args[1];
-                        for (const [shapeFamily, group] of Object.entries(this.coreShapeNames)) {
-                            // Planar families are camelCase ("planarE", "planarEl",
-                            // "planarEr"); plain toUpperCase() makes them an
-                            // unreadable "PLANARE". Render them as "Planar E" etc.
-                            this.coreShapeFamilies[shapeFamily] = /^planar/i.test(shapeFamily)
-                                ? 'Planar ' + shapeFamily.slice(6).toUpperCase()
-                                : shapeFamily.toUpperCase();
+                        for (const shapeFamily of Object.keys(this.coreShapeNames)) {
+                            this.coreShapeFamilies[shapeFamily] = shapeFamilyLabel(shapeFamily);
                         }
                         // Use bulk function to get all core data at once
                         this.taskQueueStore.processAllCoresFromShapes();
@@ -136,25 +184,17 @@ export default {
                 if (name == "allCoresFromShapesProcessed") {
                     if (args[0]) {
                         const cores = args[1];
+                        // The engine enumerates its alias index, so a shape
+                        // with N aliases arrives N+1 times (ABT #924 for the
+                        // dropdown; MKF get_shapes() has the same root). One
+                        // row per shape name.
+                        const seen = new Set();
                         const rows = [];
                         for (const core of cores) {
-                            const auxEffectiveLength = core.processedDescription.effectiveParameters.effectiveLength * 1000;
-                            const effectiveLength = `${removeTrailingZeroes(auxEffectiveLength, 2)} mm`;
-                            const auxEffectiveArea = core.processedDescription.effectiveParameters.effectiveArea * 1000000;
-                            const effectiveArea = `${removeTrailingZeroes(auxEffectiveArea, 2)} mm²`;
-                            const auxMinimumArea = core.processedDescription.effectiveParameters.minimumArea * 1000000;
-                            const minimumArea = `${removeTrailingZeroes(auxMinimumArea, 2)} mm²`;
-                            const auxEffectiveVolume = core.processedDescription.effectiveParameters.effectiveVolume * 1000000000;
-                            const effectiveVolume = `${removeTrailingZeroes(auxEffectiveVolume, 2)} mm³`;
-                            rows.push({
-                                name: core.functionalDescription.shape.name,
-                                family: core.functionalDescription.shape.family,
-                                effectiveLength: effectiveLength,
-                                effectiveArea: effectiveArea,
-                                minimumArea: minimumArea,
-                                effectiveVolume: effectiveVolume,
-                                www: "www",
-                            });
+                            const row = buildShapeRow(core);
+                            if (seen.has(row.name)) continue;
+                            seen.add(row.name);
+                            rows.push(row);
                         }
                         this.coreShapeData = rows;
                     }
@@ -165,25 +205,10 @@ export default {
                 if (name == "coreFromShapeProcessed") {
                     if (args[0]) {
                         const core = args[1];
-
-                        const auxEffectiveLength = core.processedDescription.effectiveParameters.effectiveLength * 1000;
-                        const effectiveLength = `${removeTrailingZeroes(auxEffectiveLength, 2)} mm`;
-                        const auxEffectiveArea = core.processedDescription.effectiveParameters.effectiveArea * 1000000;
-                        const effectiveArea = `${removeTrailingZeroes(auxEffectiveArea, 2)} mm²`;
-                        const auxMinimumArea = core.processedDescription.effectiveParameters.minimumArea * 1000000;
-                        const minimumArea = `${removeTrailingZeroes(auxMinimumArea, 2)} mm²`;
-                        const auxEffectiveVolume = core.processedDescription.effectiveParameters.effectiveVolume  * 1000000000;
-                        const effectiveVolume = `${removeTrailingZeroes(auxEffectiveVolume, 2)} mm³`;
-                        this.coreShapeData = [...this.coreShapeData, {
-                            name: core.functionalDescription.shape.name,
-                            family: core.functionalDescription.shape.family,
-                            effectiveLength: effectiveLength,
-                            effectiveArea: effectiveArea,
-                            minimumArea: minimumArea,
-                            effectiveVolume: effectiveVolume,
-                            www: "www",
-                        }]
-
+                        const row = buildShapeRow(core);
+                        if (!this.coreShapeData.some((r) => r.name === row.name)) {
+                            this.coreShapeData = [...this.coreShapeData, row];
+                        }
                     }
                     else {
                         console.error(args[1]);
