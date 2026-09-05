@@ -572,6 +572,38 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             return JSON.parse(result);
         },
 
+        /**
+         * Gap that gives the required magnetizing inductance (from inputs'
+         * designRequirements) with the coil's current turns. Returns the core
+         * with the new gapping, processed. gappingType: "Ground" | "Spacer".
+         */
+        async calculateGappingFromNumberTurnsAndInductance(core, coil, inputs, gappingType, decimals, modelsData) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+            const result = await mkf.calculate_gapping_from_number_turns_and_inductance(
+                JSON.stringify(core), JSON.stringify(coil), JSON.stringify(inputs), gappingType, decimals, JSON.stringify(modelsData));
+            if (result.startsWith('Exception')) {
+                throw new Error(result);
+            }
+            return JSON.parse(result);
+        },
+
+        /**
+         * Primary turns that give the required magnetizing inductance with the
+         * core's current gapping. The engine reports failures as -1 (its message
+         * goes to the worker console), so that is turned into a thrown error here.
+         */
+        async calculateNumberTurnsFromGappingAndInductance(core, coil, inputs, modelsData) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+            const result = await mkf.calculate_number_turns_from_gapping_and_inductance(
+                JSON.stringify(core), JSON.stringify(coil), JSON.stringify(inputs), JSON.stringify(modelsData));
+            if (!(result > 0)) {
+                throw new Error('Exception: calculate_number_turns_from_gapping_and_inductance failed (worker returned ' + result + '); see the worker console for the engine message');
+            }
+            return result;
+        },
+
         coreLossesCalculated(success = true, dataOrMessage = '') {
         },
 

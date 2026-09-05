@@ -5,6 +5,7 @@ import CoreGappingSelector from '/WebSharedComponents/Common/CoreGappingSelector
 import Magnetic3DVisualizer from '/WebSharedComponents/Common/Magnetic3DVisualizer.vue'
 import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights, defaultUngappedGapping } from '/WebSharedComponents/assets/js/defaults.js'
+import * as Defaults from '/WebSharedComponents/assets/js/defaults.js'
 import CoreInfo from './CoreInfo.vue'
 import CoreShapeSelector from './CoreShapeSelector.vue'
 import CoreMaterialTableModal, { buildMaterialRow } from './CoreMaterialTableModal.vue'
@@ -80,6 +81,8 @@ export default {
         const coreMaterialSummaryRows = null;
         const coreMaterialTableVisible = false;
         const shapeTableOpenRequest = 0;
+        const adjustingToInductance = false;
+        const infoMessage = '';
         const coreMaterialTableLoading = false;
 
         if (this.masStore.coreAdviserWeights == null) {
@@ -101,6 +104,8 @@ export default {
             coreMaterialSummaryRows,
             coreMaterialTableVisible,
             shapeTableOpenRequest,
+            adjustingToInductance,
+            infoMessage,
             coreMaterialTableLoading,
             coreMaterialManufacturers,
             coreMaterialNames,
@@ -116,6 +121,39 @@ export default {
         }
     },
     computed: {
+        /** Required magnetizing inductance (H) from the design requirements, or null. */
+        requiredMagnetizingInductance() {
+            const requirement = this.masStore.mas.inputs?.designRequirements?.magnetizingInductance;
+            if (requirement == null) return null;
+            if (typeof requirement === 'number') return requirement;
+            // PEAS dimensionWithTolerance resolution order: nominal, (min+max)/2, max, min.
+            if (requirement.nominal != null) return requirement.nominal;
+            if (requirement.minimum != null && requirement.maximum != null) return (requirement.minimum + requirement.maximum) / 2;
+            if (requirement.maximum != null) return requirement.maximum;
+            if (requirement.minimum != null) return requirement.minimum;
+            return null;
+        },
+        coreIsComplete() {
+            const functionalDescription = this.masStore.mas.magnetic.core?.functionalDescription;
+            return functionalDescription != null && functionalDescription.shape != '' && functionalDescription.shape != null
+                && functionalDescription.material != '' && functionalDescription.material != null;
+        },
+        primaryTurns() {
+            return this.masStore.mas.magnetic.coil?.functionalDescription?.[0]?.numberTurns ?? 0;
+        },
+        canAdjustGapToInductance() {
+            const type = this.masStore.mas.magnetic.core?.functionalDescription?.type;
+            return this.coreIsComplete && !this.readOnly
+                && (type == 'twoPieceSet' || type == 'pieceAndPlate')
+                && this.primaryTurns > 0
+                && this.requiredMagnetizingInductance != null
+                && this.masStore.mas.inputs?.operatingPoints?.length > 0;
+        },
+        canAdjustTurnsToInductance() {
+            return this.coreIsComplete && !this.readOnly
+                && this.requiredMagnetizingInductance != null
+                && this.masStore.mas.inputs?.operatingPoints?.length > 0;
+        },
         offerableMaterialRows() {
             if (this.coreMaterialSummaryRows == null) return [];
             return this.coreMaterialSummaryRows.filter((row) => {
@@ -421,6 +459,96 @@ export default {
         },
         openShapeTable() {
             this.shapeTableOpenRequest += 1;
+        },
+        /** Same model selection CoreInfo simulates with, so the result matches what is shown. */
+        inductanceModelsData() {
+            return {
+                coreLosses: this.$userStore.selectedModels['coreLosses'] || Defaults.coreLossesModelDefault,
+                coreTemperature: this.$userStore.selectedModels['coreTemperature'] || Defaults.coreTemperatureModelDefault,
+                gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault,
+            };
+        },
+        showInfo(message) {
+            this.infoMessage = message;
+            setTimeout(() => { if (this.infoMessage === message) this.infoMessage = ''; }, 8000);
+        },
+        showError(message) {
+            console.error(message);
+            this.errorMessage = message;
+            setTimeout(() => { if (this.errorMessage === message) this.errorMessage = ''; }, 10000);
+        },
+        /**
+         * Gap for the required magnetizing inductance with the turns as they are.
+         * Keeps the gap kind the core has (spacer if any additive gap, else ground).
+         *
+         * The engine is asked for the SMALL-SIGNAL gap (operating points stripped):
+         * with an operating point, MKF's gap search re-evaluates the material
+         * permeability under the DC bias through a fixed-point iteration that
+         * diverges near the B-H knee and collapses to the residual gap for any
+         * target above ~20 µH on a 15-turn P 11/7 (ABT #1093). The bias-aware
+         * inductance is what Core Info shows afterwards, so the user still sees it.
+         */
+        async adjustGapToInductance() {
+            if (!this.canAdjustGapToInductance || this.adjustingToInductance) return;
+            this.adjustingToInductance = true;
+            this.changeMadeByUser = true;
+            try {
+                const core = deepCopy(this.masStore.mas.magnetic.core);
+                const gappingType = (core.functionalDescription.gapping || []).some((gap) => gap.type == 'additive') ? 'Spacer' : 'Ground';
+                const smallSignalInputs = deepCopy(this.masStore.mas.inputs);
+                smallSignalInputs.operatingPoints = [];
+                const gappedCore = await this.taskQueueStore.calculateGappingFromNumberTurnsAndInductance(
+                    core, this.masStore.mas.magnetic.coil, smallSignalInputs, gappingType, 6, this.inductanceModelsData());
+                this.masStore.mas.magnetic.core.functionalDescription.gapping = gappedCore.functionalDescription.gapping;
+                this.$emit('gappingUpdated');
+                this.$emit('coreProcessingStarted');
+                const processedCore = await this.taskQueueStore.processCore(this.masStore.mas.magnetic.core);
+                this.masStore.mas.magnetic.core = processedCore;
+                this.localData['gapping'] = deepCopy(processedCore.functionalDescription.gapping);
+                this.updatingLocalData = true;
+                this.forceUpdate += 1;
+                this.$nextTick(() => { this.updatingLocalData = false; });
+                this.$emit('coreProcessed');
+                const longest = Math.max(...processedCore.functionalDescription.gapping.map((gap) => gap.length));
+                this.showInfo(`Gap set to ${(longest * 1e3).toFixed(3)} mm (${gappingType.toLowerCase()}) for ${this.primaryTurns} turns and ${(this.requiredMagnetizingInductance * 1e6).toPrecision(3)} µH small-signal`);
+            }
+            catch (error) {
+                this.showError('Could not find a gap for the required inductance: ' + error.message);
+            }
+            finally {
+                this.adjustingToInductance = false;
+            }
+        },
+        /**
+         * Turns for the required magnetizing inductance with the gap as it is.
+         * The primary comes from the engine; the other windings follow the
+         * design's turns ratios, as after Advise.
+         */
+        async adjustTurnsToInductance() {
+            if (!this.canAdjustTurnsToInductance || this.adjustingToInductance) return;
+            this.adjustingToInductance = true;
+            this.changeMadeByUser = true;
+            try {
+                const primaryTurns = await this.taskQueueStore.calculateNumberTurnsFromGappingAndInductance(
+                    this.masStore.mas.magnetic.core, this.masStore.mas.magnetic.coil, this.masStore.mas.inputs, this.inductanceModelsData());
+                const numberTurns = await this.taskQueueStore.calculateNumberTurns(primaryTurns, this.masStore.mas.inputs.designRequirements);
+                const windings = this.masStore.mas.magnetic.coil.functionalDescription;
+                for (let i = 0; i < numberTurns.length && i < windings.length; i++) {
+                    windings[i].numberTurns = numberTurns[i];
+                }
+                // The wound description is stale now; the coil rewinds on numberTurnsUpdated.
+                this.masStore.mas.magnetic.coil.turnsDescription = null;
+                this.masStore.mas.magnetic.coil.layersDescription = null;
+                this.masStore.mas.magnetic.coil.sectionsDescription = null;
+                this.taskQueueStore.numberTurnsUpdated(true);
+                this.showInfo(`Turns set to ${numberTurns.join(' : ')} for ${(this.requiredMagnetizingInductance * 1e6).toPrecision(3)} µH with the current gap`);
+            }
+            catch (error) {
+                this.showError('Could not find a number of turns for the required inductance: ' + error.message);
+            }
+            finally {
+                this.adjustingToInductance = false;
+            }
         },
         /**
          * Material table (ABT #1072): every offerable material with its
@@ -793,9 +921,15 @@ export default {
                     :dataTestLabel="dataTestLabel + '-BasicCoreSubmenu'"
                     :masStore="masStore"
                     :enableCustomize="enableCustomize"
+                    :allowGapAdjust="canAdjustGapToInductance"
+                    :allowTurnsAdjust="canAdjustTurnsToInductance"
+                    :busy="adjustingToInductance"
                     @customizeCore="$emit('customizeCore')"
                     @loadCore="loadCore"
+                    @adjustGapToInductance="adjustGapToInductance"
+                    @adjustTurnsToInductance="adjustTurnsToInductance"
                 />
+                <label v-if="infoMessage" :data-cy="dataTestLabel + '-Core-adjust-info'" class="text-success col-12 pt-1" style="font-size: 0.7em">{{infoMessage}}</label>
                 <label class="text-danger col-12 pt-1" style="font-size: 0.7em">{{errorMessage}}</label>
             </div>
         </div>
@@ -965,24 +1099,21 @@ export default {
     padding-right: 0 !important;
 }
 
-/* Core Shape row: dropdown + table-icon button act as ONE element
- * aligned left and right with the Shape Family dropdown above.
- * - Dropdown's left edge = Shape Family dropdown's left edge (via the
- *   inner ElementFromList's col-5 label + col-7 select split)
- * - Button right edge = Shape Family dropdown's right edge (the button
- *   is pinned with `right: 12px` to compensate for the row gutter that
- *   insets the other selects from the cell's right edge)
- * - Dropdown is shrunk by 3rem so it doesn't overlap the 28px button
- *   and there's a visible gap between them. */
+/* Core Shape row: its ElementFromList is nested one level deeper than the
+ * Family / Manufacturer / Material ones (inside .core-shape-input-group), so
+ * the `.row.g-0 > [class*="col-"]` gutter reset above does not reach it. Zero
+ * its own col gutter too, so the dropdown's right edge lines up with the rest. */
 .core-config-cell :deep(.core-shape-input-group) {
     position: relative !important;
     display: block;
 }
-/* Reserve room on the right for the table button (the p-select fills the rest
- * via flex:1, so constrain the row, not the select). */
+.core-config-cell :deep(.core-shape-input-group > .efl-container) {
+    padding-right: 0 !important;
+}
+/* The shape row spans the full value column like Family / Manufacturer /
+ * Material (the table button moved to the header, ABT #1072). */
 .core-config-cell :deep(.core-shape-input-group .core-shape-row) {
     width: 100%;
-    padding-right: 2.25rem;
     box-sizing: border-box;
 }
 .core-config-cell :deep(.core-shape-input-group .core-shape-row .p-select) {
@@ -996,14 +1127,6 @@ export default {
     width: 100% !important;
     max-width: 100% !important;
     margin-right: 0 !important;
-}
-/* Table button pinned to the right edge — aligns with the Manufacturer /
- * Material dropdowns' right edge. */
-.core-config-cell :deep(.core-shape-table-btn-wrapper) {
-    position: absolute !important;
-    right: 0 !important;
-    top: 50%;
-    transform: translateY(-50%) !important;
 }
 
 /* Align all labels (Shape Family / Shape / Manufacturer / Material /
