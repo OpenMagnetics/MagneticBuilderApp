@@ -4,6 +4,7 @@ import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponen
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
 import { useSettingsStore } from './settings'
+import { unitSystem } from '/WebSharedComponents/assets/js/units.js'
 import { useInventoryStore } from './inventory'
 
 // Returns the restricted shape-family whitelist (lowercase) if set in
@@ -1343,6 +1344,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 if (typeof(wire.strand) == "string" || wire.strand == null || (wire.strand != null && wire.strand.coating == null)) {
                     wire.strand = JSON.parse(await mkf.get_wire_data_by_standard_name(newWireDataDict["litzStrandConductingDiameter"]));
                 }
+                // The strand's size names its standard ("0.1 mm" is IEC, "38 AWG" is NEMA);
+                // the litz inherits it (ABT #1110, the standard is no longer a user field).
+                if (wire.strand != null && wire.strand.standard != null) {
+                    wire.standard = wire.strand.standard;
+                }
                 wire.numberConductors = newWireDataDict["numberConductors"];
                 if (coating != null) {
                     if (wire.outerDiameter == null) {
@@ -1546,6 +1552,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         // WebFrontend the inventory store is the host's full implementation;
         // standalone MB keeps scope 'public' and always takes the classic path.
         async callCalculateAdvisedCoil(mkf, advisePayload) {
+            await this.applyPreferredWireStandard(mkf);
             const inventoryStore = useInventoryStore();
             if (inventoryStore.scope === 'only') {
                 if (!inventoryStore.engineContextLoaded) {
@@ -1557,6 +1564,37 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         allWiresAdvised(success = true, dataOrMessage = '') {
+        },
+
+        /**
+         * The wire standard follows the profile unit system (ABT #1110): IEC 60317
+         * (millimetre sizes) under SI, NEMA MW 1000 C (AWG) under imperial. Pushed
+         * into the engine settings before any wire or coil advise, so the advisers
+         * only offer wires of that standard.
+         */
+        preferredWireStandard() {
+            return unitSystem() === 'imperial' ? 'NEMA MW 1000 C' : 'IEC 60317';
+        },
+        async applyPreferredWireStandard(mkf) {
+            const settings = JSON.parse(await mkf.get_settings());
+            if (!('preferredWireStandard' in settings)) {
+                throw new Error('Engine settings do not expose preferredWireStandard: libMKF is older than the wire-standard preference (ABT #1110)');
+            }
+            const wanted = this.preferredWireStandard();
+            if (settings.preferredWireStandard === wanted) return;
+            settings.preferredWireStandard = wanted;
+            await mkf.set_settings(JSON.stringify(settings));
+        },
+
+        /** Every catalogue wire, one summary row each (engine get_wires_summary, lengths in metres). */
+        async getWiresSummary() {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+            const result = await mkf.get_wires_summary();
+            if (result.startsWith('Exception')) {
+                throw new Error(result);
+            }
+            return JSON.parse(result);
         },
 
         async adviseAllWires(mas) {

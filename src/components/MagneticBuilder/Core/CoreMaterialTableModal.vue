@@ -150,13 +150,15 @@ export default {
             { data: 'family', title: 'Family', type: 'string' },
             // `applications` is kept on the row (CSV, search) but not shown: the
             // MAS field is filled for a handful of records only.
-            { data: 'initialPermeabilityA', title: 'Permeability @25 °C', render: renderNumber(0) },
-            { data: 'initialPermeabilityB', title: 'Permeability @100 °C', render: renderNumber(0) },
-            { data: 'saturationA', title: 'Bsat @25 °C (mT)', render: renderNumber(0) },
-            { data: 'saturationB', title: 'Bsat @100 °C (mT)', render: renderNumber(0) },
-            { data: 'curieTemperature', title: `Curie Temp. (${temperatureUnit})`, render: renderNumber(0) },
-            { data: 'resistivityA', title: 'Resistivity @25 °C (Ω·m)', render: renderNumber(2) },
-            { data: 'volumetricLossesReference', title: 'Losses @100 kHz, 100 mT, 100 °C (kW/m³)', render: renderNumber(1) },
+            // Short symbols so the thirteen columns fit a 1366 px screen without a
+            // horizontal scroll; the conditions are spelled out under the title.
+            { data: 'initialPermeabilityA', title: 'µi @25 °C', render: renderNumber(0) },
+            { data: 'initialPermeabilityB', title: 'µi @100 °C', render: renderNumber(0) },
+            { data: 'saturationA', title: 'Bsat @25 (mT)', render: renderNumber(0) },
+            { data: 'saturationB', title: 'Bsat @100 (mT)', render: renderNumber(0) },
+            { data: 'curieTemperature', title: `Tc (${temperatureUnit})`, render: renderNumber(0) },
+            { data: 'resistivityA', title: 'ρ (Ω·m)', render: renderNumber(2) },
+            { data: 'volumetricLossesReference', title: 'Pv (kW/m³)', render: renderNumber(1) },
             {
                 data: null,
                 title: '',
@@ -193,9 +195,10 @@ export default {
             <div class="d-flex align-items-center">
                 <i class="pi pi-th-large shape-header-icon mr-3"></i>
                 <h5 :data-cy="dataTestLabel + '-MaterialTable-title'" class="modal-title mb-0 shape-modal-title">Select Core Material</h5>
+                <small class="material-table-legend ml-3">µi initial permeability · Bsat saturation flux density · Tc Curie temperature · ρ resistivity at 25 °C · Pv volumetric losses at 100 kHz, 100 mT, 100 °C · @25 and @100 are °C</small>
             </div>
         </template>
-        <div class="px-2 py-2 shape-table-wrapper" :data-cy="dataTestLabel + '-MaterialTable'">
+        <div class="px-2 py-2 shape-table-wrapper material-table-wrapper" :data-cy="dataTestLabel + '-MaterialTable'">
             <div v-if="loading" class="material-table-loading" :data-cy="dataTestLabel + '-MaterialTable-loading'">
                 <i class="pi pi-spin pi-spinner"></i>
                 <span>Resolving material properties with the engine…</span>
@@ -208,6 +211,7 @@ export default {
                 :columns="coreMaterialColumns"
                 :options="tableOptions"
                 :columnFilters="true"
+                :compact="true"
                 :exportCsv="true"
                 exportFileName="core_materials"
                 rowNoun="materials"
@@ -250,6 +254,13 @@ export default {
     .shape-table-wrapper .material-missing {
         color: var(--p-gray-500);
     }
+
+    .material-table-legend {
+        color: var(--p-gray-400);
+        font-size: 0.75rem;
+        font-weight: 400;
+    }
+
 
     .material-table-loading {
         display: flex;

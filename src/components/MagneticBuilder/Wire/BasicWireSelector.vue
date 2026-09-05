@@ -3,6 +3,8 @@ import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import BasicWireSubmenu from './BasicWireSubmenu.vue'
 import WireInfo from './WireInfo.vue'
+import WireTableModal, { buildWireRow } from './WireTableModal.vue'
+import { unitSystem } from '/WebSharedComponents/assets/js/units.js'
 import BasicTurnsSelector from './BasicTurnsSelector.vue'
 import Wire2DVisualizer from '/WebSharedComponents/Common/Wire2DVisualizer.vue'
 import WindingSelector from '../Common/WindingSelector.vue'
@@ -74,8 +76,10 @@ export default {
         const wireConductingDiameters = [];
         const wireHeights = [];
         const wireWidths = [];
-        const wireStandards = []; 
         const wireCoatings = []; 
+        const wireTableVisible = false;
+        const wireTableLoading = false;
+        const wireSummaryRows = null;
         const errorMessage = ""; 
         const localData = {
             type: null,
@@ -107,8 +111,10 @@ export default {
             wireConductingDiameters,
             wireHeights,
             wireWidths,
-            wireStandards,
             wireCoatings,
+            wireTableVisible,
+            wireTableLoading,
+            wireSummaryRows,
             forceUpdate,
             loading,
             errorMessage,
@@ -116,6 +122,17 @@ export default {
         }
     },
     computed: {
+        activeUnitSystem() {
+            return unitSystem();
+        },
+        /**
+         * The wire standard is not a user field any more (ABT #1110): it follows
+         * the profile unit system — IEC 60317 (mm sizes) under SI, NEMA MW 1000 C
+         * (AWG) under imperial — for the size list and for the advisers.
+         */
+        preferredWireStandard() {
+            return this.activeUnitSystem === 'imperial' ? 'NEMA MW 1000 C' : 'IEC 60317';
+        },
         isCurrentWireIncomplete() {
             // Returns true when the wire of the currently visible winding is
             // missing or incomplete — used to highlight the "Advise" button.
@@ -148,6 +165,10 @@ export default {
         },
     },
     watch: {
+        activeUnitSystem() {
+            this.localData.standard = this.preferredWireStandard;
+            this.getWireDiameters();
+        },
         // 'masStore.mas.magnetic.coil.functionalDescription': {
         //     handler(newValue, oldValue) {
         //         const newWireHash = JSON.stringify(newValue[this.windingIndex].wire);
@@ -222,12 +243,7 @@ export default {
             if (wire && wire != "" && wire.type != null) {
 
                 this.localData["type"] = wire.type;
-                if (wire.standard != null) {
-                    this.localData["standard"] = wire.standard;
-                }
-                else {
-                    this.localData["standard"] = "IEC 60317";
-                }
+                this.localData["standard"] = this.preferredWireStandard;
 
 
                 if (wire.type == "round") {
@@ -247,7 +263,6 @@ export default {
                                 }
                                 const strandObj = typeof strandJson === 'string' ? JSON.parse(strandJson) : strandJson;
                                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire.strand = strandObj;
-                                this.localData["standard"] = strandObj.standard;
                                 this.localData["litzStrandConductingDiameter"] = strandObj.standardName;
                                 this.getWireDiameters();
                                 this.forceUpdate += 1;
@@ -255,7 +270,6 @@ export default {
                         });
                     }
                     else {
-                        this.localData["standard"] = wire.strand.standard;
                         this.localData["litzStrandConductingDiameter"] = wire.strand.standardName;
                     }
                     this.localData["numberConductors"] = wire.numberConductors;
@@ -282,7 +296,6 @@ export default {
                 this.forceUpdate += 1;
             }
             this.getWireTypes();
-            this.getWireStandards();
             this.getWireDiameters();
             this.getWireCoatings();
         },
@@ -295,15 +308,20 @@ export default {
                 this.wireTypes = wireTypes;
             });
         },
-        getWireStandards() {
-            this.taskQueueStore.getAvailableWireStandards().then((wireTypes) => {
-                this.wireStandards = wireTypes;
-            });
-        },
         getWireDiameters() {
             try {
-                this.taskQueueStore.getUniqueWireDiameters(this.localData.standard).then((wireConductingDiameters) => {
-                    this.wireConductingDiameters = wireConductingDiameters;
+                this.localData.standard = this.preferredWireStandard;
+                this.taskQueueStore.getUniqueWireDiameters(this.preferredWireStandard).then((wireConductingDiameters) => {
+                    // A design may carry a wire of the other standard (loaded, or
+                    // picked from the table): keep its size selectable at the top so
+                    // the dropdown never shows a value that is not in its list.
+                    const current = this.localData.type === 'litz' ? this.localData.litzStrandConductingDiameter : this.localData.roundConductingDiameter;
+                    if (current != null && current !== '' && !wireConductingDiameters.includes(current)) {
+                        this.wireConductingDiameters = [current, ...wireConductingDiameters];
+                    }
+                    else {
+                        this.wireConductingDiameters = wireConductingDiameters;
+                    }
                 });
             }
             catch (e) {
@@ -320,10 +338,6 @@ export default {
                     }
                 });
             }
-        },
-        async wireStandardUpdated() {
-            this.getWireDiameters();
-            await this.assignWire();
         },
         async wireCoatingUpdated() {
             await this.assignWire();
@@ -514,12 +528,49 @@ export default {
         },
         loadWire() {
         },
+        async openWireTable() {
+            this.wireTableVisible = true;
+            if (this.wireSummaryRows == null) {
+                this.wireTableLoading = true;
+                try {
+                    const summary = await this.taskQueueStore.getWiresSummary();
+                    this.wireSummaryRows = summary.map((row) => buildWireRow(row));
+                }
+                finally {
+                    this.wireTableLoading = false;
+                }
+            }
+        },
+        /** A row of the wire table: the catalogue wire replaces the winding's wire. */
+        async wireSelectedFromTable(row) {
+            this.errorMessage = "";
+            const wire = await this.taskQueueStore.getWireByName(row.name);
+            if (typeof wire === 'string' && wire.startsWith('Exception')) {
+                this.errorMessage = wire;
+                setTimeout(() => {this.errorMessage = ""}, 10000);
+                throw new Error(wire);
+            }
+            const wireObj = typeof wire === 'string' ? JSON.parse(wire) : wire;
+            this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wireObj;
+            this.assignLocalData(wireObj);
+            this.cleanCoil();
+            this.$emit("wireUpdated", this.windingIndex);
+            this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+            this.taskQueueStore.newWireCreated(true, wireObj);
+        },
     }
 }
 </script>
 
 <template>
     <div class="container">
+        <WireTableModal
+            v-model:visible="wireTableVisible"
+            :dataTestLabel="dataTestLabel + 'Wire'"
+            :wireData="wireSummaryRows ?? []"
+            :loading="wireTableLoading"
+            @wireSelected="wireSelectedFromTable"
+        />
         <div
             class="wire-config-panel"
             :style="{ '--wire-config-value-font-size': $styleStore.magneticBuilder.inputFontSize?.['font-size'] ?? $styleStore.magneticBuilder.inputFontSize?.fontSize }"
@@ -529,9 +580,19 @@ export default {
                     <i class="pi pi-bolt"></i>
                     <span>Wire Configuration</span>
                 </div>
-                <div v-if="enableAdvise && enableSubmenu && !readOnly" class="wire-config-header-right">
+                <div v-if="!readOnly" class="wire-config-header-right">
                     <button
-                        v-if="masStore.mas.magnetic.coil.functionalDescription.length > 1"
+                        type="button"
+                        :data-cy="dataTestLabel + 'Wire-WireTable-button'"
+                        class="wire-config-header-btn wire-config-header-btn-secondary"
+                        v-tooltip="'Browse every wire in a table: filter and order by type, standard, size, diameter, strands…'"
+                        @click="openWireTable"
+                    >
+                        <i class="pi pi-table"></i>
+                        <span>Wires</span>
+                    </button>
+                    <button
+                        v-if="enableAdvise && enableSubmenu && masStore.mas.magnetic.coil.functionalDescription.length > 1"
                         type="button"
                         :disabled="loading"
                         :data-cy="dataTestLabel + 'Wire-Advise-button'"
@@ -543,7 +604,7 @@ export default {
                         <span>Advise</span>
                     </button>
                     <button
-                        v-if="masStore.mas.magnetic.coil.functionalDescription.length > 1"
+                        v-if="enableAdvise && enableSubmenu && masStore.mas.magnetic.coil.functionalDescription.length > 1"
                         type="button"
                         :disabled="loading"
                         :data-cy="dataTestLabel + 'Wire-Advise-All-button'"
@@ -555,7 +616,7 @@ export default {
                         <span>Advise all</span>
                     </button>
                     <button
-                        v-if="masStore.mas.magnetic.coil.functionalDescription.length == 1"
+                        v-if="enableAdvise && enableSubmenu && masStore.mas.magnetic.coil.functionalDescription.length == 1"
                         type="button"
                         :disabled="loading"
                         :data-cy="dataTestLabel + 'Wire-Advise-button'"
@@ -632,27 +693,7 @@ export default {
                     </div>
                     <h5 v-if="!loading && localData.type == null" class="text-danger my-2 col-12">Select a type for the wire</h5>
 
-                    <div v-if="!loading && (localData.type == 'round' || localData.type == 'litz' && localData.standard != null)" class="wire-config-cell wire-config-cell-wide">
-                        <ElementFromList
-                            v-tooltip="tooltipsMagneticBuilder.wireStandard"
-                            :disabled="readOnly"
-                            class="text-left"
-                            :dataTestLabel="dataTestLabel + '-WireStandard'"
-                            :name="'standard'"
-                            :titleSameRow="true"
-                            :justifyContent="true"
-                            :labelWidthProportionClass="'col-12 md:col-5'"
-                            :selectStyleClass="'col-12 md:col-7'"
-                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
-                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
-                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
-                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                            :textColor="$styleStore.magneticBuilder.inputTextColor"
-                            v-model="localData"
-                            :options="wireStandards"
-                            @update="wireStandardUpdated"
-                        />
-                    </div>
+                    <!-- The wire standard follows the profile unit system (ABT #1110); no field. -->
                     <div v-if="!loading && localData.type == 'round'" class="wire-config-cell wire-config-cell-wide">
                         <ElementFromList
                             v-tooltip="tooltipsMagneticBuilder.wireRoundConductingDiameter"
@@ -930,6 +971,16 @@ export default {
 .wire-config-header-btn:not(:disabled):hover {
     filter: brightness(1.12);
     transform: translateY(-1px);
+}
+
+.wire-config-header-btn-secondary {
+    background: transparent;
+    color: var(--p-primary);
+    border: 1px solid rgb(var(--p-primary-rgb) / 0.45);
+}
+
+.wire-config-header-btn-secondary:not(:disabled):hover {
+    background: rgb(var(--p-primary-rgb) / 0.12);
 }
 
 .wire-config-header-btn-primary {
