@@ -3,9 +3,8 @@ import Dialog from 'primevue/dialog'
 import { useMagneticBuilderSettingsStore } from '../../stores/magneticBuilderSettings'
 import { useModelSettingsStore } from '../../stores/modelSettings'
 import { useStateStore } from '../../stores/state'
-import { useTaskQueueStore } from '../../stores/taskQueue'
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
-import { UNIT_SYSTEMS } from '/WebSharedComponents/assets/js/units.js'
+import UserPreferencesSettings from '/WebSharedComponents/Common/UserPreferencesSettings.vue'
 </script>
 
 <script>
@@ -46,38 +45,6 @@ export default {
             magneticBuilderSettingsStore,
             modelSettingsStore,
             stateStore,
-            // Preferences (ABT #1099): roam with the profile via $settingsStore.userPreferences.
-            unitSystemOptions: UNIT_SYSTEMS,
-            coreManufacturers: [],
-        }
-    },
-    computed: {
-        preferredManufacturerOptions() {
-            const options = { '': 'Engine default' };
-            for (const manufacturer of this.coreManufacturers) {
-                options[manufacturer] = manufacturer;
-            }
-            return options;
-        },
-        preferencesProxy() {
-            // ElementFromList binds `v-model[name]`; keep the null "engine default"
-            // as '' for the dropdown and write null back to the store.
-            const preferences = this.$settingsStore.userPreferences;
-            const self = this;
-            return {
-                get unitSystem() { return preferences.unitSystem; },
-                set unitSystem(value) { preferences.unitSystem = value; self.settingsChanged = true; },
-                get preferredCoreManufacturer() { return preferences.preferredCoreManufacturer ?? ''; },
-                set preferredCoreManufacturer(value) { preferences.preferredCoreManufacturer = value === '' ? null : value; self.settingsChanged = true; },
-            };
-        },
-    },
-    async mounted() {
-        try {
-            this.coreManufacturers = await useTaskQueueStore().getCoreManufacturers();
-        }
-        catch (error) {
-            console.error('Could not list core manufacturers for the preferences:', error);
         }
     },
     methods: {
@@ -297,41 +264,9 @@ export default {
                         </div>
                     </div>
 
-                    <!-- Preferences (profile) -->
-                    <div class="mt-4" :data-cy="dataTestLabel + '-Settings-Modal-preferences'">
-                        <h6 class="text-white mb-3 border-bottom border-secondary pb-2">
-                            <i class="pi pi-user text-primary mr-2"></i>
-                            Preferences
-                        </h6>
-                        <small class="text-secondary d-block mb-3">Follow your account when you sign in on another computer</small>
-                        <div class="setting-item d-flex justify-content-between align-items-center py-2">
-                            <div>
-                                <h6 class="text-white mb-1">Unit system</h6>
-                                <small class="text-secondary">Lengths, areas, volumes and temperatures in the inputs and results; electrical quantities stay SI</small>
-                            </div>
-                            <select
-                                :data-cy="dataTestLabel + '-Settings-Modal-unit-system-select'"
-                                class="form-select form-select-sm settings-select"
-                                :value="preferencesProxy.unitSystem"
-                                @change="preferencesProxy.unitSystem = $event.target.value"
-                            >
-                                <option v-for="(label, key) in unitSystemOptions" :key="key" :value="key">{{ label }}</option>
-                            </select>
-                        </div>
-                        <div class="setting-item d-flex justify-content-between align-items-center py-2">
-                            <div>
-                                <h6 class="text-white mb-1">Preferred core manufacturer</h6>
-                                <small class="text-secondary">The core adviser searches this maker's materials first; the pick can then be cross-referenced to other makers</small>
-                            </div>
-                            <select
-                                :data-cy="dataTestLabel + '-Settings-Modal-preferred-manufacturer-select'"
-                                class="form-select form-select-sm settings-select"
-                                :value="preferencesProxy.preferredCoreManufacturer"
-                                @change="preferencesProxy.preferredCoreManufacturer = $event.target.value"
-                            >
-                                <option v-for="(label, key) in preferredManufacturerOptions" :key="key" :value="key">{{ label }}</option>
-                            </select>
-                        </div>
+                    <!-- Preferences (profile, ABT #1099) — shared with WebFrontend's settings pages -->
+                    <div class="mt-4">
+                        <UserPreferencesSettings :dataTestLabel="dataTestLabel + '-Settings-Modal'" @changed="settingsChanged = true" />
                     </div>
 
                     <!-- Simulation Models Section -->
@@ -583,13 +518,6 @@ export default {
 
 
 <style scoped>
-.settings-select {
-    max-width: 15rem;
-    background-color: var(--p-gray-800);
-    color: var(--p-gray-100);
-    border: 1px solid var(--p-secondary);
-    border-radius: var(--p-border-radius);
-}
 .settings {
     z-index: 9999;
 }
