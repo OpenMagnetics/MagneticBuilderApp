@@ -153,11 +153,18 @@ export default {
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
             >
-                <GraphCommonParameters
-                    v-if="showParameters"
-                    :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
-                    :showGraphSelector="!showSelector"
-                />
+                <!--
+                    The v-if goes on the TEMPLATE, not on the component: a slot
+                    whose content is v-if'd away still counts as a slot, so the
+                    graph kept rendering its parameters column as an empty box
+                    beside the chart (ABT #1121).
+                -->
+                <template v-if="showParameters" #default>
+                    <GraphCommonParameters
+                        :dataTestLabel="dataTestLabel + '-GraphCommonParameters'"
+                        :showGraphSelector="!showSelector"
+                    />
+                </template>
             </component>
         </div>
     </div>
