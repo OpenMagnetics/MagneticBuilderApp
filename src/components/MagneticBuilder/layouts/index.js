@@ -1,6 +1,6 @@
 import { DEFAULT_BUILDER_LAYOUT } from './constants.js'
 import LayoutColumns from './LayoutColumns.vue'
-import LayoutBands from './LayoutBands.vue'
+import LayoutRosano from './LayoutRosano.vue'
 import LayoutCockpit from './LayoutCockpit.vue'
 import LayoutCompare from './LayoutCompare.vue'
 import LayoutPlanar from './LayoutPlanar.vue'
@@ -25,10 +25,10 @@ export const BUILDER_LAYOUTS = {
         component: LayoutColumns,
         suitsPrinted: false,
     },
-    bands: {
-        label: 'Bands',
+    rosano: {
+        label: 'Rosano',
         description: 'A row per part: what you set, what it gives you, and how it compares.',
-        component: LayoutBands,
+        component: LayoutRosano,
         suitsPrinted: false,
     },
     cockpit: {
@@ -53,6 +53,20 @@ export const BUILDER_LAYOUTS = {
 
 export { DEFAULT_BUILDER_LAYOUT } from './constants.js';
 
+/**
+ * Keys a stored preference may still carry from before a layout was renamed.
+ * Without this, a profile holding 'bands' would silently fall back to the
+ * default instead of opening the layout the user chose.
+ */
+const RENAMED_LAYOUTS = {
+    bands: 'rosano',
+};
+
+/** The registry key a stored value means, following any rename. */
+export function resolveLayoutKey(key) {
+    return RENAMED_LAYOUTS[key] ?? key;
+}
+
 /** `{key: label}` for the Settings dropdown. */
 export function layoutLabels() {
     const labels = {};
@@ -67,9 +81,9 @@ export function layoutLabels() {
  * localStorage) falls back to the default rather than rendering nothing.
  */
 export function layoutComponent(key) {
-    return (BUILDER_LAYOUTS[key] ?? BUILDER_LAYOUTS[DEFAULT_BUILDER_LAYOUT]).component;
+    return (BUILDER_LAYOUTS[resolveLayoutKey(key)] ?? BUILDER_LAYOUTS[DEFAULT_BUILDER_LAYOUT]).component;
 }
 
 export function isKnownLayout(key) {
-    return key in BUILDER_LAYOUTS;
+    return resolveLayoutKey(key) in BUILDER_LAYOUTS;
 }

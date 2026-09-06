@@ -16,7 +16,7 @@ import { firstGraphOfDomains } from '../Graphs/graphRegistry.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 /**
- * Bands — a row per part of the design (ABT #1121).
+ * Rosano — a row per part of the design (ABT #1121).
  *
  * Each row reads left to right: what you set, what it gives you, and how it
  * compares. The third cell is the one the columns layout has nowhere to put —
@@ -68,7 +68,7 @@ export default {
 </script>
 
 <template>
-    <div class="layout-bands" :data-cy="dataTestLabel + '-LayoutBands'">
+    <div class="layout-rosano" :data-cy="dataTestLabel + '-LayoutRosano'">
 
         <!-- ── Core ─────────────────────────────────────────────── -->
         <div class="band" :data-cy="dataTestLabel + '-Band-Core'">
@@ -216,7 +216,7 @@ export default {
 </template>
 
 <style scoped>
-.layout-bands {
+.layout-rosano {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
