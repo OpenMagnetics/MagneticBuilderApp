@@ -98,6 +98,14 @@ export default {
             },
         },
     },
+    watch: {
+        'masStore.mas.magnetic.core.processedDescription.effectiveParameters': {
+            deep: true,
+            handler() {
+                this.syncEffectiveParametersFromStore();
+            },
+        },
+    },
     mounted () {
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
@@ -168,11 +176,13 @@ export default {
             });
         }))
 
-        // Populate coreEffectiveParameters from existing processedDescription on mount
-        const existingEffParams = this.masStore.mas.magnetic.core?.processedDescription?.effectiveParameters;
-        if (existingEffParams) {
-            this.coreEffectiveParameters = existingEffParams;
-        }
+        // The effective parameters come from the store, not only from the
+        // coreProcessed event: this panel can be mounted after the core was
+        // processed (a layout switch remounts it) or miss the event while it is
+        // being rebuilt, and latching on the event alone left it BLANK with a
+        // perfectly good core selected (ABT #1121). The watcher below keeps it in
+        // step; this is the first read.
+        this.syncEffectiveParametersFromStore();
 
         // Auto-simulate on mount if valid data exists (e.g., after navigating back from file load)
         if (this.enableAutoSimulation) {
@@ -192,6 +202,13 @@ export default {
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
+        /** Take the engine's processed parameters for the core now in the store. */
+        syncEffectiveParametersFromStore() {
+            const stored = this.masStore.mas?.magnetic?.core?.processedDescription?.effectiveParameters;
+            if (stored?.effectiveLength != null) {
+                this.coreEffectiveParameters = stored;
+            }
+        },
         calculateCoreLosses() {
             // Check if there are pending simulation models from the state store
             const pendingModels = this.$stateStore.pendingSimulationModels;
@@ -543,6 +560,12 @@ export default {
                         />
                     </div>
                 </div>
+                <p
+                    v-else
+                    :data-cy="dataTestLabel + '-CoreInfo-notProcessed'"
+                    class="coreinfo-empty"
+                >The core's numbers appear once the engine has processed it. If this stays empty,
+                the shape and material together could not be built — try another pairing.</p>
             </template>
             <template v-else>
                 <div class="coreinfo-simple" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
@@ -606,6 +629,12 @@ export default {
                         :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                     />
                 </div>
+                <p
+                    v-else
+                    :data-cy="dataTestLabel + '-CoreInfo-notProcessed'"
+                    class="coreinfo-empty"
+                >The core's numbers appear once the engine has processed it. If this stays empty,
+                the shape and material together could not be built — try another pairing.</p>
             </template>
         </div>
     </div>
@@ -660,6 +689,14 @@ export default {
 
 .coreinfo-body {
     padding: 0.2rem 0.4rem;
+}
+
+.coreinfo-empty {
+    color: var(--p-gray-400);
+    font-size: 0.8rem;
+    margin: 0;
+    padding: 0.9rem 0.4rem;
+    text-align: center;
 }
 
 .coreinfo-grid {
