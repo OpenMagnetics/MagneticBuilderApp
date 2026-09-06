@@ -1,6 +1,8 @@
 <script setup>
 import PanelFrame from '/WebSharedComponents/Common/PanelFrame.vue'
 import BasicCoreSelector from '../Core/BasicCoreSelector.vue'
+import BasicWireBuilder from '../Wire/BasicWireBuilder.vue'
+import BasicCoilBuilder from '../Coil/BasicCoilBuilder.vue'
 import CoreInfo from '../Core/CoreInfo.vue'
 import AlternativesPanel from '../Common/AlternativesPanel.vue'
 import VisualizerSwitch from '../Common/VisualizerSwitch.vue'
@@ -14,10 +16,10 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
  * Compare — the design pinned as the reference, everything else ranked against
  * it (ABT #1121).
  *
- * The question is "what else could I build this with?". The core panel stays,
- * because changing the reference is part of the comparison, but the screen
- * belongs to the alternatives; picking one adopts it and the comparison
- * re-centres on the new design.
+ * The question is "what else could I build this with?", but this is still the
+ * magnetic builder, not a core browser: the whole design stays editable in the
+ * rail — core, wire and coil — while the screen belongs to the comparison.
+ * Picking an alternative adopts it and the map re-centres on the new design.
  */
 export default {
     emits: BUILDER_LAYOUT_EMITS,
@@ -28,6 +30,7 @@ export default {
             geometryView: '2D',
             redraw: 0,
             adopted: null,
+            adoptedTimer: null,
             subscriptions: [],
         }
     },
@@ -41,6 +44,7 @@ export default {
         }));
     },
     beforeUnmount() {
+        if (this.adoptedTimer) clearTimeout(this.adoptedTimer);
         this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {
@@ -49,7 +53,8 @@ export default {
             const shape = typeof core?.shape === 'string' ? core.shape : core?.shape?.name;
             this.adopted = shape ?? null;
             this.redraw += 1;
-            setTimeout(() => { this.adopted = null; }, 8000);
+            if (this.adoptedTimer) clearTimeout(this.adoptedTimer);
+            this.adoptedTimer = setTimeout(() => { this.adopted = null; }, 8000);
         },
     },
 }
@@ -57,34 +62,9 @@ export default {
 
 <template>
     <div class="layout-compare" :data-cy="dataTestLabel + '-LayoutCompare'">
-        <div class="compare-reference">
-            <PanelFrame
-                title="Reference design"
-                icon="pi-bookmark-fill"
-                :dataTestLabel="dataTestLabel + '-Compare-Reference'"
-            >
-                <div class="compare-canvas">
-                    <VisualizerSwitch
-                        :dataTestLabel="dataTestLabel + '-Compare'"
-                        :masStore="masStore"
-                        :operatingPointIndex="operatingPointIndex"
-                        v-model:view="geometryView"
-                        :enableSimulation="enableSimulation"
-                        :enableTemperaturePlot="enableTemperaturePlot"
-                        :forceUpdate="redraw"
-                    />
-                </div>
-            </PanelFrame>
 
-            <CoreInfo
-                v-if="enableSimulation"
-                :dataTestLabel="dataTestLabel + '-CoreInfo'"
-                :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
-                :masStore="masStore"
-                :operatingPointIndex="operatingPointIndex"
-                :enableAutoSimulation="enableAutoSimulation"
-            />
-
+        <!-- The design, all of it, still editable. -->
+        <div class="compare-rail">
             <BasicCoreSelector
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
@@ -101,27 +81,85 @@ export default {
                 :imageUpToDate="true"
                 @customizeCore="$emit('customizeCore')"
             />
+            <BasicWireBuilder
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+                :readOnly="readOnly"
+                :useVisualizers="false"
+                :showInfoPanel="false"
+                :enableSimulation="enableSimulation"
+                :enableAutoSimulation="enableAutoSimulation"
+                :enableSubmenu="enableSubmenu"
+                :enableAdvise="enableAdvise"
+                :isIsolatedApp="isIsolatedApp"
+                :operatingPointIndex="operatingPointIndex"
+            />
+            <BasicCoilBuilder
+                v-if="enableCoil"
+                :dataTestLabel="dataTestLabel"
+                :masStore="masStore"
+                :readOnly="readOnly"
+                :useVisualizers="false"
+                :showInfoPanel="false"
+                :enableSimulation="enableSimulation"
+                :enableAutoSimulation="enableAutoSimulation"
+                :enableOptions="enableCoilOptions"
+                :enableSubmenu="enableSubmenu"
+                :enableAdvise="enableAdvise"
+                :operatingPointIndex="operatingPointIndex"
+                :showInterleavingOrder="showInterleavingOrder"
+                :enableTemperaturePlot="enableTemperaturePlot"
+            />
         </div>
 
-        <div class="compare-alternatives">
-            <PanelFrame
-                title="Alternatives to this core"
-                icon="pi-sitemap"
-                accent="var(--p-info)"
-                :dataTestLabel="dataTestLabel + '-Compare-Alternatives'"
-            >
-                <p
-                    v-if="adopted"
-                    :data-cy="dataTestLabel + '-Compare-adopted'"
-                    class="compare-adopted"
-                >Now building on {{ adopted }} — the comparison re-centred on it.</p>
-                <AlternativesPanel
-                    :dataTestLabel="dataTestLabel + '-Compare'"
+        <!-- What it is now, and what else it could be. -->
+        <div class="compare-main">
+            <div class="compare-reference">
+                <PanelFrame
+                    title="Reference design"
+                    icon="pi-bookmark-fill"
+                    :dataTestLabel="dataTestLabel + '-Compare-Reference'"
+                >
+                    <VisualizerSwitch
+                        :dataTestLabel="dataTestLabel + '-Compare'"
+                        :masStore="masStore"
+                        :operatingPointIndex="operatingPointIndex"
+                        v-model:view="geometryView"
+                        :enableSimulation="enableSimulation"
+                        :enableTemperaturePlot="enableTemperaturePlot"
+                        :forceUpdate="redraw"
+                    />
+                </PanelFrame>
+
+                <CoreInfo
+                    v-if="enableSimulation"
+                    :dataTestLabel="dataTestLabel + '-CoreInfo'"
+                    :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
                     :masStore="masStore"
-                    :autoLoad="true"
-                    @coreAdopted="coreAdopted"
+                    :operatingPointIndex="operatingPointIndex"
+                    :enableAutoSimulation="enableAutoSimulation"
                 />
-            </PanelFrame>
+            </div>
+
+            <div class="compare-alternatives">
+                <PanelFrame
+                    title="Alternatives to this core"
+                    icon="pi-sitemap"
+                    accent="var(--p-info)"
+                    :dataTestLabel="dataTestLabel + '-Compare-Alternatives'"
+                >
+                    <p
+                        v-if="adopted"
+                        :data-cy="dataTestLabel + '-Compare-adopted'"
+                        class="compare-adopted"
+                    >Now building on {{ adopted }} — the comparison re-centred on it.</p>
+                    <AlternativesPanel
+                        :dataTestLabel="dataTestLabel + '-Compare'"
+                        :masStore="masStore"
+                        @coreAdopted="coreAdopted"
+                    />
+                </PanelFrame>
+            </div>
         </div>
     </div>
 </template>
@@ -130,28 +168,39 @@ export default {
 .layout-compare {
     display: flex;
     gap: 0.5rem;
-    align-items: stretch;
+    align-items: flex-start;
     width: 100%;
 }
 
-.compare-reference {
-    flex: 0 0 26%;
+.compare-rail {
+    flex: 0 0 27%;
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
 }
 
-.compare-canvas {
-    min-height: 12rem;
+.compare-main {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.compare-reference {
+    flex: 0 0 38%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
+    gap: 0.4rem;
+    /* A thumbnail beside the map, not a full canvas. */
+    --visualizer-switch-height: 16rem;
 }
 
 .compare-alternatives {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 32rem;
     display: flex;
     flex-direction: column;
 }
@@ -163,13 +212,16 @@ export default {
     text-align: center;
 }
 
-@media (max-width: 1100px) {
-    .layout-compare {
+@media (max-width: 1300px) {
+    .layout-compare,
+    .compare-main {
         flex-direction: column;
     }
+    .compare-rail,
     .compare-reference,
     .compare-alternatives {
         flex: 1 1 auto;
+        width: 100%;
     }
 }
 </style>

@@ -57,10 +57,13 @@ export default {
             type: Array,
             default: null,
         },
-        /** Fetch on mount rather than waiting for the user to press Find. */
+        /**
+         * Keep the map current by itself: fetch once the design can be ranked and
+         * refetch when the core changes. The Find button stays as a manual refresh.
+         */
         autoLoad: {
             type: Boolean,
-            default: false,
+            default: true,
         },
         title: {
             type: String,
@@ -76,6 +79,7 @@ export default {
             ownCandidates: null,
             loading: false,
             errorMessage: '',
+            refetchTimer: null,
         }
     },
     computed: {
@@ -85,6 +89,16 @@ export default {
         },
         currentCore() {
             return this.masStore.mas?.magnetic?.core;
+        },
+        /** What makes the map worth refetching: the core the user is comparing. */
+        coreSignature() {
+            const core = this.currentCore?.functionalDescription;
+            const name = (value) => (typeof value === 'string' ? value : value?.name ?? null);
+            return `${name(core?.shape)}|${name(core?.material)}`;
+        },
+        canRank() {
+            return (this.masStore.mas?.inputs?.operatingPoints?.length ?? 0) > 0
+                && this.currentCore?.processedDescription != null;
         },
         /** The design itself, drawn as the reference point. */
         referencePoint() {
@@ -119,9 +133,12 @@ export default {
             return toCamelCase(this.yLabel);
         },
         chartData() {
+            // `label` is what the comparator's tooltip shows for a point; without
+            // it every hover read "undefined".
             return (this.points ?? []).map((point) => ({
                 [this.xKey]: point.x,
                 [this.yKey]: point.y,
+                label: point.name,
                 name: point.name,
             }));
         },
@@ -131,6 +148,7 @@ export default {
             return {
                 [this.xKey]: reference.x,
                 [this.yKey]: reference.y,
+                label: reference.name,
                 name: reference.name,
             };
         },
@@ -145,10 +163,25 @@ export default {
             return AXES[this.axes.y].label;
         },
     },
-    mounted() {
-        if (this.autoLoad && this.candidates == null) {
-            this.findAlternatives();
-        }
+    watch: {
+        coreSignature: {
+            immediate: true,
+            handler() {
+                if (!this.autoLoad || this.candidates != null) return;
+                // Coalesce a burst of edits (shape, then material, then gap) into
+                // one search, and stay out of the way while the design is still
+                // being rebuilt — an adviser run started mid-edit competes with
+                // the reprocess for the same engine.
+                if (this.refetchTimer) clearTimeout(this.refetchTimer);
+                this.refetchTimer = setTimeout(() => {
+                    this.refetchTimer = null;
+                    if (this.canRank) this.findAlternatives();
+                }, 2500);
+            },
+        },
+    },
+    beforeUnmount() {
+        if (this.refetchTimer) clearTimeout(this.refetchTimer);
     },
     methods: {
         coreName(core) {
@@ -162,8 +195,12 @@ export default {
             const value = AXES[key].of(core);
             return value == null || Number.isNaN(value) ? null : value;
         },
-        axisFormatter(value) {
-            const shown = formatUnit(value, AXES[this.axes.x].unit);
+        axisFormatter(value, label) {
+            // The comparator formats both axes with this and says which one it is;
+            // using the x unit for both mislabels the y axis.
+            const axis = Object.values(AXES).find((entry) => entry.label === label)
+                ?? AXES[this.axes.x];
+            const shown = formatUnit(value, axis.unit);
             return `${shown.label} ${shown.unit}`;
         },
         /**
@@ -215,12 +252,16 @@ export default {
             if (point == null) return;
             this.errorMessage = '';
             try {
+                const magnetic = point.candidate.mas.magnetic;
                 await applyAdvisedCore({
                     masStore: this.masStore,
                     taskQueueStore: this.taskQueueStore,
                     historyStore: this.historyStore,
-                    magnetic: point.candidate.mas.magnetic,
+                    magnetic,
                 });
+                // The same announcement the Advise button makes, so the core panel
+                // reloads its dropdowns with the core the user just picked.
+                this.taskQueueStore.coreAdvised(true, magnetic);
                 this.$emit('coreAdopted', point.candidate);
             }
             catch (error) {
@@ -292,7 +333,9 @@ export default {
             v-else-if="shownCandidates == null && !loading"
             :data-cy="dataTestLabel + '-Alternatives-empty'"
             class="alternatives-message"
-        >Ask the adviser for the cores that also fit these requirements, and compare them with the one you have.</p>
+        >{{ canRank
+            ? 'Looking for the cores that also fit these requirements…'
+            : 'Set an operating point and a processed core, and the cores that also fit these requirements appear here.' }}</p>
 
         <p v-else-if="loading" class="alternatives-message">
             <i class="pi pi-spin pi-spinner mr-2"></i>Ranking cores against your requirements…

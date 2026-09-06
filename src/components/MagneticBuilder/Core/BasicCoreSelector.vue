@@ -234,6 +234,16 @@ export default {
 
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
+                // A core the ADVISER produced — from this panel's own button or
+                // from the alternatives map — has to reach these dropdowns, or the
+                // panel keeps showing the shape the user just replaced (ABT #1121).
+                // Only when the advise came from SOMEWHERE ELSE (the alternatives
+                // map): this panel's own Advise assigns the core itself when its
+                // promise resolves, and repeating the work here while that is
+                // still in flight only adds a second reprocess.
+                if (name == "coreAdvised" && args[0] && args[1]?.core != null && !this.loading) {
+                    this.assignLocalData(args[1].core);
+                }
                 if (name == "coreProcessed") {
                     if (args[0]) {
                         const core = args[1];

@@ -252,7 +252,7 @@ export default {
 
 .band-cell-geometry {
     flex: 1 1 0;
-    min-height: 20rem;
+    --visualizer-switch-height: 22rem;
 }
 
 .band-note {

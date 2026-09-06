@@ -219,7 +219,8 @@ export default {
 
 .planar-cell-view {
     flex: 1 1 0;
-    min-height: 28rem;
+    /* Cross-section above, response below: each gets half the column. */
+    --visualizer-switch-height: 20rem;
 }
 
 .planar-warning {

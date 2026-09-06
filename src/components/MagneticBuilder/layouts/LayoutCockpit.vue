@@ -247,7 +247,8 @@ export default {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    min-height: 32rem;
+    /* The canvas is the point of this layout, so the geometry gets the room. */
+    --visualizer-switch-height: 34rem;
 }
 
 .cockpit-tab {

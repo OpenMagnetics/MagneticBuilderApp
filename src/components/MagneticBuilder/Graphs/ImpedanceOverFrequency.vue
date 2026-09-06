@@ -195,12 +195,12 @@ export default {
 <template>
     <div class="graph-wrapper">
         <div class="grid">
-            <div class="col-12 md:col-3">
+            <div v-if="$slots.default" class="col-12 md:col-3">
                 <div class="graph-params">
                     <slot/>
                 </div>
             </div>
-            <div class="col-12 md:col-9 graph-viz-col">
+            <div :class="$slots.default ? 'col-12 md:col-9 graph-viz-col' : 'col-12 graph-viz-col'">
 
                 <img :data-cy="dataTestLabel + '-ResistancesOverFrequency-loading'" v-if="loading" class="mx-auto d-block graph-loading" alt="loading" :src="$settingsStore.loadingGif">
                 <label v-if="errorMessage != ''" :data-cy="dataTestLabel + '-BottomOrRightMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{errorMessage}}</label>

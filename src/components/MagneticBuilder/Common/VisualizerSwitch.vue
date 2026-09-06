@@ -63,6 +63,8 @@ export default {
             availableViews: VIEWS,
             subscriptions: [],
             selfUpdate: 0,
+            onResize: null,
+            resizeTimer: null,
             // What ElementFromList writes into; kept in step with the prop.
             editable: { view: this.view in VIEWS ? this.view : '2D' },
         }
@@ -91,6 +93,14 @@ export default {
         },
     },
     mounted() {
+        // The fit is computed in pixels against the container, so a resize needs a
+        // re-plot or the drawing keeps the old box's scale.
+        this.onResize = () => {
+            if (this.resizeTimer) clearTimeout(this.resizeTimer);
+            this.resizeTimer = setTimeout(() => { this.selfUpdate += 1; }, 250);
+        };
+        window.addEventListener('resize', this.onResize);
+
         // Same trigger the Core panel uses: redraw when the engine says the
         // design was rebuilt, so the canvas is never a step behind the inputs.
         this.subscriptions.push(this.taskQueueStore.$onAction(({ name, args, after }) => {
@@ -104,9 +114,25 @@ export default {
         }));
     },
     beforeUnmount() {
+        if (this.onResize) window.removeEventListener('resize', this.onResize);
+        if (this.resizeTimer) clearTimeout(this.resizeTimer);
         this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     watch: {
+        /**
+         * The 2D visualizer keeps the plot mode as its own state and only
+         * re-plots when something forces it, so "Show Temperature" — which the
+         * coil panel writes into the shared state — would flip the label and
+         * leave the drawing untouched here (ABT #1121). The coil panel bumps its
+         * own counter for the same reason; this is that bump for the layouts
+         * that host the view instead.
+         */
+        '$stateStore.magnetic2DVisualizerState.plotMode'() {
+            this.selfUpdate += 1;
+        },
+        '$stateStore.magnetic2DVisualizerState.includeFringing'() {
+            this.selfUpdate += 1;
+        },
         view(chosen) {
             if (chosen in VIEWS && chosen !== this.editable.view) {
                 this.editable.view = chosen;
@@ -214,12 +240,27 @@ export default {
     max-width: 16rem;
 }
 
+/*
+ * A DEFINITE height, not a flexed one. Magnetic2DVisualizer fits its drawing by
+ * measuring its container in pixels when the plot arrives and writing that size
+ * onto the svg; against a container whose height is still being negotiated it
+ * measures the content instead and the drawing spills out of the card. A fixed
+ * box also keeps every layout's geometry cell the same size as the panels the
+ * builder already had.
+ */
 .visualizer-switch-canvas {
-    flex: 1;
+    height: var(--visualizer-switch-height, 24rem);
     min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+.visualizer-switch-canvas :deep(svg),
+.visualizer-switch-canvas :deep(canvas) {
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .visualizer-switch-empty {
