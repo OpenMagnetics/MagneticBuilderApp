@@ -56,6 +56,14 @@ export default {
             type: Boolean,
             default: true,
         },
+        /**
+         * Compact: the chart drops its own title and toolbox and uses a shorter
+         * box, since this panel's header already names it (ABT #1121).
+         */
+        compact: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         return {
@@ -152,6 +160,7 @@ export default {
                 :key="effectiveGraph"
                 :dataTestLabel="dataTestLabel"
                 :masStore="masStore"
+                :compact="compact"
             >
                 <!--
                     The v-if goes on the TEMPLATE, not on the component: a slot

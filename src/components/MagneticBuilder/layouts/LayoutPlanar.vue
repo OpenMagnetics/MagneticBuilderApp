@@ -178,6 +178,7 @@ export default {
                     :domains="['winding']"
                     title="Layer response"
                     :showParameters="false"
+                    :compact="true"
                 />
                 <PanelFrame v-else title="Layer response" icon="pi-chart-line" accent="var(--p-success)">
                     <p class="planar-note">Finish the magnetic to see what the layers do with frequency.</p>
@@ -198,7 +199,7 @@ export default {
 .planar-row {
     display: flex;
     gap: 0.5rem;
-    align-items: stretch;
+    align-items: flex-start;
     width: 100%;
 }
 

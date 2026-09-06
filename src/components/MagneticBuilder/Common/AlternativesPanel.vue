@@ -272,11 +272,15 @@ export default {
         },
         axisFormatter(value, label) {
             // The comparator formats both axes with this and says which one it is;
-            // using the x unit for both mislabels the y axis.
+            // using the x unit for both mislabels the y axis. Round to three
+            // significant digits: an axis tick read "2.1430000000000002 W".
             const axis = Object.values(AXES).find((entry) => entry.label === label)
                 ?? AXES[this.axes.x];
+            if (value === 0) return '0';
             const shown = formatUnit(value, axis.unit);
-            return `${shown.label} ${shown.unit}`;
+            const rounded = Number(shown.label);
+            const label3 = Number.isFinite(rounded) ? Number(rounded.toPrecision(3)) : shown.label;
+            return `${label3} ${shown.unit}`;
         },
         /**
          * The comparator asks for the axis captions and calls this without a
@@ -440,6 +444,8 @@ export default {
             :yLabel="yLabel"
             :axisFormatter="axisFormatter"
             :labelFormatter="labelFormatter"
+            :compact="true"
+            height="20rem"
             @click="pointClicked"
         />
     </div>
@@ -457,13 +463,24 @@ export default {
 .alternatives-bar {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.3rem;
     flex-wrap: wrap;
+    font-size: 0.8rem;
 }
 
 .alternatives-axis {
-    flex: 1 1 9rem;
+    flex: 1 1 8rem;
     min-width: 0;
+}
+
+/* The chart is the point of the panel; the axis pickers stay on one slim line. */
+.alternatives-bar :deep(.p-select) {
+    font-size: 0.78rem;
+}
+
+.alternatives-bar :deep(.p-select-label) {
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
 }
 
 .alternatives-btn {

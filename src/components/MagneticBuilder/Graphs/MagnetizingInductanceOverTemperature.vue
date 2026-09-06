@@ -10,6 +10,14 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 export default {
     props: {
+        /**
+         * Compact: the chart drops its own title and toolbox and uses a shorter
+         * box, for a panel whose header already names it (ABT #1121).
+         */
+        compact: {
+            type: Boolean,
+            default: false,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -163,11 +171,15 @@ export default {
                     v-show="!loading"
                     :data="magnetizingInductanceOverTemperatureData"
                     :xAxisOptions="temperatureData"
-                    :title="'Magnetizing Inductance over Temperature'"
+                    :title="compact ? '' : 'Magnetizing Inductance over Temperature'"
+                    :toolbox="!compact"
+                    :chartStyle="compact ? 'height: 8rem' : 'height: 50vh'"
+                    :chartPaddings="compact ? { top: 16, left: 62, right: '5%', bottom: 30 } : { top: 60, left: 60, right: '5%', bottom: 30 }"
                     :forceUpdate="forceUpdate"
                     :bgColor="$styleStore.magneticBuilder.graphBgColor['background-color']"
                     :lineColor="$styleStore.magneticBuilder.graphLineColor.color"
                     :showPoints="false"
+                    :showLegend="!compact"
                     :tooltipTrigger="'axis'"
                     :pointsColor="$styleStore.magneticBuilder.graphPointsColor.color"
                     :textColor="$styleStore.magneticBuilder.inputTextColor.color"

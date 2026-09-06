@@ -166,6 +166,7 @@ export default {
                     :domains="['winding']"
                     title="Wire response"
                     :showParameters="false"
+                    :compact="true"
                 />
                 <PanelFrame v-else title="Wire response" icon="pi-chart-line" accent="var(--p-danger)">
                     <p class="band-note">Finish the magnetic to see how the winding responds with frequency.</p>
@@ -225,7 +226,9 @@ export default {
 .band {
     display: flex;
     gap: 0.5rem;
-    align-items: stretch;
+    /* Cards take the height of their own content: stretching a cell does not
+     * stretch the card inside it, so it only padded the row out. */
+    align-items: flex-start;
     width: 100%;
 }
 
@@ -253,7 +256,7 @@ export default {
 
 .band-cell-geometry {
     flex: 1 1 0;
-    --visualizer-switch-height: 22rem;
+    --visualizer-switch-height: 20rem;
 }
 
 .band-note {
