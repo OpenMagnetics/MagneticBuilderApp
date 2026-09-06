@@ -975,6 +975,13 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.core-config-header-left span {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -987,6 +994,10 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.3rem;
+    min-width: 0;
     margin-left: auto;
 }
 

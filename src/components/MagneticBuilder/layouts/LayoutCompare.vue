@@ -175,7 +175,8 @@ export default {
 
 .compare-rail {
     flex: 0 0 27%;
-    min-width: 0;
+    /* A dimension row needs this much before its selects start truncating. */
+    min-width: 27rem;
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
@@ -218,11 +219,15 @@ export default {
     .compare-main {
         flex-direction: column;
     }
+    .compare-main,
     .compare-rail,
     .compare-reference,
     .compare-alternatives {
         flex: 1 1 auto;
         width: 100%;
+    }
+    .compare-reference {
+        --visualizer-switch-height: 22rem;
     }
 }
 </style>

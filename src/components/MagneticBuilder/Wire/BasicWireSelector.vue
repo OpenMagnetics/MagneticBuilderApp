@@ -931,6 +931,10 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* The action buttons do not fit beside the title in a narrow column:
+     * let them wrap under it rather than spill past the card (ABT #1121). */
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
     padding: 0.6rem 0.9rem;
     background: rgba(120, 120, 120, 0.1);
     border-bottom: 1px solid rgba(120, 120, 120, 0.15);
@@ -944,6 +948,13 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
+}
+
+.wire-config-header-left span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .wire-config-header-left i {
@@ -955,6 +966,10 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.3rem;
+    min-width: 0;
 }
 
 .wire-config-header-btn {

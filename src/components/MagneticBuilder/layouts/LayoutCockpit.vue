@@ -236,11 +236,14 @@ export default {
 }
 
 .cockpit-rail-inputs {
-    flex: 0 0 24%;
+    /* Wide enough for a dimension field and its unit beside a label: below this
+     * the selects truncate and the unit box spills out (ABT #1121). */
+    flex: 0 0 28%;
+    min-width: 27rem;
 }
 
 .cockpit-rail-results {
-    flex: 0 0 25%;
+    flex: 0 0 26%;
 }
 
 .cockpit-canvas {

@@ -238,8 +238,24 @@ export default {
     flex-direction: column;
 }
 
+/* The cards carry their own top margins, which differ between the panel kinds
+ * and would leave neighbours in a band a few pixels out of line. */
+.band-cell > :deep(*),
+.band-cell :deep(.panel-frame:first-child),
+.band-cell :deep(.core-config-panel),
+.band-cell :deep(.wire-config-panel),
+.band-cell :deep(.coil-config-panel),
+.band-cell :deep(.coreinfo-panel),
+.band-cell :deep(.wireinfo-panel),
+.band-cell :deep(.coilinfo-panel) {
+    margin-top: 0;
+}
+
 .band-cell-inputs {
     flex: 0 0 27%;
+    /* A dimension row is a label, a field and a unit select: under this the
+     * selects start truncating their value (ABT #1121). */
+    min-width: 27rem;
 }
 
 .band-cell-info {

@@ -210,8 +210,23 @@ export default {
     gap: 0.4rem;
 }
 
+/* The cards carry their own top margins, which differ between the panel kinds
+ * and would leave neighbours in a band a few pixels out of line. */
+.planar-cell > :deep(*),
+.planar-cell :deep(.panel-frame:first-child),
+.planar-cell :deep(.core-config-panel),
+.planar-cell :deep(.wire-config-panel),
+.planar-cell :deep(.coil-config-panel),
+.planar-cell :deep(.coreinfo-panel),
+.planar-cell :deep(.wireinfo-panel),
+.planar-cell :deep(.coilinfo-panel) {
+    margin-top: 0;
+}
+
 .planar-cell-core {
     flex: 0 0 26%;
+    /* Same floor as the other layouts: below this the selects truncate. */
+    min-width: 27rem;
 }
 
 .planar-cell-stack {
