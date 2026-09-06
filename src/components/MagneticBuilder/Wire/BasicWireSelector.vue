@@ -18,6 +18,15 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 export default {
     props: {
+        /**
+         * The panel's own info card. A layout that gives the results a cell of
+         * their own (the bands layout) turns this off and mounts the info
+         * component itself — same component, different place (ABT #1121).
+         */
+        showInfoPanel: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -882,7 +891,7 @@ export default {
                 </div>
 
                 <WireInfo
-                    v-if="!loading && enableSimulation"
+                    v-if="showInfoPanel && !loading && enableSimulation"
                     ref="wireInfo"
                     :dataTestLabel="dataTestLabel + '-WireInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"

@@ -1,19 +1,20 @@
 <script setup>
 import { useHistoryStore } from '../stores/history'
 import { useTaskQueueStore } from '../stores/taskQueue'
-import CoreBuilder from './MagneticBuilder/Core/CoreBuilder.vue'
-import BasicWireBuilder from './MagneticBuilder/Wire/BasicWireBuilder.vue'
-import BasicCoilBuilder from './MagneticBuilder/Coil/BasicCoilBuilder.vue'
 import AdvancedCoreSelector from './MagneticBuilder/Core/AdvancedCoreSelector.vue'
 import AdvancedCoilInfo from './MagneticBuilder/Coil/AdvancedCoilInfo.vue'
-import GraphInfo from './MagneticBuilder/GraphInfo.vue'
-import { isMobile } from '/WebSharedComponents/assets/js/utils.js'
 import { recordDesign } from '/WebSharedComponents/assets/js/telemetry.js'
 import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
 
 </script>
 
 <script>
+// Imported under a different name than the computed below: a module binding is
+// exposed to the template as $setup, and $setup WINS over an Options API member
+// of the same name — with both called `layoutComponent`, `:is` received the
+// function instead of the component and rendered it as "[object Object]".
+import { layoutComponent as resolveLayoutComponent } from './MagneticBuilder/layouts/index.js'
+
 export default {
     emits: ["canContinue"],
     props: {
@@ -97,6 +98,39 @@ export default {
         }
     },
     computed: {
+        /**
+         * The layout on screen (ABT #1121): whichever the user picked in
+         * Settings. Layouts arrange the same components with the same props —
+         * see layouts/layoutProps.js — so switching one never touches the design.
+         */
+        layoutComponent() {
+            return resolveLayoutComponent(this.magneticBuilderSettingsStore.layout);
+        },
+        /**
+         * One binding for the whole layout contract, so a prop added to
+         * layoutProps.js reaches every layout without editing five templates.
+         */
+        layoutBindings() {
+            return {
+                dataTestLabel: this.dataTestLabel,
+                masStore: this.masStore,
+                readOnly: this.readOnly,
+                isIsolatedApp: this.isIsolatedApp,
+                operatingPointIndex: this.operatingPointIndex,
+                magneticBuilt: this.magneticBuilt,
+                useVisualizers: this.useVisualizers,
+                enableSimulation: this.enableSimulationComputed,
+                enableAutoSimulation: this.enableAutoSimulationComputed,
+                enableSubmenu: this.enableSubmenu,
+                enableCustomize: this.magneticBuilderSettingsStore.enableCustomize,
+                enableAdvise: this.enableAdvisers && !this.isIsolatedApp,
+                enableCoil: this.enableCoil,
+                enableCoilOptions: this.enableCoilOptions,
+                enableGraphs: this.enableGraphs,
+                showInterleavingOrder: this.showInterleavingOrder,
+                enableTemperaturePlot: this.enableTemperaturePlot,
+            };
+        },
         enableVisualizers() {
             if (this.isIsolatedApp) {
                 return true;
@@ -278,64 +312,11 @@ export default {
                 :operatingPointIndex="operatingPointIndex"
             />
         </div>
-        <div 
+        <component
             v-else
-            class="row gx-0"
-        >
-            <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'col-offset-1 col-4'">
-                <CoreBuilder 
-                    :masStore="masStore"
-                    :readOnly="readOnly"
-                    :useVisualizers="useVisualizers && enableVisualizers"
-                    :enableSimulation="enableSimulationComputed"
-                    :enableAutoSimulation="enableAutoSimulationComputed"
-                    :enableSubmenu="enableSubmenu"
-                    :enableCustomize="magneticBuilderSettingsStore.enableCustomize"
-                    :enableAdvise="enableAdvisers && !isIsolatedApp"
-                    :operatingPointIndex="operatingPointIndex"
-                    @customizeCore="customizeCore"
-                />
-            </div>
-            <div :class="isMobile($windowWidth)? 'col-12' : enableCoil? 'col-4' : 'col-offset-1 col-4'">
-                <BasicWireBuilder 
-                    :masStore="masStore"
-                    :readOnly="readOnly"
-                    :useVisualizers="useVisualizers && enableVisualizers"
-                    :enableSimulation="enableSimulationComputed"
-                    :enableAutoSimulation="enableAutoSimulationComputed"
-                    :enableSubmenu="enableSubmenu"
-                    :enableAdvise="enableAdvisers && !isIsolatedApp"
-                    :isIsolatedApp="isIsolatedApp"
-                    :operatingPointIndex="operatingPointIndex"
-                />
-            </div>
-            <div v-if="enableCoil" :class="isMobile($windowWidth)? 'col-12' : 'col-4'">
-                <BasicCoilBuilder 
-                    :masStore="masStore"
-                    :readOnly="readOnly"
-                    :useVisualizers="useVisualizers && enableVisualizers"
-                    :enableSimulation="enableSimulationComputed"
-                    :enableAutoSimulation="enableAutoSimulationComputed"
-                    :enableOptions="enableCoilOptions"
-                    :enableSubmenu="enableSubmenu"
-                    :enableAdvise="enableAdvisers && !isIsolatedApp"
-                    :operatingPointIndex="operatingPointIndex"
-                    :showInterleavingOrder="showInterleavingOrder"
-                    :enableTemperaturePlot="enableTemperaturePlot"
-                />
-            </div> 
-            <div v-else class="col-2"/>
-        </div>
-        <div
-            v-if="enableGraphs && magneticBuilderSettingsStore.enableGraphs && $stateStore.magneticBuilder.mode.core != $stateStore.MagneticBuilderModes.Advanced"
-            class="row w-100"
-        >
-            <h5 v-if="!magneticBuilt" class="text-danger my-2">Select the magnetic first</h5>
-            <GraphInfo 
-                v-else
-                :masStore="masStore"
-                :operatingPointIndex="operatingPointIndex"
-            />
-        </div>
+            :is="layoutComponent"
+            v-bind="layoutBindings"
+            @customizeCore="customizeCore"
+        />
     </div>
 </template>

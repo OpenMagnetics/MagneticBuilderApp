@@ -22,8 +22,17 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 <script>
 
 export default {
-    emits: ['fits', 'plotModeChange', 'swapIncludeFringing', 'errorInImage'],
+    emits: ['fits', 'plotModeChange', 'swapIncludeFringing', 'errorInImage', 'fillingFactorsChanged'],
     props: {
+        /**
+         * The panel's own info card. A layout that gives the results a cell of
+         * their own (the bands layout) turns this off and mounts the info
+         * component itself — same component, different place (ABT #1121).
+         */
+        showInfoPanel: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -1236,6 +1245,9 @@ export default {
                     this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins, coreColumns, customSectionRects, compactEnabled).then((coil) => {
                         this.taskQueueStore.calculateFillingFactors(coil).then((fillingFactors) => {
                             this.localData.fillingFactors = fillingFactors;
+                            // A layout that shows the coil's numbers away from this
+                            // panel needs them too (ABT #1121).
+                            this.$emit('fillingFactorsChanged', fillingFactors);
                         })
 
                         this.taskQueueStore.checkIfSectionsAndLayersFit(coil).then((fits) => {
@@ -1768,7 +1780,7 @@ export default {
                 </div>
 
                 <CoilInfo
-                    v-if="!loading && enableSimulation"
+                    v-if="showInfoPanel && !loading && enableSimulation"
                     ref="coilInfo"
                     :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"

@@ -17,10 +17,22 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 </script>
 
 <script>
+// In the plain block, not <script setup>: methods below call it, and an Options
+// API method cannot see a <script setup> binding.
+import { applyAdvisedCore } from './applyAdvisedCore.js'
 
 export default {
     emits: ['customizeCore', 'gappingUpdated', 'coreProcessed', 'coreProcessingStarted'],
     props: {
+        /**
+         * The panel's own info card. A layout that gives the results a cell of
+         * their own (the bands layout) turns this off and mounts the info
+         * component itself — same component, different place (ABT #1121).
+         */
+        showInfoPanel: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -674,47 +686,18 @@ export default {
                     // ABT #790: a zero-candidate advise RESOLVES with an empty
                     // magnetic (shape ""), and assigning it left the panel on
                     // "Select a core first" with no explanation — the button
-                    // just looked dead. Route it to the same visible message
-                    // the rejection path already has, and assign nothing.
-                    const advisedShape = magnetic?.core?.functionalDescription?.shape;
-                    const advisedShapeName = typeof advisedShape === 'string' ? advisedShape : advisedShape?.name;
-                    if (!advisedShapeName) {
-                        this.errorMessage = "No core can be advised for these requirements. Try another core-advise mode in Settings, or relax the requirements.";
-                        this.loading = false;
-                        this.$emit('coreProcessed', false, 'core adviser returned no candidate');
-                        setTimeout(() => {this.errorMessage = ""}, 10000);
-                        return;
-                    }
-                    this.masStore.mas.magnetic.core = magnetic.core;
-                    
-                    // Generate bobbin first
-                    const bobbin = await this.taskQueueStore.generateBobbinFromCoreShape(magnetic.core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
-                    
-                    // Then calculate turns
-                    const numberTurns = await this.taskQueueStore.calculateNumberTurns(magnetic.coil.functionalDescription[0].numberTurns, this.masStore.mas.inputs.designRequirements);
-                    
-                    // Update windings with calculated turns
-                    const windings = this.masStore.mas.magnetic.coil.functionalDescription;
-                    for (let i = 0; i < numberTurns.length; i++) {
-                        windings[i].numberTurns = numberTurns[i];
-                    }
-                    
-                    // Assign everything atomically: first coil data, then bobbin last
-                    this.masStore.mas.magnetic.coil.turnsDescription = null;
-                    this.masStore.mas.magnetic.coil.layersDescription = null;
-                    this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                    this.masStore.mas.magnetic.coil.functionalDescription = windings;
-                    this.masStore.mas.magnetic.coil.bobbin = bobbin;
-                    
-                    setTimeout(() => {this.historyStore.addToHistory(this.masStore.mas);}, 1000);
-
-                    this.errorMessage = "";
-                    this.assignLocalData(magnetic.core);
-                    this.loading = false;
+                    // just looked dead. applyAdvisedCore throws on that, which
+                    // the catch below turns into the visible message.
+                    await this.applyAdvisedCore(magnetic);
                     this.$emit('coreProcessed', true, magnetic.core);
                 })
                 .catch(error => {
-                    this.errorMessage = "No core can be advised. You are on your own."
+                    // A zero-candidate advise and a failed advise read differently
+                    // to the user: one is "relax the requirements", the other is
+                    // "something broke".
+                    this.errorMessage = /no candidate/i.test(error?.message ?? '')
+                        ? "No core can be advised for these requirements. Try another core-advise mode in Settings, or relax the requirements."
+                        : "No core can be advised. You are on your own.";
                     this.loading = false;
                     this.$emit('coreProcessed', false, error);
                     setTimeout(() => {this.errorMessage = ""}, 10000);
@@ -723,6 +706,22 @@ export default {
             else {
                 this.loading = false;
             }
+        },
+        /**
+         * Adopt an advised core: shared with the alternatives panel, so a core
+         * picked from the chart lands in the design exactly as the Advise
+         * button's does (bobbin, turns, history). See applyAdvisedCore.js.
+         */
+        async applyAdvisedCore(magnetic) {
+            await applyAdvisedCore({
+                masStore: this.masStore,
+                taskQueueStore: this.taskQueueStore,
+                historyStore: this.historyStore,
+                magnetic,
+            });
+            this.errorMessage = "";
+            this.assignLocalData(magnetic.core);
+            this.loading = false;
         },
         loadCore() {
         },
@@ -903,7 +902,7 @@ export default {
                 </div>
 
                 <CoreInfo 
-                    v-if="!loading && enableSimulation"
+                    v-if="showInfoPanel && !loading && enableSimulation"
                     ref="coreInfo"
                     :dataTestLabel="dataTestLabel + '-CoreInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"

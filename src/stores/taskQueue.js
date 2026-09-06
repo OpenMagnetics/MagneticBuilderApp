@@ -839,6 +839,21 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async adviseCore(inputs, coreAdviserWeights, adviserSettings) {
+            const candidates = await this.adviseCoreCandidates(inputs, coreAdviserWeights, adviserSettings, 1);
+            const magnetic = candidates[0].mas.magnetic;
+            setTimeout(() => {this.coreAdvised(true, magnetic);}, this.task_standard_response_delay);
+            return magnetic;
+        },
+
+        /**
+         * The core adviser's ranked candidates for these requirements — `count`
+         * of them, each an entry of the engine's `data` array with its scoring
+         * and its whole MAS (ABT #1121).
+         *
+         * adviseCore is this with count 1; the alternatives panel asks for more.
+         * Nothing here touches the design: the caller decides what to adopt.
+         */
+        async adviseCoreCandidates(inputs, coreAdviserWeights, adviserSettings, count = 1) {
             const mkf = await waitForMkf();
             await mkf.ready;
 
@@ -954,7 +969,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
 
             masSentry('adviseCore', inputsClean, 'Inputs');
-            const result = await mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), 1, coreAdviseMode);
+            const result = await mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), count, coreAdviseMode);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.coreAdvised(false, result);}, this.task_standard_response_delay);
@@ -968,9 +983,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             try { if (typeof window !== 'undefined') window.__lastAdviseCoreRaw = aux; } catch (_) {}
 
             if (data.length > 0) {
-                const magnetic = data[0].mas.magnetic;
-                setTimeout(() => {this.coreAdvised(true, magnetic);}, this.task_standard_response_delay);
-                return magnetic;
+                return data;
             }
             else {
                 // Surface the MKF Core Adviser log so we can see WHY every

@@ -7,7 +7,13 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 <script>
 export default {
+    emits: ['fillingFactorsChanged'],
     props: {
+        /** Passed through: a layout may place the coil's numbers elsewhere. */
+        showInfoPanel: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -234,6 +240,8 @@ export default {
     <div v-if="!missingWires && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''" class="container">
         <div class="row">
             <BasicCoilSelector
+                :showInfoPanel="showInfoPanel"
+                @fillingFactorsChanged="$emit('fillingFactorsChanged', $event)"
                 v-if="(masStore.mas.inputs.designRequirements.wiringTechnology == null || masStore.mas.inputs.designRequirements.wiringTechnology.toLowerCase() == 'wound')"
                 :masStore="masStore"
                 :readOnly="readOnly"

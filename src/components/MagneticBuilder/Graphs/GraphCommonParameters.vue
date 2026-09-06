@@ -1,5 +1,6 @@
 <script setup>
 import ElementFromList from '/WebSharedComponents/DataInput/ElementFromList.vue'
+import { graphLabels } from './graphRegistry.js'
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 
@@ -9,6 +10,11 @@ import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebShare
 
 export default {
     props: {
+        /** Hidden when the surrounding panel already offers the graph chooser. */
+        showGraphSelector: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -27,18 +33,8 @@ export default {
         },
     },
     data() {
-        const availableGraphs = {
-            'impedanceOverFrequency': 'Impedance Over Frequency',
-            'qFactorOverFrequency': 'Q Factor Over Frequency',
-            'resistancesOverFrequency': 'Total Resistance Over Frequency',
-            'windingResistancesOverFrequency': 'Resistances Per Winding Over Frequency',
-            'coreLossesOverFrequency': 'Core Losses Over Frequency',
-            'windingLossesOverFrequency': 'Winding Losses Over Frequency',
-            'lossesOverFrequency': 'Total Losses Over Frequency',
-            'magnetizingInductanceOverFrequency': 'Magnetizing Inductance Over Frequency',
-            'magnetizingInductanceOverTemperature': 'Magnetizing Inductance Over Temperature',
-            'magnetizingInductanceOverDcBias': 'Magnetizing Inductance Over DC Bias',
-        }
+        // One list, in graphRegistry.js — see there (ABT #1121).
+        const availableGraphs = graphLabels();
         const availableModes = {
             'log': 'Log',
             'linear': 'Linear',
@@ -63,6 +59,7 @@ export default {
         }"
     >
     <ElementFromList
+        v-if="showGraphSelector"
         class="gcp-cell"
         :dataTestLabel="dataTestLabel + '-GraphsSelector'"
         :name="'graph'"
