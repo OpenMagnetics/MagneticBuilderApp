@@ -156,6 +156,7 @@ export default {
                     <AlternativesPanel
                         :dataTestLabel="dataTestLabel + '-Compare'"
                         :masStore="masStore"
+                        :operatingPointIndex="operatingPointIndex"
                         @coreAdopted="coreAdopted"
                     />
                 </PanelFrame>

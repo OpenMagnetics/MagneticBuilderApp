@@ -176,6 +176,7 @@ export default {
                     v-else
                     :dataTestLabel="dataTestLabel + '-Cockpit'"
                     :masStore="masStore"
+                    :operatingPointIndex="operatingPointIndex"
                     @coreAdopted="redraw += 1"
                 />
             </PanelFrame>

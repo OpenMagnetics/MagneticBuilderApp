@@ -26,13 +26,35 @@ import { formatUnit, toCamelCase } from '/WebSharedComponents/assets/js/utils.js
  * when the candidate was built, so nothing here recomputes magnetics.
  */
 
+/**
+ * What a core can be compared on. Every value is one the ENGINE already produced
+ * — the geometry it processed, and the losses and temperature it simulated for
+ * this operating point when it built the candidate — so nothing here does
+ * magnetics of its own.
+ *
+ * An axis whose value is missing on the design or on every candidate is not
+ * offered at all, rather than drawing an empty map (cost and temperature are
+ * absent for many catalogue cores).
+ */
 const AXES = {
-    volume: { label: 'Core volume', unit: 'm³', of: (core) => core?.processedDescription?.effectiveParameters?.effectiveVolume },
-    effectiveArea: { label: 'Effective area', unit: 'm²', of: (core) => core?.processedDescription?.effectiveParameters?.effectiveArea },
-    effectiveLength: { label: 'Effective length', unit: 'm', of: (core) => core?.processedDescription?.effectiveParameters?.effectiveLength },
-    windowArea: { label: 'Window area', unit: 'm²', of: (core) => core?.processedDescription?.windingWindows?.[0]?.area },
-    width: { label: 'Width', unit: 'm', of: (core) => core?.processedDescription?.width },
-    height: { label: 'Height', unit: 'm', of: (core) => core?.processedDescription?.height },
+    totalLosses: {
+        label: 'Total losses',
+        unit: 'W',
+        of: ({ outputs }) => {
+            const core = outputs?.coreLosses?.coreLosses;
+            const winding = outputs?.windingLosses?.windingLosses;
+            return core == null || winding == null ? null : core + winding;
+        },
+    },
+    coreLosses: { label: 'Core losses', unit: 'W', of: ({ outputs }) => outputs?.coreLosses?.coreLosses },
+    windingLosses: { label: 'Winding losses', unit: 'W', of: ({ outputs }) => outputs?.windingLosses?.windingLosses },
+    temperature: { label: 'Temperature rise', unit: '°C', of: ({ outputs }) => outputs?.temperature?.maximumTemperature },
+    volume: { label: 'Core volume', unit: 'm³', of: ({ core }) => core?.processedDescription?.effectiveParameters?.effectiveVolume },
+    effectiveArea: { label: 'Effective area', unit: 'm²', of: ({ core }) => core?.processedDescription?.effectiveParameters?.effectiveArea },
+    effectiveLength: { label: 'Effective length', unit: 'm', of: ({ core }) => core?.processedDescription?.effectiveParameters?.effectiveLength },
+    windowArea: { label: 'Window area', unit: 'm²', of: ({ core }) => core?.processedDescription?.windingWindows?.[0]?.area },
+    width: { label: 'Width', unit: 'm', of: ({ core }) => core?.processedDescription?.width },
+    height: { label: 'Height', unit: 'm', of: ({ core }) => core?.processedDescription?.height },
 };
 
 const HOW_MANY = 12;
@@ -47,6 +69,11 @@ export default {
         masStore: {
             type: Object,
             required: true,
+        },
+        /** Which operating point the design's own results come from. */
+        operatingPointIndex: {
+            type: Number,
+            default: 0,
         },
         /**
          * Candidates to draw, each `{mas, scoringPerFilter, weightedTotalScoring}`
@@ -74,8 +101,13 @@ export default {
         return {
             taskQueueStore: useTaskQueueStore(),
             historyStore: useHistoryStore(),
-            availableAxes: Object.fromEntries(Object.entries(AXES).map(([key, axis]) => [key, axis.label])),
-            axes: { x: 'volume', y: 'effectiveArea' },
+            // Size against loss is the trade-off a designer is actually making.
+            axes: { x: 'volume', y: 'totalLosses' },
+            preferredAxes: { x: 'volume', y: 'totalLosses' },
+            // Once the user picks an axis it is theirs; before that the panel is
+            // free to move back to the preferred one as soon as the design has
+            // been simulated and the losses become plottable.
+            axisChosenByUser: { x: false, y: false },
             ownCandidates: null,
             loading: false,
             errorMessage: '',
@@ -89,6 +121,25 @@ export default {
         },
         currentCore() {
             return this.masStore.mas?.magnetic?.core;
+        },
+        /** The design's own simulated results, for the reference point. */
+        currentOutputs() {
+            return this.masStore.mas?.outputs?.[this.operatingPointIndex] ?? null;
+        },
+        /**
+         * Only the axes something can be plotted on: the design must have the
+         * value, and so must at least one candidate. Keeps a dropdown from
+         * offering an axis that would empty the map.
+         */
+        availableAxes() {
+            const labels = {};
+            for (const [key, axis] of Object.entries(AXES)) {
+                if (this.axisValue({ core: this.currentCore, outputs: this.currentOutputs }, key) == null) continue;
+                const candidates = this.shownCandidates;
+                if (candidates != null && !candidates.some((candidate) => this.axisValue(this.subjectOf(candidate), key) != null)) continue;
+                labels[key] = axis.label;
+            }
+            return labels;
         },
         /** What makes the map worth refetching: the core the user is comparing. */
         coreSignature() {
@@ -104,21 +155,21 @@ export default {
         referencePoint() {
             const core = this.currentCore;
             if (core?.processedDescription == null) return null;
-            return {
-                name: this.coreName(core),
-                x: this.axisValue(core, this.axes.x),
-                y: this.axisValue(core, this.axes.y),
-            };
+            const subject = { core, outputs: this.currentOutputs };
+            const x = this.axisValue(subject, this.axes.x);
+            const y = this.axisValue(subject, this.axes.y);
+            if (x == null || y == null) return null;
+            return { name: this.coreName(core), x, y };
         },
         points() {
             if (this.shownCandidates == null) return null;
             const points = [];
             for (const candidate of this.shownCandidates) {
-                const core = candidate?.mas?.magnetic?.core;
-                const x = this.axisValue(core, this.axes.x);
-                const y = this.axisValue(core, this.axes.y);
-                if (x == null || y == null) continue;   // a candidate the engine did not process
-                points.push({ name: this.coreName(core), x, y, candidate });
+                const subject = this.subjectOf(candidate);
+                const x = this.axisValue(subject, this.axes.x);
+                const y = this.axisValue(subject, this.axes.y);
+                if (x == null || y == null) continue;   // not comparable on these axes
+                points.push({ name: this.coreName(subject.core), x, y, candidate });
             }
             return points;
         },
@@ -164,6 +215,23 @@ export default {
         },
     },
     watch: {
+        availableAxes: {
+            immediate: true,
+            handler(offered) {
+                const keys = Object.keys(offered);
+                if (keys.length === 0) return;
+                for (const axis of ['x', 'y']) {
+                    const preferred = this.preferredAxes[axis];
+                    if (!this.axisChosenByUser[axis] && preferred in offered) {
+                        this.axes[axis] = preferred;
+                    }
+                    else if (!(this.axes[axis] in offered)) {
+                        // Fall back only while the preferred axis cannot be drawn.
+                        this.axes[axis] = axis === 'x' ? keys[0] : keys[keys.length > 1 ? 1 : 0];
+                    }
+                }
+            },
+        },
         coreSignature: {
             immediate: true,
             handler() {
@@ -191,8 +259,15 @@ export default {
             const materialName = typeof material === 'string' ? material : material?.name;
             return `${shapeName ?? '—'} · ${materialName ?? '—'}`;
         },
-        axisValue(core, key) {
-            const value = AXES[key].of(core);
+        /** A candidate's core and the outputs the engine simulated for it. */
+        subjectOf(candidate) {
+            return {
+                core: candidate?.mas?.magnetic?.core,
+                outputs: candidate?.mas?.outputs?.[0] ?? null,
+            };
+        },
+        axisValue(subject, key) {
+            const value = AXES[key].of(subject);
             return value == null || Number.isNaN(value) ? null : value;
         },
         axisFormatter(value, label) {
@@ -281,6 +356,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-Alternatives-XAxis'"
                 :name="'x'"
                 :replaceTitle="'x'"
+                @update="axisChosenByUser.x = true"
                 :titleSameRow="true"
                 :justifyContent="true"
                 v-model="axes"
@@ -298,6 +374,7 @@ export default {
                 :dataTestLabel="dataTestLabel + '-Alternatives-YAxis'"
                 :name="'y'"
                 :replaceTitle="'y'"
+                @update="axisChosenByUser.y = true"
                 :titleSameRow="true"
                 :justifyContent="true"
                 v-model="axes"

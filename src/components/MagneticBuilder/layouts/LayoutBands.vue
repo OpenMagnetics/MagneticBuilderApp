@@ -115,6 +115,7 @@ export default {
                     <AlternativesPanel
                         :dataTestLabel="dataTestLabel + '-Band'"
                         :masStore="masStore"
+                        :operatingPointIndex="operatingPointIndex"
                         @coreAdopted="coreRedraw += 1"
                     />
                 </PanelFrame>
