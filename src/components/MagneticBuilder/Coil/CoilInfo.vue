@@ -5,6 +5,7 @@ import WindingSelector from '../Common/WindingSelector.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 import { useModelSettingsStore } from '../../../stores/modelSettings'
+import * as Defaults from '/WebSharedComponents/assets/js/defaults.js'
 </script>
 
 <script>
