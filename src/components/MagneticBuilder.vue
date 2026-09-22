@@ -94,6 +94,13 @@ export default {
             magneticBuilt,
             historyStore,
             subscriptions,
+            // The last failed calculation reported by the task queue (e.g. a
+            // wind()/simulate() call MKF rejected), kept for display only.
+            // Deliberately NOT wired into `magneticBuilt`/canContinue: an
+            // unusual or failed calculation on an otherwise fully-specified
+            // design should not lock the user out of Continue (ABT #1347) —
+            // it should just tell them plainly what happened.
+            calculationWarning: null,
         }
     },
     computed: {
@@ -150,8 +157,24 @@ export default {
         this.subscriptions.push(this.historyStore.$onAction((action) => {
             if (action.name == "addToHistory") {
                 this.magneticBuilt = this.isMagneticBuilt();
-                this.$emit("canContinue", this.magneticBuilt);
+                this.$emit("canContinue", this.magneticBuilt, this.magneticBuilt ? [] : this.getIncompleteInputReasons());
             }
+        }));
+
+        // Every taskQueue action that reports a result follows the same
+        // (success, dataOrMessage) convention (wind, numberTurnsCalculated,
+        // coreLossesCalculated, ...). Surface the message from a real failure
+        // as a plain, visible warning instead of the console.error-only
+        // handling most callers do today — without blocking Continue for it.
+        this.subscriptions.push(this.taskQueueStore.$onAction(({ name, args, after }) => {
+            after(() => {
+                if (args.length >= 2 && args[0] === false && typeof args[1] === 'string' && args[1].length > 0) {
+                    this.calculationWarning = { action: name, message: args[1] };
+                }
+                else if (args.length >= 1 && args[0] === true && this.calculationWarning?.action === name) {
+                    this.calculationWarning = null;
+                }
+            });
         }));
 
         // ABT #1084 — settle recorder. Edits used to reach the history only
@@ -211,6 +234,15 @@ export default {
             // Intermediate working state — the builder design as the user leaves it.
             recordDesign({ event_type: 'builder_snapshot', source: 'builder', mas: this.masStore.mas });
         },
+        // Whether the user has filled in every INPUT the builder needs — not
+        // whether the last calculation on those inputs came out clean. A
+        // design can be fully specified and still produce an extreme or
+        // failed calculation (e.g. a turns count that saturates the core);
+        // that is surfaced separately via `calculationWarning`, and does not
+        // belong here (ABT #1347 — this used to also gate on
+        // coil.turnsDescription, which is a CALCULATION OUTPUT, so a design
+        // that was otherwise complete could get silently stuck on the
+        // generic "not complete yet" message with nothing to fix).
         isMagneticBuilt() {
             if (this.masStore.mas.magnetic.core.functionalDescription.material == null) {
                 return false;
@@ -233,21 +265,39 @@ export default {
             if (this.masStore.mas.magnetic.coil.bobbin == "Dummy") {
                 return false;
             }
-            this.masStore.mas.magnetic.coil.functionalDescription.forEach((winding) => {
-                if (winding.wire == null) {
-                    return false;
-                }
-                if (winding.wire == "") {
-                    return false;
-                }
-                if (winding.wire == "Dummy") {
-                    return false;
-                }
-            })
-            if (this.masStore.mas.magnetic.coil.turnsDescription == null) {
+            const hasIncompleteWinding = this.masStore.mas.magnetic.coil.functionalDescription.some((winding) => {
+                return winding.wire == null || winding.wire == "" || winding.wire == "Dummy";
+            });
+            if (hasIncompleteWinding) {
                 return false;
             }
             return true;
+        },
+        // Human-readable reasons isMagneticBuilt() returned false, for
+        // StorylineErrors (ABT #1347) — mirrors isMagneticBuilt()'s checks.
+        getIncompleteInputReasons() {
+            const reasons = [];
+            if (this.masStore.mas.magnetic.core.functionalDescription.material == null) {
+                reasons.push("Select a core material.");
+            }
+            if (this.masStore.mas.magnetic.core.functionalDescription.shape == null) {
+                reasons.push("Select a core shape.");
+            }
+            if (this.masStore.mas.magnetic.core.functionalDescription.gapping == null) {
+                reasons.push("Select a gapping configuration.");
+            }
+            if (this.masStore.mas.magnetic.coil.functionalDescription.length == 0) {
+                reasons.push("Add at least one winding.");
+            }
+            if ([null, "", "Dummy"].includes(this.masStore.mas.magnetic.coil.bobbin)) {
+                reasons.push("Select a bobbin.");
+            }
+            this.masStore.mas.magnetic.coil.functionalDescription.forEach((winding, index) => {
+                if ([null, "", "Dummy"].includes(winding.wire)) {
+                    reasons.push(`Select a wire for winding ${index + 1}${winding.name ? ` (${winding.name})` : ''}.`);
+                }
+            });
+            return reasons;
         },
         customizeCore() {
             this.$stateStore.magneticBuilder.mode.core = this.$stateStore.MagneticBuilderModes.Advanced;
@@ -258,6 +308,14 @@ export default {
 
 <template>
     <div class="container" :style="$styleStore.magneticBuilder.main">
+        <!-- Non-blocking: a real calculation failure (e.g. wind() rejecting the current
+             turns/wire/core combination) is shown here so the user knows what happened,
+             but it does NOT gate Continue -- the design's inputs are still valid, only
+             this specific derived result failed (ABT #1347). -->
+        <div v-if="calculationWarning" class="alert alert-danger py-2 px-3 mb-2" :title="calculationWarning.message">
+            <i class="pi pi-exclamation-triangle me-2"></i>
+            <strong>Calculation issue:</strong> {{calculationWarning.message}}
+        </div>
         <div
             class="row"
             v-if="$stateStore.magneticBuilder.mode.core == $stateStore.MagneticBuilderModes.Advanced"
