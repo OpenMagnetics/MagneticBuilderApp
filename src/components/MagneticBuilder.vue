@@ -14,6 +14,32 @@ import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettin
 </script>
 
 <script>
+/**
+ * taskQueue actions whose failure is already presented where it belongs, so the
+ * builder-level "Calculation issue" banner must NOT repeat it. Every graph
+ * component (ImpedanceOverFrequency, CoreLossesOverFrequency, ...) catches its
+ * own sweep failure and renders it as a label under the chart; the advanced
+ * material selector does the same for the complex permeability lookup. Those
+ * failures are expected for most of the catalogue — 877 of 1073 core materials
+ * carry no complex permeability data, so an impedance sweep on a power ferrite
+ * such as TDG TP5 throws MATERIAL_DATA_MISSING by design — and they say nothing
+ * about whether the DESIGN built. Left in the banner, the default impedance
+ * graph turned every such design into a permanent red "Calculation issue".
+ */
+const LOCALLY_REPORTED_ACTIONS = new Set([
+    'impedanceOverFrequencySwept',
+    'qFactorOverFrequencySwept',
+    'resistanceOverFrequencySwept',
+    'windingResistanceOverFrequencySwept',
+    'windingLossesOverFrequencySwept',
+    'coreLossesOverFrequencySwept',
+    'volumetricLossesSwept',
+    'magnetizingInductanceOverFrequencySwept',
+    'magnetizingInductanceOverTemperatureSwept',
+    'magnetizingInductanceOverDcBiasSwept',
+    'complexPermeabilityGotten',
+]);
+
 export default {
     emits: ["canContinue"],
     props: {
@@ -166,8 +192,13 @@ export default {
         // coreLossesCalculated, ...). Surface the message from a real failure
         // as a plain, visible warning instead of the console.error-only
         // handling most callers do today — without blocking Continue for it.
+        // Actions that already show their own failure (the graph sweeps, see
+        // LOCALLY_REPORTED_ACTIONS) stay out of it.
         this.subscriptions.push(this.taskQueueStore.$onAction(({ name, args, after }) => {
             after(() => {
+                if (LOCALLY_REPORTED_ACTIONS.has(name)) {
+                    return;
+                }
                 if (args.length >= 2 && args[0] === false && typeof args[1] === 'string' && args[1].length > 0) {
                     this.calculationWarning = { action: name, message: args[1] };
                 }
