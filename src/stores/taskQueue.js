@@ -84,14 +84,45 @@ function stripNulls(v) {
     return v;
 }
 
-function masSentry(where, obj, kind = 'Mas') {
+// JSON Schema validator installed by the HOST app (ABT #1388). quicktype's
+// Convert.to* only checks types, enums and unknown keys; the real MAS schema
+// also has bounds, patterns, const and oneOf. Validating against it needs the
+// ajv library, which this package does not force on every host that embeds it:
+// the host installs it with setMasSchemaValidator(fn), where
+// fn(kind, obj, where) throws a specific error for an invalid document
+// (WebFrontend: WebSharedComponents/assets/js/masValidator.js assertValidMas).
+// A host that installs none keeps the type check, and is told so once.
+let masSchemaValidator = null;
+let warnedNoSchemaValidator = false;
+export function setMasSchemaValidator(fn) {
+    if (typeof fn !== 'function') {
+        throw new Error('setMasSchemaValidator: expected a function (kind, obj, where) that throws on an invalid MAS document');
+    }
+    masSchemaValidator = fn;
+}
+
+function checkMasDocument(where, kind, cleaned) {
+    if (masSchemaValidator) {
+        masSchemaValidator(kind, cleaned, where);
+        return;
+    }
+    if (!warnedNoSchemaValidator) {
+        warnedNoSchemaValidator = true;
+        // eslint-disable-next-line no-console
+        console.warn('[MAS sentry] no JSON Schema validator installed by the host (setMasSchemaValidator); '
+            + 'payloads are only type-checked against MAS.ts');
+    }
     const fn = MasConvert['to' + kind];
     if (typeof fn !== 'function') {
         throw new Error(`[MAS sentry @ ${where}] Unknown sentry kind "${kind}" (no Convert.to${kind} in MAS.ts)`);
     }
+    fn(JSON.stringify(cleaned));
+}
+
+function masSentry(where, obj, kind = 'Mas') {
     try {
         const cleaned = stripNulls(JSON.parse(JSON.stringify(obj)));
-        fn(JSON.stringify(cleaned));
+        checkMasDocument(where, kind, cleaned);
     } catch (e) {
         const msg = `[MAS sentry @ ${where}/${kind}] Frontend produced invalid payload: ${e.message}`;
         // eslint-disable-next-line no-console
@@ -113,13 +144,13 @@ function quarantineInvalidReturnedOutputs(where, mas) {
         return mas;
     }
     try {
-        MasConvert.toMas(JSON.stringify(stripNulls(JSON.parse(JSON.stringify(mas)))));
+        checkMasDocument(where, 'Mas', stripNulls(JSON.parse(JSON.stringify(mas))));
         return mas;
     } catch (originalError) {
         try {
             const probe = stripNulls(JSON.parse(JSON.stringify(mas)));
             probe.outputs = [];
-            MasConvert.toMas(JSON.stringify(probe));
+            checkMasDocument(where, 'Mas', probe);
         } catch (stillInvalid) {
             return mas;
         }
