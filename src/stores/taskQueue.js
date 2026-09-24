@@ -283,9 +283,16 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            core.geometricalDescription = null;
-            core.processedDescription = null;
-            const coreResult = await mkf.calculate_core_data(JSON.stringify(core), false)
+            // Process a COPY and swap the results in at the end. Callers pass the
+            // store's live core; nulling its processed/geometrical description here
+            // and then awaiting the engine left a window in which the coil panel's
+            // simulation and the core-loss panel sent a core with no effective
+            // area — MKF answered "Waveform data contains NaN" (flux / area 0) and
+            // "cannot use at() with null" (ABT #1369 follow-up, 2026-09-24).
+            const request = deepCopy(core);
+            request.geometricalDescription = null;
+            request.processedDescription = null;
+            const coreResult = await mkf.calculate_core_data(JSON.stringify(request), false)
             if (coreResult.startsWith('Exception')) {
                 setTimeout(() => {this.coreProcessed(false, coreResult);}, this.task_standard_response_delay);
                 throw new Error(coreResult);
@@ -630,10 +637,16 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 coil.functionalDescription.length > 0 &&
                 coil.functionalDescription.some(w => w.numberTurns > 0);
             
+            // A core whose processed description is being (re)computed — a shape
+            // change clears it until processCore answers — is incomplete input like
+            // a missing shape: MKF reads the effective area from it. Skip; the
+            // coreProcessed event re-runs this once the core is processed.
+            const coreProcessed = magnetic.core?.processedDescription?.effectiveParameters != null;
+
             // Check all required fields (coil is optional - we'll skip inductance/loss calculations if missing)
             if (!hasValidShape || !material || material === '' || 
                 !gapping || !Array.isArray(gapping) ||
-                !operatingPoint || ambientTemperature == null) {
+                !operatingPoint || ambientTemperature == null || !coreProcessed) {
                 return null;
             }
             

@@ -337,7 +337,12 @@ export default {
                 // for coils that have turns but not layers (e.g. between wire
                 // assignment and full Coil::process()).
                 const coil = this.masStore.mas.magnetic.coil;
-                const coilReady = coil.turnsDescription != null && coil.layersDescription != null;
+                // The core's processed description is cleared while the core is being
+                // (re)processed; MKF reads the effective area from it, and simulating
+                // without it divides the flux by 0 ("Waveform data contains NaN"). The
+                // coreProcessed event simulates again once it is back.
+                const coreReady = this.masStore.mas.magnetic.core?.processedDescription?.effectiveParameters != null;
+                const coilReady = coreReady && coil.turnsDescription != null && coil.layersDescription != null;
                 if (coilReady && (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels)) {
 
                     this.taskQueueStore.simulate(this.masStore.mas, modelsData).then((mas) => {
@@ -360,6 +365,13 @@ export default {
                         console.error('[CoilInfo] Simulation error:', error);
                         this.loading = false;
                     });
+                }
+                else if (!coilReady) {
+                    // Core or coil still being processed: the shown values are not
+                    // for this design yet. The coreProcessed / wound event that ends
+                    // the processing simulates again.
+                    this.dataUptoDate = false;
+                    this.loading = false;
                 }
                 else {
                     // Inputs match the last successful simulation — the shown
