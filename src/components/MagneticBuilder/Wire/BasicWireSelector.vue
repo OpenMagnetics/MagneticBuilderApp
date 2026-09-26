@@ -18,6 +18,15 @@ import { useTaskQueueStore } from '../../../stores/taskQueue'
 
 export default {
     props: {
+        /**
+         * The panel's own info card. A layout that gives the results a cell of
+         * their own (the bands layout) turns this off and mounts the info
+         * component itself — same component, different place (ABT #1121).
+         */
+        showInfoPanel: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -882,7 +891,7 @@ export default {
                 </div>
 
                 <WireInfo
-                    v-if="!loading && enableSimulation"
+                    v-if="showInfoPanel && !loading && enableSimulation"
                     ref="wireInfo"
                     :dataTestLabel="dataTestLabel + '-WireInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
@@ -909,8 +918,8 @@ export default {
 
 <style scoped>
 .wire-config-panel {
-    background: linear-gradient(145deg, rgba(120, 120, 120, 0.06) 0%, rgba(120, 120, 120, 0.02) 100%);
-    border: 1px solid rgba(120, 120, 120, 0.2);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--p-gray-600) 6%, transparent) 0%, color-mix(in srgb, var(--p-gray-600) 2%, transparent) 100%);
+    border: 1px solid color-mix(in srgb, var(--p-gray-600) 20%, transparent);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
@@ -922,9 +931,13 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* The action buttons do not fit beside the title in a narrow column:
+     * let them wrap under it rather than spill past the card (ABT #1121). */
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
     padding: 0.6rem 0.9rem;
-    background: rgba(120, 120, 120, 0.1);
-    border-bottom: 1px solid rgba(120, 120, 120, 0.15);
+    background: color-mix(in srgb, var(--p-gray-600) 10%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--p-gray-600) 15%, transparent);
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--p-primary);
@@ -935,6 +948,13 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
+}
+
+.wire-config-header-left span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .wire-config-header-left i {
@@ -946,6 +966,10 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.3rem;
+    min-width: 0;
 }
 
 .wire-config-header-btn {
@@ -976,23 +1000,23 @@ export default {
 .wire-config-header-btn-secondary {
     background: transparent;
     color: var(--p-primary);
-    border: 1px solid rgb(var(--p-primary-rgb) / 0.45);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.45);
 }
 
 .wire-config-header-btn-secondary:not(:disabled):hover {
-    background: rgb(var(--p-primary-rgb) / 0.12);
+    background: rgba(var(--p-primary-rgb), 0.12);
 }
 
 .wire-config-header-btn-primary {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--p-primary) 115%, transparent 0%) 0%,
         var(--p-primary) 55%,
-        rgb(var(--p-primary-rgb) / 0.85) 100%);
+        rgba(var(--p-primary-rgb), 0.85) 100%);
     color: var(--p-white);
     border: 1px solid color-mix(in srgb, var(--p-primary) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 1px rgb(var(--p-primary-rgb) / 0.35),
-        0 2px 8px rgb(var(--p-primary-rgb) / 0.4),
+        0 0 0 1px rgba(var(--p-primary-rgb), 0.35),
+        0 2px 8px rgba(var(--p-primary-rgb), 0.4),
         inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.25);
 }
@@ -1001,11 +1025,11 @@ export default {
    incomplete, so the user is reminded they can use it as a shortcut. */
 .wire-config-header-btn.wire-config-header-btn-needs-attention {
     color: var(--p-danger) !important;
-    border-color: rgb(var(--p-danger-rgb) / 0.6) !important;
+    border-color: rgba(var(--p-danger-rgb), 0.6) !important;
     text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.35);
     box-shadow:
-        0 0 0 1px rgb(var(--p-danger-rgb) / 0.4),
-        0 2px 10px rgb(var(--p-danger-rgb) / 0.4),
+        0 0 0 1px rgba(var(--p-danger-rgb), 0.4),
+        0 2px 10px rgba(var(--p-danger-rgb), 0.4),
         inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     animation: wire-advise-pulse 1.8s ease-in-out infinite;
 }

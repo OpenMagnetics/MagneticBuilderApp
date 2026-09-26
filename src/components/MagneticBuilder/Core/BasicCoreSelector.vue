@@ -17,10 +17,22 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 </script>
 
 <script>
+// In the plain block, not <script setup>: methods below call it, and an Options
+// API method cannot see a <script setup> binding.
+import { applyAdvisedCore } from './applyAdvisedCore.js'
 
 export default {
     emits: ['customizeCore', 'gappingUpdated', 'coreProcessed', 'coreProcessingStarted'],
     props: {
+        /**
+         * The panel's own info card. A layout that gives the results a cell of
+         * their own (the bands layout) turns this off and mounts the info
+         * component itself — same component, different place (ABT #1121).
+         */
+        showInfoPanel: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -222,6 +234,16 @@ export default {
 
         this.subscriptions.push(this.taskQueueStore.$onAction(({name, args, after}) => {
             after(() => {
+                // A core the ADVISER produced — from this panel's own button or
+                // from the alternatives map — has to reach these dropdowns, or the
+                // panel keeps showing the shape the user just replaced (ABT #1121).
+                // Only when the advise came from SOMEWHERE ELSE (the alternatives
+                // map): this panel's own Advise assigns the core itself when its
+                // promise resolves, and repeating the work here while that is
+                // still in flight only adds a second reprocess.
+                if (name == "coreAdvised" && args[0] && args[1]?.core != null && !this.loading) {
+                    this.assignLocalData(args[1].core);
+                }
                 if (name == "coreProcessed") {
                     if (args[0]) {
                         const core = args[1];
@@ -674,58 +696,18 @@ export default {
                     // ABT #790: a zero-candidate advise RESOLVES with an empty
                     // magnetic (shape ""), and assigning it left the panel on
                     // "Select a core first" with no explanation — the button
-                    // just looked dead. Route it to the same visible message
-                    // the rejection path already has, and assign nothing.
-                    const advisedShape = magnetic?.core?.functionalDescription?.shape;
-                    const advisedShapeName = typeof advisedShape === 'string' ? advisedShape : advisedShape?.name;
-                    if (!advisedShapeName) {
-                        this.errorMessage = "No core can be advised for these requirements. Try another core-advise mode in Settings, or relax the requirements.";
-                        this.loading = false;
-                        this.$emit('coreProcessed', false, 'core adviser returned no candidate');
-                        setTimeout(() => {this.errorMessage = ""}, 10000);
-                        return;
-                    }
-                    this.masStore.mas.magnetic.core = magnetic.core;
-                    
-                    // Generate bobbin first
-                    const bobbin = await this.taskQueueStore.generateBobbinFromCoreShape(magnetic.core, this.masStore.mas.inputs.designRequirements.wiringTechnology);
-                    
-                    // Then calculate turns
-                    const numberTurns = await this.taskQueueStore.calculateNumberTurns(magnetic.coil.functionalDescription[0].numberTurns, this.masStore.mas.inputs.designRequirements);
-                    
-                    // Update windings with calculated turns
-                    const windings = this.masStore.mas.magnetic.coil.functionalDescription;
-                    for (let i = 0; i < numberTurns.length; i++) {
-                        windings[i].numberTurns = numberTurns[i];
-                    }
-                    
-                    // Assign everything atomically: first coil data, then bobbin last
-                    this.masStore.mas.magnetic.coil.turnsDescription = null;
-                    this.masStore.mas.magnetic.coil.layersDescription = null;
-                    this.masStore.mas.magnetic.coil.sectionsDescription = null;
-                    this.masStore.mas.magnetic.coil.functionalDescription = windings;
-                    this.masStore.mas.magnetic.coil.bobbin = bobbin;
-
-                    // Tell the panels the core changed, exactly as a shape or material pick does
-                    // (processCore -> coreProcessed): CoreInfo recomputes its effective parameters,
-                    // inductance and losses on that action. Advising replaced the core without it,
-                    // so Core Info stayed 'Outdated' with zeros until something else changed.
-                    if (this.masStore.mas.magnetic.core.processedDescription?.effectiveParameters == null) {
-                        await this.taskQueueStore.processCore(this.masStore.mas.magnetic.core);
-                    }
-                    else {
-                        this.taskQueueStore.coreProcessed(true, this.masStore.mas.magnetic.core);
-                    }
-                    
-                    setTimeout(() => {this.historyStore.addToHistory(this.masStore.mas);}, 1000);
-
-                    this.errorMessage = "";
-                    this.assignLocalData(magnetic.core);
-                    this.loading = false;
+                    // just looked dead. applyAdvisedCore throws on that, which
+                    // the catch below turns into the visible message.
+                    await this.applyAdvisedCore(magnetic);
                     this.$emit('coreProcessed', true, magnetic.core);
                 })
                 .catch(error => {
-                    this.errorMessage = "No core can be advised. You are on your own."
+                    // A zero-candidate advise and a failed advise read differently
+                    // to the user: one is "relax the requirements", the other is
+                    // "something broke".
+                    this.errorMessage = /no candidate/i.test(error?.message ?? '')
+                        ? "No core can be advised for these requirements. Try another core-advise mode in Settings, or relax the requirements."
+                        : "No core can be advised. You are on your own.";
                     this.loading = false;
                     this.$emit('coreProcessed', false, error);
                     setTimeout(() => {this.errorMessage = ""}, 10000);
@@ -734,6 +716,22 @@ export default {
             else {
                 this.loading = false;
             }
+        },
+        /**
+         * Adopt an advised core: shared with the alternatives panel, so a core
+         * picked from the chart lands in the design exactly as the Advise
+         * button's does (bobbin, turns, history). See applyAdvisedCore.js.
+         */
+        async applyAdvisedCore(magnetic) {
+            await applyAdvisedCore({
+                masStore: this.masStore,
+                taskQueueStore: this.taskQueueStore,
+                historyStore: this.historyStore,
+                magnetic,
+            });
+            this.errorMessage = "";
+            this.assignLocalData(magnetic.core);
+            this.loading = false;
         },
         loadCore() {
         },
@@ -914,7 +912,7 @@ export default {
                 </div>
 
                 <CoreInfo 
-                    v-if="!loading && enableSimulation"
+                    v-if="showInfoPanel && !loading && enableSimulation"
                     ref="coreInfo"
                     :dataTestLabel="dataTestLabel + '-CoreInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
@@ -946,8 +944,8 @@ export default {
 
 <style scoped>
 .core-config-panel {
-    background: linear-gradient(145deg, rgba(120, 120, 120, 0.06) 0%, rgba(120, 120, 120, 0.02) 100%);
-    border: 1px solid rgba(120, 120, 120, 0.2);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--p-gray-600) 6%, transparent) 0%, color-mix(in srgb, var(--p-gray-600) 2%, transparent) 100%);
+    border: 1px solid color-mix(in srgb, var(--p-gray-600) 20%, transparent);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
@@ -965,8 +963,8 @@ export default {
     flex-wrap: wrap;
     row-gap: 0.35rem;
     padding: 0.6rem 0.9rem;
-    background: rgba(120, 120, 120, 0.1);
-    border-bottom: 1px solid rgba(120, 120, 120, 0.15);
+    background: color-mix(in srgb, var(--p-gray-600) 10%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--p-gray-600) 15%, transparent);
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--p-primary);
@@ -977,6 +975,13 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.core-config-header-left span {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -989,6 +994,10 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.3rem;
+    min-width: 0;
     margin-left: auto;
 }
 
@@ -1020,23 +1029,23 @@ export default {
 .core-config-header-btn-secondary {
     background: transparent;
     color: var(--p-primary);
-    border: 1px solid rgb(var(--p-primary-rgb) / 0.45);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.45);
 }
 
 .core-config-header-btn-secondary:not(:disabled):hover {
-    background: rgb(var(--p-primary-rgb) / 0.12);
+    background: rgba(var(--p-primary-rgb), 0.12);
 }
 
 .core-config-header-btn-primary {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--p-primary) 115%, transparent 0%) 0%,
         var(--p-primary) 55%,
-        rgb(var(--p-primary-rgb) / 0.85) 100%);
+        rgba(var(--p-primary-rgb), 0.85) 100%);
     color: var(--p-white);
     border: 1px solid color-mix(in srgb, var(--p-primary) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 1px rgb(var(--p-primary-rgb) / 0.35),
-        0 2px 8px rgb(var(--p-primary-rgb) / 0.4),
+        0 0 0 1px rgba(var(--p-primary-rgb), 0.35),
+        0 2px 8px rgba(var(--p-primary-rgb), 0.4),
         inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.25);
 }
@@ -1045,11 +1054,11 @@ export default {
    so the user is reminded they can use it to get a starting selection. */
 .core-config-header-btn.core-config-header-btn-needs-attention {
     color: var(--p-danger) !important;
-    border-color: rgb(var(--p-danger-rgb) / 0.6) !important;
+    border-color: rgba(var(--p-danger-rgb), 0.6) !important;
     text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.35);
     box-shadow:
-        0 0 0 1px rgb(var(--p-danger-rgb) / 0.4),
-        0 2px 10px rgb(var(--p-danger-rgb) / 0.4),
+        0 0 0 1px rgba(var(--p-danger-rgb), 0.4),
+        0 2px 10px rgba(var(--p-danger-rgb), 0.4),
         inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     animation: core-advise-pulse 1.8s ease-in-out infinite;
 }

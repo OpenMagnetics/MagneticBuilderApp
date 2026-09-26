@@ -1506,8 +1506,8 @@ export default {
 }
 
 .advancedcoil-card {
-    background: linear-gradient(145deg, rgba(120, 120, 120, 0.05) 0%, rgba(120, 120, 120, 0.01) 100%);
-    border: 1px solid rgba(120, 120, 120, 0.12);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--p-gray-600) 5%, transparent) 0%, color-mix(in srgb, var(--p-gray-600) 1%, transparent) 100%);
+    border: 1px solid color-mix(in srgb, var(--p-gray-600) 12%, transparent);
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(var(--p-black-rgb), 0.12), inset 0 1px 0 rgba(var(--p-white-rgb), 0.04);
@@ -1518,8 +1518,8 @@ export default {
     align-items: center;
     gap: 0.6rem;
     padding: 0.75rem 1rem;
-    background: rgba(120, 120, 120, 0.1);
-    border-bottom: 1px solid rgba(120, 120, 120, 0.15);
+    background: color-mix(in srgb, var(--p-gray-600) 10%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--p-gray-600) 15%, transparent);
     font-weight: 600;
     font-size: 0.95rem;
     color: var(--p-primary);

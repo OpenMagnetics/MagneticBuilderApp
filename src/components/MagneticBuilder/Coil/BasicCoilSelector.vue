@@ -22,8 +22,17 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 <script>
 
 export default {
-    emits: ['fits', 'plotModeChange', 'swapIncludeFringing', 'errorInImage'],
+    emits: ['fits', 'plotModeChange', 'swapIncludeFringing', 'errorInImage', 'fillingFactorsChanged'],
     props: {
+        /**
+         * The panel's own info card. A layout that gives the results a cell of
+         * their own (the bands layout) turns this off and mounts the info
+         * component itself — same component, different place (ABT #1121).
+         */
+        showInfoPanel: {
+            type: Boolean,
+            default: true,
+        },
         dataTestLabel: {
             type: String,
             default: '',
@@ -1236,6 +1245,9 @@ export default {
                     this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins, coreColumns, customSectionRects, compactEnabled).then((coil) => {
                         this.taskQueueStore.calculateFillingFactors(coil).then((fillingFactors) => {
                             this.localData.fillingFactors = fillingFactors;
+                            // A layout that shows the coil's numbers away from this
+                            // panel needs them too (ABT #1121).
+                            this.$emit('fillingFactorsChanged', fillingFactors);
                         })
 
                         this.taskQueueStore.checkIfSectionsAndLayersFit(coil).then((fits) => {
@@ -1768,7 +1780,7 @@ export default {
                 </div>
 
                 <CoilInfo
-                    v-if="!loading && enableSimulation"
+                    v-if="showInfoPanel && !loading && enableSimulation"
                     ref="coilInfo"
                     :dataTestLabel="dataTestLabel + '-BasicCoreInfo'"
                     :advancedMode="$settingsStore.magneticBuilderSettings.advancedMode"
@@ -1805,8 +1817,8 @@ export default {
 
 <style scoped>
 .coil-config-panel {
-    background: linear-gradient(145deg, rgba(120, 120, 120, 0.06) 0%, rgba(120, 120, 120, 0.02) 100%);
-    border: 1px solid rgba(120, 120, 120, 0.2);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--p-gray-600) 6%, transparent) 0%, color-mix(in srgb, var(--p-gray-600) 2%, transparent) 100%);
+    border: 1px solid color-mix(in srgb, var(--p-gray-600) 20%, transparent);
     border-radius: 14px;
     padding: 0;
     margin: 0.15rem 0 0.25rem 0;
@@ -1818,9 +1830,13 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* The action buttons do not fit beside the title in a narrow column:
+     * let them wrap under it rather than spill past the card (ABT #1121). */
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
     padding: 0.6rem 0.9rem;
-    background: rgba(120, 120, 120, 0.1);
-    border-bottom: 1px solid rgba(120, 120, 120, 0.15);
+    background: color-mix(in srgb, var(--p-gray-600) 10%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--p-gray-600) 15%, transparent);
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--p-primary);
@@ -1831,6 +1847,13 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
+}
+
+.coil-config-header-left span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .coil-config-header-left i {
@@ -1842,6 +1865,10 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.3rem;
+    min-width: 0;
 }
 
 .coil-config-header-btn {
@@ -1873,27 +1900,27 @@ export default {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--p-primary) 115%, transparent 0%) 0%,
         var(--p-primary) 55%,
-        rgb(var(--p-primary-rgb) / 0.85) 100%);
+        rgba(var(--p-primary-rgb), 0.85) 100%);
     color: var(--p-white);
     border: 1px solid color-mix(in srgb, var(--p-primary) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 1px rgb(var(--p-primary-rgb) / 0.35),
-        0 2px 8px rgb(var(--p-primary-rgb) / 0.4),
+        0 0 0 1px rgba(var(--p-primary-rgb), 0.35),
+        0 2px 8px rgba(var(--p-primary-rgb), 0.4),
         inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     text-shadow: 0 1px 1px rgba(var(--p-black-rgb), 0.25);
 }
 
 .coil-config-header-btn-outline {
-    background: rgb(var(--p-primary-rgb) / 0.2);
-    border: 1px solid rgb(var(--p-primary-rgb) / 0.55);
+    background: rgba(var(--p-primary-rgb), 0.2);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.55);
     color: var(--p-primary);
     box-shadow: 0 1px 4px rgba(var(--p-black-rgb), 0.2);
 }
 
 .coil-config-header-btn-outline:hover {
-    background: rgb(var(--p-primary-rgb) / 0.3);
-    border-color: rgb(var(--p-primary-rgb) / 0.75);
-    box-shadow: 0 2px 6px rgb(var(--p-primary-rgb) / 0.25);
+    background: rgba(var(--p-primary-rgb), 0.3);
+    border-color: rgba(var(--p-primary-rgb), 0.75);
+    box-shadow: 0 2px 6px rgba(var(--p-primary-rgb), 0.25);
 }
 
 .coil-config-body {
@@ -2055,19 +2082,19 @@ export default {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--p-success) 115%, transparent 0%) 0%,
         var(--p-success) 55%,
-        rgb(var(--p-success-rgb) / 0.85) 100%);
+        rgba(var(--p-success-rgb), 0.85) 100%);
     color: var(--p-white);
     border: 2px solid color-mix(in srgb, var(--p-success) 70%, var(--p-white) 30%);
     box-shadow:
-        0 0 0 2px rgb(var(--p-success-rgb) / 0.35),
-        0 4px 14px rgb(var(--p-success-rgb) / 0.5),
+        0 0 0 2px rgba(var(--p-success-rgb), 0.35),
+        0 4px 14px rgba(var(--p-success-rgb), 0.5),
         inset 0 1px 0 rgba(var(--p-white-rgb), 0.3);
     text-shadow: 0 1px 2px rgba(var(--p-black-rgb), 0.25);
 }
 
 .builder-action-btn-outline {
-    background: rgb(var(--p-primary-rgb) / 0.2);
-    border: 1px solid rgb(var(--p-primary-rgb) / 0.55);
+    background: rgba(var(--p-primary-rgb), 0.2);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.55);
     color: var(--p-primary);
     box-shadow: 0 2px 6px rgba(var(--p-black-rgb), 0.2);
 }
