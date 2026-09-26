@@ -23,6 +23,11 @@ export interface Mas {
      * The description of the outputs that are produced after designing a Magnetic
      */
     outputs: Outputs[];
+    /**
+     * The MAS release this document conforms to. Optional; if absent, the latest MAS release is
+     * assumed.
+     */
+    schemaVersion?: string;
 }
 
 /**
@@ -1271,6 +1276,13 @@ export interface ManufacturerInfo {
      */
     orderCode?: string;
     /**
+     * Where this component's data came from. Optional here so that any PEAS-based record
+     * carrying manufacturerInfo -- including ones whose own schema has no datasheet-info
+     * section, such as a bobbin -- can cite the source of each value rather than only a
+     * datasheet URL.
+     */
+    provenance?: Provenance[];
+    /**
      * Manufacturer part number
      */
     reference?: string;
@@ -1287,6 +1299,176 @@ export interface ManufacturerInfo {
      */
     status?: Status;
     [property: string]: any;
+}
+
+/**
+ * Where this component's data came from. Optional here so that any PEAS-based record
+ * carrying manufacturerInfo -- including ones whose own schema has no datasheet-info
+ * section, such as a bobbin -- can cite the source of each value rather than only a
+ * datasheet URL.
+ *
+ * Data-provenance trail for this record's data. A list, because different fields may come
+ * from different sources (e.g. core specs from the manufacturer datasheet, current rating
+ * from a distributor, a missing field back-filled by librarian enrichment). Most records
+ * that carry this are PARTS, where the trail describes their datasheetInfo — but the
+ * definition is deliberately record-neutral: CIAS $refs it for a whole circuit brick, which
+ * has no datasheetInfo at all, and a DERIVED brick's trail describes how the brick itself
+ * was generated.
+ */
+export interface Provenance {
+    /**
+     * For source='derived': the rule the value follows, as a short phrase (e.g. 'contact array
+     * from pitch, positions and rows', 'IPC-7351B nominal land pattern for the case code'). No
+     * field paths, scripts, tools, ticket numbers or reasoning.
+     */
+    derivation?: string;
+    /**
+     * Optional: which fields of this record this source provided (for mixed-source records). On
+     * a part that means datasheetInfo fields; on a record with no datasheetInfo (e.g. a CIAS
+     * brick) it means whatever fields the source is claiming.
+     */
+    fields?: string[];
+    /**
+     * true when this entry has been WITHDRAWN: the claim it records is no longer asserted. A
+     * retracted entry is KEPT, never deleted, so the withdrawal stays traceable — but consumers
+     * MUST NOT count it as provenance for any field, and MUST NOT treat its
+     * sourceUrl/sourceName as a live citation. This exists because a withdrawal has nowhere to
+     * live today and is therefore written as a NEW entry that impersonates a source: 91,416 TAS
+     * entries carry retraction prose in `sourceName`, spread across five different `source`
+     * enum values for the same act.
+     */
+    retracted?: boolean;
+    /**
+     * Why the entry was withdrawn, as a short label. Required when `retracted` is true. E.g.
+     * 'placeholder value', 'cited document is for a different part', 'superseded'. No history,
+     * reasoning or ticket numbers. The fields the withdrawal covers go in `fields`, exactly as
+     * for a positive claim.
+     */
+    retractionReason?: string;
+    /**
+     * Date the data was retrieved (YYYY-MM-DD). For source='derived' there is nothing to
+     * retrieve, so this is the date the value was COMPUTED — the two readings are deliberately
+     * unified rather than given separate keys, because in both cases the question it answers is
+     * 'as of when is this true'.
+     */
+    retrievedDate?: null | string;
+    /**
+     * Kind of source this data came from. 'derived' marks values COMPUTED from other fields of
+     * the same record (never measured, never read from a document) — a derived entry must say
+     * how in `derivation`, so a consumer can distinguish vendor fact from arithmetic.
+     */
+    source: ProvenanceSource;
+    /**
+     * Human-readable source identifier, e.g. 'TI parametric API', 'WE - Passive
+     * Components.mdb', 'DigiKey'. A NAME ONLY. Verification state belongs in
+     * `verification`/`verificationMethod`, a withdrawal in `retracted`/`retractionReason`, and
+     * a computation in `derivation` — none of it in this field. Writing them here is what
+     * produced 507 distinct bracketed phrasings of what should be a closed vocabulary.
+     */
+    sourceName?: string;
+    /**
+     * URL the data was retrieved from, if applicable. MUST NOT be set when source='derived': a
+     * computation has nothing to retrieve, and a URL on a derived entry reads as a citation
+     * that was never made (37,075 such entries exist in the TAS corpus today, 315 of them
+     * citing a URL scheme retired in 2026). Put the inputs in `derivation` instead.
+     */
+    sourceUrl?: null | string;
+    /**
+     * What was actually DONE to establish this entry, as a closed vocabulary. `source` says
+     * WHERE the data is claimed to come from; `verification` says HOW FAR anyone got in
+     * confirming that claim. The two are independent: a manufacturerDatasheet entry may be
+     * anything from notAttempted to valuesReadFromSource. ABSENT means UNSTATED — never a claim
+     * of verification — which is what makes this key additive for the 1.7M entries written
+     * before it existed. Values, weakest to strongest: 'notAttempted' nobody tried to confirm
+     * the claim; 'sourceUnreachable' a fetch was attempted and the source could not be reached
+     * (dead URL, gated host, network failure) — evidence about the CITATION, never about the
+     * part; 'documentUnreadable' the source was retrieved but yields no usable content (scanned
+     * image, no text layer, textless CAD drawing); 'citationOnly' the cited document was
+     * retrieved and is a real document, but nothing in it was matched to this record;
+     * 'existenceConfirmed' an authoritative catalogue or database confirms this part number
+     * exists, without any document being read; 'seriesConfirmed' the retrieved document covers
+     * this part's SERIES but does not print this individual order code; 'partNamed' the
+     * retrieved document names this exact part number; 'valuesReadFromSource' the stored VALUES
+     * for the fields listed in `fields` were actually read or re-derived from the source — the
+     * only value that asserts the NUMBERS were checked, and deliberately the hardest to claim;
+     * 'disproven' the source was retrieved and CONTRADICTS this record (does not mention the
+     * part, or names a different one); 'inferredNotVerified' the entry was constructed from the
+     * record itself (its own URL, its own manufacturer name, a templated search query) with no
+     * retrieval of any kind — such an entry is NOT evidence and must never be counted as a
+     * citation.
+     */
+    verification?: Verification;
+    /**
+     * Date (YYYY-MM-DD) on which the act recorded in `verification` was performed. Distinct
+     * from `retrievedDate`, which dates the DATA; this dates the CHECK. Required whenever
+     * `verification` is present and is not 'notAttempted'.
+     */
+    verificationDate?: Date;
+    /**
+     * The measurement CONDITIONS and bounds under which the source states the value, read off
+     * the source and kept because the schema has nowhere else for them — e.g. 'Measured at 10
+     * mA Max.', '200V AC for 1 minute', 'Dielectric Withstanding Voltage 1000 VRMS Min', 'Ptot
+     * max, TC=25 C', 'Qg 55 nC (VGS 10 V)'. Several fields are typed as bare numbers, so the
+     * Min/Max sense and the RMS or temperature basis survive only here. This is NOT a place to
+     * record HOW the row was obtained: no endpoint or HTTP method, no script or tool name, no
+     * staging path, no matcher rule, no ticket number, no agent or campaign identity, no audit
+     * note or superseded-value history. That belongs in the commit and the issue tracker — it
+     * is not part of the record. It must not be written into `sourceName` either.
+     */
+    verificationMethod?: string;
+}
+
+/**
+ * Kind of source this data came from. 'derived' marks values COMPUTED from other fields of
+ * the same record (never measured, never read from a document) — a derived entry must say
+ * how in `derivation`, so a consumer can distinguish vendor fact from arithmetic.
+ */
+export enum ProvenanceSource {
+    Derived = "derived",
+    Distributor = "distributor",
+    LibrarianEnrichment = "librarianEnrichment",
+    Manual = "manual",
+    ManufacturerDatabase = "manufacturerDatabase",
+    ManufacturerDatasheet = "manufacturerDatasheet",
+    ManufacturerParametric = "manufacturerParametric",
+    Scrape = "scrape",
+}
+
+/**
+ * What was actually DONE to establish this entry, as a closed vocabulary. `source` says
+ * WHERE the data is claimed to come from; `verification` says HOW FAR anyone got in
+ * confirming that claim. The two are independent: a manufacturerDatasheet entry may be
+ * anything from notAttempted to valuesReadFromSource. ABSENT means UNSTATED — never a claim
+ * of verification — which is what makes this key additive for the 1.7M entries written
+ * before it existed. Values, weakest to strongest: 'notAttempted' nobody tried to confirm
+ * the claim; 'sourceUnreachable' a fetch was attempted and the source could not be reached
+ * (dead URL, gated host, network failure) — evidence about the CITATION, never about the
+ * part; 'documentUnreadable' the source was retrieved but yields no usable content (scanned
+ * image, no text layer, textless CAD drawing); 'citationOnly' the cited document was
+ * retrieved and is a real document, but nothing in it was matched to this record;
+ * 'existenceConfirmed' an authoritative catalogue or database confirms this part number
+ * exists, without any document being read; 'seriesConfirmed' the retrieved document covers
+ * this part's SERIES but does not print this individual order code; 'partNamed' the
+ * retrieved document names this exact part number; 'valuesReadFromSource' the stored VALUES
+ * for the fields listed in `fields` were actually read or re-derived from the source — the
+ * only value that asserts the NUMBERS were checked, and deliberately the hardest to claim;
+ * 'disproven' the source was retrieved and CONTRADICTS this record (does not mention the
+ * part, or names a different one); 'inferredNotVerified' the entry was constructed from the
+ * record itself (its own URL, its own manufacturer name, a templated search query) with no
+ * retrieval of any kind — such an entry is NOT evidence and must never be counted as a
+ * citation.
+ */
+export enum Verification {
+    CitationOnly = "citationOnly",
+    Disproven = "disproven",
+    DocumentUnreadable = "documentUnreadable",
+    ExistenceConfirmed = "existenceConfirmed",
+    InferredNotVerified = "inferredNotVerified",
+    NotAttempted = "notAttempted",
+    PartNamed = "partNamed",
+    SeriesConfirmed = "seriesConfirmed",
+    SourceUnreachable = "sourceUnreachable",
+    ValuesReadFromSource = "valuesReadFromSource",
 }
 
 /**
@@ -1321,71 +1503,6 @@ export interface MinimumBendRadiusElement {
      * Wall thickness of the tubing size the value is for, in m
      */
     wallThickness: number;
-}
-
-/**
- * Where the value comes from: the manufacturer's measured or rated figure, never an
- * estimate.
- *
- * Data-provenance trail for this record's data. A list, because different fields may come
- * from different sources (e.g. core specs from the manufacturer datasheet, current rating
- * from a distributor, a missing field back-filled by librarian enrichment). Most records
- * that carry this are PARTS, where the trail describes their datasheetInfo — but the
- * definition is deliberately record-neutral: CIAS $refs it for a whole circuit brick, which
- * has no datasheetInfo at all, and a DERIVED brick's trail describes how the brick itself
- * was generated.
- */
-export interface Provenance {
-    /**
-     * For source='derived': the exact rule and inputs the value was computed from (e.g.
-     * 'contactArray from mechanical.pitch x positions x rows; countX=positions/rows'). Required
-     * reading for anyone consuming a derived field — it is the assumption record.
-     */
-    derivation?: string;
-    /**
-     * Optional: which fields of this record this source provided (for mixed-source records). On
-     * a part that means datasheetInfo fields; on a record with no datasheetInfo (e.g. a CIAS
-     * brick) it means whatever fields the source is claiming.
-     */
-    fields?: string[];
-    /**
-     * Date the data was retrieved (YYYY-MM-DD). For source='derived' there is nothing to
-     * retrieve, so this is the date the value was COMPUTED — the two readings are deliberately
-     * unified rather than given separate keys, because in both cases the question it answers is
-     * 'as of when is this true'.
-     */
-    retrievedDate?: null | string;
-    /**
-     * Kind of source this data came from. 'derived' marks values COMPUTED from other fields of
-     * the same record (never measured, never read from a document) — a derived entry must say
-     * how in `derivation`, so a consumer can distinguish vendor fact from arithmetic.
-     */
-    source: ProvenanceSource;
-    /**
-     * Human-readable source identifier, e.g. 'TI parametric API', 'WE - Passive
-     * Components.mdb', 'DigiKey'.
-     */
-    sourceName?: string;
-    /**
-     * URL the data was retrieved from, if applicable.
-     */
-    sourceUrl?: null | string;
-}
-
-/**
- * Kind of source this data came from. 'derived' marks values COMPUTED from other fields of
- * the same record (never measured, never read from a document) — a derived entry must say
- * how in `derivation`, so a consumer can distinguish vendor fact from arithmetic.
- */
-export enum ProvenanceSource {
-    Derived = "derived",
-    Distributor = "distributor",
-    LibrarianEnrichment = "librarianEnrichment",
-    Manual = "manual",
-    ManufacturerDatabase = "manufacturerDatabase",
-    ManufacturerDatasheet = "manufacturerDatasheet",
-    ManufacturerParametric = "manufacturerParametric",
-    Scrape = "scrape",
 }
 
 /**
@@ -3927,6 +4044,13 @@ export interface MagneticManufacturerInfo {
      */
     orderCode?: string;
     /**
+     * Where this component's data came from. Optional here so that any PEAS-based record
+     * carrying manufacturerInfo -- including ones whose own schema has no datasheet-info
+     * section, such as a bobbin -- can cite the source of each value rather than only a
+     * datasheet URL.
+     */
+    provenance?: Provenance[];
+    /**
      * Manufacturer part number
      */
     reference?: string;
@@ -4719,7 +4843,9 @@ export interface MagneticShuntSegment {
  */
 export interface SubstituteInfo {
     /**
-     * Manufacturer of the substitute.
+     * Manufacturer of the substitute. Omitted on a 'successor' entry it means the same
+     * manufacturer as this part, since a manufacturer supersedes its own part; write it anyway,
+     * and it MUST be written when it differs.
      */
     manufacturer?: null | string;
     /**
@@ -4735,7 +4861,11 @@ export interface SubstituteInfo {
      */
     source?: SubstitutesInfoSource | null;
     /**
-     * Type of substitution.
+     * Kind of substitution. 'successor' is directional and asserts that THIS part is superseded
+     * by the named one - one hop, as the manufacturer states it, never inferred from an
+     * obsolete status or from a part-number pattern; a successor that is itself superseded
+     * names its own successor on its own record. The other values are symmetric: either part
+     * may be bought in place of the other.
      */
     type?: SubstitutesInfoType;
 }
@@ -4748,7 +4878,11 @@ export enum SubstitutesInfoSource {
 }
 
 /**
- * Type of substitution.
+ * Kind of substitution. 'successor' is directional and asserts that THIS part is superseded
+ * by the named one - one hop, as the manufacturer states it, never inferred from an
+ * obsolete status or from a part-number pattern; a successor that is itself superseded
+ * names its own successor on its own record. The other values are symmetric: either part
+ * may be bought in place of the other.
  */
 export enum SubstitutesInfoType {
     Downgrade = "downgrade",
@@ -5663,6 +5797,7 @@ const typeMap: any = {
         { json: "inputs", js: "inputs", typ: r("Inputs") },
         { json: "magnetic", js: "magnetic", typ: r("Magnetic") },
         { json: "outputs", js: "outputs", typ: a(r("Outputs")) },
+        { json: "schemaVersion", js: "schemaVersion", typ: u(undefined, "") },
     ], false),
     "Inputs": o([
         { json: "designRequirements", js: "designRequirements", typ: r("DesignRequirements") },
@@ -5899,24 +6034,30 @@ const typeMap: any = {
         { json: "family", js: "family", typ: u(undefined, "") },
         { json: "name", js: "name", typ: "" },
         { json: "orderCode", js: "orderCode", typ: u(undefined, "") },
+        { json: "provenance", js: "provenance", typ: u(undefined, a(r("Provenance"))) },
         { json: "reference", js: "reference", typ: u(undefined, "") },
         { json: "series", js: "series", typ: u(undefined, "") },
         { json: "spiceModel", js: "spiceModel", typ: u(undefined, m("any")) },
         { json: "status", js: "status", typ: u(undefined, r("Status")) },
     ], "any"),
+    "Provenance": o([
+        { json: "derivation", js: "derivation", typ: u(undefined, "") },
+        { json: "fields", js: "fields", typ: u(undefined, a("")) },
+        { json: "retracted", js: "retracted", typ: u(undefined, true) },
+        { json: "retractionReason", js: "retractionReason", typ: u(undefined, "") },
+        { json: "retrievedDate", js: "retrievedDate", typ: u(undefined, u(null, "")) },
+        { json: "source", js: "source", typ: r("ProvenanceSource") },
+        { json: "sourceName", js: "sourceName", typ: u(undefined, "") },
+        { json: "sourceUrl", js: "sourceUrl", typ: u(undefined, u(null, "")) },
+        { json: "verification", js: "verification", typ: u(undefined, r("Verification")) },
+        { json: "verificationDate", js: "verificationDate", typ: u(undefined, Date) },
+        { json: "verificationMethod", js: "verificationMethod", typ: u(undefined, "") },
+    ], false),
     "MinimumBendRadiusElement": o([
         { json: "innerDiameter", js: "innerDiameter", typ: 3.14 },
         { json: "provenance", js: "provenance", typ: a(r("Provenance")) },
         { json: "value", js: "value", typ: 3.14 },
         { json: "wallThickness", js: "wallThickness", typ: 3.14 },
-    ], false),
-    "Provenance": o([
-        { json: "derivation", js: "derivation", typ: u(undefined, "") },
-        { json: "fields", js: "fields", typ: u(undefined, a("")) },
-        { json: "retrievedDate", js: "retrievedDate", typ: u(undefined, u(null, "")) },
-        { json: "source", js: "source", typ: r("ProvenanceSource") },
-        { json: "sourceName", js: "sourceName", typ: u(undefined, "") },
-        { json: "sourceUrl", js: "sourceUrl", typ: u(undefined, u(null, "")) },
     ], false),
     "ResistivityPoint": o([
         { json: "temperature", js: "temperature", typ: u(undefined, 3.14) },
@@ -6439,6 +6580,7 @@ const typeMap: any = {
         { json: "family", js: "family", typ: u(undefined, "") },
         { json: "name", js: "name", typ: "" },
         { json: "orderCode", js: "orderCode", typ: u(undefined, "") },
+        { json: "provenance", js: "provenance", typ: u(undefined, a(r("Provenance"))) },
         { json: "reference", js: "reference", typ: u(undefined, "") },
         { json: "series", js: "series", typ: u(undefined, "") },
         { json: "spiceModel", js: "spiceModel", typ: u(undefined, m("any")) },
@@ -6950,13 +7092,6 @@ const typeMap: any = {
         "tape",
         "varnish",
     ],
-    "Status": [
-        "nrnd",
-        "obsolete",
-        "preview",
-        "production",
-        "prototype",
-    ],
     "ProvenanceSource": [
         "derived",
         "distributor",
@@ -6966,6 +7101,25 @@ const typeMap: any = {
         "manufacturerDatasheet",
         "manufacturerParametric",
         "scrape",
+    ],
+    "Verification": [
+        "citationOnly",
+        "disproven",
+        "documentUnreadable",
+        "existenceConfirmed",
+        "inferredNotVerified",
+        "notAttempted",
+        "partNamed",
+        "seriesConfirmed",
+        "sourceUnreachable",
+        "valuesReadFromSource",
+    ],
+    "Status": [
+        "nrnd",
+        "obsolete",
+        "preview",
+        "production",
+        "prototype",
     ],
     "TemperatureClassEnum": [
         "A",
