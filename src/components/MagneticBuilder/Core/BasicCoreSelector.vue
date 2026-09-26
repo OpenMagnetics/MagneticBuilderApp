@@ -705,6 +705,17 @@ export default {
                     this.masStore.mas.magnetic.coil.sectionsDescription = null;
                     this.masStore.mas.magnetic.coil.functionalDescription = windings;
                     this.masStore.mas.magnetic.coil.bobbin = bobbin;
+
+                    // Tell the panels the core changed, exactly as a shape or material pick does
+                    // (processCore -> coreProcessed): CoreInfo recomputes its effective parameters,
+                    // inductance and losses on that action. Advising replaced the core without it,
+                    // so Core Info stayed 'Outdated' with zeros until something else changed.
+                    if (this.masStore.mas.magnetic.core.processedDescription?.effectiveParameters == null) {
+                        await this.taskQueueStore.processCore(this.masStore.mas.magnetic.core);
+                    }
+                    else {
+                        this.taskQueueStore.coreProcessed(true, this.masStore.mas.magnetic.core);
+                    }
                     
                     setTimeout(() => {this.historyStore.addToHistory(this.masStore.mas);}, 1000);
 
