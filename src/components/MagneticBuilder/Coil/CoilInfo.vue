@@ -313,6 +313,14 @@ export default {
                 // Use pending models if available, otherwise fall back to store values
                 const magneticFieldStrength = pendingModels?.magneticFieldStrengthModel || this.modelSettingsStore.magneticFieldStrengthModel;
                 const magneticFieldStrengthFringingEffect = pendingModels?.magneticFieldStrengthFringingEffectModel || this.modelSettingsStore.magneticFieldStrengthFringingEffectModel;
+                // The field-strength models are loaded from the engine asynchronously on first open; until
+                // they are, there is nothing to simulate with (MKF throws on a null model name). Their load
+                // resimulates, which runs this again.
+                if (!magneticFieldStrength || !magneticFieldStrengthFringingEffect) {
+                    this.loading = false;
+                    this.dataUptoDate = false;
+                    return;
+                }
                 
                 const modelsData = {
                     coreLosses: this.$userStore.selectedModels['coreLosses'] || Defaults.coreLossesModelDefault,
