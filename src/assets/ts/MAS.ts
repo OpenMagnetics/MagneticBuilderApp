@@ -2495,7 +2495,12 @@ export interface PCBDesignRules {
     copperToEdge?: number;
     /**
      * Copper edge to the core cut-outs (central column and lateral legs). Also the
-     * copper-to-board-edge rule unless copperToEdge is given.
+     * copper-to-board-edge rule unless copperToEdge is given. Default 0.5 mm: IPC-2222 10.1.1
+     * edge spacing, the IPC-2221B Table 6-1 value (B1, 31-100 V: 0.1 mm) plus 0.4 mm; the core
+     * cut-outs are routed board edges. This default is for FUNCTIONAL insulation in the 31-100
+     * V band only; basic, supplementary or reinforced (safety) insulation must be stated
+     * explicitly (reinforced through a PCB: 0.4 mm distance through insulation, IEC 62368-1
+     * 5.4.4.2).
      */
     coreToTrack: number;
     /**
@@ -2507,7 +2512,23 @@ export interface PCBDesignRules {
      */
     holeToHole?: number;
     /**
+     * Dielectric thickness between two adjacent copper layers (copper face to copper face,
+     * z-axis). Used for every pair of adjacent copper layers whose insulation layer the
+     * stack-up (layersDescription) does not state; a stated insulation layer takes precedence.
+     * Default 0.1 mm: IPC-2221B clause 6.3 applies Table 6-1 to layer-to-layer (z-axis)
+     * spacing, column B1 (internal conductors), 31-100 V = 0.1 mm, which is above the 90 um
+     * minimum dielectric IPC-6012E assumes when the drawing does not specify one. This default
+     * is for FUNCTIONAL insulation in the 31-100 V band only; basic, supplementary or
+     * reinforced (safety) insulation must be stated explicitly (reinforced through a PCB: 0.4
+     * mm distance through insulation, IEC 62368-1 5.4.4.2).
+     */
+    layerToLayer?: number;
+    /**
      * Copper edge to copper edge between adjacent tracks (turn pitch minus track width).
+     * Default 0.1 mm: IPC-2221B Table 6-1, column B1 (internal conductors), 31-100 V. This
+     * default is for FUNCTIONAL insulation in the 31-100 V band only; basic, supplementary or
+     * reinforced (safety) insulation must be stated explicitly (reinforced through a PCB: 0.4
+     * mm distance through insulation, IEC 62368-1 5.4.4.2).
      */
     trackToTrack: number;
     /**
@@ -6254,6 +6275,7 @@ const typeMap: any = {
         { json: "coreToTrack", js: "coreToTrack", typ: 3.14 },
         { json: "holeToCopper", js: "holeToCopper", typ: u(undefined, 3.14) },
         { json: "holeToHole", js: "holeToHole", typ: u(undefined, 3.14) },
+        { json: "layerToLayer", js: "layerToLayer", typ: u(undefined, 3.14) },
         { json: "trackToTrack", js: "trackToTrack", typ: 3.14 },
         { json: "viaToTrack", js: "viaToTrack", typ: 3.14 },
         { json: "viaToVia", js: "viaToVia", typ: 3.14 },
