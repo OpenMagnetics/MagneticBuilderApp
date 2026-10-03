@@ -1,5 +1,5 @@
 <script setup>
-import { removeTrailingZeroes, deepCopy, isMobile, effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js'
+import { removeTrailingZeroes, deepCopy, isMobile, effectiveBobbin, formatPower } from '/WebSharedComponents/assets/js/utils.js'
 import DimensionReadOnly from '/WebSharedComponents/DataInput/DimensionReadOnly.vue'
 import WindingSelector from '../Common/WindingSelector.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
@@ -244,6 +244,10 @@ export default {
                 }
                 , this.$settingsStore.waitingTimeAfterChange);
             }
+        },
+        powerLabel(watts) {
+            const { label, unit } = formatPower(watts);
+            return `${Number(Number(label).toPrecision(3))} ${unit}`;
         },
         updateFields(outputs) {
             this.outputsData.proximityLosses = 0;
@@ -787,6 +791,19 @@ export default {
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                         :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
+                    <!-- Where the winding losses come from (ABT #203): the per-winding
+                         breakdown lives in Advanced mode, so say what the total is made of here. -->
+                    <div
+                        v-if="outputsData.windingLosses != null && outputsData.ohmicLosses != null"
+                        class="coilinfo-loss-breakdown text-left pl-4 pr-4"
+                        :style="[$styleStore.magneticBuilder.inputTextColor, $styleStore.magneticBuilder.infoLabelFontSize]"
+                        :data-cy="dataTestLabel + '-WindingLossesBreakdown'"
+                    >
+                        <span>DC {{ powerLabel(outputsData.ohmicLosses) }}</span>
+                        <span>· skin {{ powerLabel(outputsData.skinLosses) }}</span>
+                        <span>· proximity {{ powerLabel(outputsData.proximityLosses) }}</span>
+                        <span class="coilinfo-loss-breakdown-hint">Per winding: Settings → Advanced mode</span>
+                    </div>
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.totalLosses"
                         v-if="outputsData.totalLosses != null"
@@ -978,6 +995,18 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+}
+
+.coilinfo-loss-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.4rem;
+    opacity: 0.85;
+}
+.coilinfo-loss-breakdown-hint {
+    flex-basis: 100%;
+    font-size: 0.9em;
+    opacity: 0.75;
 }
 
 .coilinfo-dimmed {
