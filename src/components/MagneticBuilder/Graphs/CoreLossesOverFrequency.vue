@@ -2,6 +2,7 @@
 import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { describeGraphError } from './graphErrors.js'
 import { defaultOperatingConditions } from '/WebSharedComponents/assets/js/defaults.js'
 </script>
 
@@ -151,7 +152,7 @@ export default {
             .catch(error => {
                 console.error(error);
                 this.loading = false;
-                this.errorMessage = "Error calculating core losses";
+                this.errorMessage = describeGraphError(error, "the core losses");
                 this.coreLossesOverFrequencyData[0].data = {
                     x: [],
                     y: [],

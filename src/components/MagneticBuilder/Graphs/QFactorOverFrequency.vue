@@ -5,6 +5,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { describeGraphError } from './graphErrors.js'
 
 </script>
 
@@ -147,7 +148,7 @@ export default {
             .catch(error => {
                 console.error(error);
                 this.loading = false;
-                this.errorMessage = "Material is missing complex permeability, please choose another";
+                this.errorMessage = describeGraphError(error, "the Q factor");
                 this.qFactorOverFrequencyData[0].data = {
                     x: [],
                     y: [],
