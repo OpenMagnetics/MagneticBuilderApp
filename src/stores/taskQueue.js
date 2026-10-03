@@ -6,6 +6,7 @@ import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
 import { useSettingsStore } from './settings'
 import { unitSystem } from '/WebSharedComponents/assets/js/units.js'
 import { useInventoryStore } from './inventory'
+import { requireAdviserExcitations, requireCoreAdviseMode } from '/WebSharedComponents/assets/js/adviserInputs.js'
 
 // Returns the restricted shape-family whitelist (lowercase) if set in
 // magneticBuilderSettings, or null when no restriction applies. Defensive
@@ -948,78 +949,22 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 settings["useToroidalCores"] = adviserSettings.allowToroidalCores;
                 settings["useOnlyCoresInStock"] = false;
             }
-            settings["coreAdviserEnableTemperatureFilter"] = adviserSettings.enableTemperatureFilter ?? false;
-            settings["coreAdviserMaximumTemperature"] = adviserSettings.maximumTemperature ?? 130;
+            const enableTemperatureFilter = adviserSettings.enableTemperatureFilter === true;
+            settings["coreAdviserEnableTemperatureFilter"] = enableTemperatureFilter;
+            if (enableTemperatureFilter) {
+                if (!Number.isFinite(adviserSettings.maximumTemperature)) {
+                    throw new Error(`The core adviser temperature filter is on but its maximum temperature is ${JSON.stringify(adviserSettings.maximumTemperature)}`);
+                }
+                settings["coreAdviserMaximumTemperature"] = adviserSettings.maximumTemperature;
+            }
             await mkf.set_settings(JSON.stringify(settings));
 
-            // Ensure coreAdviseMode is a string, not an object
-            let coreAdviseMode = adviserSettings.coreAdviseMode;
-            if (typeof coreAdviseMode === 'object') {
-                console.warn('[taskQueue] coreAdviseMode was an object, resetting to default');
-                coreAdviseMode = "standard cores";
-            }
-            
-            // Validate and fix frequency before calling WASM
-            // Frequency must be a reasonable value (1 Hz to 100 MHz range)
-            // Values outside this range are likely uninitialized/garbage
-            const DEFAULT_FREQUENCY = 100000; // 100 kHz default
-            const MIN_VALID_FREQUENCY = 1; // 1 Hz minimum
-            const MAX_VALID_FREQUENCY = 100000000; // 100 MHz maximum
-            if (inputs.operatingPoints && inputs.operatingPoints.length > 0) {
-                inputs.operatingPoints.forEach((op, opIndex) => {
-                    if (op.excitationsPerWinding && op.excitationsPerWinding.length > 0) {
-                        op.excitationsPerWinding.forEach((exc, excIndex) => {
-                            const freq = exc.frequency;
-                            if (!freq || !Number.isFinite(freq) || freq < MIN_VALID_FREQUENCY || freq > MAX_VALID_FREQUENCY) {
-                                console.warn(`[taskQueue] Invalid frequency=${freq} in operating point ${opIndex}, excitation ${excIndex}. Set to ${DEFAULT_FREQUENCY}`);
-                                exc.frequency = DEFAULT_FREQUENCY;
-                            }
-                        });
-                    }
-                });
-            }
+            const coreAdviseMode = requireCoreAdviseMode(adviserSettings.coreAdviseMode);
 
-            // Deep-clone inputs (strips Vue reactivity) and sanitize excitation signals.
-            // WASM calculate_buck_inputs returns garbage for some operating points:
-            //   - all-zero frequency harmonics → strip zero-freq entries, remove key if empty
-            //   - waveform.time arrays with trailing nulls → truncate at first null
-            //   - waveform.data arrays mismatched with time → truncate to match
+            // Deep-clone strips Vue reactivity. Bad excitations throw, naming the
+            // operating point and winding, instead of being rewritten (ABT #1417).
             const inputsClean = JSON.parse(JSON.stringify(inputs));
-            if (inputsClean.operatingPoints) {
-                for (const op of inputsClean.operatingPoints) {
-                    if (op.excitationsPerWinding == null) continue;
-                    for (const exc of op.excitationsPerWinding) {
-                        for (const signal of ['current', 'voltage']) {
-                            if (!exc[signal]) continue;
-
-                            // Sanitize harmonics
-                            const harmonics = exc[signal].harmonics;
-                            if (harmonics != null) {
-                                if (harmonics.amplitudes != null) harmonics.amplitudes = harmonics.amplitudes.filter(v => v !== null);
-                                if (harmonics.frequencies != null) harmonics.frequencies = harmonics.frequencies.filter(v => v !== null);
-                                const keep = (harmonics.frequencies || []).map(f => f !== 0);
-                                if (harmonics.amplitudes) harmonics.amplitudes = harmonics.amplitudes.filter((_, i) => keep[i]);
-                                if (harmonics.frequencies) harmonics.frequencies = harmonics.frequencies.filter((_, i) => keep[i]);
-                                if (!harmonics.amplitudes?.length && !harmonics.frequencies?.length) {
-                                    delete exc[signal].harmonics;
-                                }
-                            }
-
-                            // Sanitize waveform — truncate arrays at first null in time
-                            const waveform = exc[signal].waveform;
-                            if (waveform?.time) {
-                                const firstNull = waveform.time.indexOf(null);
-                                if (firstNull === 0) {
-                                    delete exc[signal].waveform;
-                                } else if (firstNull > 0) {
-                                    waveform.time = waveform.time.slice(0, firstNull);
-                                    if (waveform.data) waveform.data = waveform.data.slice(0, firstNull);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            requireAdviserExcitations(inputsClean);
 
             masSentry('adviseCore', inputsClean, 'Inputs');
             const result = await mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), count, coreAdviseMode);
