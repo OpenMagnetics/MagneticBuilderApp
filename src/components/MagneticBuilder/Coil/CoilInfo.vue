@@ -366,6 +366,12 @@ export default {
                         // error made simulation failures look like a silent hang.
                         this.simulationError = error?.message || String(error);
                         this.dataUptoDate = false;
+                        // The stored outputs were computed for an earlier state of this
+                        // design (a loaded file's, or the last edit's). Kept, they read as
+                        // the answer for what is on screen: user report #185 kept 147 W of
+                        // core loss computed for another coil. Drop them; the panel shows
+                        // the error instead.
+                        this.masStore.mas.outputs = [];
                         console.error('[CoilInfo] Simulation error:', error);
                         this.loading = false;
                     });
