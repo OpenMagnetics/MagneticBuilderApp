@@ -220,6 +220,11 @@ export interface InsulationRequirements {
  *
  * Finished drill diameter of the via. Unit: m.
  *
+ * Thickness of the coating, in m. A dimensionWithTolerance, because sources usually bound
+ * it rather than state a nominal (e.g. a 0.6 mm maximum, or a minimum per ring size), so
+ * give only the bounds that are known. A thickness of 0 means the core is bare: a coating
+ * object with zero thickness records that the core was checked and has no coating.
+ *
  * Specific heat capacity value according to manufacturer. Unit: J/(kg*K).
  *
  * Thermal conductivity value according to manufacturer. Unit: W/(m*K).
@@ -1129,6 +1134,7 @@ export enum BobbinFamily {
     E = "e",
     Ec = "ec",
     Efd = "efd",
+    Ei = "ei",
     El = "el",
     Ep = "ep",
     Er = "er",
@@ -2941,9 +2947,12 @@ export interface CoreCoating {
      */
     material?: InsulationMaterial | string;
     /**
-     * Thickness of the coating, in m
+     * Thickness of the coating, in m. A dimensionWithTolerance, because sources usually bound
+     * it rather than state a nominal (e.g. a 0.6 mm maximum, or a minimum per ring size), so
+     * give only the bounds that are known. A thickness of 0 means the core is bare: a coating
+     * object with zero thickness records that the core was checked and has no coating.
      */
-    thickness: number;
+    thickness: DimensionWithTolerance;
     /**
      * The type of coating material applied to the core
      */
@@ -6369,7 +6378,7 @@ const typeMap: any = {
     ], false),
     "CoreCoating": o([
         { json: "material", js: "material", typ: u(undefined, u(r("InsulationMaterial"), "")) },
-        { json: "thickness", js: "thickness", typ: 3.14 },
+        { json: "thickness", js: "thickness", typ: r("DimensionWithTolerance") },
         { json: "type", js: "type", typ: u(undefined, r("CoatingType")) },
     ], false),
     "CoreGap": o([
@@ -7097,6 +7106,7 @@ const typeMap: any = {
         "e",
         "ec",
         "efd",
+        "ei",
         "el",
         "ep",
         "er",
