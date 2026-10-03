@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { waitForMkf, isWorkerMode } from '/WebSharedComponents/assets/js/mkfRuntime'
+import { waitForMkf, isWorkerMode, applyRealWindingGeometrySetting } from '/WebSharedComponents/assets/js/mkfRuntime'
 import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
@@ -1793,6 +1793,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         async wind(inputCoil, repetitions, proportionPerWinding, pattern, margins, coreColumns = null, customSectionRects = null, delimitAndCompact = true) {
             const mkf = await waitForMkf();
             await mkf.ready;
+
+            // The real-winding switch decides HOW the coil is wound (connection blocking,
+            // leads), so the engine must hold the current value at the moment it winds,
+            // not whatever an earlier settings write left behind (ABT #1420).
+            await applyRealWindingGeometrySetting(mkf, useSettingsStore().magneticBuilderSettings?.useRealWindingGeometry === true);
 
             const hasCustomRects = customSectionRects != null && Object.keys(customSectionRects).length > 0;
 

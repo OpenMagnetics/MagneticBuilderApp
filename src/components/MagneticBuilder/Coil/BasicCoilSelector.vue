@@ -179,6 +179,9 @@ export default {
         }
     },
     computed: {
+        realWindingSetting() {
+            return this.$settingsStore?.magneticBuilderSettings?.useRealWindingGeometry === true;
+        },
         conductiveSections() {
             const sections = [];
 
@@ -296,6 +299,19 @@ export default {
             // invalidating the hash makes sure that wind isn't no-op'd away.
             this.oldMagneticCoilHash = null;
             this.oldInputsCoilHash = null;
+        },
+        // Real winding changes how the coil is WOUND (connection blocking, leads), not only
+        // how it is drawn: re-wind the design under the new setting through the normal wind
+        // path, so a coil laid out ideal is laid out again with blocking, or the panel says
+        // why it no longer fits (ABT #1420). The coil itself is unchanged, so the hashes that
+        // de-duplicate winds are cleared or the re-wind is skipped as a repeat.
+        realWindingSetting(newValue, oldValue) {
+            if (newValue === oldValue) {
+                return;
+            }
+            this.oldMagneticCoilHash = null;
+            this.oldInputsCoilHash = null;
+            this.tryToWind();
         },
     },
     mounted () {
