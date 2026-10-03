@@ -11,6 +11,12 @@ import { requireAdviserExcitations, requireCoreAdviseMode } from '/WebSharedComp
 // Returns the restricted shape-family whitelist (lowercase) if set in
 // magneticBuilderSettings, or null when no restriction applies. Defensive
 // against the field being absent in older persisted settings blobs.
+// Two wire coatings build the same wire when type, grade and insulation layers match.
+function sameCoating(a, b) {
+    if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') return false;
+    return ['type', 'grade', 'numberLayers', 'thicknessLayers'].every((key) => (a[key] ?? null) === (b[key] ?? null));
+}
+
 function getRestrictedShapeFamilies() {
     try {
         const s = useSettingsStore();
@@ -1344,6 +1350,32 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     wire.standard = newWireDataDict["standard"];
                 }
                 wire = JSON.parse(await mkf.get_wire_data_by_standard_name(newWireDataDict["roundConductingDiameter"]));
+                // The catalogue wire comes with its own coating (grade 1 enamelled). A
+                // different coating changes the outer diameter: pasting a TIW coating on
+                // it kept the enamelled diameter (user report #177).
+                if (coating != null && !sameCoating(wire.coating, coating)) {
+                    const conductingDiameter = await mkf.resolve_dimension_with_tolerance(JSON.stringify(wire.conductingDiameter));
+                    let outerDiameter;
+                    if (coating.type == "insulated") {
+                        try {
+                            outerDiameter = await mkf.get_wire_outer_diameter_insulated_round(conductingDiameter, coating.numberLayers, coating.thicknessLayers, wire.standard);
+                        } catch (error) {
+                            throw new Error(`MKF could not size a ${newWireDataDict["coating"]} coating on the ${wire.standard} wire ${newWireDataDict["roundConductingDiameter"]}: ${error?.message ?? error}`);
+                        }
+                    } else if (coating.type == "enamelled") {
+                        outerDiameter = await mkf.get_wire_outer_diameter_enamelled_round(conductingDiameter, coating.grade, wire.standard);
+                    } else if (coating.type == "bare") {
+                        outerDiameter = conductingDiameter;
+                    } else {
+                        throw new Error(`A round wire cannot take a ${coating.type} coating (${newWireDataDict["coating"]})`);
+                    }
+                    if (!(outerDiameter >= conductingDiameter)) {
+                        throw new Error(`MKF computed an outer diameter of ${outerDiameter} m for a ${conductingDiameter} m round wire with coating ${newWireDataDict["coating"]} (${wire.standard}); it cannot be smaller than the copper`);
+                    }
+                    wire.outerDiameter = { nominal: outerDiameter };
+                    // It is no longer the catalogue wire it was copied from.
+                    delete wire.name;
+                }
             }
             else if (newWireDataDict["type"] == "litz") {
                 if (newWireDataDict["standard"] != null) {
@@ -1404,14 +1436,16 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     wire.outerWidth = {};
                 }
                 
-                if (coating != null) {
-                    const grade = coating.grade || 1;
-                    if (coating.type != "bare" || coating.type != "enamelled") {
-                        coating.type = "enamelled"
-                        coating.grade = 1
+                if (coating != null && coating.type == "enamelled") {
+                    if (coating.grade == null) {
+                        throw new Error(`Enamelled coating ${newWireDataDict["coating"]} has no grade`);
                     }
-                    wire.outerHeight.nominal = await mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], grade, wire.standard);
-                    wire.outerWidth.nominal = await mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], grade, wire.standard);
+                    wire.outerHeight.nominal = await mkf.get_wire_outer_height_rectangular(newWireDataDict["rectangularConductingHeight"], coating.grade, wire.standard);
+                    wire.outerWidth.nominal = await mkf.get_wire_outer_width_rectangular(newWireDataDict["rectangularConductingWidth"], coating.grade, wire.standard);
+                } else if (coating != null && coating.type != "bare") {
+                    // This used to turn every coating into grade 1 enamel ('type != bare ||
+                    // type != enamelled' is always true), silently changing the wire.
+                    throw new Error(`Rectangular wires take a bare or enamelled coating; ${newWireDataDict["coating"]} is ${coating.type}`);
                 } else {
                     // Default to conducting dimensions if no coating
                     wire.outerHeight.nominal = newWireDataDict["rectangularConductingHeight"];
