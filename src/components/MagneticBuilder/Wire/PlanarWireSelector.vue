@@ -105,6 +105,9 @@ export default {
     computed: {
     },
     watch: {
+        loading(value) {
+            this.taskQueueStore.wireAdviseBusy = value;
+        },
     },
     mounted () {
         this.getWireThicknesses();
@@ -118,6 +121,7 @@ export default {
         }));
     },
     beforeUnmount() {
+        if (this.loading) this.taskQueueStore.wireAdviseBusy = false;
         this.subscriptions.forEach((unsubscribe) => unsubscribe());
     },
     methods: {
@@ -293,7 +297,7 @@ export default {
                     <button
                         v-if="masStore.mas.magnetic.coil.functionalDescription.length > 1"
                         type="button"
-                        :disabled="loading"
+                        :disabled="loading || taskQueueStore.coreAdviseBusy"
                         :data-cy="dataTestLabel + 'Wire-Advise-button'"
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseWireRequested"
@@ -304,7 +308,7 @@ export default {
                     <button
                         v-if="masStore.mas.magnetic.coil.functionalDescription.length > 1"
                         type="button"
-                        :disabled="loading"
+                        :disabled="loading || taskQueueStore.coreAdviseBusy"
                         :data-cy="dataTestLabel + 'Wire-Advise-All-button'"
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseAllWiresRequested"
@@ -315,7 +319,7 @@ export default {
                     <button
                         v-if="masStore.mas.magnetic.coil.functionalDescription.length == 1"
                         type="button"
-                        :disabled="loading"
+                        :disabled="loading || taskQueueStore.coreAdviseBusy"
                         :data-cy="dataTestLabel + 'Wire-Advise-button'"
                         class="wire-config-header-btn wire-config-header-btn-primary"
                         @click="adviseWireRequested"

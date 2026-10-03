@@ -199,6 +199,13 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         task_standard_response_delay: 20,
         windingIndexChangeBlock: false,
         bobbinRegenerationPending: false,
+        // An advise replaces part of the magnetic in several awaited steps, so the
+        // core and wire advisers must not overlap: a wire advise started while an
+        // advised core is being applied runs on a half-swapped coil ("Bobbin is
+        // dummy") or lands on top of the new core. Each panel mirrors its own
+        // advise into these flags and disables its Advise buttons on the other's.
+        coreAdviseBusy: false,
+        wireAdviseBusy: false,
         _windingBlockTimer: null,
         _windingChangedTimer: null,
     }),

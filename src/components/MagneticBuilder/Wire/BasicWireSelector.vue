@@ -174,6 +174,9 @@ export default {
         },
     },
     watch: {
+        loading(value) {
+            this.taskQueueStore.wireAdviseBusy = value;
+        },
         activeUnitSystem() {
             this.localData.standard = this.preferredWireStandard;
             this.getWireDiameters();
@@ -239,6 +242,7 @@ export default {
         }));
     },
     beforeUnmount () {
+        if (this.loading) this.taskQueueStore.wireAdviseBusy = false;
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
@@ -603,7 +607,7 @@ export default {
                     <button
                         v-if="enableAdvise && enableSubmenu && masStore.mas.magnetic.coil.functionalDescription.length > 1"
                         type="button"
-                        :disabled="loading"
+                        :disabled="loading || taskQueueStore.coreAdviseBusy"
                         :data-cy="dataTestLabel + 'Wire-Advise-button'"
                         :class="['wire-config-header-btn', 'wire-config-header-btn-primary', { 'wire-config-header-btn-needs-attention': isCurrentWireIncomplete }]"
                         v-tooltip="isCurrentWireIncomplete ? 'Wire not configured for this winding — click to get a recommendation' : 'Get a recommended wire for this winding'"
@@ -615,7 +619,7 @@ export default {
                     <button
                         v-if="enableAdvise && enableSubmenu && masStore.mas.magnetic.coil.functionalDescription.length > 1"
                         type="button"
-                        :disabled="loading"
+                        :disabled="loading || taskQueueStore.coreAdviseBusy"
                         :data-cy="dataTestLabel + 'Wire-Advise-All-button'"
                         :class="['wire-config-header-btn', 'wire-config-header-btn-primary', { 'wire-config-header-btn-needs-attention': anyWireIncomplete }]"
                         v-tooltip="anyWireIncomplete ? 'Some wires are not configured — click to get a recommendation for every winding' : 'Get a recommendation for every winding'"
@@ -627,7 +631,7 @@ export default {
                     <button
                         v-if="enableAdvise && enableSubmenu && masStore.mas.magnetic.coil.functionalDescription.length == 1"
                         type="button"
-                        :disabled="loading"
+                        :disabled="loading || taskQueueStore.coreAdviseBusy"
                         :data-cy="dataTestLabel + 'Wire-Advise-button'"
                         :class="['wire-config-header-btn', 'wire-config-header-btn-primary', { 'wire-config-header-btn-needs-attention': isCurrentWireIncomplete }]"
                         v-tooltip="isCurrentWireIncomplete ? 'Wire not configured — click to get a recommendation' : 'Get a recommended wire'"
