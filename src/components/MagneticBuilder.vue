@@ -377,9 +377,27 @@ export default {
              turns/wire/core combination) is shown here so the user knows what happened,
              but it does NOT gate Continue -- the design's inputs are still valid, only
              this specific derived result failed (ABT #1347). -->
-        <div v-if="calculationWarning" class="alert alert-danger py-2 px-3 mb-2" :title="calculationWarning.message">
-            <i class="pi pi-exclamation-triangle me-2"></i>
-            <strong>Calculation issue:</strong> {{calculationWarning.message}}
+        <div
+            v-if="calculationWarning"
+            :data-cy="dataTestLabel + '-CalculationIssue'"
+            class="alert alert-danger py-2 px-3 mb-2 d-flex align-items-start"
+            :title="calculationWarning.message"
+        >
+            <span class="flex-grow-1">
+                <i class="pi pi-exclamation-triangle me-2"></i>
+                <strong>Calculation issue:</strong> {{calculationWarning.message}}
+            </span>
+            <!-- Dismissed until the next failure: a new one sets calculationWarning again. -->
+            <button
+                type="button"
+                :data-cy="dataTestLabel + '-CalculationIssue-dismiss'"
+                class="mb-calc-issue-dismiss ms-2"
+                aria-label="Dismiss"
+                title="Dismiss"
+                @click="calculationWarning = null"
+            >
+                <i class="pi pi-times"></i>
+            </button>
         </div>
         <div
             class="row"
@@ -409,3 +427,18 @@ export default {
         />
     </div>
 </template>
+
+<style scoped>
+.mb-calc-issue-dismiss {
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 0 0.25rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+}
+.mb-calc-issue-dismiss:hover {
+    opacity: 1;
+}
+</style>
