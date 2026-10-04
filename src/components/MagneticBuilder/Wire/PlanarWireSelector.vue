@@ -210,72 +210,70 @@ export default {
             setTimeout(() => this.adviseAllWires(), 100);
         },
         adviseAllWires() {
-            this.taskQueueStore.getSettings().then((settings) => {
+            this.taskQueueStore.updateSettings((settings) => {
                 settings["coilMaximumLayersPlanar"] = 24;
-                this.taskQueueStore.setSettings(settings).then(() => {
+            }).then(() => {
 
-                    this.taskQueueStore.adviseAllWires(this.masStore.mas)
-                    .then((coil) => {
-                        this.errorMessage = "";
-                        if (!this.taskQueueStore.windingIndexChangeBlock) {
-                            this.masStore.mas.magnetic.coil = coil;
-                            this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
-                            // Don't clean coil here - the advised coil already has valid layers/turns
-                            this.$emit("wireUpdated", this.windingIndex);
+                this.taskQueueStore.adviseAllWires(this.masStore.mas)
+                .then((coil) => {
+                    this.errorMessage = "";
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.masStore.mas.magnetic.coil = coil;
+                        this.assignLocalData(coil.functionalDescription[this.windingIndex].wire);
+                        // Don't clean coil here - the advised coil already has valid layers/turns
+                        this.$emit("wireUpdated", this.windingIndex);
 
-                            this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
-                            setTimeout(() => this.loading = false, 100);
-
-                            // Trigger rewinding and resimulation
-                            this.taskQueueStore.newWireCreated(true, coil.functionalDescription[this.windingIndex].wire);
-                        }
-
-                    })
-                    .catch(error => {
-                        this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
-                        setTimeout(() => {this.errorMessage = ""}, 10000);
-                        this.loading = false;
-                        console.error(error);
-                    })
-                })
-            })
-        },
-        adviseWire() {
-            this.taskQueueStore.getSettings().then((settings) => {
-                settings["coilMaximumLayersPlanar"] = 24;
-                this.taskQueueStore.setSettings(settings).then(() => {
-                    this.taskQueueStore.adviseWire(this.masStore.mas, this.windingIndex)
-                    .then((result) => {
-                        this.errorMessage = "";
-                        const winding = result.winding;
-                        const coil = result.coil;
-                        
-                        // Always update UI (localData) regardless of block
-                        this.assignLocalData(winding.wire);
-                        
-                        // Only update coil and trigger actions if not blocked
-                        if (!this.taskQueueStore.windingIndexChangeBlock) {
-                            this.masStore.mas.magnetic.coil = coil;
-                            // Don't clean coil here - the advised coil already has valid layers/turns
-                            this.$emit("wireUpdated", this.windingIndex);
-
-                            this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
-
-                            // Trigger rewinding and resimulation
-                            this.taskQueueStore.newWireCreated(true, winding.wire);
-                        }
-                        
+                        this.$stateStore.wire2DVisualizerState.plotCurrentViews = {};
                         setTimeout(() => this.loading = false, 100);
 
-                    })
-                    .catch(error => {
-                        this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
-                        this.loading = false;
-                        setTimeout(() => {this.errorMessage = ""}, 10000);
-                        console.error(error);
-                    })
+                        // Trigger rewinding and resimulation
+                        this.taskQueueStore.newWireCreated(true, coil.functionalDescription[this.windingIndex].wire);
+                    }
+
                 })
-            });
+                .catch(error => {
+                    this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
+                    setTimeout(() => {this.errorMessage = ""}, 10000);
+                    this.loading = false;
+                    console.error(error);
+                })
+                })
+        },
+        adviseWire() {
+            this.taskQueueStore.updateSettings((settings) => {
+                settings["coilMaximumLayersPlanar"] = 24;
+            }).then(() => {
+                this.taskQueueStore.adviseWire(this.masStore.mas, this.windingIndex)
+                .then((result) => {
+                    this.errorMessage = "";
+                    const winding = result.winding;
+                    const coil = result.coil;
+                    
+                    // Always update UI (localData) regardless of block
+                    this.assignLocalData(winding.wire);
+                    
+                    // Only update coil and trigger actions if not blocked
+                    if (!this.taskQueueStore.windingIndexChangeBlock) {
+                        this.masStore.mas.magnetic.coil = coil;
+                        // Don't clean coil here - the advised coil already has valid layers/turns
+                        this.$emit("wireUpdated", this.windingIndex);
+
+                        this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
+
+                        // Trigger rewinding and resimulation
+                        this.taskQueueStore.newWireCreated(true, winding.wire);
+                    }
+                    
+                    setTimeout(() => this.loading = false, 100);
+
+                })
+                .catch(error => {
+                    this.errorMessage = "Our advisers could not find a wire. Sorry, you are on your own!";
+                    this.loading = false;
+                    setTimeout(() => {this.errorMessage = ""}, 10000);
+                    console.error(error);
+                })
+                });
         },
         customizeWire() {
         },

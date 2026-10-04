@@ -973,11 +973,9 @@ export default {
                 // 1. From now on the engine emits one winding window per wound-column
                 //    edge (idempotent; legacy geometry is byte-identical when nothing
                 //    is placed laterally).
-                const settings = await this.taskQueueStore.getSettings();
-                if (!settings.corePerColumnWindingWindows) {
+                await this.taskQueueStore.updateSettings((settings) => {
                     settings.corePerColumnWindingWindows = true;
-                    await this.taskQueueStore.setSettings(settings);
-                }
+                });
 
                 // 2. Reprocess the core so it carries the per-column windows. Flag the
                 //    pending bobbin regeneration so the coreProcessed subscriber does
@@ -1044,11 +1042,9 @@ export default {
                 }
 
                 // 1. Engine emits one winding window per wound-column edge.
-                const settings = await this.taskQueueStore.getSettings();
-                if (!settings.corePerColumnWindingWindows) {
+                await this.taskQueueStore.updateSettings((settings) => {
                     settings.corePerColumnWindingWindows = true;
-                    await this.taskQueueStore.setSettings(settings);
-                }
+                });
 
                 // 2. Reprocess the core so it carries the per-column windows. Flag
                 //    the pending bobbin regeneration so the coreProcessed subscriber
@@ -1258,7 +1254,18 @@ export default {
                     // Core columns ride along so multi-column placements (winding
                     // studio) can wind lateral-leg frames; no-op for classic coils.
                     const coreColumns = this.masStore.mas.magnetic.core?.processedDescription?.columns ?? null;
+                    // A wind takes a while, and a request to wind again while it runs is
+                    // dropped (tryingToSend). If the windings change meanwhile (an advised
+                    // wire lands), this result describes the OLD windings: applying it put
+                    // the previous wire back over the advised one (ABT #1660). Wind the
+                    // current coil instead.
+                    const windingsAtStart = JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription);
                     this.taskQueueStore.wind(inputCoil, this.localData.repetitions, this.localData.proportionPerWinding, pattern, margins, coreColumns, customSectionRects, compactEnabled).then((coil) => {
+                        if (JSON.stringify(this.masStore.mas.magnetic.coil.functionalDescription) !== windingsAtStart) {
+                            this.tryingToSend = false;
+                            this.tryToWind();
+                            return;
+                        }
                         this.taskQueueStore.calculateFillingFactors(coil).then((fillingFactors) => {
                             this.localData.fillingFactors = fillingFactors;
                             // A layout that shows the coil's numbers away from this

@@ -218,54 +218,49 @@ export default {
         wind() {
             this.$emit("fits", true);
 
-            this.taskQueueStore.getSettings().then((settings) => {
+            this.taskQueueStore.updateSettings((settings) => {
                 settings["coilMaximumLayersPlanar"] = 24;
-                this.taskQueueStore.setSettings(settings).then(() => {
-                    const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
+            }).then(() => {
+                const inputCoil = deepCopy(this.masStore.mas.magnetic.coil);
 
-                    const stackUp = [];
-                    this.localData.stackUp.split('').forEach((char, index) => {
-                        stackUp.push(Number(char) - 1);
-                    });
+                const stackUp = [];
+                this.localData.stackUp.split('').forEach((char, index) => {
+                    stackUp.push(Number(char) - 1);
+                });
 
-                    this.taskQueueStore.generateBobbinFromCoreShape(this.masStore.mas.magnetic.core, "Printed").then((bobbin) => {
-                        // Set sectionsAlignment from localData FIRST (user's current selection takes priority)
-                        if (bobbin?.processedDescription?.windingWindows != null && this.localData.sectionsAlignment != null) {
-                            bobbin.processedDescription.windingWindows.forEach((window) => {
-                                window.sectionsAlignment = this.localData.sectionsAlignment;
-                            });
-                        }
-                        
-                        // Preserve other windingWindows settings from original bobbin (only if not set in localData)
-                        const originalWindingWindows = this.masStore.mas.magnetic.coil.bobbin?.processedDescription?.windingWindows;
-                        if (originalWindingWindows != null && bobbin?.processedDescription?.windingWindows != null) {
-                            bobbin.processedDescription.windingWindows.forEach((window, index) => {
-                                if (originalWindingWindows[index] != null) {
-                                    // Only preserve sectionsOrientation, not sectionsAlignment (which comes from localData)
-                                    if (originalWindingWindows[index].sectionsOrientation != null && window.sectionsOrientation == null) {
-                                        window.sectionsOrientation = originalWindingWindows[index].sectionsOrientation;
-                                    }
+                this.taskQueueStore.generateBobbinFromCoreShape(this.masStore.mas.magnetic.core, "Printed").then((bobbin) => {
+                    // Set sectionsAlignment from localData FIRST (user's current selection takes priority)
+                    if (bobbin?.processedDescription?.windingWindows != null && this.localData.sectionsAlignment != null) {
+                        bobbin.processedDescription.windingWindows.forEach((window) => {
+                            window.sectionsAlignment = this.localData.sectionsAlignment;
+                        });
+                    }
+                    
+                    // Preserve other windingWindows settings from original bobbin (only if not set in localData)
+                    const originalWindingWindows = this.masStore.mas.magnetic.coil.bobbin?.processedDescription?.windingWindows;
+                    if (originalWindingWindows != null && bobbin?.processedDescription?.windingWindows != null) {
+                        bobbin.processedDescription.windingWindows.forEach((window, index) => {
+                            if (originalWindingWindows[index] != null) {
+                                // Only preserve sectionsOrientation, not sectionsAlignment (which comes from localData)
+                                if (originalWindingWindows[index].sectionsOrientation != null && window.sectionsOrientation == null) {
+                                    window.sectionsOrientation = originalWindingWindows[index].sectionsOrientation;
                                 }
-                            });
-                        }
-                        
-                        inputCoil.bobbin = bobbin;
+                            }
+                        });
+                    }
+                    
+                    inputCoil.bobbin = bobbin;
 
-                        this.taskQueueStore.windPlanar(inputCoil, stackUp, this.localData.borderToWireDistance, this.localData.clearancePerWinding, this.localData.insulationThicknessPerLayer, this.localData.coreToLayerDistance)
-                        .then((coil) => {
-                            this.masStore.mas.magnetic.coil = coil;
-                            this.assignLocalData(this.masStore.mas.magnetic);
-                            this.historyStore.addToHistory(this.masStore.mas);
-                            this.tryingToSend = false;
-                            this.taskQueueStore.checkIfSectionsAndLayersFit(coil).then((fits) => {
-                                this.$emit("fits", fits);
-                            })
+                    this.taskQueueStore.windPlanar(inputCoil, stackUp, this.localData.borderToWireDistance, this.localData.clearancePerWinding, this.localData.insulationThicknessPerLayer, this.localData.coreToLayerDistance)
+                    .then((coil) => {
+                        this.masStore.mas.magnetic.coil = coil;
+                        this.assignLocalData(this.masStore.mas.magnetic);
+                        this.historyStore.addToHistory(this.masStore.mas);
+                        this.tryingToSend = false;
+                        this.taskQueueStore.checkIfSectionsAndLayersFit(coil).then((fits) => {
+                            this.$emit("fits", fits);
+                        })
 
-                        })
-                        .catch(error => {
-                            this.tryingToSend = false;
-                            console.error(error);
-                        })
                     })
                     .catch(error => {
                         this.tryingToSend = false;

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { waitForMkf, isWorkerMode, applyRealWindingGeometrySetting } from '/WebSharedComponents/assets/js/mkfRuntime'
+import { waitForMkf, isWorkerMode, applyRealWindingGeometrySetting, updateEngineSettings, queueEngineSettingsTask } from '/WebSharedComponents/assets/js/mkfRuntime'
 import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
@@ -924,54 +924,6 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const settings = JSON.parse(await mkf.get_settings());
-
-            // Preferred core manufacturer (ABT #1099): the adviser searches that
-            // maker's materials first (a tiebreak in MKF, never a gate — with
-            // no match it evaluates every material and says so). The engine's
-            // own defaults are remembered from the first call so clearing the
-            // preference restores them rather than a value guessed here.
-            if (this._engineDefaultPreferredManufacturers == null) {
-                if (!('preferredCoreMaterialFerriteManufacturer' in settings) || !('preferredCoreMaterialPowderManufacturer' in settings)) {
-                    throw new Error('Engine settings do not expose preferredCoreMaterial*Manufacturer: libMKF is older than the preferred-manufacturer feature (ABT #1099)');
-                }
-                this._engineDefaultPreferredManufacturers = {
-                    ferrite: settings.preferredCoreMaterialFerriteManufacturer,
-                    powder: settings.preferredCoreMaterialPowderManufacturer,
-                };
-            }
-            const preferredManufacturer = useSettingsStore().userPreferences?.preferredCoreManufacturer ?? null;
-            settings.preferredCoreMaterialFerriteManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.ferrite;
-            settings.preferredCoreMaterialPowderManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.powder;
-
-            // CMC topology → force toroidal, no distributed gaps (winding goes around).
-            const isCmc = inputs?.designRequirements?.topology?.toLowerCase() === 'commonmodechoke';
-
-            if (isCmc) {
-                settings["coreIncludeDistributedGaps"] = false;
-                settings["coreIncludeMargin"] = true;
-                settings["coreIncludeStacks"] = true;
-                settings["useToroidalCores"] = true;
-                settings["useConcentricCores"] = false;
-                settings["useOnlyCoresInStock"] = false;
-            }
-            else {
-                settings["coreIncludeDistributedGaps"] = adviserSettings.allowDistributedGaps;
-                settings["coreIncludeMargin"] = true;
-                settings["coreIncludeStacks"] = adviserSettings.allowStacks;
-                settings["useToroidalCores"] = adviserSettings.allowToroidalCores;
-                settings["useOnlyCoresInStock"] = false;
-            }
-            const enableTemperatureFilter = adviserSettings.enableTemperatureFilter === true;
-            settings["coreAdviserEnableTemperatureFilter"] = enableTemperatureFilter;
-            if (enableTemperatureFilter) {
-                if (!Number.isFinite(adviserSettings.maximumTemperature)) {
-                    throw new Error(`The core adviser temperature filter is on but its maximum temperature is ${JSON.stringify(adviserSettings.maximumTemperature)}`);
-                }
-                settings["coreAdviserMaximumTemperature"] = adviserSettings.maximumTemperature;
-            }
-            await mkf.set_settings(JSON.stringify(settings));
-
             const coreAdviseMode = requireCoreAdviseMode(adviserSettings.coreAdviseMode);
 
             // Deep-clone strips Vue reactivity. Bad excitations throw, naming the
@@ -980,7 +932,60 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             requireAdviserExcitations(inputsClean);
 
             masSentry('adviseCore', inputsClean, 'Inputs');
-            const result = await mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), count, coreAdviseMode);
+            // The adviser runs inside the settings queue, right after its settings are
+            // written, so no other settings writer can change them in between (ABT #1660).
+            // It winds its candidates with the coil adviser, so the wire standard is set too.
+            const preferredWireStandard = this.preferredWireStandard();
+            const result = await updateEngineSettings(mkf, (settings) => {
+                // Preferred core manufacturer (ABT #1099): the adviser searches that
+                // maker's materials first (a tiebreak in MKF, never a gate — with
+                // no match it evaluates every material and says so). The engine's
+                // own defaults are remembered from the first call so clearing the
+                // preference restores them rather than a value guessed here.
+                if (this._engineDefaultPreferredManufacturers == null) {
+                    if (!('preferredCoreMaterialFerriteManufacturer' in settings) || !('preferredCoreMaterialPowderManufacturer' in settings)) {
+                        throw new Error('Engine settings do not expose preferredCoreMaterial*Manufacturer: libMKF is older than the preferred-manufacturer feature (ABT #1099)');
+                    }
+                    this._engineDefaultPreferredManufacturers = {
+                        ferrite: settings.preferredCoreMaterialFerriteManufacturer,
+                        powder: settings.preferredCoreMaterialPowderManufacturer,
+                    };
+                }
+                const preferredManufacturer = useSettingsStore().userPreferences?.preferredCoreManufacturer ?? null;
+                settings.preferredCoreMaterialFerriteManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.ferrite;
+                settings.preferredCoreMaterialPowderManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.powder;
+
+                // CMC topology → force toroidal, no distributed gaps (winding goes around).
+                const isCmc = inputs?.designRequirements?.topology?.toLowerCase() === 'commonmodechoke';
+
+                if (isCmc) {
+                    settings["coreIncludeDistributedGaps"] = false;
+                    settings["coreIncludeMargin"] = true;
+                    settings["coreIncludeStacks"] = true;
+                    settings["useToroidalCores"] = true;
+                    settings["useConcentricCores"] = false;
+                    settings["useOnlyCoresInStock"] = false;
+                }
+                else {
+                    settings["coreIncludeDistributedGaps"] = adviserSettings.allowDistributedGaps;
+                    settings["coreIncludeMargin"] = true;
+                    settings["coreIncludeStacks"] = adviserSettings.allowStacks;
+                    settings["useToroidalCores"] = adviserSettings.allowToroidalCores;
+                    settings["useOnlyCoresInStock"] = false;
+                }
+                const enableTemperatureFilter = adviserSettings.enableTemperatureFilter === true;
+                settings["coreAdviserEnableTemperatureFilter"] = enableTemperatureFilter;
+                if (enableTemperatureFilter) {
+                    if (!Number.isFinite(adviserSettings.maximumTemperature)) {
+                        throw new Error(`The core adviser temperature filter is on but its maximum temperature is ${JSON.stringify(adviserSettings.maximumTemperature)}`);
+                    }
+                    settings["coreAdviserMaximumTemperature"] = adviserSettings.maximumTemperature;
+                }
+                if (!('preferredWireStandard' in settings)) {
+                    throw new Error('Engine settings do not expose preferredWireStandard: libMKF is older than the wire-standard preference (ABT #1110)');
+                }
+                settings.preferredWireStandard = preferredWireStandard;
+            }, () => mkf.calculate_advised_cores(JSON.stringify(inputsClean), JSON.stringify(coreAdviserWeights), count, coreAdviseMode));
 
             if (result.startsWith("Exception")) {
                 throw new Error(result);
@@ -1603,15 +1608,14 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         // WebFrontend the inventory store is the host's full implementation;
         // standalone MB keeps scope 'public' and always takes the classic path.
         async callCalculateAdvisedCoil(mkf, advisePayload) {
-            await this.applyPreferredWireStandard(mkf);
             const inventoryStore = useInventoryStore();
             if (inventoryStore.scope === 'only') {
                 if (!inventoryStore.engineContextLoaded) {
                     throw new Error("Adviser scope is 'only my inventory' but your inventory could not be loaded into the engine — sign in again or reload the page (see console for the original error).");
                 }
-                return await mkf.calculate_advised_coil_with_context(advisePayload, true);
+                return await this.withPreferredWireStandard(mkf, () => mkf.calculate_advised_coil_with_context(advisePayload, true));
             }
-            return await mkf.calculate_advised_coil(advisePayload);
+            return await this.withPreferredWireStandard(mkf, () => mkf.calculate_advised_coil(advisePayload));
         },
 
         allWiresAdvised(success = true, dataOrMessage = '') {
@@ -1620,21 +1624,22 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         /**
          * The wire standard follows the profile unit system (ABT #1110): IEC 60317
          * (millimetre sizes) under SI, NEMA MW 1000 C (AWG) under imperial. Pushed
-         * into the engine settings before any wire or coil advise, so the advisers
-         * only offer wires of that standard.
+         * into the engine settings for every wire or coil advise, so the advisers
+         * only offer wires of that standard. Set inside the settings queue together
+         * with the advise call: a settings writer running in between used to put the
+         * other standard back, and the advise then offered the wrong wires (ABT #1660).
          */
         preferredWireStandard() {
             return unitSystem() === 'imperial' ? 'NEMA MW 1000 C' : 'IEC 60317';
         },
-        async applyPreferredWireStandard(mkf) {
-            const settings = JSON.parse(await mkf.get_settings());
-            if (!('preferredWireStandard' in settings)) {
-                throw new Error('Engine settings do not expose preferredWireStandard: libMKF is older than the wire-standard preference (ABT #1110)');
-            }
+        withPreferredWireStandard(mkf, engineCall) {
             const wanted = this.preferredWireStandard();
-            if (settings.preferredWireStandard === wanted) return;
-            settings.preferredWireStandard = wanted;
-            await mkf.set_settings(JSON.stringify(settings));
+            return updateEngineSettings(mkf, (settings) => {
+                if (!('preferredWireStandard' in settings)) {
+                    throw new Error('Engine settings do not expose preferredWireStandard: libMKF is older than the wire-standard preference (ABT #1110)');
+                }
+                settings.preferredWireStandard = wanted;
+            }, engineCall);
         },
 
         /** Every catalogue wire, one summary row each (engine get_wires_summary, lengths in metres). */
@@ -2018,7 +2023,21 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            await mkf.set_settings(JSON.stringify(settings));
+            await queueEngineSettingsTask(() => mkf.set_settings(JSON.stringify(settings)));
+
+            setTimeout(() => {this.settingsSet(true, true);}, this.task_standard_response_delay);
+            return true;
+        },
+
+        /**
+         * Change some engine settings without overwriting anyone else's: `change`
+         * sets its fields on the current settings (see updateEngineSettings).
+         */
+        async updateSettings(change) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            await updateEngineSettings(mkf, change);
 
             setTimeout(() => {this.settingsSet(true, true);}, this.task_standard_response_delay);
             return true;
