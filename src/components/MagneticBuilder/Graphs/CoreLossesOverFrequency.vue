@@ -174,7 +174,7 @@ export default {
             </div>
             <div :class="$slots.default ? 'col-12 md:col-9 graph-viz-col' : 'col-12 graph-viz-col'">
                 <img :data-cy="dataTestLabel + '-CoreLossesOverFrequency-loading'" v-if="loading" class="mx-auto d-block graph-loading" alt="loading" :src="$settingsStore.loadingGif">
-                <label v-if="errorMessage != ''" :data-cy="dataTestLabel + '-BottomOrRightMarginErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{errorMessage}}</label>
+                <label v-if="errorMessage != ''" :data-cy="dataTestLabel + '-Graph-ErrorMessage'" class="text-danger m-0" style="font-size: 0.9em"> {{errorMessage}}</label>
                 <LineVisualizer 
                     v-show="!loading"
                     :data="coreLossesOverFrequencyData"
