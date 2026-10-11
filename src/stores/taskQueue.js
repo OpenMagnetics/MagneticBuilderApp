@@ -1336,6 +1336,37 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
 
+            // The design's wire is rebuilt on a copy and swapped in whole at the end. Editing it in
+            // place left it half-built across the awaits below (a litz with its strand as a size
+            // label and no outer diameter), and a simulate fired in between sent that to the MAS
+            // sentry, which refused it ("wire ... must have required property 'outerDiameter'").
+            const designWire = (oldWire != null && typeof(oldWire) == "object") ? oldWire : null;
+            if (designWire != null) {
+                oldWire = deepCopy(designWire);
+            }
+            const workingCopy = designWire != null ? oldWire : null;
+
+            // Asked for the litz the design already has (same strand size, strand count and
+            // coating, e.g. the panel re-syncing after undo or a load): keep the catalogue wire.
+            // Rebuilding it replaced its catalogue outer diameter by a computed one, rewound the
+            // coil and recorded that as a new edit, so undo landed on a fresh history entry.
+            if (newWireDataDict["type"] == "litz" && designWire != null && designWire.type == "litz"
+                && designWire.numberConductors == newWireDataDict["numberConductors"] && designWire.strand != null) {
+                let designStrand = designWire.strand;
+                if (typeof(designStrand) == "string") {
+                    const strandData = await mkf.get_wire_data_by_name(designStrand);
+                    if (strandData.startsWith("Exception")) {
+                        throw new Error(`The litz strand '${designStrand}' is not in the wire catalogue: ${strandData}`);
+                    }
+                    designStrand = JSON.parse(strandData);
+                }
+                const designCoating = await mkf.get_coating_label(JSON.stringify(designWire));
+                if (designStrand.standardName == newWireDataDict["litzStrandConductingDiameter"]
+                    && designCoating == newWireDataDict["coating"]) {
+                    return designWire;
+                }
+            }
+
             // So the outer diameter gets updated for Litz
             if (newWireDataDict["type"] == "litz") {
                 if (typeof(oldWire) != "string") {
@@ -1488,9 +1519,17 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 wire.outerWidth.nominal = wire.conductingWidth.nominal;
             }
 
+            const editsDesignWire = workingCopy != null && wire === workingCopy;
             wire.coating = coating;
             wire.material = "copper";
             wire = clean(wire);
+            if (editsDesignWire) {
+                for (const key of Object.keys(designWire)) {
+                    delete designWire[key];
+                }
+                Object.assign(designWire, wire);
+                wire = designWire;
+            }
             setTimeout(() => {this.newWireCreated(true, wire);}, this.task_standard_response_delay);
             return wire;
         },
