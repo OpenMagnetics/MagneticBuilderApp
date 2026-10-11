@@ -136,7 +136,7 @@ export default {
             })
             this.frequencyData.type = this.$stateStore.graphParameters.xAxisMode == "linear"? "value" : this.$stateStore.graphParameters.xAxisMode;
             this.coreLossesOverFrequencyData[0].type = this.$stateStore.graphParameters.yAxisMode == "linear"? "value" : this.$stateStore.graphParameters.yAxisMode;
-            this.taskQueueStore.sweepCoreLossesOverFrequency(this.masStore.mas.magnetic, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex], this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, ambientTemperature, this.$stateStore.graphParameters.xAxisMode, "Core Losses over frequency").then((curve2D) => {
+            this.taskQueueStore.sweepCoreLossesOverFrequency(this.masStore.mas.magnetic, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex], this.masStore.mas.inputs.designRequirements.topology ?? null, this.$stateStore.graphParameters.minimumFrequency, this.$stateStore.graphParameters.maximumFrequency, this.$stateStore.graphParameters.numberPoints, ambientTemperature, this.$stateStore.graphParameters.xAxisMode, "Core Losses over frequency").then((curve2D) => {
                     this.coreLossesOverFrequencyData[0].data = {
                         x: curve2D.xPoints,
                         y: curve2D.yPoints,

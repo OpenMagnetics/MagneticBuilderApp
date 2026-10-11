@@ -2125,11 +2125,17 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         coreLossesOverFrequencySwept(success = true, dataOrMessage = '') {
         },
 
-        async sweepCoreLossesOverFrequency(magnetic, operatingPoint, minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title) {
+        // topology: the design's designRequirements.topology, null when it has none. The engine
+        // needs it to drive the core with the right magnetizing current (a multi-winding DMC and a
+        // CMC carry matching winding currents alike, ABT #1754).
+        async sweepCoreLossesOverFrequency(magnetic, operatingPoint, topology, minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title) {
+            if (topology === undefined) {
+                throw new Error("sweepCoreLossesOverFrequency needs the design's topology (null when the design has none)");
+            }
             const mkf = await waitForMkf();
             await mkf.ready;
 
-            const result = await mkf.sweep_core_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
+            const result = await mkf.sweep_core_losses_over_frequency(JSON.stringify(magnetic), JSON.stringify(operatingPoint), JSON.stringify(topology), minimumFrequency, maximumFrequency, numberPoints, temperature, xAxisMode, title);
 
             if (result.startsWith("Exception")) {
                 setTimeout(() => {this.coreLossesOverFrequencySwept(false, result);}, this.task_standard_response_delay);
