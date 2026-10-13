@@ -26,6 +26,7 @@ const PERSISTENT_STORE_KEYS = [
     'mas',
     'settings',
     'state',
+    'storedCoilLayout',
     'user',
 ];
 

@@ -90,6 +90,8 @@ export default {
         const subscriptions = [];
 
         return {
+            // The thickness and width this panel read back from the wire of the design.
+            wireShown: null,
             taskQueueStore,
             blockingRebounds,
             wireHash,
@@ -136,12 +138,24 @@ export default {
                 this.localData["wireThickness"] = wire.standardName;
                 this.taskQueueStore.resolveDimensionWithTolerance(wire.conductingWidth).then((dimension) => {
                     this.localData["wireWidth"] = dimension;
+                    this.wireShown = { wireThickness: wire.standardName, wireWidth: dimension };
                     this.forceUpdate += 1;
                 })
             }
         },
         assignWire() {
             this.errorMessage = "";
+            // The inputs report an update when they receive the values read back from the
+            // wire of the design. Nothing was changed then, and the wire of the design
+            // stays: built again from the two knobs it is the catalogue wire of that
+            // thickness, which is another wire when the design holds a copper thickness
+            // of its own (a loaded "3 oz." wire 0.5 mm thick came back 0.104 mm thick,
+            // and its stored layout was cleared and wound again; ABT #1838).
+            if (this.wireShown != null
+                && this.localData["wireThickness"] === this.wireShown.wireThickness
+                && this.localData["wireWidth"] === this.wireShown.wireWidth) {
+                return;
+            }
             let wire = {};
             if (this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "" && this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != "Dummy") {
                 wire = this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire;
@@ -170,6 +184,7 @@ export default {
 
                 this.$stateStore.wire2DVisualizerState.plotCurrentViews[this.windingIndex] = null;
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire = wire;
+                this.wireShown = { wireThickness: wire.standardName, wireWidth: wire.conductingWidth.nominal };
                 if (!this.taskQueueStore.windingIndexChangeBlock && !wireUnchanged) {
                     this.cleanCoil();
                     this.$emit("wireUpdated", this.windingIndex);

@@ -118,6 +118,12 @@ export default {
     watch: {
     },
     mounted () {
+        // The loader turns the loading state on and leaves it to the coil panel to end
+        // it. Only the wound panel did: after a planar design was loaded it stayed on
+        // for good, and the core panel ignores what the user changes while it is on.
+        if (this.$stateStore.loadingDesign) {
+            this.releaseLoadingDesignSoon();
+        }
         this.tryToWind();
         this.assignLocalData(this.masStore.mas.magnetic);
 
@@ -137,6 +143,7 @@ export default {
         this.subscriptions.push(this.masStore.$onAction(({name, args, after}) => {
             after(() => {
                 if (name == "importedMas") {
+                    this.releaseLoadingDesignSoon();
                     this.assignLocalData(this.masStore.mas.magnetic);
                     this.getStackUp(this.masStore.mas.magnetic.coil);
                     this.tryToWind();
@@ -183,9 +190,17 @@ export default {
     },
     beforeUnmount () {
         if (this._windTimer) clearTimeout(this._windTimer);
+        if (this._loadingTimer) clearTimeout(this._loadingTimer);
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
+        releaseLoadingDesignSoon() {
+            if (this._loadingTimer) clearTimeout(this._loadingTimer);
+            this._loadingTimer = setTimeout(() => {
+                this.$stateStore.loadingDesign = false;
+                this._loadingTimer = null;
+            }, 2000);
+        },
         getWindingIndex(coil, windinName) {
             let foundWindingIndex = null;
             coil.functionalDescription.forEach((winding, windingIndex) => {
