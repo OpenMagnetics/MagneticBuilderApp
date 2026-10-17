@@ -1772,6 +1772,38 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
         },
 
+        resultsAnalyzed(success = true, dataOrMessage = '') {
+        },
+
+        // MKF's findings on a simulated MAS (ABT #1855): simulate no longer judges, it returns numbers
+        // for every operating point; analyze_results says where those numbers describe a saturating
+        // core, a voltage that is not volt-second balanced, a temperature above a limit, a core past
+        // its material's data. [{operatingPointIndex, operatingPointName?, code, message}].
+        async analyzeResults(mas) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const stripNullsForWasm = (v) => {
+                if (Array.isArray(v)) { v.forEach(stripNullsForWasm); return v; }
+                if (v && typeof v === 'object') {
+                    for (const k of Object.keys(v)) {
+                        if (v[k] === null || v[k] === 'null' || v[k] === undefined) delete v[k];
+                        else stripNullsForWasm(v[k]);
+                    }
+                }
+                return v;
+            };
+            const cleanMas = stripNullsForWasm(JSON.parse(JSON.stringify({ inputs: mas.inputs, magnetic: mas.magnetic, outputs: mas.outputs })));
+            const result = await mkf.analyze_results(JSON.stringify(cleanMas));
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.resultsAnalyzed(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            const findings = JSON.parse(result);
+            setTimeout(() => {this.resultsAnalyzed(true, findings);}, this.task_standard_response_delay);
+            return findings;
+        },
+
         simulated(success = true, dataOrMessage = '') {
         },
 

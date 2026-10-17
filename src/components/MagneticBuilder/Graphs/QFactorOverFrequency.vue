@@ -5,7 +5,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
-import { describeGraphError } from './graphErrors.js'
+import { describeGraphError, describeCurveDataLimits } from './graphErrors.js'
 
 </script>
 
@@ -55,6 +55,9 @@ export default {
         const recentChange = false;
         const tryingToSweep = false;
         const errorMessage = "";
+        // MKF's word on the curve's own data (ABT #1861): estimated stretches, drawn dashed, and
+        // stretches it cannot compute, where the curve stops.
+        const dataLimitNotes = [];
         const subscriptions = [];
 
         return {
@@ -66,6 +69,7 @@ export default {
             recentChange,
             tryingToSweep,
             errorMessage,
+            dataLimitNotes,
             subscriptions,
             _sweepTimer: null,
             _triggerTimer: null,
@@ -141,6 +145,9 @@ export default {
                 this.qFactorOverFrequencyData[0].xMinimum =Math.min(...curve2D.xPoints);
                 this.qFactorOverFrequencyData[0].yMaximum =Math.max(...curve2D.yPoints);
                 this.qFactorOverFrequencyData[0].yMinimum =Math.min(...curve2D.yPoints);
+                this.qFactorOverFrequencyData[0].dashedPoints = curve2D.extrapolatedPoints ?? null;
+                this.qFactorOverFrequencyData[0].dashedLabel = 'Q Factor (estimated permeability)';
+                this.dataLimitNotes = describeCurveDataLimits(curve2D);
                 this.forceUpdate += 1;
                 this.errorMessage = "";
                 this.loading = false;
@@ -149,6 +156,8 @@ export default {
                 console.error(error);
                 this.loading = false;
                 this.errorMessage = describeGraphError(error, "the Q factor");
+                this.dataLimitNotes = [];
+                this.qFactorOverFrequencyData[0].dashedPoints = null;
                 this.qFactorOverFrequencyData[0].data = {
                     x: [],
                     y: [],
@@ -190,6 +199,9 @@ export default {
                     :pointsColor="$styleStore.magneticBuilder.graphPointsColor.color"
                     :textColor="$styleStore.magneticBuilder.inputTextColor.color"
                 />
+                <div v-if="errorMessage == '' && !loading && dataLimitNotes.length > 0" :data-cy="dataTestLabel + '-Graph-DataLimits'" class="graph-data-limits">
+                    <div v-for="note in dataLimitNotes" :key="note">{{note}}</div>
+                </div>
             </div>
         </div>
     </div>
@@ -208,6 +220,12 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+}
+
+.graph-data-limits {
+    font-size: 0.85em;
+    opacity: 0.85;
+    margin-top: 0.25rem;
 }
 
 .graph-viz-col {

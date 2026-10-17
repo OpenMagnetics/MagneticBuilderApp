@@ -5,6 +5,7 @@ import WindingSelector from '../Common/WindingSelector.vue'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
 import { useModelSettingsStore } from '../../../stores/modelSettings'
+import { useSimulationFindingsStore } from '../../../stores/simulationFindings'
 import * as Defaults from '/WebSharedComponents/assets/js/defaults.js'
 </script>
 
@@ -357,6 +358,8 @@ export default {
                 const coilReady = coreReady && coil.turnsDescription != null && coil.layersDescription != null;
                 if (coilReady && (inputsString != this.lastSimulatedInputs || magneticsString != this.lastSimulatedMagnetics || modelsString != this.lastSimulatedModels)) {
 
+                    // The findings shown were for the design before this change.
+                    useSimulationFindingsStore().clear(this.masStore.$id);
                     this.taskQueueStore.simulate(this.masStore.mas, modelsData).then((mas) => {
 
                         this.lastSimulatedInputs = inputsString;
@@ -368,6 +371,18 @@ export default {
                         this.loading = false;
                         this.dataUptoDate = true;
                         this.simulationError = '';
+                        // MKF's verdict on these outputs, per operating point (ABT #1855). Asked
+                        // for this simulation only: a later one replaces it, a failed one drops it.
+                        const findingsStore = useSimulationFindingsStore();
+                        this.taskQueueStore.analyzeResults(mas).then((findings) => {
+                            if (inputsString == this.lastSimulatedInputs && magneticsString == this.lastSimulatedMagnetics) {
+                                findingsStore.set(this.masStore.$id, findings);
+                            }
+                        })
+                        .catch((error) => {
+                            findingsStore.clear(this.masStore.$id);
+                            this.simulationError = `MKF could not analyse the simulated results: ${error?.message || String(error)}`;
+                        });
                     })
                     .catch(error => {
                         // Show the real MKF error in the panel — a console-only
@@ -380,6 +395,7 @@ export default {
                         // core loss computed for another coil. Drop them; the panel shows
                         // the error instead.
                         this.masStore.mas.outputs = [];
+                        useSimulationFindingsStore().clear(this.masStore.$id);
                         console.error('[CoilInfo] Simulation error:', error);
                         this.loading = false;
                     });
@@ -388,6 +404,7 @@ export default {
                     // Core or coil still being processed: the shown values are not
                     // for this design yet. The coreProcessed / wound event that ends
                     // the processing simulates again.
+                    useSimulationFindingsStore().clear(this.masStore.$id);
                     this.dataUptoDate = false;
                     this.loading = false;
                 }

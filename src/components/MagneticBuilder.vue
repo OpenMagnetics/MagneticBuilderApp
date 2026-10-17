@@ -5,6 +5,7 @@ import AdvancedCoreSelector from './MagneticBuilder/Core/AdvancedCoreSelector.vu
 import AdvancedCoilInfo from './MagneticBuilder/Coil/AdvancedCoilInfo.vue'
 import { recordDesign } from '/WebSharedComponents/assets/js/telemetry.js'
 import { useMagneticBuilderSettingsStore } from '../stores/magneticBuilderSettings'
+import { useSimulationFindingsStore } from '../stores/simulationFindings'
 
 </script>
 
@@ -135,6 +136,25 @@ export default {
         // The distinct messages of the actions that are failing, in the order they failed.
         calculationIssues() {
             return [...new Set(Object.values(this.calculationWarnings))];
+        },
+        // MKF's findings on the last simulation (ABT #1855), one group per operating point, the
+        // selected point first: a point that saturates or whose voltage is not balanced still gets
+        // its numbers, and this is where it says so.
+        simulationFindingsByPoint() {
+            const findings = useSimulationFindingsStore().of(this.masStore.$id);
+            const groups = new Map();
+            for (const finding of findings) {
+                const index = finding.operatingPointIndex;
+                if (!groups.has(index)) {
+                    const name = finding.operatingPointName ?? this.masStore.mas.inputs?.operatingPoints?.[index]?.name ?? `Operating point ${index + 1}`;
+                    groups.set(index, { index, name, messages: [] });
+                }
+                // MKF's message opens with the point it is about; the group heading names it already.
+                const message = finding.message.replace(/^At operating point \d+( \('[^']*'\))?(: |, )/, '');
+                groups.get(index).messages.push(message.charAt(0).toUpperCase() + message.slice(1));
+            }
+            return [...groups.values()].sort((a, b) =>
+                (a.index == this.operatingPointIndex ? -1 : 0) - (b.index == this.operatingPointIndex ? -1 : 0) || a.index - b.index);
         },
         /**
          * The layout on screen (ABT #1121): whichever the user picked in
@@ -410,6 +430,21 @@ export default {
             >
                 <i class="pi pi-times"></i>
             </button>
+        </div>
+        <div
+            v-if="simulationFindingsByPoint.length > 0"
+            :data-cy="dataTestLabel + '-SimulationFindings'"
+            class="alert alert-warning py-2 px-3 mb-2"
+            role="alert"
+        >
+            <div v-for="group in simulationFindingsByPoint" :key="group.index" :data-cy="dataTestLabel + '-SimulationFindings-' + group.index">
+                <i class="pi pi-exclamation-triangle me-2"></i>
+                <strong>{{group.name}}<template v-if="group.index == operatingPointIndex"> (shown)</template>:</strong>
+                <template v-if="group.messages.length == 1"> {{group.messages[0]}}</template>
+                <ul v-else class="mb-1 ps-4">
+                    <li v-for="message in group.messages" :key="message">{{message}}</li>
+                </ul>
+            </div>
         </div>
         <div
             class="row"

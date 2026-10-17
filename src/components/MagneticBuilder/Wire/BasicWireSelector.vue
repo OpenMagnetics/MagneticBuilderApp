@@ -447,9 +447,11 @@ export default {
                     // Only update coil and trigger actions if not blocked
                     if (!this.taskQueueStore.windingIndexChangeBlock) {
                         this.masStore.mas.magnetic.coil.functionalDescription = coil.functionalDescription;
-                        // Preserve sections/turns layout from adviser (e.g. CMC spacers); only wipe if absent
+                        // Preserve sections/layers/turns layout from adviser (e.g. CMC spacers); only wipe if absent.
+                        // The layers carry the interlayer insulation, which cannot be rebuilt from sections and turns (ABT #1892)
                         if (coil.sectionsDescription) {
                             this.masStore.mas.magnetic.coil.sectionsDescription = coil.sectionsDescription;
+                            this.masStore.mas.magnetic.coil.layersDescription = coil.layersDescription ?? null;
                             this.masStore.mas.magnetic.coil.turnsDescription = coil.turnsDescription ?? null;
                             // Propagate bobbin sectionsOrientation so subsequent wind() calls
                             // inherit CONTIGUOUS for CMC toroids instead of resetting to OVERLAPPING
@@ -509,9 +511,11 @@ export default {
                     // Only update coil and trigger actions if not blocked
                     if (!this.taskQueueStore.windingIndexChangeBlock) {
                         this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex] = winding;
-                        // Preserve sections/turns layout from adviser (e.g. CMC spacers); only wipe if absent
+                        // Preserve sections/layers/turns layout from adviser (e.g. CMC spacers); only wipe if absent.
+                        // The layers carry the interlayer insulation, which cannot be rebuilt from sections and turns (ABT #1892)
                         if (result.coil?.sectionsDescription) {
                             this.masStore.mas.magnetic.coil.sectionsDescription = result.coil.sectionsDescription;
+                            this.masStore.mas.magnetic.coil.layersDescription = result.coil.layersDescription ?? null;
                             this.masStore.mas.magnetic.coil.turnsDescription = result.coil.turnsDescription ?? null;
                         } else {
                             this.cleanCoil();

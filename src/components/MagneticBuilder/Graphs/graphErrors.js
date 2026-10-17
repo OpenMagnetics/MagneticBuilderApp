@@ -32,3 +32,22 @@ export function describeGraphError(error, what) {
     const reason = text.replace(/^\[[A-Z_]+\]\s*/, '').trim();
     return reason === '' ? `Error calculating ${what}` : `Error calculating ${what}: ${reason}`;
 }
+
+/**
+ * What an impedance-type sweep (impedance, Q factor) says about its own data (ABT #1861): where the
+ * core's complex permeability is estimated rather than measured (the curve is drawn dashed there),
+ * and where it cannot even be estimated (the curve stops). One sentence per stretch, naming the
+ * material and the span it is measured over.
+ */
+export function describeCurveDataLimits(curve2D) {
+    const notes = [];
+    for (const range of curve2D.extrapolatedRanges ?? []) {
+        const parts = range.parts.length == 2 ? 'complex permeability' : `${range.parts[0]} part of the complex permeability`;
+        notes.push(`Dashed, ${formatFrequency(range.from)} to ${formatFrequency(range.to)}: ${range.material}'s ${parts} is measured from ${formatFrequency(range.tabulatedMinimum)} to ${formatFrequency(range.tabulatedMaximum)} and estimated here (${range.source}).`);
+    }
+    for (const range of curve2D.unavailableRanges ?? []) {
+        notes.push(`No values from ${formatFrequency(range.from)} to ${formatFrequency(range.to)}: ${String(range.reason).replace(/^\[[A-Z_]+\]\s*/, '')}`);
+    }
+    return notes;
+}
+
