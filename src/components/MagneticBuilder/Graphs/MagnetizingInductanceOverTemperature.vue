@@ -8,6 +8,8 @@ import { describeGraphError } from './graphErrors.js'
 </script>
 
 <script>
+// Warnings and errors go to the host's log when it has one (notices.js).
+import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js/notices.js'
 
 export default {
     props: {
@@ -72,6 +74,9 @@ export default {
     computed: {
     },
     watch: {
+        errorMessage(message) {
+            reportNotice('ERROR', 'Magnetizing Inductance Over Temperature graph', message);
+        },
         '$stateStore.graphParameters': {
             handler(newValue, oldValue) {
                 this.loading = true;
@@ -108,6 +113,9 @@ export default {
         this.subscriptions.forEach((subscription) => {subscription();})
     },
     methods: {
+        inlineNotices() {
+            return noticesShownInline();
+        },
         tryToSweep() {
             if (!this.tryingToSweep) {
                 this.recentChange = false;
@@ -171,7 +179,7 @@ export default {
             </div>
             <div :class="$slots.default ? 'col-12 md:col-9 graph-viz-col' : 'col-12 graph-viz-col'">
                 <img :data-cy="dataTestLabel + '-MagnetizingInductancesOverTemperature-loading'" v-if="loading" class="mx-auto d-block graph-loading" alt="loading" :src="$settingsStore.loadingGif">
-                <label v-if="errorMessage != ''" :data-cy="dataTestLabel + '-Graph-ErrorMessage'" class="text-danger m-0 d-block" style="font-size: 0.9em">{{ errorMessage }}</label>
+                <label v-if="inlineNotices() && errorMessage != ''" :data-cy="dataTestLabel + '-Graph-ErrorMessage'" class="text-danger m-0 d-block" style="font-size: 0.9em">{{ errorMessage }}</label>
                 <LineVisualizer 
                     v-show="!loading"
                     :data="magnetizingInductanceOverTemperatureData"
