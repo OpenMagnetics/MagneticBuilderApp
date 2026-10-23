@@ -146,17 +146,20 @@ export default {
             const findings = useSimulationFindingsStore().of(this.masStore.$id);
             const groups = new Map();
             for (const finding of findings) {
-                const index = finding.operatingPointIndex;
+                // A finding about the whole design (an edgewise bend tighter than the wire's mandrel) has no point.
+                const index = finding.operatingPointIndex ?? null;
                 if (!groups.has(index)) {
-                    const name = finding.operatingPointName ?? this.masStore.mas.inputs?.operatingPoints?.[index]?.name ?? `Operating point ${index + 1}`;
+                    const name = index == null ? 'Design'
+                        : finding.operatingPointName ?? this.masStore.mas.inputs?.operatingPoints?.[index]?.name ?? `Operating point ${index + 1}`;
                     groups.set(index, { index, name, messages: [] });
                 }
                 // MKF's message opens with the point it is about; the group heading names it already.
                 const message = finding.message.replace(/^At operating point \d+( \('[^']*'\))?(: |, )/, '');
                 groups.get(index).messages.push(message.charAt(0).toUpperCase() + message.slice(1));
             }
-            return [...groups.values()].sort((a, b) =>
-                (a.index == this.operatingPointIndex ? -1 : 0) - (b.index == this.operatingPointIndex ? -1 : 0) || a.index - b.index);
+            // The design's own findings first, then the selected point, then the rest in order.
+            const rank = (group) => group.index == null ? -2 : group.index == this.operatingPointIndex ? -1 : 0;
+            return [...groups.values()].sort((a, b) => rank(a) - rank(b) || (a.index ?? 0) - (b.index ?? 0));
         },
         /**
          * The layout on screen (ABT #1121): whichever the user picked in
