@@ -239,6 +239,9 @@ export default {
         }
 
         this.magneticBuilt = this.isMagneticBuilt();
+        // Report the state on arrival too: until the first history entry the step would otherwise
+        // block with its default (false) and no reason.
+        this.$emit("canContinue", this.magneticBuilt, this.magneticBuilt ? [] : this.getIncompleteInputReasons());
         // Block history during initial mount — intermediate states (processCore,
         // bobbin regen, winding) won't create entries. The settle recorder below
         // (or the first wind() completion) lifts the block and saves the
