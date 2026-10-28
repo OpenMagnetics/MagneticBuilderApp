@@ -126,15 +126,38 @@ function checkMasDocument(where, kind, cleaned) {
     fn(JSON.stringify(cleaned));
 }
 
+// What each sentry-guarded call is, as the user knows it.
+const SENTRY_CALLS = {
+    masAutocomplete: 'the design could not be completed',
+    simulate: 'the simulation was not run',
+    adviseCore: 'the core adviser was not run',
+    adviseAllWires: 'the wire adviser was not run',
+    adviseWire: 'the wire adviser was not run',
+    calculateFillingFactors: 'the filling factors were not calculated',
+};
+
 function masSentry(where, obj, kind = 'Mas') {
     try {
         const cleaned = stripNulls(JSON.parse(JSON.stringify(obj)));
         checkMasDocument(where, kind, cleaned);
     } catch (e) {
-        const msg = `[MAS sentry @ ${where}/${kind}] Frontend produced invalid payload: ${e.message}`;
         // eslint-disable-next-line no-console
-        console.error(msg);
-        throw new Error(msg);
+        console.error(`[MAS sentry @ ${where}/${kind}] Frontend produced invalid payload: ${e.message}`);
+        const call = SENTRY_CALLS[where];
+        if (call == null) {
+            throw new Error(`[MAS sentry] no description of the call '${where}' for the user: add it to SENTRY_CALLS. ${e.message}`);
+        }
+        // The validator words the violations (WebSharedComponents masValidator.js); a host without
+        // it reports quicktype's text, which is the detail either way.
+        // At most 8 of them, as the load dialog does; the full report is the detail.
+        const sentences = Array.isArray(e.masSchemaSentences) ? e.masSchemaSentences : [];
+        const inWords = sentences.length === 0 ? ''
+            : ` ${sentences.slice(0, 8).join(' ')}${sentences.length > 8 ? ` (and ${sentences.length - 8} more)` : ''}`;
+        const separator = e.message.indexOf(' Details: ');
+        const technical = separator >= 0 ? e.message.slice(separator + ' Details: '.length) : e.message;
+        throw new Error(`The design in the builder does not follow the MAS format, so ${call}.${inWords} `
+            + 'Correct these values, or report this design if you did not set them.'
+            + ` Details: [MAS sentry @ ${where}/${kind}] ${technical}`);
     }
 }
 

@@ -22,6 +22,28 @@ import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js
 
 <script>
 
+// A section margin with new widths, in the form the section already has. The MAS schema takes
+// the array [topOrLeft, bottomOrRight], or a marginInfo object that also states numberLayers and
+// layerThickness. No layer data is invented: an object that has other margin data (an insulation
+// material) but no layers cannot be completed and throws. An object holding only the two widths
+// (what earlier builder versions wrote) carries exactly what the array form does, so it becomes one.
+function marginWithWidths(margin, topOrLeft, bottomOrRight, sectionName) {
+    if (margin == null || Array.isArray(margin)) {
+        return [topOrLeft, bottomOrRight];
+    }
+    if (margin.numberLayers != null && margin.layerThickness != null) {
+        return { ...margin, topOrLeftWidth: topOrLeft, bottomOrRightWidth: bottomOrRight };
+    }
+    const otherKeys = Object.keys(margin).filter((key) => key != 'topOrLeftWidth' && key != 'bottomOrRightWidth');
+    if (otherKeys.length == 0) {
+        return [topOrLeft, bottomOrRight];
+    }
+    const missing = [];
+    if (margin.numberLayers == null) missing.push('the number of layers');
+    if (margin.layerThickness == null) missing.push('the layer thickness');
+    throw new Error(`Coil section '${sectionName}': its margin has no ${missing.join(' and no ')}, which the MAS format requires of a margin described as an object.`);
+}
+
 export default {
     emits: ['fits', 'plotModeChange', 'swapIncludeFringing', 'errorInImage', 'fillingFactorsChanged'],
     props: {
@@ -1589,16 +1611,21 @@ export default {
             coilDataBobbin.processedDescription.windingWindows[0].sectionsAlignment = this.localData.sectionsAlignment;
             coilDataBobbin.processedDescription.windingWindows[0].sectionsOrientation = this.localData.sectionsOrientation;
 
-            // Update margins in the coil's sectionsDescription
+            // Update margins in the coil's sectionsDescription, in a form the MAS schema accepts:
+            // the array [topOrLeft, bottomOrRight], or a marginInfo object, which also needs
+            // numberLayers and layerThickness. A margin is written in the form it already has, and
+            // a section without one gets the array form, which carries exactly the two widths.
             if (this.masStore.mas.magnetic.coil.sectionsDescription != null) {
                 let conductionSectionIndex = 0;
                 this.masStore.mas.magnetic.coil.sectionsDescription.forEach((section) => {
                     if (section.type == "conduction" && conductionSectionIndex < this.localData.dataPerSection.length) {
-                        if (section.margin == null) {
-                            section.margin = {};
+                        const datum = this.localData.dataPerSection[conductionSectionIndex];
+                        const topOrLeft = datum.topOrLeftMargin;
+                        const bottomOrRight = datum.bottomOrRightMargin;
+                        if (!Number.isFinite(topOrLeft) || !Number.isFinite(bottomOrRight)) {
+                            throw new Error(`Coil section '${section.name}': the margin widths are not numbers (top or left: ${topOrLeft}, bottom or right: ${bottomOrRight}).`);
                         }
-                        section.margin.topOrLeftWidth = this.localData.dataPerSection[conductionSectionIndex].topOrLeftMargin;
-                        section.margin.bottomOrRightWidth = this.localData.dataPerSection[conductionSectionIndex].bottomOrRightMargin;
+                        section.margin = marginWithWidths(section.margin, topOrLeft, bottomOrRight, section.name);
                         conductionSectionIndex++;
                     }
                 });

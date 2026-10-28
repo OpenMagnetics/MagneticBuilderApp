@@ -405,7 +405,7 @@ export default {
                         })
                         .catch((error) => {
                             findingsStore.clear(this.masStore.$id);
-                            this.simulationError = `MKF could not analyse the simulated results: ${error?.message || String(error)}`;
+                            this.simulationError = `The engine could not check the simulated results for problems: ${error?.message || String(error)}`;
                         });
                     })
                     .catch(error => {
@@ -467,7 +467,7 @@ export default {
                 :data-cy="dataTestLabel + '-CoilInfo-RefusedCoreMaterial'"
                 v-tooltip="refusedCoreMaterial.message"
                 class="text-danger my-2"
-            >The core material {{ refusedCoreMaterial.name }} must be updated: MKF refuses this design's copy of it, so nothing is computed with it.</h6>
+            >The core material {{ refusedCoreMaterial.name }} must be updated: the engine refuses this design's copy of its data, so nothing is computed with it. Update it to the library's copy, or choose another material.</h6>
             <h6
                 v-if="inlineNotices() && simulationError"
                 :data-cy="dataTestLabel + '-CoilInfo-SimulationError'"
