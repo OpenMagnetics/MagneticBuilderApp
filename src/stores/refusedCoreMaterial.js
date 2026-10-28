@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-// A core material MKF refuses as data no material can have (MATERIAL_INVALID_PROPERTY, e.g. Fair-Rite
-// 95's old record: remanence above saturation), per MAS store, as the host found it when the design
-// was loaded. The verdict is MKF's; this only remembers it. The info panels do not compute with that
+// A core material whose data MKF refuses (e.g. MATERIAL_INVALID_PROPERTY: Fair-Rite 95's old record,
+// remanence above saturation; INVALID_LOSS_DATA: an old DMR96 copy whose Steinmetz temperature factor
+// is negative), per MAS store, as the host found it when the design was loaded. The verdict is MKF's; this only remembers it. The info panels do not compute with that
 // copy, they say it must be updated (Alf, 2026-10-27). The verdict belongs to that exact copy: once
 // the design's material is anything else (the library's copy, another material) it no longer applies.
 export const useRefusedCoreMaterialStore = defineStore("refusedCoreMaterial", () => {
