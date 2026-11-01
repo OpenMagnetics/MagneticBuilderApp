@@ -55,6 +55,7 @@ const BUILDER_ACTION_SOURCES = {
     planarWound: 'Winding',
     layersAndTurnsRewound: 'Winding',
     fillingFactorsCalculated: 'Winding',
+    insulationThicknessRead: 'Winding',
     coreProcessed: 'Core',
     coreShapeProcessed: 'Core',
     coreMaterialProcessed: 'Core',

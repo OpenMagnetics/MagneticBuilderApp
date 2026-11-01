@@ -134,6 +134,7 @@ const SENTRY_CALLS = {
     adviseAllWires: 'the wire adviser was not run',
     adviseWire: 'the wire adviser was not run',
     calculateFillingFactors: 'the filling factors were not calculated',
+    getInsulationThickness: 'the insulation thickness was not read',
 };
 
 function masSentry(where, obj, kind = 'Mas') {
@@ -2092,6 +2093,41 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 const fillingFactors = JSON.parse(result);
                 setTimeout(() => {this.fillingFactorsCalculated(true, fillingFactors);}, this.task_standard_response_delay);
                 return fillingFactors;
+            }
+        },
+
+        insulationThicknessRead(success = true, dataOrMessage = '') {
+        },
+
+        // The thickness of an insulation section (isLayer false) or of an insulation layer
+        // (isLayer true) of the coil, in metres, as MKF measures it on that coil's geometry
+        // (a toroid's insulation section is a wedge: its thickness is not one of its dimensions).
+        async getInsulationThickness(coil, name, isLayer) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            masSentry('getInsulationThickness', coil, 'Coil');
+            let result;
+            try {
+                result = isLayer
+                    ? await mkf.get_insulation_layer_thickness(JSON.stringify(coil), name)
+                    : await mkf.get_insulation_section_thickness(JSON.stringify(coil), name);
+            }
+            catch (error) {
+                // A worker failure (an engine without these functions answers "Method not found").
+                const message = `Exception: the thickness of the insulation ${isLayer ? 'layer' : 'section'} '${name}' could not be read: ${error?.message ?? error}`;
+                setTimeout(() => {this.insulationThicknessRead(false, message);}, this.task_standard_response_delay);
+                throw new Error(message);
+            }
+
+            if (result.startsWith("Exception")) {
+                setTimeout(() => {this.insulationThicknessRead(false, result);}, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            else {
+                const thickness = JSON.parse(result);
+                setTimeout(() => {this.insulationThicknessRead(true, thickness);}, this.task_standard_response_delay);
+                return thickness;
             }
         },
 
