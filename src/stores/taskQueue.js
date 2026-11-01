@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { waitForMkf, isWorkerMode, applyRealWindingGeometrySetting, updateEngineSettings, queueEngineSettingsTask } from '/WebSharedComponents/assets/js/mkfRuntime'
-import { checkAndFixMas, clean, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
+import { checkAndFixMas, clean, withoutNulls, toTitleCase, deepCopy } from '/WebSharedComponents/assets/js/utils.js'
 import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { Convert as MasConvert } from '/WebSharedComponents/assets/ts/MAS.ts'
 import { useSettingsStore } from './settings'
@@ -1200,7 +1200,8 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             await mkf.ready;
 
             const result = await mkf.sweep_volumetric_losses_over_frequency(
-                typeof material === 'string' ? material : JSON.stringify(clean(material)),
+                // The material as it is (withoutNulls, not clean: a material can require an empty object).
+                typeof material === 'string' ? material : JSON.stringify(withoutNulls(material)),
                 temperature, magneticFluxDensityPeak, start, stop, numberElements, method);
             if (typeof result === 'string' && result.startsWith('Exception')) {
                 setTimeout(() => { this.volumetricLossesSwept(false, result); }, this.task_standard_response_delay);
