@@ -979,6 +979,10 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 settings.preferredCoreMaterialFerriteManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.ferrite;
                 settings.preferredCoreMaterialPowderManufacturer = preferredManufacturer ?? this._engineDefaultPreferredManufacturers.powder;
 
+                // The stock toggle of the core selector decides which catalogue is searched.
+                if (typeof adviserSettings.useOnlyCoresInStock !== 'boolean') {
+                    throw new Error(`The core adviser needs useOnlyCoresInStock as a boolean, got ${JSON.stringify(adviserSettings.useOnlyCoresInStock)}`);
+                }
                 // CMC topology → force toroidal, no distributed gaps (winding goes around).
                 const isCmc = inputs?.designRequirements?.topology?.toLowerCase() === 'commonmodechoke';
 
@@ -988,14 +992,14 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     settings["coreIncludeStacks"] = true;
                     settings["useToroidalCores"] = true;
                     settings["useConcentricCores"] = false;
-                    settings["useOnlyCoresInStock"] = false;
+                    settings["useOnlyCoresInStock"] = adviserSettings.useOnlyCoresInStock;
                 }
                 else {
                     settings["coreIncludeDistributedGaps"] = adviserSettings.allowDistributedGaps;
                     settings["coreIncludeMargin"] = true;
                     settings["coreIncludeStacks"] = adviserSettings.allowStacks;
                     settings["useToroidalCores"] = adviserSettings.allowToroidalCores;
-                    settings["useOnlyCoresInStock"] = false;
+                    settings["useOnlyCoresInStock"] = adviserSettings.useOnlyCoresInStock;
                 }
                 const enableTemperatureFilter = adviserSettings.enableTemperatureFilter === true;
                 settings["coreAdviserEnableTemperatureFilter"] = enableTemperatureFilter;
