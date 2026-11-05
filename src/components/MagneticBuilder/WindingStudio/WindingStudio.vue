@@ -1683,16 +1683,28 @@ function endTransformDrag() {
         return;
     }
     // The gaps the custom rectangle leaves to the window walls along the
-    // sections axis BECOME the section's margins (tape): the drawn layout and
+    // margin axis BECOME the section's margins (tape): the drawn layout and
     // the MAS margin data stay consistent (painter, insulation panel, fill).
+    // The window's sectionsOrientation picks that axis exactly as the painter
+    // (paint_two_piece_set_margin) and marginRects() read it back: overlapping
+    // sections carry top/bottom margins, contiguous sections left/right ones.
+    // Both orientations derive them: a contiguous section used to send no
+    // margin at all, so it kept whatever it had before — top/bottom gaps from
+    // an overlapping layout — which then drew as left/right tape across the
+    // whole window.
     const window = model.value.windows.find((w) => w.index === drag_.section.windingWindow) ?? model.value.windows[0];
     let margin = null;
-    if (window != null && (window.sectionsOrientation ?? 'overlapping') !== 'contiguous') {
-        const topGap = Math.max(0, rect.y - window.rect.y);
-        const bottomGap = Math.max(0, window.rect.y + window.rect.height - (rect.y + rect.height));
+    if (window != null) {
+        const contiguous = (window.sectionsOrientation ?? 'overlapping') === 'contiguous';
+        const beforeGap = contiguous
+            ? Math.max(0, rect.x - window.rect.x)
+            : Math.max(0, rect.y - window.rect.y);
+        const afterGap = contiguous
+            ? Math.max(0, window.rect.x + window.rect.width - (rect.x + rect.width))
+            : Math.max(0, window.rect.y + window.rect.height - (rect.y + rect.height));
         margin = [
-            topGap < 0.05 ? 0 : topGap / MARGIN_MM,
-            bottomGap < 0.05 ? 0 : bottomGap / MARGIN_MM,
+            beforeGap < 0.05 ? 0 : beforeGap / MARGIN_MM,
+            afterGap < 0.05 ? 0 : afterGap / MARGIN_MM,
         ];
     }
     // SVG mm (y flipped) -> physical meters, center-based like MAS sections.

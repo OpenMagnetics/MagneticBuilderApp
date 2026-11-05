@@ -908,6 +908,9 @@ export default {
                 console.error(`[WindingStudio] No bobbin window ${windowIndex} to set the layout on`);
                 return;
             }
+            if (targetWindow.sectionsOrientation != null && targetWindow.sectionsOrientation !== sectionsOrientation) {
+                this.dropLayoutOfReorientedWindow(windowIndex);
+            }
             targetWindow.sectionsOrientation = sectionsOrientation;
             targetWindow.sectionsAlignment = sectionsAlignment;
             if (windingOrder != null) {
@@ -929,6 +932,31 @@ export default {
             this.oldInputsCoilHash = null;
             this.recentChange = true;
             this.tryToWind();
+        },
+        dropLayoutOfReorientedWindow(windowIndex) {
+            // A section margin is [topOrLeft, bottomOrRight] and its window's sections
+            // orientation says which axis that is: top/bottom for overlapping sections,
+            // left/right for contiguous ones (MKF wind_by_rectangular_sections and the
+            // painter). Re-orienting the window does not turn a top margin into a left
+            // one, so the margins the window's sections carry stop meaning anything:
+            // kept, a 14 mm bottom gap of an overlapping layout became a 14 mm right
+            // margin of a contiguous one, tape drawn across the whole window over the
+            // turns. The drawn rectangles go with them: they were drawn for the other
+            // layout, and their wall gaps are where those margins came from.
+            // A section without windingWindow lives in the coil's first window (MAS).
+            const reorientedSections = this.conductiveSections
+                .map((section, sectionIndex) => ({ section, sectionIndex }))
+                .filter(({ section }) => (section.windingWindow == null ? 0 : section.windingWindow) === windowIndex);
+            for (const { section, sectionIndex } of reorientedSections) {
+                const datum = this.localData.dataPerSection[sectionIndex];
+                if (datum == null) {
+                    // No per-section entry: the wind sends no margin for it, so there is none to clear.
+                    continue;
+                }
+                datum.topOrLeftMargin = 0;
+                datum.bottomOrRightMargin = 0;
+            }
+            this.windingStudioStore.clearCustomSectionRectsForSections(reorientedSections.map(({ section }) => section.name));
         },
         async resizeSectionRectFromStudio({ sectionName, coordinates, dimensions, margin = null }) {
             // Winding-studio free transform: write the custom rectangle into the
@@ -1642,6 +1670,16 @@ export default {
         },
         coilUpdated() {
             this.updateDataPerSection();
+            // The Alignment panel's Windings Orientation is window 0's sections orientation;
+            // it reaches the bobbin in assignCoilData, so the bobbin still holds the old one.
+            const coilBobbin = this.masStore.mas.magnetic.coil.bobbin;
+            const windowZeroBobbin = Array.isArray(coilBobbin) ? coilBobbin[0] : coilBobbin;
+            const previousOrientation = (typeof windowZeroBobbin === 'object' && windowZeroBobbin != null)
+                ? windowZeroBobbin.processedDescription?.windingWindows?.[0]?.sectionsOrientation
+                : null;
+            if (previousOrientation != null && previousOrientation !== this.localData.sectionsOrientation) {
+                this.dropLayoutOfReorientedWindow(0);
+            }
             this.assignCoilData();
             this.recentChange = true;
             this.tryToWind();
