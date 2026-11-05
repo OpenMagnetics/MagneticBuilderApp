@@ -341,7 +341,19 @@ export default {
                 <i class="pi pi-box"></i>
                 <span>Core Info</span>
             </div>
-            <div v-if="!dataUptoDate && hasCalculableData" class="coreinfo-outdated-badge">Outdated</div>
+            <div class="coreinfo-header-right">
+                <!-- In the title bar, right-aligned (Alf, 2026-11-05). -->
+                <span
+                    v-if="resultsShown && coreHold != null"
+                    :data-cy="dataTestLabel + '-CoreInfo-HeldAtDataLimit'"
+                    class="coreinfo-hold-hint text-danger"
+                    tabindex="0"
+                    role="note"
+                    v-tooltip="coreHold.full"
+                    :aria-label="coreHold.full"
+                ><i class="pi pi-exclamation-triangle"></i> {{ coreHold.short }}</span>
+                <div v-if="!dataUptoDate && hasCalculableData" class="coreinfo-outdated-badge">Outdated</div>
+            </div>
         </div>
         <div class="coreinfo-body">
             <h6
@@ -359,15 +371,6 @@ export default {
                 :aria-label="simulationErrorFull"
                 class="text-danger my-2"
             >{{ simulationErrorShort }}</h6>
-            <span
-                v-if="resultsShown && coreHold != null"
-                :data-cy="dataTestLabel + '-CoreInfo-HeldAtDataLimit'"
-                class="coreinfo-hold-hint text-danger"
-                tabindex="0"
-                role="note"
-                v-tooltip="coreHold.full"
-                :aria-label="coreHold.full"
-            ><i class="pi pi-exclamation-triangle"></i> {{ coreHold.short }}</span>
             <template v-if="advancedMode">
                 <div class="coreinfo-grid" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
                     <div class="coreinfo-cell">
@@ -793,13 +796,20 @@ export default {
     text-align: center;
 }
 
+.coreinfo-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
 .coreinfo-hold-hint {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     font-size: 0.75rem;
     font-weight: 600;
-    margin: 0.25rem 0;
+    letter-spacing: normal;
     cursor: help;
 }
 

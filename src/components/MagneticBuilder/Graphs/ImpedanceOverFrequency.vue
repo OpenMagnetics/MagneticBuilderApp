@@ -245,7 +245,7 @@ export default {
                         tabindex="0"
                         role="note"
                         :aria-label="dataLimitNotes.join(' ')"
-                        v-tooltip.top="dataLimitNotes.join('\n\n')">
+                        v-tooltip.top="{ value: dataLimitNotes.join('\n\n'), class: 'graph-data-limits-tooltip' }">
                         <i class="pi pi-info-circle"></i>
                         <span>Dashed: estimated material data</span>
                     </span>
@@ -296,5 +296,19 @@ export default {
 .graph-loading {
     max-width: 60%;
     height: auto;
+}
+</style>
+
+<style>
+/* The tooltip is teleported to <body>, out of reach of the scoped styles. Its notes are long:
+   give it room so it reads as a few wide paragraphs, not a narrow column. */
+.graph-data-limits-tooltip {
+    max-width: min(44rem, 92vw) !important;
+}
+
+.graph-data-limits-tooltip .p-tooltip-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.8rem;
 }
 </style>
