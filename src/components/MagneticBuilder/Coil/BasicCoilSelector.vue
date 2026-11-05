@@ -1842,8 +1842,13 @@ export default {
                 <div
                     v-if="magneticBuilderSettingsStore.enableWindingStudio && useVisualizers && masStore.mas.magnetic != null && masStore.mas.magnetic.core != null && masStore.mas.magnetic.core.functionalDescription.shape != ''"
                     class="mb-3"
-                    :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;') + ' max-height: 50vh;'"
+                    :style="(imageUpToDate? 'opacity: 100%;' : 'opacity: 20%;')"
                 >
+                    <!-- No max-height here: the studio's drawing is already capped at 45vh, and
+                         its toolbar above it wraps to several lines in a narrow card. A 50vh cap
+                         on this box kept the box at 50vh while its content ran past it, over
+                         Advanced Parasitics and the inputs below (Alf, 2026-11-05: "the image
+                         overflows the space in the coil card"). -->
                     <WindingStudio
                         :dataTestLabel="dataTestLabel"
                         :masStore="masStore"
