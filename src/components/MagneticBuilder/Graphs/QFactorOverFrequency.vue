@@ -205,8 +205,20 @@ export default {
                     :pointsColor="$styleStore.magneticBuilder.graphPointsColor.color"
                     :textColor="$styleStore.magneticBuilder.inputTextColor.color"
                 />
-                <div v-if="errorMessage == '' && !loading && dataLimitNotes.length > 0" :data-cy="dataTestLabel + '-Graph-DataLimits'" class="graph-data-limits">
-                    <div v-for="note in dataLimitNotes" :key="note">{{note}}</div>
+                <!-- Where the curve rests on estimated or missing material data. The sentences are long, so they
+                     sit behind a small pill and its tooltip, as the Fourier chart does with its hidden harmonics
+                     (Alf, 2026-11-05: no long text around the graphs). -->
+                <div v-if="errorMessage == '' && !loading && dataLimitNotes.length > 0" class="graph-data-limits">
+                    <span
+                        :data-cy="dataTestLabel + '-Graph-DataLimits'"
+                        class="graph-data-limits-hint"
+                        tabindex="0"
+                        role="note"
+                        :aria-label="dataLimitNotes.join(' ')"
+                        v-tooltip.top="dataLimitNotes.join('\n\n')">
+                        <i class="pi pi-info-circle"></i>
+                        <span>Dashed: estimated material data</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -229,9 +241,21 @@ export default {
 }
 
 .graph-data-limits {
-    font-size: 0.85em;
-    opacity: 0.85;
     margin-top: 0.25rem;
+}
+
+.graph-data-limits-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.18rem 0.5rem;
+    background: rgba(var(--p-primary-rgb), 0.18);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.45);
+    border-radius: 999px;
+    cursor: help;
 }
 
 .graph-viz-col {

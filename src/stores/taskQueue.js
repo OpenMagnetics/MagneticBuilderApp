@@ -757,6 +757,12 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     }
                     else {
                         coreLossesData = JSON.parse(result);
+                        // Since ABT #2273 the engine always states whether the core was held at its
+                        // material's data limit. An engine that does not is older than this web: its
+                        // silence would read as "not held".
+                        if (typeof coreLossesData.coreHeldAtDataLimit !== 'boolean') {
+                            throw new Error('Exception: the engine did not say whether the core was held at its material data limit (coreHeldAtDataLimit); it is older than this web app');
+                        }
                     }
                 }
 
@@ -1290,13 +1296,22 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             data.turnsRatio = coil.functionalDescription[0].numberTurns / coil.functionalDescription[windingIndex].numberTurns;
             data.dcResistancePerMeter = await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints?.conditions?.ambientTemperature || 25);
 
+            // These bindings answer -1 when MKF refuses (its reason goes to the worker's console). A -1
+            // is not a figure: divided into a current density it showed -0.08 uA/mm2 (ABT #2277).
+            const refused = (value, what) => {
+                if (value === -1) {
+                    throw new Error(`Exception: the engine could not calculate the ${what} of winding '${coil.functionalDescription[windingIndex].name}' (its current may lack processed data)`);
+                }
+                return value;
+            };
             if (hasCurrentData) {
-                data.skinAcResistancePerMeter = await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-                data.skinAcFactor = await mkf.calculate_skin_ac_factor(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-                data.dcLossesPerMeter = await mkf.calculate_dc_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-                data.skinAcLossesPerMeter = await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, operatingPoints.conditions.ambientTemperature);
-                data.effectiveCurrentDensity = (await mkf.calculate_effective_current_density(wireString, currentString, operatingPoints.conditions.ambientTemperature)) / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
-                data.effectiveSkinDepth = await mkf.calculate_effective_skin_depth(wireMaterial, currentString, operatingPoints.conditions.ambientTemperature);
+                const temperature = operatingPoints.conditions.ambientTemperature;
+                data.skinAcResistancePerMeter = refused(await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, temperature), 'skin-effect AC resistance');
+                data.skinAcFactor = refused(await mkf.calculate_skin_ac_factor(wireString, currentString, temperature), 'skin-effect AC factor');
+                data.dcLossesPerMeter = refused(await mkf.calculate_dc_losses_per_meter(wireString, currentString, temperature), 'DC losses');
+                data.skinAcLossesPerMeter = refused(await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, temperature), 'skin-effect AC losses');
+                data.effectiveCurrentDensity = refused(await mkf.calculate_effective_current_density(wireString, currentString, temperature), 'effective current density') / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
+                data.effectiveSkinDepth = refused(await mkf.calculate_effective_skin_depth(wireMaterial, currentString, temperature), 'effective skin depth');
             } else {
                 // Set default values when no current data is available
                 data.skinAcResistancePerMeter = data.dcResistancePerMeter;

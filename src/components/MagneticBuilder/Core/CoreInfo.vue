@@ -11,6 +11,8 @@ import { useRefusedCoreMaterialStore } from '../../../stores/refusedCoreMaterial
 <script>
 // Warnings and errors go to the host's log when it has one (notices.js).
 import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js/notices.js'
+import { engineMessageInFull, engineMessageFirstSentence } from '../engineMessage.js'
+import { formatPower, formatTemperature } from '/WebSharedComponents/assets/js/utils.js'
 
 export default {
     props: {
@@ -47,6 +49,10 @@ export default {
         const tryingToSend = false;
         const dataUptoDate = false;
         const simulationError = '';
+        // The results (permeabilities, flux densities, inductance, losses) belong to the design they
+        // were computed for. A failed simulation hides them: the last good numbers of another core must
+        // not sit next to this core's geometry (ABT #2277).
+        const resultsShown = false;
         const subscriptions = [];
 
         return {
@@ -61,10 +67,42 @@ export default {
             tryingToSend,
             dataUptoDate,
             simulationError,
+            resultsShown,
             subscriptions,
         }
     },
     computed: {
+        simulationErrorShort() {
+            return engineMessageFirstSentence(this.simulationError);
+        },
+        simulationErrorFull() {
+            return engineMessageInFull(this.simulationError);
+        },
+        // ABT #2273: the core's temperature ran past its material's data and MKF held it at the limit;
+        // the losses shown are the held ones. Null when it was not held.
+        coreHold() {
+            if (this.coreLossesData?.coreHeldAtDataLimit !== true) return null;
+            const heldAt = this.coreLossesData.coreHeldAt;
+            const limits = {
+                curieTemperature: 'its Curie temperature',
+                permeabilityDataEnd: 'the end of its permeability data',
+                lossDataEnd: 'the end of its loss data',
+            };
+            if (!(heldAt?.limit in limits)) {
+                throw new Error(`The engine held the core at an unknown material data limit '${heldAt?.limit}'`);
+            }
+            const temperature = formatTemperature(heldAt.temperature);
+            const temperatureText = `${temperature.label} ${temperature.unit}`;
+            const before = this.coreLossesData.coreLossesBeforeHold?.coreLosses;
+            if (typeof before !== 'number') {
+                throw new Error('The engine held the core at its material data limit but did not say what it lost before the hold');
+            }
+            const beforePower = formatPower(before);
+            return {
+                short: `Held at ${temperatureText}`,
+                full: `The core gets hotter than ${limits[heldAt.limit]} (${temperatureText}), so the engine held it there: the losses shown are at ${temperatureText}, not at the core's real temperature. Just before the hold the core lost ${beforePower.label} ${beforePower.unit}.`,
+            };
+        },
         // MKF refused the design's copy of its core material when it was loaded: nothing is
         // computed with it until it is updated (Alf, 2026-10-27).
         refusedCoreMaterial() {
@@ -105,8 +143,8 @@ export default {
                 }
             },
         },
-    },
-    watch: {
+        // (One watch block: a second `watch:` key in this object replaced the first, and the two
+        // watchers above never ran -- ABT #2277.)
         simulationError(message) {
             reportNotice('ERROR', 'Core info', message);
         },
@@ -230,6 +268,7 @@ export default {
                 // computed again.
                 this.simulationError = '';
                 this.dataUptoDate = false;
+                this.resultsShown = false;
                 return;
             }
             // Check if there are pending simulation models from the state store
@@ -275,6 +314,10 @@ export default {
                         this.magnetizingInductanceCheck = data.magnetizingInductanceCheck;
                         this.dataUptoDate = true;
                         this.simulationError = '';
+                        this.resultsShown = true;
+                        if (this.coreHold != null) {
+                            reportNotice('WARNING', 'Core info', this.coreHold.full);
+                        }
                     }
                 })
                 .catch(error => {
@@ -282,6 +325,7 @@ export default {
                     // left the user staring at losses that never arrive.
                     this.simulationError = error?.message || String(error);
                     this.dataUptoDate = false;
+                    this.resultsShown = false;
                     console.error(error);
                 });
             }
@@ -306,11 +350,24 @@ export default {
                 v-tooltip="refusedCoreMaterial.message"
                 class="text-danger my-2"
             >The core material {{ refusedCoreMaterial.name }} must be updated: the engine refuses this design's copy of its data, so nothing is computed with it. Update it to the library's copy, or choose another material.</h6>
+            <!-- Shown here as well as in the Engine log (Alf, 2026-11-05, ABT #2277): a Resimulate that
+                 fails must say so where the user is looking. First sentence inline, all of it on hover. -->
             <h6
-                v-if="inlineNotices() && simulationError"
+                v-if="simulationError"
                 :data-cy="dataTestLabel + '-CoreInfo-SimulationError'"
+                v-tooltip="simulationErrorFull"
+                :aria-label="simulationErrorFull"
                 class="text-danger my-2"
-            >{{ simulationError }}</h6>
+            >{{ simulationErrorShort }}</h6>
+            <span
+                v-if="resultsShown && coreHold != null"
+                :data-cy="dataTestLabel + '-CoreInfo-HeldAtDataLimit'"
+                class="coreinfo-hold-hint text-danger"
+                tabindex="0"
+                role="note"
+                v-tooltip="coreHold.full"
+                :aria-label="coreHold.full"
+            ><i class="pi pi-exclamation-triangle"></i> {{ coreHold.short }}</span>
             <template v-if="advancedMode">
                 <div class="coreinfo-grid" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
                     <div class="coreinfo-cell">
@@ -397,6 +454,7 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
+                    <template v-if="resultsShown">
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.initialPermeability"
@@ -589,9 +647,10 @@ export default {
                             :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                             :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                            :textColor="coreHold != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
+                    </template>
                 </div>
                 <p
                     v-else
@@ -602,6 +661,7 @@ export default {
             </template>
             <template v-else>
                 <div class="coreinfo-simple" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
+                    <template v-if="resultsShown">
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
                         class="text-left pl-4 pr-4"
@@ -640,7 +700,7 @@ export default {
                         :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        :textColor="coreHold != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                     />
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.saturationProportion"
@@ -661,6 +721,7 @@ export default {
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                         :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                     />
+                    </template>
                 </div>
                 <p
                     v-else
@@ -730,6 +791,16 @@ export default {
     margin: 0;
     padding: 0.9rem 0.4rem;
     text-align: center;
+}
+
+.coreinfo-hold-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+    cursor: help;
 }
 
 .coreinfo-grid {

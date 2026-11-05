@@ -13,6 +13,7 @@ import * as Defaults from '/WebSharedComponents/assets/js/defaults.js'
 <script>
 // Warnings and errors go to the host's log when it has one (notices.js).
 import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js/notices.js'
+import { engineMessageInFull, engineMessageFirstSentence } from '../engineMessage.js'
 
 export default {
     props: {
@@ -79,6 +80,12 @@ export default {
         }
     },
     computed: {
+        simulationErrorShort() {
+            return engineMessageFirstSentence(this.simulationError);
+        },
+        simulationErrorFull() {
+            return engineMessageInFull(this.simulationError);
+        },
         // MKF refused the design's copy of its core material when it was loaded: nothing is
         // computed with it until it is updated (Alf, 2026-10-27).
         refusedCoreMaterial() {
@@ -419,6 +426,9 @@ export default {
                         // core loss computed for another coil. Drop them; the panel shows
                         // the error instead.
                         this.masStore.mas.outputs = [];
+                        // ... and the panel's own copy of them (ABT #2277: after a core change the
+                        // panel went on showing the previous core's losses next to the error).
+                        this.outputsData = {};
                         useSimulationFindingsStore().clear(this.masStore.$id);
                         console.error('[CoilInfo] Simulation error:', error);
                         this.loading = false;
@@ -468,11 +478,15 @@ export default {
                 v-tooltip="refusedCoreMaterial.message"
                 class="text-danger my-2"
             >The core material {{ refusedCoreMaterial.name }} must be updated: the engine refuses this design's copy of its data, so nothing is computed with it. Update it to the library's copy, or choose another material.</h6>
+            <!-- Shown here as well as in the Engine log (Alf, 2026-11-05, ABT #2277). First sentence
+                 inline, all of it on hover. -->
             <h6
-                v-if="inlineNotices() && simulationError"
+                v-if="simulationError"
                 :data-cy="dataTestLabel + '-CoilInfo-SimulationError'"
+                v-tooltip="simulationErrorFull"
+                :aria-label="simulationErrorFull"
                 class="text-danger my-2"
-            >{{ simulationError }}</h6>
+            >{{ simulationErrorShort }}</h6>
             <img
                 :data-cy="dataTestLabel + '-BasicCoilInfo-loading'"
                 v-if="loading"

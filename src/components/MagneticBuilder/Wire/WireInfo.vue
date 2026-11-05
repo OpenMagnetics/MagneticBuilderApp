@@ -4,6 +4,8 @@ import { wireMaterialDefault } from '/WebSharedComponents/assets/js/defaults.js'
 import { effectiveBobbin } from '/WebSharedComponents/assets/js/utils.js'
 import { tooltipsMagneticBuilder } from '/WebSharedComponents/assets/js/texts.js'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
+import { reportNotice } from '/WebSharedComponents/assets/js/notices.js'
+import { engineMessageInFull, engineMessageFirstSentence } from '../engineMessage.js'
 </script>
 
 <script>
@@ -67,11 +69,20 @@ export default {
             recentChange,
             tryingToSend,
             dataUptoDate,
+            // MKF's refusal of this wire's figures (ABT #2277): shown instead of the figures, which
+            // would otherwise be the binding's -1 (Jeff of -0.08 uA/mm2) or another winding's.
+            wireError: '',
             subscriptions,
             _simTimer: null,
         }
     },
     computed: {
+        wireErrorShort() {
+            return engineMessageFirstSentence(this.wireError);
+        },
+        wireErrorFull() {
+            return engineMessageInFull(this.wireError);
+        },
         tooMuchCurrentDensity() {
             return this.effectiveCurrentDensity > 12;
         },
@@ -177,6 +188,7 @@ export default {
 
                         this.computeIfCompliesWithTurnsRatio();
                         this.dataUptoDate = true;
+                        this.wireError = '';
                     }
                     else {
                         console.error(args[1])
@@ -261,6 +273,12 @@ export default {
                 this.masStore.mas.magnetic.coil.functionalDescription[this.windingIndex].wire != null) {
 
                 this.taskQueueStore.calculateWireData(this.masStore.mas.magnetic.coil, this.masStore.mas.inputs.operatingPoints[this.operatingPointIndex], this.windingIndex)
+                .catch((error) => {
+                    this.wireError = error?.message || String(error);
+                    this.dataUptoDate = false;
+                    reportNotice('ERROR', 'Wire info', this.wireError);
+                    console.error(error);
+                });
             }
         },
     }
@@ -277,8 +295,15 @@ export default {
             <div v-if="!dataUptoDate && hasCalculableData" class="wireinfo-outdated-badge">Outdated</div>
         </div>
         <div class="wireinfo-body">
+            <h6
+                v-if="wireError"
+                :data-cy="dataTestLabel + '-WireInfo-Error'"
+                v-tooltip="wireErrorFull"
+                :aria-label="wireErrorFull"
+                class="text-danger my-2"
+            >{{ wireErrorShort }}</h6>
             <template v-if="advancedMode">
-                <div class="wireinfo-grid" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
+                <div v-if="!wireError" class="wireinfo-grid" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.dcResistancePerMeter"
@@ -482,7 +507,7 @@ export default {
                 </div>
             </template>
             <template v-else>
-                <div class="wireinfo-simple" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
+                <div v-if="!wireError" class="wireinfo-simple" :class="{ 'wireinfo-dimmed': !dataUptoDate }">
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
                         class="text-left pl-4 pr-4"
