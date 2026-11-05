@@ -11,6 +11,7 @@ import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { buildStudioModel, buildConnectionViews, windingColor, annularSectorPath, woundDistanceToAngleDeg, wiresEqual } from './geometry.js';
 import { waitForMkf, applyRealWindingGeometrySetting } from '/WebSharedComponents/assets/js/mkfRuntime';
 import { useSettingsStore } from '/src/stores/settings';
+import { reportNotice } from '/WebSharedComponents/assets/js/notices.js';
 
 const props = defineProps({
     dataTestLabel: {
@@ -248,19 +249,37 @@ function marginRects(section) {
             ? { x: section.rect.x, y: window.rect.y + window.rect.height - after * MARGIN_MM, width: section.rect.width, height: after * MARGIN_MM }
             : { x: window.rect.x + window.rect.width - after * MARGIN_MM, y: section.rect.y, width: after * MARGIN_MM, height: section.rect.height });
     }
-    // Clamp to the window so pathological margins never spill onto the core.
-    return rects
-        .map((rect) => {
-            const x0 = Math.max(rect.x, window.rect.x);
-            const y0 = Math.max(rect.y, window.rect.y);
-            const x1 = Math.min(rect.x + rect.width, window.rect.x + window.rect.width);
-            const y1 = Math.min(rect.y + rect.height, window.rect.y + window.rect.height);
-            return x1 - x0 > 1e-6 && y1 - y0 > 1e-6
-                ? { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }
-                : null;
-        })
-        .filter(Boolean);
+    // Drawn as stored, as MKF's painter draws them outside the studio. A clamp to the window
+    // used to hide margins that cannot fit: the studio showed a strip of tape while the painter
+    // drew 11.89 mm of it across the core of a 3.08 mm wide window (Alf, 2026-11-06: "why is the
+    // 2D in studio different than the 2D when we go out??"). marginOverflow() flags those.
+    return rects;
 }
+
+// A margin that cannot fit beside its section in the window, along the margin axis: the
+// message saying so, else null.
+function marginOverflow(section) {
+    if (section.margin == null || section.type !== 'conduction' || model.value.kind === 'toroidal') {
+        return null;
+    }
+    const window = model.value.windows.find((w) => w.index === section.windingWindow) ?? model.value.windows[0];
+    if (window == null) {
+        return null;
+    }
+    const [before, after] = section.margin;
+    const contiguous = (window.sectionsOrientation ?? 'overlapping') === 'contiguous';
+    const span = contiguous ? window.rect.width : window.rect.height;
+    const size = contiguous ? section.rect.width : section.rect.height;
+    const total = (before + after) * MARGIN_MM + size;
+    if (total <= span * (1 + 1e-3)) {
+        return null;
+    }
+    const mm = (value) => `${value.toFixed(2)} mm`;
+    return `Section '${section.name}' has margins of ${mm(before * MARGIN_MM)} and ${mm(after * MARGIN_MM)} `
+        + `${contiguous ? 'left and right' : 'above and below'} of its ${mm(size)} ${contiguous ? 'width' : 'height'}, `
+        + `which do not fit its ${mm(span)} ${contiguous ? 'wide' : 'high'} window`;
+}
+
 
 // Litz bundle icon: a center strand plus a ring of six, scaled to the glyph.
 function litzStrands(turn) {
@@ -1148,6 +1167,21 @@ function endBoundaryDrag(event) {
 // distance from the winding-window wall to the section edge. Dragging an edge
 // emits the margin; the winder re-spreads/re-packs the turns accordingly.
 const MARGIN_MM = 1000;
+
+const marginOverflows = computed(() => (model.value?.sections ?? [])
+    .map((section) => ({ section, message: marginOverflow(section) }))
+    .filter((entry) => entry.message != null));
+
+// Each overflow goes to the Engine log once per message.
+const reportedMarginOverflows = new Set();
+watch(marginOverflows, (overflows) => {
+    for (const { message } of overflows) {
+        if (!reportedMarginOverflows.has(message)) {
+            reportedMarginOverflows.add(message);
+            reportNotice('ERROR', 'Winding Studio', message);
+        }
+    }
+}, { immediate: true });
 const sectionEdgeHandles = computed(() => {
     if (!props.editable || !model.value.valid || model.value.kind === 'toroidal' || model.value.windows.length === 0) {
         return [];
@@ -1931,6 +1965,16 @@ function endTransformDrag() {
                             />
                         </template>
                     </template>
+                    <!-- Margins that do not fit their window, outlined -->
+                    <rect
+                        v-for="{ section, message } in marginOverflows"
+                        :key="section.name + 'margin-overflow'"
+                        v-bind="section.rect"
+                        class="winding-studio-margin-overflow"
+                        fill="none"
+                        pointer-events="none"
+                        :data-cy="dataTestLabel + '-WindingStudio-margin-overflow-' + section.name"
+                    ><title>{{ message }}</title></rect>
                     <!-- Insulation layers -->
                     <template v-if="fieldImage == null">
                         <template v-for="layer in model.layers">
@@ -2684,6 +2728,11 @@ function endTransformDrag() {
 .winding-studio-fit-bad {
     color: #ff8b8b;
     border-color: #ff8b8b88;
+}
+.winding-studio-margin-overflow {
+    stroke: var(--p-danger);
+    stroke-width: 0.15;
+    stroke-dasharray: 0.4 0.25;
 }
 .winding-studio-slot {
     cursor: copy;
