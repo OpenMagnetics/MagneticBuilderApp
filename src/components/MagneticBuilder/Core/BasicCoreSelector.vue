@@ -617,7 +617,19 @@ export default {
         },
         materialUpdated(value) {
             this.changeMadeByUser = true;
-            
+
+            // Shape picked before any material: shapeUpdated() could only store the shape, so the core still has
+            // the type and gapping it had before (twoPieceSet, three residual gaps). processCore on that sends a
+            // toroid as a two-piece set and the engine refuses it (bad_optional_access), leaving no effective
+            // parameters. Complete the core through checkAndFixMas instead, as shapeUpdated() does when the
+            // material is already known.
+            if (this.masStore.mas.magnetic.core.processedDescription == null) {
+                const mas = deepCopy(this.masStore.mas);
+                mas.magnetic.core.functionalDescription.material = value;
+                this.taskQueueStore.checkAndFixMas(mas);
+                return;
+            }
+
             // Save current bobbin wall and column thickness before material change
             const currentBobbin = this.masStore.mas.magnetic.coil.bobbin;
             this.pendingBobbinThickness = {

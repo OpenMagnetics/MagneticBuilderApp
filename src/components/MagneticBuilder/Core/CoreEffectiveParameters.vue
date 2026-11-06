@@ -38,7 +38,8 @@ export default {
         // Changes when the material or the shape changes: the only inputs of the fill factor.
         fillFactorKey() {
             const description = this.core?.functionalDescription;
-            if (description == null || description.material == null || description.shape == null) {
+            // A builder with no material or shape picked yet holds "" there: nothing to look up.
+            if (description == null || !description.material || !description.shape) {
                 return null;
             }
             return JSON.stringify([description.material, description.shape]);
