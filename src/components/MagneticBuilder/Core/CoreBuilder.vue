@@ -21,6 +21,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        showEffectiveParameters: {
+            type: Boolean,
+            default: false,
+        },
         enableSimulation: {
             type: Boolean,
             default: true,
@@ -138,6 +142,7 @@ export default {
                 :readOnly="readOnly"
                 :operatingPointIndex="operatingPointIndex"
                 :enableSimulation="enableSimulation"
+                :showEffectiveParameters="showEffectiveParameters"
                 :enableAutoSimulation="enableAutoSimulation"
                 :enableSubmenu="enableSubmenu"
                 :enableCustomize="enableCustomize"

@@ -83,6 +83,11 @@ export const BUILDER_LAYOUT_PROPS = {
         type: Boolean,
         default: true,
     },
+    /** Show the core's effective parameters and fill factor without a simulation (CoreEffectiveParameters). */
+    showEffectiveParameters: {
+        type: Boolean,
+        default: false,
+    },
 };
 
 /** Events every layout may raise. `customizeCore` opens the advanced core editor. */

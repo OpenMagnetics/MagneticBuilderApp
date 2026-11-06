@@ -110,6 +110,12 @@ export default {
             type: Boolean,
             default: true,
         },
+        // Show the core's effective parameters (le, Ae, Ve, and a tape-wound core's fill factor) in the core panel
+        // without running a simulation: for hosts that only define the magnetic (CoreDataX).
+        showEffectiveParameters: {
+            type: Boolean,
+            default: false,
+        },
         enableAdvisers: {
             type: Boolean,
             default: true,
@@ -232,6 +238,7 @@ export default {
                 enableGraphs: this.enableGraphs && this.magneticBuilderSettingsStore.enableGraphs,
                 showInterleavingOrder: this.showInterleavingOrder,
                 enableTemperaturePlot: this.enableTemperaturePlot,
+                showEffectiveParameters: this.showEffectiveParameters,
             };
         },
         enableVisualizers() {

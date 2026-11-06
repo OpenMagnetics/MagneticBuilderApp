@@ -7,6 +7,7 @@ import BasicCoreSubmenu from './BasicCoreSubmenu.vue'
 import { coreAdviserWeights, defaultUngappedGapping } from '/WebSharedComponents/assets/js/defaults.js'
 import * as Defaults from '/WebSharedComponents/assets/js/defaults.js'
 import CoreInfo from './CoreInfo.vue'
+import CoreEffectiveParameters from './CoreEffectiveParameters.vue'
 import CoreShapeSelector from './CoreShapeSelector.vue'
 import CoreMaterialTableModal, { buildMaterialRow } from './CoreMaterialTableModal.vue'
 import { useHistoryStore } from '../../../stores/history'
@@ -42,6 +43,10 @@ export default {
         masStore: {
             type: Object,
             required: true,
+        },
+        showEffectiveParameters: {
+            type: Boolean,
+            default: false,
         },
         enableSimulation: {
             type: Boolean,
@@ -931,6 +936,12 @@ export default {
                     :masStore="masStore"
                     :operatingPointIndex="operatingPointIndex"
                     :enableAutoSimulation="enableAutoSimulation"
+                />
+
+                <CoreEffectiveParameters
+                    v-if="showEffectiveParameters && !loading"
+                    :dataTestLabel="dataTestLabel + '-CoreEffectiveParameters'"
+                    :masStore="masStore"
                 />
 
                 <BasicCoreSubmenu 

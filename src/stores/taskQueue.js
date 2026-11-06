@@ -377,6 +377,26 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             }
         },
 
+        // Fill factor k_f of a tape-wound core and its source (MKF Core::get_tape_wound_fill_factor_with_source),
+        // the factor already applied to the effective area calculate_core_data returns. null when the core is
+        // not tape-wound (ferrite, powder, laminated stacks). Throws with the engine's message otherwise.
+        async getTapeWoundFillFactor(core) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            if (typeof mkf.get_tape_wound_fill_factor !== 'function') {
+                throw new Error('This engine build has no get_tape_wound_fill_factor (needs WebLibMKF with the fill-factor binding)');
+            }
+            const request = deepCopy(core);
+            request.geometricalDescription = null;
+            request.processedDescription = null;
+            const result = await mkf.get_tape_wound_fill_factor(JSON.stringify(request));
+            if (result.startsWith('Exception')) {
+                throw new Error(result);
+            }
+            return JSON.parse(result);
+        },
+
         coreFromShapeProcessed(success = true, dataOrMessage = '') {
         },
 
