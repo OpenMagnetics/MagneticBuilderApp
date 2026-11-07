@@ -48,6 +48,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        completeCoreOnMaterialChange: {
+            type: Boolean,
+            default: false,
+        },
         enableSimulation: {
             type: Boolean,
             default: true,
@@ -622,8 +626,9 @@ export default {
             // the type and gapping it had before (twoPieceSet, three residual gaps). processCore on that sends a
             // toroid as a two-piece set and the engine refuses it (bad_optional_access), leaving no effective
             // parameters. Complete the core through checkAndFixMas instead, as shapeUpdated() does when the
-            // material is already known.
-            if (this.masStore.mas.magnetic.core.processedDescription == null) {
+            // material is already known. Only for hosts that ask for it (completeCoreOnMaterialChange, CoreDataX), so
+            // other builders keep their behaviour.
+            if (this.completeCoreOnMaterialChange && this.masStore.mas.magnetic.core.processedDescription == null) {
                 const mas = deepCopy(this.masStore.mas);
                 mas.magnetic.core.functionalDescription.material = value;
                 this.taskQueueStore.checkAndFixMas(mas);

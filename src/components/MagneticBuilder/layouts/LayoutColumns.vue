@@ -35,6 +35,7 @@ export default {
                 <CoreBuilder
                     :masStore="masStore"
                     :showEffectiveParameters="showEffectiveParameters"
+                    :completeCoreOnMaterialChange="completeCoreOnMaterialChange"
                     :readOnly="readOnly"
                     :useVisualizers="useVisualizers"
                     :enableSimulation="enableSimulation"

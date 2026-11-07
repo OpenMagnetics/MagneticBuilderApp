@@ -25,6 +25,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        completeCoreOnMaterialChange: {
+            type: Boolean,
+            default: false,
+        },
         enableSimulation: {
             type: Boolean,
             default: true,
@@ -143,6 +147,7 @@ export default {
                 :operatingPointIndex="operatingPointIndex"
                 :enableSimulation="enableSimulation"
                 :showEffectiveParameters="showEffectiveParameters"
+                :completeCoreOnMaterialChange="completeCoreOnMaterialChange"
                 :enableAutoSimulation="enableAutoSimulation"
                 :enableSubmenu="enableSubmenu"
                 :enableCustomize="enableCustomize"

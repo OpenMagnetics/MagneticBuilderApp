@@ -116,6 +116,12 @@ export default {
             type: Boolean,
             default: false,
         },
+        // A material picked while the core was never processed (shape chosen first) completes the core through
+        // checkAndFixMas instead of only reprocessing it. Off by default; CoreDataX turns it on.
+        completeCoreOnMaterialChange: {
+            type: Boolean,
+            default: false,
+        },
         enableAdvisers: {
             type: Boolean,
             default: true,
@@ -239,6 +245,7 @@ export default {
                 showInterleavingOrder: this.showInterleavingOrder,
                 enableTemperaturePlot: this.enableTemperaturePlot,
                 showEffectiveParameters: this.showEffectiveParameters,
+                completeCoreOnMaterialChange: this.completeCoreOnMaterialChange,
             };
         },
         enableVisualizers() {

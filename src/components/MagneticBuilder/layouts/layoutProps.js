@@ -88,6 +88,11 @@ export const BUILDER_LAYOUT_PROPS = {
         type: Boolean,
         default: false,
     },
+    /** Complete a never-processed core through checkAndFixMas when a material is picked (BasicCoreSelector). */
+    completeCoreOnMaterialChange: {
+        type: Boolean,
+        default: false,
+    },
 };
 
 /** Events every layout may raise. `customizeCore` opens the advanced core editor. */

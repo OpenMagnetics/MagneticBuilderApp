@@ -77,6 +77,7 @@ export default {
                     :dataTestLabel="dataTestLabel"
                     :masStore="masStore"
                     :showEffectiveParameters="showEffectiveParameters"
+                    :completeCoreOnMaterialChange="completeCoreOnMaterialChange"
                     :readOnly="readOnly"
                     :operatingPointIndex="operatingPointIndex"
                     :enableSimulation="enableSimulation"
