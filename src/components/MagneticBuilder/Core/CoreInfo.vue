@@ -315,9 +315,9 @@ export default {
                         this.dataUptoDate = true;
                         this.simulationError = '';
                         this.resultsShown = true;
-                        if (this.coreHold != null) {
-                            reportNotice('WARNING', 'Core info', this.coreHold.full);
-                        }
+                        // The hold is shown in this panel ("Held at ...") and the Simulation findings say the
+                        // core runs past its material data; a third copy in the Engine log only repeated them
+                        // (ABT #2302, Alf 2026-11-07).
                     }
                 })
                 .catch(error => {

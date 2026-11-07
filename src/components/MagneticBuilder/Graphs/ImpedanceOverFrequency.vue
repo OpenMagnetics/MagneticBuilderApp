@@ -5,7 +5,7 @@ import Dimension from '/WebSharedComponents/DataInput/Dimension.vue'
 import { removeTrailingZeroes, deepCopy, isMobile, toCamelCase } from '/WebSharedComponents/assets/js/utils.js'
 import LineVisualizer from '/WebSharedComponents/Common/LineVisualizer.vue'
 import { useTaskQueueStore } from '../../../stores/taskQueue'
-import { describeGraphError, describeCurveDataLimits } from './graphErrors.js'
+import { describeGraphError, describeCurveDataLimits, graphFailureLevel } from './graphErrors.js'
 </script>
 
 <script>
@@ -109,7 +109,7 @@ export default {
     },
     watch: {
         errorMessage(message) {
-            reportNotice('ERROR', 'Impedance Over Frequency graph', message);
+            reportNotice(graphFailureLevel(message), 'Impedance Over Frequency graph', message);
         },
         '$stateStore.graphParameters': {
             handler(newValue, oldValue) {
