@@ -282,6 +282,21 @@ export default {
     line-height: 1.25 !important;
 }
 
+/* Tooltips open from the cell's outer edge (left column to the right, right column to the left) and wrap at
+   18rem, so a long one (kf's source) stays inside the card instead of being centred past its edge. The
+   variables are those of CoreDataX's CSS tooltip; PrimeVue's tooltip (OpenMagnetics) ignores them. */
+.coreinfo-grid > .coreinfo-cell:nth-child(odd) {
+    --v-tooltip-left: 0%;
+    --v-tooltip-translate: translate(0, -110%);
+}
+.coreinfo-grid > .coreinfo-cell:nth-child(even) {
+    --v-tooltip-left: 100%;
+    --v-tooltip-translate: translate(-100%, -110%);
+}
+.coreinfo-cell :deep(.data-v-tooltip::after) {
+    max-width: min(18rem, calc(100vw - 2rem));
+}
+
 /* A full-width line under the cells: why the fill factor could not be found. */
 .coreinfo-note {
     grid-column: 1 / -1;
