@@ -12,7 +12,7 @@ import { useRefusedCoreMaterialStore } from '../../../stores/refusedCoreMaterial
 // Warnings and errors go to the host's log when it has one (notices.js).
 import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js/notices.js'
 import { engineMessageInFull, engineMessageFirstSentence } from '../engineMessage.js'
-import { formatPower, formatTemperature } from '/WebSharedComponents/assets/js/utils.js'
+import { describeCoreHold } from '../coreHold.js'
 
 export default {
     props: {
@@ -83,37 +83,7 @@ export default {
         // design's, so they are never shown as the result: the panel shows this error instead, with
         // the losses just before the hold. Null when the core was not held.
         coreHold() {
-            if (this.coreLossesData?.coreHeldAtDataLimit !== true) return null;
-            const heldAt = this.coreLossesData.coreHeldAt;
-            // The limits libMKF's calculate_core_losses names (CoreDataCeilingSource).
-            const limits = {
-                curieTemperature: 'No steady temperature: the core reaches its Curie temperature',
-                permeabilityDataEnd: 'No steady temperature within the material\'s data: the core gets past the end of its permeability data',
-                lossDataEnd: 'No steady temperature within the material\'s data: the core gets past the end of its loss data',
-            };
-            if (!(heldAt?.limit in limits) || typeof heldAt?.temperature !== 'number') {
-                const message = `The engine held the core at a material data limit it did not describe (limit '${heldAt?.limit}', temperature ${heldAt?.temperature}), so its losses are unknown.`;
-                return { short: 'Held at a data limit', full: message, error: message };
-            }
-            const temperature = formatTemperature(heldAt.temperature);
-            const temperatureText = `${temperature.label} ${temperature.unit}`;
-            const reason = `${limits[heldAt.limit]} (${temperatureText}).`;
-            const before = this.coreLossesData.coreLossesBeforeHold;
-            let beforeText;
-            if (typeof before?.coreLosses !== 'number') {
-                beforeText = 'The engine did not report the losses before the hold, so the core losses are unknown.';
-            }
-            else if (typeof before.temperature !== 'number') {
-                const beforePower = formatPower(before.coreLosses);
-                beforeText = `Losses before the hold: ${beforePower.label} ${beforePower.unit}; the engine did not report the temperature they were computed at.`;
-            }
-            else {
-                const beforePower = formatPower(before.coreLosses);
-                const beforeTemperature = formatTemperature(before.temperature);
-                beforeText = `Losses before the hold: ${beforePower.label} ${beforePower.unit} at ${beforeTemperature.label} ${beforeTemperature.unit}.`;
-            }
-            const message = `${reason} ${beforeText}`;
-            return { short: `Held at ${temperatureText}`, full: message, error: message };
+            return describeCoreHold(this.coreLossesData);
         },
         // MKF refused the design's copy of its core material when it was loaded: nothing is
         // computed with it until it is updated (Alf, 2026-10-27).
@@ -578,7 +548,8 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
-                    <div class="coreinfo-cell">
+                    <!-- On a held core B is computed on the paramagnetic (mu_r = 1) core, far below the design's: hidden, the core-losses error says why. -->
+                    <div class="coreinfo-cell" v-if="coreHold == null">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
                             class="text-left"
@@ -600,7 +571,8 @@ export default {
                             :textColor="closeOrOverSaturation? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
-                    <div class="coreinfo-cell">
+                    <!-- On a held core B is computed on the paramagnetic (mu_r = 1) core, far below the design's: hidden, the core-losses error says why. -->
+                    <div class="coreinfo-cell" v-if="coreHold == null">
                         <DimensionReadOnly 
                             v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
                             class="text-left"
@@ -729,7 +701,8 @@ export default {
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                         :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
-                    <DimensionReadOnly 
+                    <!-- Computed on the held (paramagnetic) core: hidden with the losses. -->
+                    <DimensionReadOnly v-if="coreHold == null"
                         v-tooltip="tooltipsMagneticBuilder.saturationProportion"
                         class="text-left pl-4 pr-4"
                         :name="'Saturation Proportion'"
