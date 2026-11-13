@@ -47,6 +47,9 @@ const LOCALLY_REPORTED_ACTIONS = new Set([
     'simulated',
     'resultsAnalyzed',
     'coreLossesCalculated',
+    // The Core panel reports a failed or empty Core Advise itself, with the engine's reason;
+    // reported here as well, one advise was two records.
+    'coreAdvised',
 ]);
 
 // The part of the builder each other calculation belongs to, as the Engine log names it.

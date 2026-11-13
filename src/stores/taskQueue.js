@@ -218,6 +218,19 @@ function toArray(vectorOrArray) {
     return vectorOrArray;
 }
 
+// The core adviser's log ("[time] [LEVEL] [Core adviser] text" per line, as one string or a list)
+// as { level, text, raw } lines.
+function coreAdviserLogLines(log) {
+    if (log == null) {
+        return [];
+    }
+    const lines = Array.isArray(log) ? log.map(String) : String(log).split('\n');
+    return lines.map((raw) => raw.trim()).filter((raw) => raw !== '').map((raw) => {
+        const match = raw.match(/^\[[^\]]*\]\s*\[(TRACE|DEBUG|INFO|WARNING|ERROR|CRITICAL)\]\s*(?:\[[^\]]*\]\s*)?(.*)$/);
+        return match ? { level: match[1], text: match[2].trim(), raw } : { level: null, text: raw, raw };
+    });
+}
+
 export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
     state: () => ({
         task_standard_response_delay: 20,
@@ -1027,13 +1040,24 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                     settings["useToroidalCores"] = adviserSettings.allowToroidalCores;
                     settings["useOnlyCoresInStock"] = adviserSettings.useOnlyCoresInStock;
                 }
-                const enableTemperatureFilter = adviserSettings.enableTemperatureFilter === true;
-                settings["coreAdviserEnableTemperatureFilter"] = enableTemperatureFilter;
-                if (enableTemperatureFilter) {
-                    if (!Number.isFinite(adviserSettings.maximumTemperature)) {
-                        throw new Error(`The core adviser temperature filter is on but its maximum temperature is ${JSON.stringify(adviserSettings.maximumTemperature)}`);
+                // The temperature gate is the engine's own setting; the user's choice lives in
+                // adviserSettings.coreAdviserEnableTemperatureFilter / coreAdviserMaximumTemperature,
+                // where null (or a host without these keys) means the engine's own value, which
+                // is then left as it is. The old enableTemperatureFilter key no longer exists, so
+                // reading it switched the gate off on every advise.
+                const enableTemperatureFilter = adviserSettings.coreAdviserEnableTemperatureFilter;
+                if (enableTemperatureFilter != null) {
+                    if (typeof enableTemperatureFilter !== 'boolean') {
+                        throw new Error(`The core adviser temperature filter setting must be true or false, got ${JSON.stringify(enableTemperatureFilter)}`);
                     }
-                    settings["coreAdviserMaximumTemperature"] = adviserSettings.maximumTemperature;
+                    settings["coreAdviserEnableTemperatureFilter"] = enableTemperatureFilter;
+                }
+                const maximumTemperature = adviserSettings.coreAdviserMaximumTemperature;
+                if (maximumTemperature != null) {
+                    if (!Number.isFinite(maximumTemperature)) {
+                        throw new Error(`The core adviser maximum temperature must be a number, got ${JSON.stringify(maximumTemperature)}`);
+                    }
+                    settings["coreAdviserMaximumTemperature"] = maximumTemperature;
                 }
                 if (!('preferredWireStandard' in settings)) {
                     throw new Error('Engine settings do not expose preferredWireStandard: libMKF is older than the wire-standard preference (ABT #1110)');
@@ -1055,12 +1079,20 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 return data;
             }
             else {
-                // Surface the MKF Core Adviser log so we can see WHY every
-                // candidate was rejected (gap too large, temperature, losses, etc).
-                const logSummary = Array.isArray(log)
-                    ? log.slice(-20).join('\n')
-                    : (typeof log === 'string' ? log : JSON.stringify(log));
-                throw new Error(`No suitable core found for the given requirements\n--- MKF Core Adviser log ---\n${logSummary}`);
+                // No candidate: the reason is what the adviser logged (every candidate culled by a
+                // gap limit, a temperature, missing material data, ...). The error is flagged so
+                // the Core panel can tell it from an adviser that failed.
+                const engineLog = coreAdviserLogLines(log);
+                const warnings = engineLog.filter((line) => line.level === 'WARNING' || line.level === 'ERROR' || line.level === 'CRITICAL');
+                const reasonLines = [...new Set((warnings.length > 0 ? warnings : engineLog).map((line) => line.text))].slice(-3);
+                const engineReason = reasonLines.length > 0
+                    ? reasonLines.map((text) => /[.!?)]$/.test(text) ? text : text + '.').join(' ')
+                    : 'The engine logged no reason.';
+                const error = new Error(`The core adviser returned no candidate for these requirements. ${engineReason}`);
+                error.noCandidate = true;
+                error.engineReason = engineReason;
+                error.engineLog = engineLog.map((line) => line.raw);
+                throw error;
             }
         },
 

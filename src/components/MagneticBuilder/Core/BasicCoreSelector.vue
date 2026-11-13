@@ -701,6 +701,8 @@ export default {
             });
         },
         adviseCoreRequested() {
+            // A new advise replaces the last one's error (and reports its own, even when it is the same).
+            this.errorMessage = "";
             this.loading = true;
             setTimeout(() => this.adviseCore(), 100);
         },
@@ -738,13 +740,13 @@ export default {
                 .catch(error => {
                     // A zero-candidate advise and a failed advise read differently
                     // to the user: one is "relax the requirements", the other is
-                    // "something broke".
-                    this.errorMessage = /no candidate/i.test(error?.message ?? '')
-                        ? "No core can be advised for these requirements. Try another core-advise mode in Settings, or relax the requirements."
-                        : "No core can be advised. You are on your own.";
+                    // "something broke". Both say the engine's reason, and stay until
+                    // dismissed or replaced by the next advise.
+                    this.errorMessage = error?.noCandidate === true
+                        ? `No core can be advised for these requirements: ${error.engineReason} Try another core-advise mode in Settings, or relax the requirements.`
+                        : `The core adviser failed: ${error?.message ?? String(error)}`;
                     this.loading = false;
                     this.$emit('coreProcessed', false, error);
-                    setTimeout(() => {this.errorMessage = ""}, 10000);
                 });
             }
             else {
@@ -976,13 +978,36 @@ export default {
                     @adjustTurnsToInductance="adjustTurnsToInductance"
                 />
                 <label v-if="infoMessage" :data-cy="dataTestLabel + '-Core-adjust-info'" class="text-success col-12 pt-1" style="font-size: 0.7em">{{infoMessage}}</label>
-                <label v-if="inlineNotices()" class="text-danger col-12 pt-1" style="font-size: 0.7em">{{errorMessage}}</label>
+                <div v-if="inlineNotices() && errorMessage" class="core-error col-12 pt-1">
+                    <label :data-cy="dataTestLabel + '-Core-error'" class="text-danger" style="font-size: 0.7em">{{errorMessage}}</label>
+                    <button
+                        type="button"
+                        class="core-error-dismiss text-danger"
+                        :data-cy="dataTestLabel + '-Core-error-dismiss'"
+                        aria-label="Dismiss this message"
+                        v-tooltip="'Dismiss this message'"
+                        @click="errorMessage = ''"
+                    ><i class="pi pi-times"></i></button>
+                </div>
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
+.core-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+}
+.core-error-dismiss {
+    flex: none;
+    background: transparent;
+    border: none;
+    padding: 0 0.2rem;
+    font-size: 0.7em;
+    cursor: pointer;
+}
 .core-config-panel {
     background: linear-gradient(145deg, color-mix(in srgb, var(--p-gray-600) 6%, transparent) 0%, color-mix(in srgb, var(--p-gray-600) 2%, transparent) 100%);
     border: 1px solid color-mix(in srgb, var(--p-gray-600) 20%, transparent);
