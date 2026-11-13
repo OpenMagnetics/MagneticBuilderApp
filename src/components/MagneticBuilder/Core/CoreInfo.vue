@@ -13,6 +13,7 @@ import { useRefusedCoreMaterialStore } from '../../../stores/refusedCoreMaterial
 import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js/notices.js'
 import { engineMessageInFull, engineMessageFirstSentence } from '../engineMessage.js'
 import { describeCoreHold } from '../coreHold.js'
+import { coreInfoModels } from './coreInfoModels.js'
 
 export default {
     props: {
@@ -257,13 +258,7 @@ export default {
             const pendingModels = this.$stateStore.pendingSimulationModels;
             
             // Use pending models if available, otherwise fall back to store values
-            const modelsData = {
-                coreLosses: this.$userStore.selectedModels['coreLosses'] || Defaults.coreLossesModelDefault,
-                coreTemperature: this.$userStore.selectedModels['coreTemperature'] || Defaults.coreTemperatureModelDefault,
-                gapReluctance: this.$userStore.selectedModels['gapReluctance'] || Defaults.reluctanceModelDefault,
-                magneticFieldStrength: pendingModels?.magneticFieldStrengthModel || this.modelSettingsStore.magneticFieldStrengthModel,
-                magneticFieldStrengthFringingEffect: pendingModels?.magneticFieldStrengthFringingEffectModel || this.modelSettingsStore.magneticFieldStrengthFringingEffectModel
-            };
+            const modelsData = coreInfoModels(this.$userStore, this.modelSettingsStore, pendingModels);
             
             // Note: Don't clear pending models here - let CoilInfo.vue also use them
             // The field-strength models are loaded from the engine asynchronously on first open; until
