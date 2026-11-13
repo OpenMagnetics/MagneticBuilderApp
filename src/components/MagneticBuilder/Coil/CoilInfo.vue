@@ -86,6 +86,13 @@ export default {
         simulationErrorFull() {
             return engineMessageInFull(this.simulationError);
         },
+        // ABT #2370: MKF held the core at its material's data limit for this operating point
+        // (analyze_results' CORE_ABOVE_MATERIAL_DATA_LIMIT). The core losses of a held core are
+        // not the design's, so neither is a total that adds them: it is not shown.
+        coreHeldFinding() {
+            return useSimulationFindingsStore().of(this.masStore.$id).find((finding) =>
+                finding.code == 'CORE_ABOVE_MATERIAL_DATA_LIMIT' && finding.operatingPointIndex == this.operatingPointIndex) ?? null;
+        },
         // MKF refused the design's copy of its core material when it was loaded: nothing is
         // computed with it until it is updated (Alf, 2026-10-27).
         refusedCoreMaterial() {
@@ -522,9 +529,16 @@ export default {
                         />
                     </div>
                     <div class="coilinfo-cell">
+                        <p
+                            v-if="outputsData.totalLosses != null && coreHeldFinding != null"
+                            :data-cy="dataTestLabel + '-TotalLosses-HeldAtDataLimit'"
+                            role="alert"
+                            v-tooltip="coreHeldFinding.message"
+                            class="coilinfo-losses-held text-danger text-left my-1"
+                        >No total losses: the core has no steady temperature within its material's data, so its losses are not the design's (see Core Info).</p>
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.totalLosses"
-                            v-if="outputsData.totalLosses != null"
+                            v-else-if="outputsData.totalLosses != null"
                             class="text-left"
                             :name="'P'"
                             :subscriptName="'total'"
@@ -879,9 +893,16 @@ export default {
                         <span>· proximity {{ powerLabel(outputsData.proximityLosses) }}</span>
                         <span class="coilinfo-loss-breakdown-hint">Per winding: Settings → Advanced mode</span>
                     </div>
+                    <p
+                        v-if="outputsData.totalLosses != null && coreHeldFinding != null"
+                        :data-cy="dataTestLabel + '-TotalLosses-HeldAtDataLimit'"
+                        role="alert"
+                        v-tooltip="coreHeldFinding.message"
+                        class="coilinfo-losses-held text-danger text-left pl-4 pr-4 my-1"
+                    >No total losses: the core has no steady temperature within its material's data, so its losses are not the design's (see Core Info).</p>
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.totalLosses"
-                        v-if="outputsData.totalLosses != null"
+                        v-else-if="outputsData.totalLosses != null"
                         class="text-left pl-4 pr-4"
                         :name="'Total losses'"
                         :unit="'W'"
@@ -938,6 +959,11 @@ export default {
 </template>
 
 <style scoped>
+.coilinfo-losses-held {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 .coilinfo-panel {
     background: linear-gradient(145deg, color-mix(in srgb, var(--p-gray-600) 6%, transparent) 0%, color-mix(in srgb, var(--p-gray-600) 2%, transparent) 100%);
     border: 1px solid color-mix(in srgb, var(--p-gray-600) 20%, transparent);
