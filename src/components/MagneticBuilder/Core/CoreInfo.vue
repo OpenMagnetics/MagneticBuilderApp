@@ -78,30 +78,42 @@ export default {
         simulationErrorFull() {
             return engineMessageInFull(this.simulationError);
         },
-        // ABT #2273: the core's temperature ran past its material's data and MKF held it at the limit;
-        // the losses shown are the held ones. Null when it was not held.
+        // ABT #2273 / #2370: the core's own losses drove it past its material's data and MKF held it
+        // at the limit. Held there (at Curie the core is paramagnetic) the losses are not the
+        // design's, so they are never shown as the result: the panel shows this error instead, with
+        // the losses just before the hold. Null when the core was not held.
         coreHold() {
             if (this.coreLossesData?.coreHeldAtDataLimit !== true) return null;
             const heldAt = this.coreLossesData.coreHeldAt;
+            // The limits libMKF's calculate_core_losses names (CoreDataCeilingSource).
             const limits = {
-                curieTemperature: 'its Curie temperature',
-                permeabilityDataEnd: 'the end of its permeability data',
-                lossDataEnd: 'the end of its loss data',
+                curieTemperature: 'No steady temperature: the core reaches its Curie temperature',
+                permeabilityDataEnd: 'No steady temperature within the material\'s data: the core gets past the end of its permeability data',
+                lossDataEnd: 'No steady temperature within the material\'s data: the core gets past the end of its loss data',
             };
-            if (!(heldAt?.limit in limits)) {
-                throw new Error(`The engine held the core at an unknown material data limit '${heldAt?.limit}'`);
+            if (!(heldAt?.limit in limits) || typeof heldAt?.temperature !== 'number') {
+                const message = `The engine held the core at a material data limit it did not describe (limit '${heldAt?.limit}', temperature ${heldAt?.temperature}), so its losses are unknown.`;
+                return { short: 'Held at a data limit', full: message, error: message };
             }
             const temperature = formatTemperature(heldAt.temperature);
             const temperatureText = `${temperature.label} ${temperature.unit}`;
-            const before = this.coreLossesData.coreLossesBeforeHold?.coreLosses;
-            if (typeof before !== 'number') {
-                throw new Error('The engine held the core at its material data limit but did not say what it lost before the hold');
+            const reason = `${limits[heldAt.limit]} (${temperatureText}).`;
+            const before = this.coreLossesData.coreLossesBeforeHold;
+            let beforeText;
+            if (typeof before?.coreLosses !== 'number') {
+                beforeText = 'The engine did not report the losses before the hold, so the core losses are unknown.';
             }
-            const beforePower = formatPower(before);
-            return {
-                short: `Held at ${temperatureText}`,
-                full: `The core gets hotter than ${limits[heldAt.limit]} (${temperatureText}), so the engine held it there: the losses shown are at ${temperatureText}, not at the core's real temperature. Just before the hold the core lost ${beforePower.label} ${beforePower.unit}.`,
-            };
+            else if (typeof before.temperature !== 'number') {
+                const beforePower = formatPower(before.coreLosses);
+                beforeText = `Losses before the hold: ${beforePower.label} ${beforePower.unit}; the engine did not report the temperature they were computed at.`;
+            }
+            else {
+                const beforePower = formatPower(before.coreLosses);
+                const beforeTemperature = formatTemperature(before.temperature);
+                beforeText = `Losses before the hold: ${beforePower.label} ${beforePower.unit} at ${beforeTemperature.label} ${beforeTemperature.unit}.`;
+            }
+            const message = `${reason} ${beforeText}`;
+            return { short: `Held at ${temperatureText}`, full: message, error: message };
         },
         // MKF refused the design's copy of its core material when it was loaded: nothing is
         // computed with it until it is updated (Alf, 2026-10-27).
@@ -632,7 +644,13 @@ export default {
                         />
                     </div>
                     <div class="coreinfo-cell">
-                        <DimensionReadOnly 
+                        <p
+                            v-if="coreHold != null"
+                            :data-cy="dataTestLabel + '-CoreLosses-HeldAtDataLimit'"
+                            role="alert"
+                            class="coreinfo-losses-held text-danger text-left my-1"
+                        >{{ coreHold.error }}</p>
+                        <DimensionReadOnly v-else
                             v-tooltip="tooltipsMagneticBuilder.coreLosses"
                             class="text-left"
                             :name="'P'"
@@ -650,7 +668,7 @@ export default {
                             :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                             :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                            :textColor="coreHold != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
                     </template>
@@ -685,7 +703,13 @@ export default {
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                         :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
                     />
-                    <DimensionReadOnly 
+                    <p
+                        v-if="coreHold != null"
+                        :data-cy="dataTestLabel + '-CoreLosses-HeldAtDataLimit'"
+                        role="alert"
+                        class="coreinfo-losses-held text-danger text-left pl-4 pr-4 my-1"
+                    >{{ coreHold.error }}</p>
+                    <DimensionReadOnly v-else
                         v-tooltip="tooltipsMagneticBuilder.coreLosses"
                         class="text-left pl-4 pr-4"
                         :replaceTitle="'Core Losses'"
@@ -703,7 +727,7 @@ export default {
                         :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="coreHold != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
+                        :textColor="$styleStore.magneticBuilder.inputTextColor"
                     />
                     <DimensionReadOnly 
                         v-tooltip="tooltipsMagneticBuilder.saturationProportion"
@@ -801,6 +825,11 @@ export default {
     align-items: center;
     gap: 0.5rem;
     margin-left: auto;
+}
+
+.coreinfo-losses-held {
+    font-size: 0.8rem;
+    font-weight: 600;
 }
 
 .coreinfo-hold-hint {
