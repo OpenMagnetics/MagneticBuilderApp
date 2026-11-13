@@ -489,6 +489,19 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             return coreShapeFamilies;
         },
 
+        // ABT #2372: the MAS core type a shape family is built as (EI -> pieceAndPlate, E -> twoPieceSet,
+        // T -> toroidal, ...), from MKF's single family -> type rule. A family change sets the core's type
+        // from this; keeping the previous family's type is what made an EI a mirrored E+E.
+        async getCoreTypeForShapeFamily(family) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+            const result = await mkf.get_core_type_for_shape_family(String(family));
+            if (result.startsWith('Exception')) {
+                throw new Error(result);
+            }
+            return result;
+        },
+
         coreShapeFamilySubtypesGotten(success = true, dataOrMessage = '') {
         },
 
