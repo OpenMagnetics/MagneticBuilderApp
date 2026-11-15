@@ -3,19 +3,21 @@
 // resolves the alias, but the builder lists shapes by their current names, so a loaded design whose
 // shape it cannot find in that list shows an empty shape (ABT #2410). On load, each catalogue shape of
 // the core (its functional shape and the shape of each geometrical piece) is given its current name,
-// as MKF resolves it (taskQueueStore.getCurrentShapeName, which throws for a name MKF does not know).
-// A custom shape (type 'custom') is not in the catalogue and keeps its name.
+// as MKF resolves it (taskQueueStore.getCurrentShapeName). A name MKF does not know at all keeps its
+// name: the design opens from its stored dimensions, as before, and the caller logs it (old MAS
+// always loads). A custom shape (type 'custom') is not in the catalogue and keeps its name.
 //
-// Returns the renames made, [{ from, to }], once per name.
+// Returns { renames: [{ from, to }], unknown: [{ name, reason }] }, once per name.
 export async function giveCoreShapesTheirCurrentNames(mas, taskQueueStore) {
     const core = mas?.magnetic?.core;
-    if (core == null) return [];
-    const renames = new Map();
+    if (core == null) return { renames: [], unknown: [] };
+    const answers = new Map();
     const currentName = async (name) => {
-        if (!renames.has(name)) {
-            renames.set(name, await taskQueueStore.getCurrentShapeName(name));
+        if (!answers.has(name)) {
+            answers.set(name, await taskQueueStore.getCurrentShapeName(name));
         }
-        return renames.get(name);
+        const answer = answers.get(name);
+        return answer.found ? answer.name : name;
     };
     const isCatalogueShape = (shape) => shape.type !== 'custom';
 
@@ -36,5 +38,9 @@ export async function giveCoreShapesTheirCurrentNames(mas, taskQueueStore) {
             pieceShape.name = await currentName(pieceShape.name);
         }
     }
-    return [...renames.entries()].filter(([from, to]) => from !== to).map(([from, to]) => ({ from, to }));
+    const entries = [...answers.entries()];
+    return {
+        renames: entries.filter(([from, answer]) => answer.found && answer.name !== from).map(([from, answer]) => ({ from, to: answer.name })),
+        unknown: entries.filter(([, answer]) => !answer.found).map(([name, answer]) => ({ name, reason: answer.reason })),
+    };
 }

@@ -528,6 +528,11 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             const mkf = await waitForMkf();
             await mkf.ready;
             const result = await mkf.get_shape_data(String(shapeName));
+            // A name the catalogue does not know at all is answered, not thrown: the design keeps it
+            // and its stored dimensions (old MAS always loads). Any other engine failure throws.
+            if (result.startsWith('Exception') && result.includes('[CORE_SHAPE_NOT_FOUND]')) {
+                return { found: false, reason: result };
+            }
             if (result.startsWith('Exception')) {
                 throw new Error(result);
             }
@@ -535,7 +540,7 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             if (typeof name !== 'string' || name === '') {
                 throw new Error(`MKF returned core shape '${shapeName}' without a name`);
             }
-            return name;
+            return { found: true, name };
         },
 
         coreShapeFamilySubtypesGotten(success = true, dataOrMessage = '') {
