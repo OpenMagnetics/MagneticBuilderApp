@@ -247,6 +247,10 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         // gap or stack change), or ''. The design went back to its previous core; Core Info shows this until
         // a core change is accepted (ABT #2410).
         coreChangeRefusal: '',
+        // Which material the advanced core editor edits: 'core' (functionalDescription.material, or the
+        // drum's entry of a material list) or 'shell' (a semi-shielded drum's magnetic-epoxy shell,
+        // functionalDescription.material[1], ABT #2410). Set by the panel that opens the editor.
+        coreMaterialEditTarget: 'core',
         _windingBlockTimer: null,
         _windingChangedTimer: null,
     }),
@@ -878,7 +882,14 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async changeCoreMaterial(materialName, core) {
-            core.functionalDescription.material = materialName;
+            // A material list ([drum, magnetic-epoxy shell] on a semi-shielded drum, ABT #2410): the
+            // change is to the core's own material, its first entry; the other pieces keep theirs.
+            if (Array.isArray(core.functionalDescription.material)) {
+                core.functionalDescription.material = [materialName, ...core.functionalDescription.material.slice(1)];
+            }
+            else {
+                core.functionalDescription.material = materialName;
+            }
             core.name = "Custom";
             core.manufacturerInfo = null;
             if (core.geometricalDescription != null) {
@@ -1170,6 +1181,29 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
                 setTimeout(() => {this.complexPermeabilityGotten(true, complexPermeability);}, this.task_standard_response_delay);
                 return complexPermeability;
             }
+        },
+
+        steinmetzCoefficientsCalculated(success = true, dataOrMessage = '') {
+        },
+
+        // MKF fits Steinmetz coefficients to measured volumetric-loss points (CoreLossesSteinmetzModel::
+        // calculate_steinmetz_coefficients). It throws on points that do not determine the fit (one
+        // frequency, one flux density or too few points per range); that message is passed on as is.
+        async calculateSteinmetzCoefficients(volumetricLossesPoints, frequencyRanges) {
+            const mkf = await waitForMkf();
+            await mkf.ready;
+
+            const result = await mkf.calculate_steinmetz_coefficients(
+                JSON.stringify(volumetricLossesPoints),
+                JSON.stringify(frequencyRanges)
+            );
+            if (typeof result === 'string' && result.startsWith('Exception')) {
+                setTimeout(() => { this.steinmetzCoefficientsCalculated(false, result); }, this.task_standard_response_delay);
+                throw new Error(result);
+            }
+            const coefficients = JSON.parse(result);
+            setTimeout(() => { this.steinmetzCoefficientsCalculated(true, coefficients); }, this.task_standard_response_delay);
+            return coefficients;
         },
 
         defaultsGotten(success = true, dataOrMessage = '') {

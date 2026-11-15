@@ -23,6 +23,7 @@ import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js
 // In the plain block, not <script setup>: methods below call it, and an Options
 // API method cannot see a <script setup> binding.
 import { applyAdvisedCore } from './applyAdvisedCore.js'
+import { shellMaterialIncompleteMessage } from './shellMaterial.js'
 
 export default {
     emits: ['customizeCore', 'gappingUpdated', 'coreProcessed', 'coreProcessingStarted'],
@@ -142,6 +143,10 @@ export default {
             // The magnetic as it was before the core change in progress (ABT #2410); put back whole when the
             // engine refuses the new core or its bobbin. null when no change is in progress.
             coreChangeSnapshot: null,
+            // Catalogue materials of type magneticEpoxy, offered as a semi-shielded drum's shell (ABT #2410).
+            // null until read from the engine.
+            shellCatalogueMaterialNames: null,
+            shellLocalData: { shellMaterial: null },
             updatingLocalData: false,
             _mountTimer: null,
         }
@@ -197,25 +202,65 @@ export default {
             const shapeMissing = shape == null
                 || (typeof shape === 'string' && shape === '')
                 || (typeof shape === 'object' && (shape.name == null || shape.name === ''));
-            const material = fd.material;
+            // A material list (a semi-shielded drum's [drum, shell]) names the core's own material first.
+            const material = Array.isArray(fd.material) ? fd.material[0] : fd.material;
             const materialMissing = material == null
                 || (typeof material === 'string' && material === '')
                 || (typeof material === 'object' && (material.name == null || material.name === ''));
             return shapeMissing || materialMissing;
         },
+        isSemishieldedDrum() {
+            const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
+            return shape != null && typeof shape !== 'string' && shape.family === 'drumSemishielded';
+        },
+        /**
+         * The shell material a semi-shielded drum carries: functionalDescription.material[1], a core material
+         * of type magneticEpoxy (MKF Core::resolve_semishielded_shell_material, ABT #2410). Its name, or null.
+         * Older designs carry it as a deprecated magneticEpoxy coating naming it, which MKF still reads.
+         */
+        shellMaterialName() {
+            const functionalDescription = this.masStore.mas.magnetic.core?.functionalDescription;
+            if (functionalDescription == null) return null;
+            const material = functionalDescription.material;
+            if (Array.isArray(material) && material.length > 1) {
+                const shell = material[1];
+                const name = typeof shell === 'string' ? shell : shell?.name;
+                if (name != null && name !== '') return name;
+            }
+            const coating = functionalDescription.coating;
+            if (coating != null && typeof coating !== 'string' && coating.type === 'magneticEpoxy'
+                && typeof coating.material === 'string' && coating.material !== '') {
+                return coating.material;
+            }
+            return null;
+        },
         /**
          * A semi-shielded drum's return path is its magnetic-epoxy shell, a second material. MKF computes
-         * nothing for it until the core carries that shell material (a magneticEpoxy coating naming it,
-         * MagnetizingInductance.cpp), and no catalogue drum states one: the panel says so instead of
-         * letting every calculation fail on it (ABT #2410). Never filled in with a guessed material.
+         * nothing for it until the core carries that shell material, and no catalogue drum states one: the
+         * panel says so instead of letting every calculation fail on it (ABT #2410). Never filled in with a
+         * guessed material.
          */
         semishieldedDrumNeedsShellMaterial() {
-            const functionalDescription = this.masStore.mas.magnetic.core?.functionalDescription;
-            const shape = functionalDescription?.shape;
-            if (shape == null || typeof shape === 'string' || shape.family !== 'drumSemishielded') return false;
-            const coating = functionalDescription.coating;
-            return coating == null || typeof coating === 'string' || coating.type !== 'magneticEpoxy'
-                || coating.material == null || coating.material === '';
+            return this.isSemishieldedDrum && this.shellMaterialName == null;
+        },
+        /**
+         * A shell the design carries without the data the engine needs (a file whose material[1] has no
+         * permeability): the message saying what is missing, or null. MKF refuses such a shell, so the
+         * core is not simulated with it; this says why. Never filled in from the drum or a typical value.
+         */
+        shellMaterialIncomplete() {
+            if (!this.isSemishieldedDrum) return null;
+            const material = this.masStore.mas.magnetic.core?.functionalDescription?.material;
+            if (!Array.isArray(material) || material.length < 2 || typeof material[1] === 'string') return null;
+            return shellMaterialIncompleteMessage(material[1]);
+        },
+        /** The shell picker's options: the catalogue's magnetic epoxies, plus the design's own shell. */
+        shellMaterialOptions() {
+            const names = [...(this.shellCatalogueMaterialNames ?? [])];
+            if (this.shellMaterialName != null && !names.includes(this.shellMaterialName)) {
+                names.push(this.shellMaterialName);
+            }
+            return names;
         },
         magneticForVisualizer() {
             // Force re-evaluation when visualizer update is triggered
@@ -232,6 +277,20 @@ export default {
     watch: {
         errorMessage(message) {
             reportNotice('ERROR', 'Core', message);
+        },
+        isSemishieldedDrum: {
+            immediate: true,
+            handler(value) {
+                if (value && this.shellCatalogueMaterialNames == null) {
+                    this.loadShellCatalogueMaterials();
+                }
+            },
+        },
+        shellMaterialName: {
+            immediate: true,
+            handler(value) {
+                this.shellLocalData.shellMaterial = value;
+            },
         },
         loading(value) {
             this.taskQueueStore.coreAdviseBusy = value;
@@ -478,20 +537,25 @@ export default {
                 this.localData["shapeFamily"] = deepCopy(core.functionalDescription.shape.family);
             }
 
-            if (typeof(core.functionalDescription.material) == 'string') {
-                if (core.functionalDescription.material != "") {
-                    this.localData["material"] = deepCopy(core.functionalDescription.material);
-                    this.taskQueueStore.processCoreMaterial(core.functionalDescription.material).then((coreMaterial) => {
-                        this.localData["materialManufacturer"] = coreMaterial.manufacturerInfo.name;
+            // A material list ([drum, magnetic-epoxy shell] on a semi-shielded drum) names the core's own
+            // material first; the shell has its own picker.
+            const coreMaterial = Array.isArray(core.functionalDescription.material)
+                ? core.functionalDescription.material[0]
+                : core.functionalDescription.material;
+            if (typeof(coreMaterial) == 'string') {
+                if (coreMaterial != "") {
+                    this.localData["material"] = deepCopy(coreMaterial);
+                    this.taskQueueStore.processCoreMaterial(coreMaterial).then((processedMaterial) => {
+                        this.localData["materialManufacturer"] = processedMaterial.manufacturerInfo.name;
                     })
                     .catch(error => {
                         console.error(error);
                     });
                 }
             }
-            else {
-                this.localData["material"] = deepCopy(core.functionalDescription.material.name);
-                this.localData["materialManufacturer"] = core.functionalDescription.material.manufacturerInfo.name;
+            else if (coreMaterial != null) {
+                this.localData["material"] = deepCopy(coreMaterial.name);
+                this.localData["materialManufacturer"] = coreMaterial.manufacturerInfo.name;
             }
 
             if (core.functionalDescription.shape != "" && core.functionalDescription.material != "") {
@@ -516,6 +580,47 @@ export default {
                     });
                 }
             }
+        },
+        /** The catalogue's magneticEpoxy materials (the engine's material summary), for the shell picker. */
+        async loadShellCatalogueMaterials() {
+            try {
+                const summary = await this.taskQueueStore.getCoreMaterialsSummary();
+                this.shellCatalogueMaterialNames = summary.filter((row) => row.materialType === 'magneticEpoxy').map((row) => row.name);
+            }
+            catch (error) {
+                this.errorMessage = `The shell materials could not be read from the engine: ${String(error?.message ?? error)}`;
+            }
+        },
+        /**
+         * The shell picked from the list: functionalDescription.material becomes [drum, shell] (ABT #2410).
+         * The design's own shell keeps its full data; a catalogue one is named. No magneticEpoxy coating is
+         * written, and a deprecated one left from an older design is dropped, as it would contradict the list.
+         */
+        shellMaterialUpdated(name) {
+            const functionalDescription = this.masStore.mas.magnetic.core.functionalDescription;
+            const list = Array.isArray(functionalDescription.material) ? functionalDescription.material : [functionalDescription.material];
+            const current = list.length > 1 ? list[1] : null;
+            const currentName = typeof current === 'string' ? current : current?.name;
+            if (name === currentName) return;
+            this.beginCoreChange();
+            functionalDescription.material = [list[0], name];
+            const coating = functionalDescription.coating;
+            if (coating != null && (coating === 'magneticEpoxy' || coating.type === 'magneticEpoxy')) {
+                functionalDescription.coating = null;
+            }
+            this.$emit('coreProcessingStarted');
+            this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
+                this.masStore.mas.magnetic.core = core;
+                this.endCoreChange();
+                this.$emit('coreProcessed');
+            })
+            .catch((error) => this.refuseCoreChange(error));
+        },
+        /** Opens the builder's material editor on the shell (the Customize flow, material page). */
+        defineShellMaterial() {
+            this.taskQueueStore.coreMaterialEditTarget = 'shell';
+            this.$stateStore.magneticBuilder.submode.core = this.$stateStore.MagneticBuilderCoreSubmodes.Material;
+            this.$emit('customizeCore');
         },
         getMaterialNames() {
             // Power/filter designs need core losses, so only offer materials the
@@ -578,6 +683,12 @@ export default {
 
                         if (!this.isStackable(shape)) {
                             mas.magnetic.core.functionalDescription.numberStacks = 1;
+                        }
+                        // The magnetic-epoxy shell (material[1]) belongs to a semi-shielded drum: any other
+                        // shape keeps only the core's own material (ABT #2410).
+                        const material = mas.magnetic.core.functionalDescription.material;
+                        if (Array.isArray(material) && shape.family !== 'drumSemishielded') {
+                            mas.magnetic.core.functionalDescription.material = material[0];
                         }
 
                         this.taskQueueStore.checkAndFixMas(mas);
@@ -999,6 +1110,49 @@ export default {
                             :textColor="$styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
+                    <div
+                        v-if="isSemishieldedDrum && localData.shape != '' && !loading"
+                        class="core-config-cell core-config-cell-wide core-shell-cell"
+                        :data-cy="dataTestLabel + '-Core-ShellMaterial'"
+                    >
+                        <ElementFromList
+                            v-if="shellMaterialOptions.length > 0"
+                            v-tooltip="tooltipsMagneticBuilder.coreShellMaterial"
+                            :disabled="readOnly"
+                            class="text-left"
+                            :dataTestLabel="dataTestLabel + '-ShellMaterialNames'"
+                            :name="'shellMaterial'"
+                            :replaceTitle="'Shell material'"
+                            :titleSameRow="true"
+                            :justifyContent="true"
+                            v-model="shellLocalData"
+                            :options="shellMaterialOptions"
+                            @update="shellMaterialUpdated"
+                            :labelWidthProportionClass="'col-12 md:col-5'"
+                            :valueWidthProportionClass="'col-12 md:col-7'"
+                            :valueFontSize="$styleStore.magneticBuilder.inputFontSize"
+                            :labelFontSize="$styleStore.magneticBuilder.inputTitleFontSize"
+                            :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
+                            :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
+                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        />
+                        <label
+                            v-else-if="shellCatalogueMaterialNames != null"
+                            v-tooltip="tooltipsMagneticBuilder.coreShellMaterial"
+                            :data-cy="dataTestLabel + '-ShellMaterial-none'"
+                            class="core-shell-note"
+                        >Shell material: no catalogue material is a magnetic epoxy yet, define the shell's own.</label>
+                        <button
+                            v-if="!readOnly && enableCustomize"
+                            type="button"
+                            :data-cy="dataTestLabel + '-Core-DefineShellMaterial-button'"
+                            class="core-shell-define"
+                            v-tooltip="tooltipsMagneticBuilder.coreShellMaterialDefine"
+                            @click="defineShellMaterial"
+                        >
+                            <i class="pi pi-sliders-h mr-2"></i>{{ shellMaterialName == null ? 'Define shell material' : 'Edit shell material' }}
+                        </button>
+                    </div>
                     <h5 v-if="localData.shape == '' && !loading" class="text-danger my-2 col-12">Select a family and a shape for the core</h5>
 
                     <div v-if="isStackable() && localData.shape != '' && !loading" class="core-config-cell core-config-cell-wide">
@@ -1048,6 +1202,11 @@ export default {
                     :data-cy="dataTestLabel + '-Core-ShellMaterialMissing'"
                     class="text-danger my-2 col-12"
                 >A semi-shielded drum needs the material of its magnetic-epoxy shell: its flux returns through that shell, so nothing can be calculated for this core until the shell material is given. No catalogue drum states it.</h6>
+                <h6
+                    v-if="shellMaterialIncomplete != null && !loading"
+                    :data-cy="dataTestLabel + '-Core-ShellMaterialIncomplete'"
+                    class="text-danger my-2 col-12"
+                >{{ shellMaterialIncomplete }}</h6>
 
                 <CoreInfo 
                     v-if="showInfoPanel && !loading && enableSimulation"
@@ -1097,6 +1256,32 @@ export default {
 </template>
 
 <style scoped>
+/* Shell material of a semi-shielded drum (ABT #2410): its picker, or the note that the catalogue has
+ * none, and the button that opens the material editor on the shell. */
+.core-shell-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+.core-shell-note {
+    font-size: 0.8rem;
+    color: var(--p-text-muted-color, var(--p-white));
+    opacity: 0.85;
+}
+.core-shell-define {
+    align-self: flex-start;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--p-primary);
+    border: 1px solid rgba(var(--p-primary-rgb), 0.6);
+}
+.core-shell-define:hover {
+    filter: brightness(1.12);
+}
 .core-error {
     display: flex;
     align-items: flex-start;
