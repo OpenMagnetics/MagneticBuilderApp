@@ -139,6 +139,9 @@ export default {
             pendingBobbinThickness,
             cachedMagnetic,
             changeMadeByUser: false,
+            // The magnetic as it was before the core change in progress (ABT #2410); put back whole when the
+            // engine refuses the new core or its bobbin. null when no change is in progress.
+            coreChangeSnapshot: null,
             updatingLocalData: false,
             _mountTimer: null,
         }
@@ -199,6 +202,20 @@ export default {
                 || (typeof material === 'string' && material === '')
                 || (typeof material === 'object' && (material.name == null || material.name === ''));
             return shapeMissing || materialMissing;
+        },
+        /**
+         * A semi-shielded drum's return path is its magnetic-epoxy shell, a second material. MKF computes
+         * nothing for it until the core carries that shell material (a magneticEpoxy coating naming it,
+         * MagnetizingInductance.cpp), and no catalogue drum states one: the panel says so instead of
+         * letting every calculation fail on it (ABT #2410). Never filled in with a guessed material.
+         */
+        semishieldedDrumNeedsShellMaterial() {
+            const functionalDescription = this.masStore.mas.magnetic.core?.functionalDescription;
+            const shape = functionalDescription?.shape;
+            if (shape == null || typeof shape === 'string' || shape.family !== 'drumSemishielded') return false;
+            const coating = functionalDescription.coating;
+            return coating == null || typeof coating === 'string' || coating.type !== 'magneticEpoxy'
+                || coating.material == null || coating.material === '';
         },
         magneticForVisualizer() {
             // Force re-evaluation when visualizer update is triggered
@@ -299,9 +316,14 @@ export default {
                                     this.masStore.mas.magnetic.coil.layersDescription = null;
                                     this.masStore.mas.magnetic.coil.sectionsDescription = null;
                                 }
+                                this.endCoreChange();
                                 // Note: BasicCoilSelector listens for bobbinFromCoreShapeGenerated
                                 // and will automatically trigger rewinding
-                            });
+                            })
+                            // A bobbin the engine cannot build for this core (e.g. wall and column
+                            // thicknesses that leave no winding window) is a refused change, not a
+                            // stale bobbin under the new core (ABT #2410).
+                            .catch((error) => this.refuseCoreChange(error));
                         }
                         else {
                         }
@@ -320,7 +342,8 @@ export default {
                             const coreHash = JSON.stringify(this.masStore.mas.magnetic.core);
 
                             if (coreHash != JSON.stringify(mas.magnetic.core)) {
-                                this.taskQueueStore.processCore(mas.magnetic.core);
+                                this.taskQueueStore.processCore(mas.magnetic.core)
+                                    .catch((error) => this.refuseCoreChange(error));
                             }
                             else if (this.changeMadeByUser && !this.$stateStore.loadingDesign) {
                                 // Core hash is the same but user changed shape - still need to regenerate bobbin
@@ -342,13 +365,21 @@ export default {
                                             this.masStore.mas.magnetic.coil.layersDescription = null;
                                             this.masStore.mas.magnetic.coil.sectionsDescription = null;
                                         }
-                                    });
+                                        this.endCoreChange();
+                                    })
+                                    .catch((error) => this.refuseCoreChange(error));
                                 }
                             }
                         }
                     }
                     else {
-                        console.error(args[1])
+                        // checkAndFixMas could not complete the changed core: the engine refused it.
+                        if (this.coreChangeSnapshot != null) {
+                            this.refuseCoreChange(args[1]);
+                        }
+                        else {
+                            console.error(args[1])
+                        }
                     }
                 }
             });
@@ -363,6 +394,54 @@ export default {
     methods: {
         inlineNotices() {
             return noticesShownInline();
+        },
+        /**
+         * A core change made in this panel (shape, material, gap, stacks) is applied whole or not at all
+         * (ABT #2410). The magnetic it starts from is kept until the engine has processed the new core and
+         * built its bobbin; a refusal puts it back, so the design never holds a core whose processed and
+         * geometrical descriptions, or bobbin, belong to another shape.
+         */
+        beginCoreChange() {
+            if (this.coreChangeSnapshot == null) {
+                this.coreChangeSnapshot = deepCopy(this.masStore.mas.magnetic);
+            }
+        },
+        endCoreChange() {
+            this.coreChangeSnapshot = null;
+            if (this.taskQueueStore.coreChangeRefusal !== '') {
+                this.taskQueueStore.coreChangeAccepted();
+            }
+        },
+        /**
+         * The engine refused the new core or its bobbin: the design goes back to the core it had, the
+         * dropdowns follow it, and the engine's reason is shown in Core Info and the Engine log.
+         */
+        refuseCoreChange(error) {
+            const reason = String(error?.message ?? error).replace(/^(Error: )?Exception: /, '');
+            if (this.coreChangeSnapshot != null) {
+                this.masStore.mas.magnetic = this.coreChangeSnapshot;
+                this.coreChangeSnapshot = null;
+            }
+            this.changeMadeByUser = false;
+            this.pendingBobbinThickness = null;
+            this.taskQueueStore.bobbinRegenerationPending = false;
+            this.assignLocalData(this.masStore.mas.magnetic.core);
+            this.updatingLocalData = true;
+            this.forceUpdate += 1;
+            this.$nextTick(() => { this.updatingLocalData = false; });
+            this.taskQueueStore.coreChangeRefused(reason);
+            this.errorMessage = `The core was not changed, the design keeps its previous core: ${reason}`;
+        },
+        /** The core type MKF builds this core's shape family as (core_type_for_shape_family, ABT #2372). */
+        async coreTypeOfShapeFamily(core) {
+            let shape = core.functionalDescription.shape;
+            if (typeof shape === 'string') {
+                shape = await this.taskQueueStore.processCoreShape(shape);
+            }
+            if (shape?.family == null) {
+                throw new Error(`The core shape ${shape?.name ?? ''} has no family, so its core type cannot be known`);
+            }
+            return this.taskQueueStore.getCoreTypeForShapeFamily(shape.family);
         },
         isStackable(shape) {
             // Accept an explicit shape so callers in mid-transition (shape just
@@ -477,16 +556,25 @@ export default {
                 this.taskQueueStore.checkAndFixMas(mas);
             }
             else {
+                this.beginCoreChange();
                 this.masStore.mas.magnetic.core.name = "Custom";
                 this.changeMadeByUser = true;
+                // A new shape gets the bobbin MKF builds for it: the wall and column thicknesses kept from the
+                // previous core's bobbin need not leave any winding window on it (a drum, ABT #2410).
+                this.pendingBobbinThickness = null;
                 this.taskQueueStore.processCoreShape(value).then((shape) => {
                     if (this.localData.material == null) {
                         this.masStore.mas.magnetic.core.functionalDescription.shape = shape;
+                        this.coreChangeSnapshot = null;
                         // Cannot generate bobbin without material - backend requires it
                     }
                     else {
                         const mas = deepCopy(this.masStore.mas);
                         mas.magnetic.core.functionalDescription.shape = shape;
+                        // The processed and geometrical descriptions describe the previous shape: they are
+                        // computed again for this one (checkAndFixMas), never carried under it (ABT #2410).
+                        mas.magnetic.core.processedDescription = null;
+                        mas.magnetic.core.geometricalDescription = null;
 
                         if (!this.isStackable(shape)) {
                             mas.magnetic.core.functionalDescription.numberStacks = 1;
@@ -495,9 +583,7 @@ export default {
                         this.taskQueueStore.checkAndFixMas(mas);
                     }
                 })
-                .catch(error => {
-                    console.error(error);
-                });
+                .catch((error) => this.refuseCoreChange(error));
             }
         },
         openShapeTable() {
@@ -642,24 +728,31 @@ export default {
                 columnThickness: currentBobbin?.processedDescription?.columnThickness
             };
             
-            this.taskQueueStore.changeCoreMaterial(value, deepCopy(this.masStore.mas.magnetic.core)).then((core) => {
-                // Ensure default gapping is set so core losses can be calculated
-                if (!core.functionalDescription.gapping || (core.functionalDescription.type == 'twoPieceSet' && core.functionalDescription.gapping.length === 0)) {
-                    core.functionalDescription.gapping = deepCopy(defaultUngappedGapping);
+            this.beginCoreChange();
+            this.taskQueueStore.changeCoreMaterial(value, deepCopy(this.masStore.mas.magnetic.core)).then(async (core) => {
+                // An ungapped two-piece set carries the residual gaps of its mating halves, so core losses can
+                // be calculated. Only a two-piece set: whether the core is one is MKF's family rule, not the
+                // stored type, which an older design may have wrong (a drum stored as twoPieceSet). A drum
+                // given residual gaps here was refused by MKF (ABT #2410); other types keep their gapping, and
+                // a core with none gets an empty one for MKF to derive what the shape has.
+                const coreType = await this.coreTypeOfShapeFamily(core);
+                if (coreType == 'twoPieceSet') {
+                    if (!core.functionalDescription.gapping || core.functionalDescription.gapping.length === 0) {
+                        core.functionalDescription.gapping = deepCopy(defaultUngappedGapping);
+                    }
+                }
+                else if (!core.functionalDescription.gapping) {
+                    core.functionalDescription.gapping = [];
                 }
                 this.masStore.mas.magnetic.core = core;
 
-                this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
-                    this.localData["numberStacks"] = deepCopy(core.functionalDescription.numberStacks);
-                    this.localData["gapping"] = deepCopy(core.functionalDescription.gapping);
-                    this.updatingLocalData = true;
-                    this.forceUpdate += 1;
-                    this.$nextTick(() => { this.updatingLocalData = false; });
-                    // Note: Bobbin thickness will be restored in coreProcessed handler after bobbin regeneration
-                })
-                .catch(error => {
-                    console.error(error);
-                });
+                const processedCore = await this.taskQueueStore.processCore(this.masStore.mas.magnetic.core);
+                this.localData["numberStacks"] = deepCopy(processedCore.functionalDescription.numberStacks);
+                this.localData["gapping"] = deepCopy(processedCore.functionalDescription.gapping);
+                this.updatingLocalData = true;
+                this.forceUpdate += 1;
+                this.$nextTick(() => { this.updatingLocalData = false; });
+                // Note: Bobbin thickness will be restored in coreProcessed handler after bobbin regeneration
                 
                 // Ensure coil has at least one turn so core losses can be calculated
                 const coil = this.masStore.mas.magnetic.coil;
@@ -667,10 +760,12 @@ export default {
                 if (!hasValidCoil && coil?.functionalDescription?.length > 0) {
                     coil.functionalDescription[0].numberTurns = 1;
                 }
-            }) 
+            })
+            .catch((error) => this.refuseCoreChange(error));
         },
         numberStacksUpdated(value) {
             if (this.updatingLocalData) return;
+            this.beginCoreChange();
             this.changeMadeByUser = true;
             this.masStore.mas.magnetic.core.functionalDescription.numberStacks = value;
             // Set image as outdated immediately
@@ -681,23 +776,24 @@ export default {
                 // will addToHistory with the fully wound coil state.
                 this.$emit('coreProcessed');
             })
-            .catch(error => {
-                console.error(error);
-            });
+            .catch((error) => this.refuseCoreChange(error));
         },
         gappingUpdated(value) {
+            this.beginCoreChange();
             this.masStore.mas.magnetic.core.functionalDescription.gapping = value;
             this.$emit('gappingUpdated');
             // Set image as outdated immediately
             this.$emit('coreProcessingStarted');
             this.taskQueueStore.processCore(this.masStore.mas.magnetic.core).then((core) => {
                 this.masStore.mas.magnetic.core = core;
+                // A gap change regenerates no bobbin: the change is complete here.
+                this.endCoreChange();
                 // Don't addToHistory here — the subsequent wind() completion
                 // will addToHistory with the fully wound coil state.
                 this.$emit('coreProcessed');
             })
-            .catch(error => {
-                console.error(error);
+            .catch((error) => {
+                this.refuseCoreChange(error);
             });
         },
         adviseCoreRequested() {
@@ -946,6 +1042,12 @@ export default {
                         />
                     </div>
                 </div>
+
+                <h6
+                    v-if="semishieldedDrumNeedsShellMaterial && !loading"
+                    :data-cy="dataTestLabel + '-Core-ShellMaterialMissing'"
+                    class="text-danger my-2 col-12"
+                >A semi-shielded drum needs the material of its magnetic-epoxy shell: its flux returns through that shell, so nothing can be calculated for this core until the shell material is given. No catalogue drum states it.</h6>
 
                 <CoreInfo 
                     v-if="showInfoPanel && !loading && enableSimulation"

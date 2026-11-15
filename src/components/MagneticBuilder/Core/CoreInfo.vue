@@ -339,6 +339,15 @@ export default {
                 v-tooltip="refusedCoreMaterial.message"
                 class="text-danger my-2"
             >The core material {{ refusedCoreMaterial.name }} must be updated: the engine refuses this design's copy of its data, so nothing is computed with it. Update it to the library's copy, or choose another material.</h6>
+            <!-- A core change the engine refused (ABT #2410): the design kept its previous core, and this
+                 says why, here as well as in the Engine log. -->
+            <h6
+                v-if="taskQueueStore.coreChangeRefusal"
+                :data-cy="dataTestLabel + '-CoreInfo-CoreChangeRefused'"
+                v-tooltip="taskQueueStore.coreChangeRefusal"
+                :aria-label="taskQueueStore.coreChangeRefusal"
+                class="text-danger my-2"
+            >The core was not changed, the design keeps its previous core: {{ taskQueueStore.coreChangeRefusal }}</h6>
             <!-- Shown here as well as in the Engine log (Alf, 2026-11-05, ABT #2277): a Resimulate that
                  fails must say so where the user is looking. First sentence inline, all of it on hover. -->
             <h6

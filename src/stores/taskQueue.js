@@ -243,6 +243,10 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         // advise into these flags and disables its Advise buttons on the other's.
         coreAdviseBusy: false,
         wireAdviseBusy: false,
+        // The engine's reason for refusing the last core change made in the core panel (a shape, material,
+        // gap or stack change), or ''. The design went back to its previous core; Core Info shows this until
+        // a core change is accepted (ABT #2410).
+        coreChangeRefusal: '',
         _windingBlockTimer: null,
         _windingChangedTimer: null,
     }),
@@ -271,6 +275,16 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         masCheckedAndFixed(success = true, dataOrMessage = '') {
+        },
+
+        // A core change the engine refused (ABT #2410): the core panel put the previous core back, and
+        // every panel that shows the core follows it (the shape selector, Core Info).
+        coreChangeRefused(message) {
+            this.coreChangeRefusal = message;
+        },
+
+        coreChangeAccepted() {
+            this.coreChangeRefusal = '';
         },
 
         async checkAndFixMas(mas) {
