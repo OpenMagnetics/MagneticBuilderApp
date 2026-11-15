@@ -8,7 +8,7 @@
 // P0 scope: read-only parity view + hover/selection + color-by-winding.
 // Gated by magneticBuilderSettings.enableWindingStudio.
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import { buildStudioModel, buildConnectionViews, windingColor, annularSectorPath, woundDistanceToAngleDeg, wiresEqual } from './geometry.js';
+import { buildStudioModel, buildConnectionViews, windingColor, annularSectorPath, woundDistanceToAngleDeg, wiresEqual, needsPainterOutline, parsePainterFerriteOutline } from './geometry.js';
 import { waitForMkf, applyRealWindingGeometrySetting } from '/WebSharedComponents/assets/js/mkfRuntime';
 import { useSettingsStore } from '/src/stores/settings';
 import { reportNotice } from '/WebSharedComponents/assets/js/notices.js';
@@ -104,7 +104,40 @@ function cssColor(color) {
     return color;
 }
 
-const model = computed(() => buildStudioModel(props.masStore.mas?.magnetic));
+// Drum-family cores (drum, rod, drumRing, drumSemishielded, molded) are drawn from MKF's own
+// outline: the Painter's plot_core ferrite polygons. Until it arrives, or when MKF cannot draw the
+// core, the studio says so instead of drawing a guessed core.
+const painterOutline = ref(null);
+let painterOutlineRequestId = 0;
+
+async function fetchPainterOutline() {
+    const magnetic = props.masStore.mas?.magnetic;
+    const requestId = ++painterOutlineRequestId;
+    if (magnetic?.core == null || magnetic?.coil == null || !needsPainterOutline(magnetic.core) || magnetic.core.processedDescription == null) {
+        painterOutline.value = null;
+        return;
+    }
+    painterOutline.value = { status: 'loading' };
+    try {
+        const mkf = await waitForMkf();
+        const svg = await mkf.plot_core(JSON.stringify(magnetic));
+        if (requestId !== painterOutlineRequestId) return;   // superseded
+        painterOutline.value = { status: 'ready', polygons: parsePainterFerriteOutline(svg) };
+    }
+    catch (error) {
+        if (requestId !== painterOutlineRequestId) return;
+        console.error('WindingStudio: plot_core failed', error);
+        painterOutline.value = { status: 'error', reason: error?.message ?? String(error) };
+    }
+}
+
+watch(
+    () => props.masStore.mas?.magnetic?.core,
+    () => { fetchPainterOutline(); },
+    { deep: true, immediate: true },
+);
+
+const model = computed(() => buildStudioModel(props.masStore.mas?.magnetic, painterOutline.value));
 
 // ABT #849 (Alf, 2026-08-22): CONNECTIONS — terminals and the links between layers/sections.
 // Unlike everything else in this component, they are NOT in the MAS: MKF derives them from the
@@ -196,6 +229,9 @@ const corePath = computed(() => {
     const core = model.value.core;
     if (model.value.kind === 'toroidal') {
         return annularSectorPath(core.ring.innerRadius, core.ring.outerRadius, 0, 360);
+    }
+    if (core.silhouette != null) {
+        return null;
     }
     const rectPath = (r) => `M ${r.x} ${r.y} h ${r.width} v ${r.height} h ${-r.width} Z`;
     return [rectPath(core.outer), ...core.cavities.map(rectPath)].join(' ');
@@ -1760,7 +1796,7 @@ function endTransformDrag() {
         :data-cy="dataTestLabel + '-WindingStudio'"
         :style="{ 'background-color': maximized ? undefined : backgroundColor, color: textColor }"
     >
-        <div v-if="!model.valid" class="winding-studio-empty">
+        <div v-if="!model.valid" class="winding-studio-empty" :data-cy="dataTestLabel + '-WindingStudio-reason'">
             {{ model.reason }}
         </div>
         <template v-else>
@@ -1911,11 +1947,21 @@ function endTransformDrag() {
                     class="winding-studio-svg"
                 >
                     <!-- Core -->
-                    <path :d="corePath" :fill="cssColor(ferriteColor)" fill-rule="evenodd" />
+                    <path v-if="corePath != null" :d="corePath" :fill="cssColor(ferriteColor)" fill-rule="evenodd" />
+                    <!-- Drum-family cores: MKF's own outline (Painter plot_core ferrite polygons) -->
+                    <g v-else :data-cy="dataTestLabel + '-WindingStudio-painter-core'">
+                        <polygon
+                            v-for="(points, index) in model.core.silhouette"
+                            :key="'ferrite' + index"
+                            :points="points"
+                            :fill="cssColor(ferriteColor)"
+                        />
+                    </g>
                     <!-- Gaps: breaks in the columns -->
                     <rect
                         v-for="(gap, index) in model.core.gaps"
                         :key="'gap' + index"
+                        :data-cy="dataTestLabel + '-WindingStudio-gap'"
                         v-bind="gap"
                         :fill="backgroundColor === 'transparent' ? '#000000' : backgroundColor"
                     />
