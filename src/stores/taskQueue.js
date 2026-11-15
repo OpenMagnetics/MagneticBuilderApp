@@ -33,7 +33,8 @@ function getRestrictedShapeFamilies() {
 // family whose code contains an 'h', and the same 5-term condition was pasted five times).
 // pqi/ut/ui/h await their UI work; the drum-era families (drum, drumRing, drumSemishielded)
 // and molded await the 3D/preview path (MVB.js drawing + WASM bump) — unhide them there.
-const UI_HIDDEN_SHAPE_FAMILIES = new Set(['pqi', 'ut', 'ui', 'h']);
+// drumSemishielded, rod and molded are hidden for now by Alf's decision (2026-11-15).
+const UI_HIDDEN_SHAPE_FAMILIES = new Set(['pqi', 'ut', 'ui', 'h', 'drumSemishielded', 'rod', 'molded']);
 
 // drum, drumRing, drumSemishielded and molded came OFF this list once the 3D/preview path
 // this comment used to wait for actually landed: MVB++ has ShapeMolded and
