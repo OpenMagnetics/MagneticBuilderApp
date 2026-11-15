@@ -529,16 +529,9 @@ export default {
                         />
                     </div>
                     <div class="coilinfo-cell">
-                        <p
-                            v-if="outputsData.totalLosses != null && coreHeldFinding != null"
-                            :data-cy="dataTestLabel + '-TotalLosses-HeldAtDataLimit'"
-                            role="alert"
-                            v-tooltip="coreHeldFinding.message"
-                            class="coilinfo-losses-held text-danger text-left my-1"
-                        >No total losses: the core has no steady temperature within its material's data, so its losses are not the design's (see Core Info).</p>
                         <DimensionReadOnly
                             v-tooltip="tooltipsMagneticBuilder.totalLosses"
-                            v-else-if="outputsData.totalLosses != null"
+                            v-if="outputsData.totalLosses != null && coreHeldFinding == null"
                             class="text-left"
                             :name="'P'"
                             :subscriptName="'total'"
@@ -893,16 +886,9 @@ export default {
                         <span>· proximity {{ powerLabel(outputsData.proximityLosses) }}</span>
                         <span class="coilinfo-loss-breakdown-hint">Per winding: Settings → Advanced mode</span>
                     </div>
-                    <p
-                        v-if="outputsData.totalLosses != null && coreHeldFinding != null"
-                        :data-cy="dataTestLabel + '-TotalLosses-HeldAtDataLimit'"
-                        role="alert"
-                        v-tooltip="coreHeldFinding.message"
-                        class="coilinfo-losses-held text-danger text-left pl-4 pr-4 my-1"
-                    >No total losses: the core has no steady temperature within its material's data, so its losses are not the design's (see Core Info).</p>
                     <DimensionReadOnly
                         v-tooltip="tooltipsMagneticBuilder.totalLosses"
-                        v-else-if="outputsData.totalLosses != null"
+                        v-if="outputsData.totalLosses != null && coreHeldFinding == null"
                         class="text-left pl-4 pr-4"
                         :name="'Total losses'"
                         :unit="'W'"
@@ -959,10 +945,6 @@ export default {
 </template>
 
 <style scoped>
-.coilinfo-losses-held {
-    font-size: 0.8rem;
-    font-weight: 600;
-}
 
 .coilinfo-panel {
     background: linear-gradient(145deg, color-mix(in srgb, var(--p-gray-600) 6%, transparent) 0%, color-mix(in srgb, var(--p-gray-600) 2%, transparent) 100%);

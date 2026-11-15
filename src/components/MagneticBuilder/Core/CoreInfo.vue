@@ -620,13 +620,7 @@ export default {
                         />
                     </div>
                     <div class="coreinfo-cell">
-                        <p
-                            v-if="coreHold != null"
-                            :data-cy="dataTestLabel + '-CoreLosses-HeldAtDataLimit'"
-                            role="alert"
-                            class="coreinfo-losses-held text-danger text-left my-1"
-                        >{{ coreHold.error }}</p>
-                        <DimensionReadOnly v-else
+                        <DimensionReadOnly v-if="coreHold == null"
                             v-tooltip="tooltipsMagneticBuilder.coreLosses"
                             class="text-left"
                             :name="'P'"
@@ -679,13 +673,7 @@ export default {
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
                         :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
                     />
-                    <p
-                        v-if="coreHold != null"
-                        :data-cy="dataTestLabel + '-CoreLosses-HeldAtDataLimit'"
-                        role="alert"
-                        class="coreinfo-losses-held text-danger text-left pl-4 pr-4 my-1"
-                    >{{ coreHold.error }}</p>
-                    <DimensionReadOnly v-else
+                    <DimensionReadOnly v-if="coreHold == null"
                         v-tooltip="tooltipsMagneticBuilder.coreLosses"
                         class="text-left pl-4 pr-4"
                         :replaceTitle="'Core Losses'"
@@ -802,11 +790,6 @@ export default {
     align-items: center;
     gap: 0.5rem;
     margin-left: auto;
-}
-
-.coreinfo-losses-held {
-    font-size: 0.8rem;
-    font-weight: 600;
 }
 
 .coreinfo-hold-hint {
