@@ -732,18 +732,25 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
         /**
          * Primary turns that give the required magnetizing inductance with the
-         * core's current gapping. The engine reports failures as -1 (its message
-         * goes to the worker console), so that is turned into a thrown error here.
+         * core's current gapping. The engine answers a JSON number, or
+         * "Exception: <its message>", which is thrown as is (ABT #2410).
          */
         async calculateNumberTurnsFromGappingAndInductance(core, coil, inputs, modelsData) {
             const mkf = await waitForMkf();
             await mkf.ready;
             const result = await mkf.calculate_number_turns_from_gapping_and_inductance(
                 JSON.stringify(core), JSON.stringify(coil), JSON.stringify(inputs), JSON.stringify(modelsData));
-            if (!(result > 0)) {
-                throw new Error('Exception: calculate_number_turns_from_gapping_and_inductance failed (worker returned ' + result + '); see the worker console for the engine message');
+            if (typeof result !== 'string') {
+                throw new Error('Exception: calculate_number_turns_from_gapping_and_inductance answered a ' + typeof result + ' (' + result + '), not a string: libMKF is older than this builder');
             }
-            return result;
+            if (result.startsWith('Exception')) {
+                throw new Error(result);
+            }
+            const numberTurns = JSON.parse(result);
+            if (!(numberTurns > 0)) {
+                throw new Error('Exception: calculate_number_turns_from_gapping_and_inductance answered ' + result + ' turns');
+            }
+            return numberTurns;
         },
 
         coreLossesCalculated(success = true, dataOrMessage = '') {
