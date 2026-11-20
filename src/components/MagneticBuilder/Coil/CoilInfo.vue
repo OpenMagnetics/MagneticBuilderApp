@@ -305,7 +305,13 @@ export default {
                 this.outputsData.dcResistancePerWinding.push(outputs[this.operatingPointIndex].windingLosses.dcResistancePerWinding[windingIndex]);
             }
 
-            if (outputs[this.operatingPointIndex].inductance.leakageInductance?.leakageInductancePerWinding) {
+            // At a point whose flux density lies past the end of the core material's magnetisation curve MKF
+            // computes no inductance, flux density or core losses (its CORE_SATURATES finding, shown in the
+            // Simulation findings): there is no leakage inductance and no total to show for it.
+            if (outputs[this.operatingPointIndex].inductance == null) {
+                this.outputsData.leakageInductancePerWinding = null;
+            }
+            else if (outputs[this.operatingPointIndex].inductance.leakageInductance?.leakageInductancePerWinding) {
                 const perWinding = outputs[this.operatingPointIndex].inductance.leakageInductance.leakageInductancePerWinding;
                 const numberWindings = this.masStore.mas.magnetic.coil.functionalDescription.length;
                 // The engine emits a winding-indexed array (N entries, 0 at the primary slot);
@@ -323,7 +329,8 @@ export default {
             }
             // this.outputsData.proximityLossesPerWinding = outputs[this.operatingPointIndex].windingLosses.windingLossesPerWinding[];
             this.outputsData.windingLosses = outputs[this.operatingPointIndex].windingLosses.windingLosses;
-            this.outputsData.totalLosses = outputs[this.operatingPointIndex].windingLosses.windingLosses + outputs[this.operatingPointIndex].coreLosses.coreLosses;
+            this.outputsData.totalLosses = outputs[this.operatingPointIndex].coreLosses == null ? null
+                : outputs[this.operatingPointIndex].windingLosses.windingLosses + outputs[this.operatingPointIndex].coreLosses.coreLosses;
         },
         simulate() {
             
