@@ -55,8 +55,12 @@ export default {
         // not sit next to this core's geometry (ABT #2277).
         const resultsShown = false;
         const subscriptions = [];
+        // Number of the latest simulation asked for: an earlier one that answers later (it priced a design
+        // since changed) must not replace its result.
+        const simulationRequest = 0;
 
         return {
+            simulationRequest,
             taskQueueStore,
             modelSettingsStore,
             coreTemperatureDependantParametersData,
@@ -171,6 +175,18 @@ export default {
                         console.error(args[1])
                     }
                 }
+                // The core is solved at the temperature its own losses AND the winding's give, so a coil wound
+                // again (after a core, bobbin, wire or turns change) changes them. A material change re-winds
+                // the coil after the core is processed, and the result priced before that stayed on screen as
+                // up to date while Resimulate gave another (ABT #2280).
+                if (name == "wound" || name == "planarWound") {
+                    if (args[0]) {
+                        this.dataUptoDate = false;
+                        if (this.enableAutoSimulation) {
+                            this.calculateCoreLosses();
+                        }
+                    }
+                }
                 if (name == "coreMaterialChanged") {
                     if (args[0]) {
                         // Just mark as outdated — the subsequent coreProcessed action
@@ -283,7 +299,11 @@ export default {
             if (hasValidShape && material && material !== '' && 
                 gapping && Array.isArray(gapping) &&
                 operatingPoint?.conditions?.ambientTemperature != null) {
+                const request = ++this.simulationRequest;
                 this.taskQueueStore.calculateCoreLosses(this.masStore.mas.magnetic, this.masStore.mas.inputs, this.operatingPointIndex, modelsData).then((data) => {
+                    if (request !== this.simulationRequest) {
+                        return;
+                    }
                     if (data) {
                         this.coreTemperatureDependantParametersData = data.coreTemperatureDependantParametersData;
                         this.magnetizingInductance = data.magnetizingInductance;
@@ -298,6 +318,9 @@ export default {
                     }
                 })
                 .catch(error => {
+                    if (request !== this.simulationRequest) {
+                        return;
+                    }
                     // Show the real MKF error in the panel — a console-only error
                     // left the user staring at losses that never arrive.
                     this.simulationError = error?.message || String(error);

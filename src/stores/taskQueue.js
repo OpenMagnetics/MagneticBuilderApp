@@ -779,6 +779,13 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
         },
 
         async calculateCoreLosses(magnetic, inputs, operatingPointIndex, modelsData) {
+            // One design for every engine call below. Callers pass the live store objects, and the engine
+            // calls are awaited one after another: a material change regenerates the bobbin and re-winds the
+            // coil meanwhile, and the core losses were priced on a coil whose turns had just been cleared, so
+            // on a core-only thermal network with no winding heat (an ETD 34 in 3C90: 1.83 W at 90 C, against
+            // 2.86 W at 145 C for the same design wound; ABT #2280).
+            magnetic = deepCopy(magnetic);
+            inputs = deepCopy(inputs);
             // Validate all required fields exist
             const shape = magnetic.core?.functionalDescription?.shape;
             const material = magnetic.core?.functionalDescription?.material;
