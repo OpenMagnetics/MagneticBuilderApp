@@ -14,6 +14,8 @@ import * as Defaults from '/WebSharedComponents/assets/js/defaults.js'
 // Warnings and errors go to the host's log when it has one (notices.js).
 import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js/notices.js'
 import { engineMessageInFull, engineMessageFirstSentence } from '../engineMessage.js'
+import { describeCoreHold } from '../coreHold.js'
+import { coreInfoModels } from '../Core/coreInfoModels.js'
 
 export default {
     props: {
@@ -77,6 +79,8 @@ export default {
             subscriptions,
             _simTimer: null,
             _waitTimer: null,
+            // On a held core: the core losses just before the hold (W), from the engine's core-loss calculation.
+            lossesBeforeHold: null,
         }
     },
     computed: {
@@ -88,10 +92,28 @@ export default {
         },
         // ABT #2370: MKF held the core at its material's data limit for this operating point
         // (analyze_results' CORE_ABOVE_MATERIAL_DATA_LIMIT). The core losses of a held core are
-        // not the design's, so neither is a total that adds them: it is not shown.
+        // not the design's: the total adds the losses just before the hold instead, marked.
         coreHeldFinding() {
             return useSimulationFindingsStore().of(this.masStore.$id).find((finding) =>
                 finding.code == 'CORE_ABOVE_MATERIAL_DATA_LIMIT' && finding.operatingPointIndex == this.operatingPointIndex) ?? null;
+        },
+        // MKF's CORE_SATURATES finding on this operating point: the total is shown, marked (Alf, 2026-11-20).
+        coreSaturatesFinding() {
+            return useSimulationFindingsStore().of(this.masStore.$id).find((finding) =>
+                finding.code == 'CORE_SATURATES' && finding.operatingPointIndex == this.operatingPointIndex) ?? null;
+        },
+        // The total shown: on a held core the winding losses plus the core losses just before the hold (Alf,
+        // 2026-11-20), else the simulated total.
+        shownTotalLosses() {
+            if (this.coreHeldFinding != null) {
+                return this.lossesBeforeHold == null || this.outputsData.windingLosses == null ? null
+                    : this.outputsData.windingLosses + this.lossesBeforeHold;
+            }
+            return this.outputsData.totalLosses;
+        },
+        // Why the total is marked in the danger colour, shown on hover; null when it is not.
+        totalLossesWarning() {
+            return this.coreHeldFinding?.message ?? this.coreSaturatesFinding?.message ?? null;
         },
         // MKF refused the design's copy of its core material when it was loaded: nothing is
         // computed with it until it is updated (Alf, 2026-10-27).
@@ -151,6 +173,27 @@ export default {
     watch: {
         simulationError(message) {
             reportNotice('ERROR', 'Coil info', message);
+        },
+        // A held core's losses before the hold are not in the simulated outputs: the engine's core-loss
+        // calculation states them, asked with Core Info's models.
+        coreHeldFinding: {
+            handler(finding) {
+                this.lossesBeforeHold = null;
+                if (finding == null) return;
+                const models = coreInfoModels(this.$userStore, this.modelSettingsStore, null);
+                const operatingPointIndex = this.operatingPointIndex;
+                this.taskQueueStore.calculateCoreLosses(this.masStore.mas.magnetic, this.masStore.mas.inputs, operatingPointIndex, models)
+                .then((data) => {
+                    if (data == null) {
+                        throw new Error('the core is not complete enough to compute its losses before the hold');
+                    }
+                    const hold = describeCoreHold(data.coreLossesData);
+                    if (this.coreHeldFinding === finding) this.lossesBeforeHold = hold?.lossesBeforeHold ?? null;
+                })
+                .catch((error) => {
+                    this.simulationError = `The losses before the hold could not be computed: ${error?.message || String(error)}`;
+                });
+            },
         },
         'operatingPointIndex': {
             handler(newValue, oldValue) {
@@ -305,9 +348,8 @@ export default {
                 this.outputsData.dcResistancePerWinding.push(outputs[this.operatingPointIndex].windingLosses.dcResistancePerWinding[windingIndex]);
             }
 
-            // At a point whose flux density lies past the end of the core material's magnetisation curve MKF
-            // computes no inductance, flux density or core losses (its CORE_SATURATES finding, shown in the
-            // Simulation findings): there is no leakage inductance and no total to show for it.
+            // An output without inductance or core losses (an engine that computed none for the point) has no
+            // leakage inductance and no total to show.
             if (outputs[this.operatingPointIndex].inductance == null) {
                 this.outputsData.leakageInductancePerWinding = null;
             }
@@ -537,8 +579,8 @@ export default {
                     </div>
                     <div class="coilinfo-cell">
                         <DimensionReadOnly
-                            v-tooltip="tooltipsMagneticBuilder.totalLosses"
-                            v-if="outputsData.totalLosses != null && coreHeldFinding == null"
+                            v-tooltip="totalLossesWarning ?? tooltipsMagneticBuilder.totalLosses"
+                            v-if="shownTotalLosses != null"
                             class="text-left"
                             :name="'P'"
                             :subscriptName="'total'"
@@ -546,7 +588,7 @@ export default {
                             :power="1"
                             :dataTestLabel="dataTestLabel + '-TotalLosses'"
                             :numberDecimals="2"
-                            :value="outputsData.totalLosses"
+                            :value="shownTotalLosses"
                             :disableShortenLabels="true"
                             :labelWidthProportionClass="'col-4'"
                             :valueWidthProportionClass="'col-8'"
@@ -555,7 +597,7 @@ export default {
                             :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                             :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                            :textColor="totalLossesWarning != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
                     <div class="coilinfo-cell">
@@ -894,15 +936,15 @@ export default {
                         <span class="coilinfo-loss-breakdown-hint">Per winding: Settings → Advanced mode</span>
                     </div>
                     <DimensionReadOnly
-                        v-tooltip="tooltipsMagneticBuilder.totalLosses"
-                        v-if="outputsData.totalLosses != null && coreHeldFinding == null"
+                        v-tooltip="totalLossesWarning ?? tooltipsMagneticBuilder.totalLosses"
+                        v-if="shownTotalLosses != null"
                         class="text-left pl-4 pr-4"
                         :name="'Total losses'"
                         :unit="'W'"
                         :power="1"
                         :dataTestLabel="dataTestLabel + '-TotalLosses'"
                         :numberDecimals="2"
-                        :value="outputsData.totalLosses"
+                        :value="shownTotalLosses"
                         :disableShortenLabels="true"
                         :labelWidthProportionClass="'col-7'"
                         :valueWidthProportionClass="'col-5'"
@@ -911,7 +953,7 @@ export default {
                         :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        :textColor="totalLossesWarning != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                     />
                     <div
                         v-if="masStore.mas.magnetic.coil.functionalDescription.length > 2 && !masStore.hasMirroredWindings"

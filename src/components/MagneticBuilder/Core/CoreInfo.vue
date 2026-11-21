@@ -13,6 +13,7 @@ import { useRefusedCoreMaterialStore } from '../../../stores/refusedCoreMaterial
 import { reportNotice, noticesShownInline } from '/WebSharedComponents/assets/js/notices.js'
 import { engineMessageInFull, engineMessageFirstSentence } from '../engineMessage.js'
 import { describeCoreHold } from '../coreHold.js'
+import { useSimulationFindingsStore } from '../../../stores/simulationFindings'
 import { coreInfoModels } from './coreInfoModels.js'
 
 export default {
@@ -85,8 +86,8 @@ export default {
         },
         // ABT #2273 / #2370: the core's own losses drove it past its material's data and MKF held it
         // at the limit. Held there (at Curie the core is paramagnetic) the losses are not the
-        // design's, so they are never shown as the result: the panel shows this error instead, with
-        // the losses just before the hold. Null when the core was not held.
+        // design's: the panel shows the losses just before the hold instead, in the danger colour,
+        // with this description on hover (Alf, 2026-11-20). Null when the core was not held.
         coreHold() {
             return describeCoreHold(this.coreLossesData);
         },
@@ -96,7 +97,26 @@ export default {
             return useRefusedCoreMaterialStore().of(this.masStore.$id, this.masStore.mas.magnetic.core?.functionalDescription?.material);
         },
         closeOrOverSaturation() {
-            return (this.coreLossesData.magneticFluxDensityPeak / this.coreTemperatureDependantParametersData.magneticFluxDensitySaturation) > 0.85;
+            return this.coreSaturatesFinding != null ||
+                (this.coreLossesData.magneticFluxDensityPeak / this.coreTemperatureDependantParametersData.magneticFluxDensitySaturation) > 0.85;
+        },
+        // MKF's CORE_SATURATES finding on this operating point (analyze_results on the last simulation). The
+        // saturated core's inductance, flux density and losses are shown, in the danger colour, with this
+        // message on hover (Alf, 2026-11-20: never hidden, marked).
+        coreSaturatesFinding() {
+            return useSimulationFindingsStore().of(this.masStore.$id).find((finding) =>
+                finding.code == 'CORE_SATURATES' && finding.operatingPointIndex == this.operatingPointIndex) ?? null;
+        },
+        // The core losses shown: on a held core the losses just before the hold (the held ones are not the
+        // design's), in the danger colour with the hold on hover (Alf, 2026-11-20); else the computed ones.
+        shownCoreLosses() {
+            if (this.coreHold != null) {
+                return this.coreLossesData.coreLossesBeforeHold?.coreLosses ?? null;
+            }
+            return this.coreLossesData.coreLosses;
+        },
+        coreLossesWarning() {
+            return this.coreHold?.full ?? this.coreSaturatesFinding?.message ?? null;
         },
         hasCalculableData() {
             const shape = this.masStore.mas.magnetic.core?.functionalDescription?.shape;
@@ -578,7 +598,7 @@ export default {
                     <!-- On a held core B is computed on the paramagnetic (mu_r = 1) core, far below the design's: hidden, the core-losses error says why. -->
                     <div class="coreinfo-cell" v-if="coreHold == null">
                         <DimensionReadOnly 
-                            v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityPeak"
+                            v-tooltip="coreSaturatesFinding?.message ?? tooltipsMagneticBuilder.magneticFluxDensityPeak"
                             class="text-left"
                             :name="'B'"
                             :subscriptName="'peak'"
@@ -601,7 +621,7 @@ export default {
                     <!-- On a held core B is computed on the paramagnetic (mu_r = 1) core, far below the design's: hidden, the core-losses error says why. -->
                     <div class="coreinfo-cell" v-if="coreHold == null">
                         <DimensionReadOnly 
-                            v-tooltip="tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
+                            v-tooltip="coreSaturatesFinding?.message ?? tooltipsMagneticBuilder.magneticFluxDensityAcPeak"
                             class="text-left"
                             :name="'B'"
                             :subscriptName="'ACpeak'"
@@ -623,7 +643,7 @@ export default {
                     </div>
                     <div class="coreinfo-cell">
                         <DimensionReadOnly 
-                            v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
+                            v-tooltip="coreSaturatesFinding?.message ?? tooltipsMagneticBuilder.magnetizingInductance"
                             class="text-left"
                             :name="'L'"
                             :unit="'H'"
@@ -639,12 +659,12 @@ export default {
                             :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                             :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                            :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                            :textColor="magnetizingInductanceCheck && coreSaturatesFinding == null ? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
                         />
                     </div>
                     <div class="coreinfo-cell">
-                        <DimensionReadOnly v-if="coreHold == null"
-                            v-tooltip="tooltipsMagneticBuilder.coreLosses"
+                        <DimensionReadOnly v-if="shownCoreLosses != null"
+                            v-tooltip="coreLossesWarning ?? tooltipsMagneticBuilder.coreLosses"
                             class="text-left"
                             :name="'P'"
                             :subscriptName="'core'"
@@ -652,7 +672,7 @@ export default {
                             :power="1"
                             :dataTestLabel="dataTestLabel + '-CoreLosses'"
                             :numberDecimals="2"
-                            :value="coreLossesData.coreLosses"
+                            :value="shownCoreLosses"
                             :useTitleCase="false"
                             :disableShortenLabels="true"
                             :labelWidthProportionClass="'col-3'"
@@ -661,7 +681,7 @@ export default {
                             :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                             :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                             :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                            :textColor="$styleStore.magneticBuilder.inputTextColor"
+                            :textColor="coreLossesWarning != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                         />
                     </div>
                     </template>
@@ -677,7 +697,7 @@ export default {
                 <div class="coreinfo-simple" :class="{ 'coreinfo-dimmed': !dataUptoDate }" v-if="coreEffectiveParameters.effectiveLength != null">
                     <template v-if="resultsShown">
                     <DimensionReadOnly 
-                        v-tooltip="tooltipsMagneticBuilder.magnetizingInductance"
+                        v-tooltip="coreSaturatesFinding?.message ?? tooltipsMagneticBuilder.magnetizingInductance"
                         class="text-left pl-4 pr-4"
                         :name="'L'"
                         :replaceTitle="'Magnetizing Inductance'"
@@ -694,10 +714,10 @@ export default {
                         :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="magnetizingInductanceCheck? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
+                        :textColor="magnetizingInductanceCheck && coreSaturatesFinding == null ? $styleStore.magneticBuilder.inputTextColor : $styleStore.magneticBuilder.inputLabelDangerBgColor"
                     />
-                    <DimensionReadOnly v-if="coreHold == null"
-                        v-tooltip="tooltipsMagneticBuilder.coreLosses"
+                    <DimensionReadOnly v-if="shownCoreLosses != null"
+                        v-tooltip="coreLossesWarning ?? tooltipsMagneticBuilder.coreLosses"
                         class="text-left pl-4 pr-4"
                         :replaceTitle="'Core Losses'"
                         :name="'P'"
@@ -705,7 +725,7 @@ export default {
                         :power="1"
                         :dataTestLabel="dataTestLabel + '-CoreLosses'"
                         :numberDecimals="2"
-                        :value="coreLossesData.coreLosses"
+                        :value="shownCoreLosses"
                         :useTitleCase="false"
                         :disableShortenLabels="true"
                         :labelWidthProportionClass="'col-7'"
@@ -714,7 +734,7 @@ export default {
                         :labelFontSize="$styleStore.magneticBuilder.infoLabelFontSize"
                         :labelBgColor="$styleStore.magneticBuilder.inputLabelBgColor"
                         :valueBgColor="$styleStore.magneticBuilder.inputValueBgColor"
-                        :textColor="$styleStore.magneticBuilder.inputTextColor"
+                        :textColor="coreLossesWarning != null ? $styleStore.magneticBuilder.inputLabelDangerBgColor : $styleStore.magneticBuilder.inputTextColor"
                     />
                     <!-- Computed on the held (paramagnetic) core: hidden with the losses. -->
                     <DimensionReadOnly v-if="coreHold == null"
