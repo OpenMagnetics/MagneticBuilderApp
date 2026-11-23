@@ -417,6 +417,26 @@ export default {
                                 </small>
                             </div>
 
+                            <!-- DC bias in core losses (ABT #2208): shown only when the engine reports the setting -->
+                            <div class="model-setting mb-3" v-if="modelSettingsStore.coreLossesDcBiasEnabled !== null">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="text-white mb-1 d-block">Core Losses Under DC Bias</label>
+                                        <small class="text-color-secondary">Scale core losses by the material's permeability drop under the DC field, where its data has one</small>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input
+                                            class="form-check-input custom-switch"
+                                            type="checkbox"
+                                            role="switch"
+                                            :data-cy="dataTestLabel + '-Settings-Modal-core-losses-dc-bias-switch'"
+                                            :checked="modelSettingsStore.coreLossesDcBiasEnabled"
+                                            @change="onModelChanged('coreLossesDcBiasEnabled', $event.target.checked)"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Winding Skin Effect Losses Model -->
                             <div class="model-setting mb-3">
                                 <label class="text-white mb-1 d-block">Skin Effect Losses Model</label>

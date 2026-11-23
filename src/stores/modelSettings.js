@@ -26,6 +26,11 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
     // Toggle for manual winding losses selection
     const coilEnableUserWindingLossesModels = ref(false)
 
+    // Whether core losses of a DC-biased excitation carry MKF's DC-bias factor mu(0)/mu(H_dc) (ABT #2208).
+    // Its value is the engine's: it stays null, and the switch hidden, until get_settings reports the key,
+    // so an engine without the setting never shows a switch that does nothing.
+    const coreLossesDcBiasEnabled = ref(null)
+
     // Painter resolution settings
     const painterNumberPointsX = ref(25)
     const painterNumberPointsY = ref(50)
@@ -149,6 +154,7 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
             if (settings.coilEnableUserWindingLossesModels !== undefined) {
                 coilEnableUserWindingLossesModels.value = settings.coilEnableUserWindingLossesModels
             }
+            coreLossesDcBiasEnabled.value = settings.coreLossesDcBiasEnabled !== undefined ? settings.coreLossesDcBiasEnabled : null
 
             // Load painter resolution settings
             if (settings.painterNumberPointsX !== undefined) {
@@ -221,6 +227,9 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
                     if (index >= 0) settings.strayCapacitanceModel = index
                 }
                 settings.coilEnableUserWindingLossesModels = coilEnableUserWindingLossesModels.value
+                if (coreLossesDcBiasEnabled.value !== null) {
+                    settings.coreLossesDcBiasEnabled = coreLossesDcBiasEnabled.value
+                }
 
                 // Sync painter resolution settings
                 settings.painterNumberPointsX = painterNumberPointsX.value
@@ -344,6 +353,7 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
         windingProximityEffectLossesModel,
         strayCapacitanceModel,
         coilEnableUserWindingLossesModels,
+        coreLossesDcBiasEnabled,
         painterNumberPointsX,
         painterNumberPointsY,
     ], (newValues, oldValues) => {
@@ -380,6 +390,7 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
         windingProximityEffectLossesModel,
         strayCapacitanceModel,
         coilEnableUserWindingLossesModels,
+        coreLossesDcBiasEnabled,
         painterNumberPointsX,
         painterNumberPointsY,
         // Available options
