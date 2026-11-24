@@ -453,6 +453,9 @@ export function buildTurnViews(coil) {
             round,
             isStart,
             litz: litzWindings.has(turn.winding),
+            // MAS turn rotation (degrees, counter-clockwise; a toroidal turn's is its azimuth). The studio's y axis
+            // points down, so the drawing turns by its negative, as MKF's Painter does.
+            rotation: turn.rotation ?? 0,
         };
         views.push({
             ...base,

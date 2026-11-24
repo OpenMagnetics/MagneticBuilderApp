@@ -2210,6 +2210,7 @@ function endTransformDrag() {
                         <rect
                             v-else
                             v-bind="turn.rect"
+                            :transform="turn.rotation ? `rotate(${-turn.rotation} ${turn.rect.x + turn.rect.width / 2} ${turn.rect.y + turn.rect.height / 2})` : null"
                             :fill="turnFill(turn)"
                             :opacity="turnOpacity(turn)"
                             :stroke="hoveredTurn === turn.name ? '#ffffff' : 'none'"
