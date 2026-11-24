@@ -437,6 +437,26 @@ export default {
                                 </div>
                             </div>
 
+                            <!-- Core losses from the core's flux density map (ABT #2534): shown only when the engine reports the setting -->
+                            <div class="model-setting mb-3" v-if="modelSettingsStore.coreLossesFluxDensityDistribution !== null">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <label class="text-white mb-1 d-block">Core Losses From Distributed Flux Density</label>
+                                        <small class="text-color-secondary">Price every piece of the core at its own flux density (corners, flanges, the field across a toroid) instead of one effective value. Slower: about 10x per simulation</small>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input
+                                            class="form-check-input custom-switch"
+                                            type="checkbox"
+                                            role="switch"
+                                            :data-cy="dataTestLabel + '-Settings-Modal-core-losses-distributed-flux-density-switch'"
+                                            :checked="modelSettingsStore.coreLossesFluxDensityDistribution === 'DISTRIBUTED'"
+                                            @change="onModelChanged('coreLossesFluxDensityDistribution', $event.target.checked ? 'DISTRIBUTED' : 'EFFECTIVE_PARAMETERS')"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Winding Skin Effect Losses Model -->
                             <div class="model-setting mb-3">
                                 <label class="text-white mb-1 d-block">Skin Effect Losses Model</label>

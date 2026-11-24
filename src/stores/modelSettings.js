@@ -30,6 +30,10 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
     // Its value is the engine's: it stays null, and the switch hidden, until get_settings reports the key,
     // so an engine without the setting never shows a switch that does nothing.
     const coreLossesDcBiasEnabled = ref(null)
+    // The flux density the core losses are priced from (ABT #2534), in the engine's own names: 'EFFECTIVE_PARAMETERS'
+    // (one B(t) over the effective area, MKF's default) or 'DISTRIBUTED' (MKF's flux density map: every piece of the
+    // core priced at its own B(t); slower). Null, and the switch hidden, until get_settings reports the key.
+    const coreLossesFluxDensityDistribution = ref(null)
 
     // Painter resolution settings
     const painterNumberPointsX = ref(25)
@@ -155,6 +159,7 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
                 coilEnableUserWindingLossesModels.value = settings.coilEnableUserWindingLossesModels
             }
             coreLossesDcBiasEnabled.value = settings.coreLossesDcBiasEnabled !== undefined ? settings.coreLossesDcBiasEnabled : null
+            coreLossesFluxDensityDistribution.value = settings.coreLossesFluxDensityDistribution !== undefined ? settings.coreLossesFluxDensityDistribution : null
 
             // Load painter resolution settings
             if (settings.painterNumberPointsX !== undefined) {
@@ -227,6 +232,9 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
                     if (index >= 0) settings.strayCapacitanceModel = index
                 }
                 settings.coilEnableUserWindingLossesModels = coilEnableUserWindingLossesModels.value
+                if (coreLossesFluxDensityDistribution.value !== null) {
+                    settings.coreLossesFluxDensityDistribution = coreLossesFluxDensityDistribution.value
+                }
                 if (coreLossesDcBiasEnabled.value !== null) {
                     settings.coreLossesDcBiasEnabled = coreLossesDcBiasEnabled.value
                 }
@@ -354,6 +362,7 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
         strayCapacitanceModel,
         coilEnableUserWindingLossesModels,
         coreLossesDcBiasEnabled,
+        coreLossesFluxDensityDistribution,
         painterNumberPointsX,
         painterNumberPointsY,
     ], (newValues, oldValues) => {
@@ -391,6 +400,7 @@ export const useModelSettingsStore = defineStore("modelSettings", () => {
         strayCapacitanceModel,
         coilEnableUserWindingLossesModels,
         coreLossesDcBiasEnabled,
+        coreLossesFluxDensityDistribution,
         painterNumberPointsX,
         painterNumberPointsY,
         // Available options
