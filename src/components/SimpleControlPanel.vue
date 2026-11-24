@@ -169,7 +169,7 @@ export default {
                     console.error(error);
                 }
             };
-            fr.readAsText(this.$refs['masFileReader'].files.item(0), "ISO-8859-1");
+            fr.readAsText(this.$refs['masFileReader'].files.item(0), "UTF-8");  // ABT #2544: a MAS file is JSON, which is UTF-8
         },
     }
 }
