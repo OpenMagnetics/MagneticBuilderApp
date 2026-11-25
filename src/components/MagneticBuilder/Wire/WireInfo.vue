@@ -45,13 +45,13 @@ export default {
     data() {
         const taskQueueStore = useTaskQueueStore();
         const dcResistancePerMeter = 0;
-        const skinAcResistancePerMeter = 0;
-        const skinAcFactor = 0;
-        const dcLossesPerMeter = 0;
-        const skinAcLossesPerMeter = 0;
+        const skinAcResistancePerMeter = null;
+        const skinAcFactor = null;
+        const dcLossesPerMeter = null;
+        const skinAcLossesPerMeter = null;
         const outerDimensions = 0;
-        const effectiveCurrentDensity = 0;
-        const effectiveSkinDepth = 0;
+        const effectiveCurrentDensity = null;
+        const effectiveSkinDepth = null;
         const turnsRatio = 1;
         const compliesWithTurnsRatio = true;
         const recentChange = false;
@@ -377,6 +377,7 @@ export default {
                     </div>
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
+                            v-if="skinAcResistancePerMeter != null"
                             v-tooltip="tooltipsMagneticBuilder.skinResistancePerMeter"
                             class="text-left"
                             :name="'R'"
@@ -397,6 +398,7 @@ export default {
                     </div>
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
+                            v-if="dcLossesPerMeter != null"
                             v-tooltip="tooltipsMagneticBuilder.ohmicLossesPerMeter"
                             class="text-left"
                             :name="'P'"
@@ -417,6 +419,7 @@ export default {
                     </div>
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
+                            v-if="skinAcLossesPerMeter != null"
                             v-tooltip="tooltipsMagneticBuilder.skinLossesPermeter"
                             class="text-left"
                             :name="'P'"
@@ -437,6 +440,7 @@ export default {
                     </div>
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
+                            v-if="effectiveCurrentDensity != null"
                             v-tooltip="tooltipsMagneticBuilder.effectiveCurrentDensity"
                             class="text-left"
                             :name="'J'"
@@ -457,6 +461,7 @@ export default {
                     </div>
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
+                            v-if="effectiveSkinDepth != null"
                             v-tooltip="tooltipsMagneticBuilder.effectiveSkinDepth"
                             class="text-left"
                             :name="'δ'"
@@ -497,6 +502,7 @@ export default {
                     </div>
                     <div class="wireinfo-cell">
                         <DimensionReadOnly
+                            v-if="skinAcFactor != null"
                             v-tooltip="tooltipsMagneticBuilder.skinFactor"
                             class="text-left"
                             :name="'F'"

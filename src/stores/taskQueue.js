@@ -1421,21 +1421,16 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
 
             const wireString = JSON.stringify(wire);
             
-            // Check if we have valid operating point data with current that the WASM can process.
-            // A current object is only "usable" if it has:
-            //   - harmonics with at least one amplitude value, OR
-            //   - a waveform with time data (so WASM can compute harmonics), OR
-            //   - processed data that includes an rms value
-            const rawCurrent = operatingPoints?.excitationsPerWinding?.[windingIndex]?.current;
-            const hasUsableCurrent = rawCurrent && (
+            // The current-dependent figures need the winding's excitation: its current, and its frequency, which the
+            // engine samples the current's waveform at (ABT #2279: a waveform's time span is not always its period).
+            const excitation = operatingPoints?.excitationsPerWinding?.[windingIndex];
+            const rawCurrent = excitation?.current;
+            const hasCurrentData = rawCurrent != null && (
                 (rawCurrent.harmonics?.amplitudes?.length > 0) ||
-                (rawCurrent.waveform?.time?.length > 1) ||
+                (rawCurrent.waveform?.data?.length > 1) ||
                 (rawCurrent.processed?.rms != null)
             );
-            const hasCurrentData = !!hasUsableCurrent;
-            
-            const currentString = hasCurrentData ? JSON.stringify(rawCurrent) : null;
-            
+
             let wireMaterial = wireMaterialDefault;
             if (wire.material != null) {
                 wireMaterial = wire.material;
@@ -1446,32 +1441,32 @@ export const useTaskQueueStore = defineStore('magneticBuilderTaskQueue', {
             data.turnsRatio = coil.functionalDescription[0].numberTurns / coil.functionalDescription[windingIndex].numberTurns;
             data.dcResistancePerMeter = await mkf.calculate_dc_resistance_per_meter(wireString, operatingPoints?.conditions?.ambientTemperature || 25);
 
-            // These bindings answer -1 when MKF refuses (its reason goes to the worker's console). A -1
-            // is not a figure: divided into a current density it showed -0.08 uA/mm2 (ABT #2277).
-            const refused = (value, what) => {
-                if (value === -1) {
-                    throw new Error(`Exception: the engine could not calculate the ${what} of winding '${coil.functionalDescription[windingIndex].name}' (its current may lack processed data)`);
+            // These bindings answer a JSON number, or "Exception: <reason>" when MKF refuses (ABT #2279).
+            const answer = (result) => {
+                if (typeof result === 'string' && result.startsWith('Exception')) {
+                    throw new Error(result);
                 }
-                return value;
+                return JSON.parse(result);
             };
             if (hasCurrentData) {
+                const excitationString = JSON.stringify(excitation);
                 const temperature = operatingPoints.conditions.ambientTemperature;
-                data.skinAcResistancePerMeter = refused(await mkf.calculate_skin_ac_resistance_per_meter(wireString, currentString, temperature), 'skin-effect AC resistance');
-                data.skinAcFactor = refused(await mkf.calculate_skin_ac_factor(wireString, currentString, temperature), 'skin-effect AC factor');
-                data.dcLossesPerMeter = refused(await mkf.calculate_dc_losses_per_meter(wireString, currentString, temperature), 'DC losses');
-                data.skinAcLossesPerMeter = refused(await mkf.calculate_skin_ac_losses_per_meter(wireString, currentString, temperature), 'skin-effect AC losses');
-                data.effectiveCurrentDensity = refused(await mkf.calculate_effective_current_density(wireString, currentString, temperature), 'effective current density') / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
-                data.effectiveSkinDepth = refused(await mkf.calculate_effective_skin_depth(wireMaterial, currentString, temperature), 'effective skin depth');
+                data.skinAcResistancePerMeter = answer(await mkf.calculate_skin_ac_resistance_per_meter(wireString, excitationString, temperature));
+                data.skinAcFactor = answer(await mkf.calculate_skin_ac_factor(wireString, excitationString, temperature));
+                data.dcLossesPerMeter = answer(await mkf.calculate_dc_losses_per_meter(wireString, excitationString, temperature));
+                data.skinAcLossesPerMeter = answer(await mkf.calculate_skin_ac_losses_per_meter(wireString, excitationString, temperature));
+                data.effectiveCurrentDensity = answer(await mkf.calculate_effective_current_density(wireString, excitationString, temperature)) / 1000000 / coil.functionalDescription[windingIndex].numberParallels;
+                data.effectiveSkinDepth = answer(await mkf.calculate_effective_skin_depth(wireMaterial, excitationString, temperature));
             } else {
-                // Set default values when no current data is available
-                data.skinAcResistancePerMeter = data.dcResistancePerMeter;
-                data.skinAcFactor = 1.0;
-                data.dcLossesPerMeter = 0;
-                data.skinAcLossesPerMeter = 0;
-                data.effectiveCurrentDensity = 0;
-                data.effectiveSkinDepth = 0;
+                // No current: these figures do not exist, and are not shown (not 1.0 or 0, which read as results).
+                data.skinAcResistancePerMeter = null;
+                data.skinAcFactor = null;
+                data.dcLossesPerMeter = null;
+                data.skinAcLossesPerMeter = null;
+                data.effectiveCurrentDensity = null;
+                data.effectiveSkinDepth = null;
             }
-            
+
             const outerDimensionsArr = toArray(await mkf.get_outer_dimensions(wireString));
             data.outerDimensions = [outerDimensionsArr[0], outerDimensionsArr[1]];
 
