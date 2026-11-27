@@ -1921,7 +1921,12 @@ function endTransformDrag() {
                     />
                     Field
                 </label>
+                <!-- The "computing …" hints keep their place in the toolbar while idle (hidden, not
+                     removed): appearing and disappearing on every MAS change made the toolbar wrap
+                     to a new line and the drawing jump by that line, under the user's pointer
+                     (ABT #2582 follow-up, seen in WS-21). -->
                 <span v-if="showField && fieldImage == null" class="winding-studio-hint">computing field…</span>
+                <span v-else-if="showField" class="winding-studio-hint winding-studio-hint-idle" aria-hidden="true" data-placeholder="computing field…"></span>
                 <label class="winding-studio-toggle">
                     <input v-model="colorByWinding" type="checkbox" />
                     Color by winding
@@ -1939,6 +1944,7 @@ function endTransformDrag() {
                     v-else-if="showConnections && connections.realWinding && connections.markers.length > 0 && connections.declined"
                     class="winding-studio-hint"
                 >MKF declined the connection blocking — turns are NOT displaced around these routes</span>
+                <span v-else-if="showConnections" class="winding-studio-hint winding-studio-hint-idle" aria-hidden="true" data-placeholder="computing connections…"></span>
             </div>
             <div ref="plotEl" class="winding-studio-plot">
                 <svg
@@ -2756,6 +2762,13 @@ function endTransformDrag() {
 .winding-studio-chip-draggable {
     cursor: grab;
     touch-action: none;
+}
+/* Same width as the hint it stands in for, but no text in the DOM: nothing reads it. */
+.winding-studio-hint-idle {
+    visibility: hidden;
+}
+.winding-studio-hint-idle::before {
+    content: attr(data-placeholder);
 }
 .winding-studio-hint {
     font-size: 0.7rem;
